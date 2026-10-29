@@ -6,7 +6,7 @@ and some goblins.
 - The map is drawn once, offscreen, in the manner of Dyson Logos' dungeon maps: heavy walls drawn
   as chains of short pen strokes (jagged in cave rooms), a grey shadow cast down-right, bold stone
   hatching in the rock, and a hand-drawn floor grid.
-- The player (`@`) and goblins (`g`) are blackletter glyphs, set in UnifrakturMaguntia.
+- The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
 - The player sees only what lies in their field of view and remembers what they have seen;
   unexplored ground stays blank paper, and they carry a warm light.
@@ -42,5 +42,5 @@ in the browser console.
 
 ## Fonts
 
-UnifrakturMaguntia (J. "Mach" Wust, after Peter Wiegel) and IM Fell English (Igino Marini) are in
+Texturina (The Texturina Project Authors) and IM Fell English (Igino Marini) are in
 `fonts/` under the SIL Open Font License; see the `OFL-*.txt` files.

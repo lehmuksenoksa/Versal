@@ -1,11 +1,21 @@
 // Per-frame drawing: the pre-inked map, what the player can see and remembers,
-// lighting, and the animated blackletter glyphs for the player and the goblins.
+// lighting, and the animated letters for the player and the goblins.
 
 import { renderMap, INK, PAPER } from "./maprender.js";
 
-const GLYPH_FONT = "UnifrakturMaguntia, serif";
 const DESK = "#2b221c";
-const PLAYER_INK = "#1c3a72";
+
+// How the player and monsters are lettered, as chosen in the character
+// mockup (mockups/glyphs.html). Sizes are in tiles; bold and halo are
+// fractions of the letter size; tilt is the most a letter leans, in radians.
+const LETTERING = {
+  font: "Texturina, Georgia, serif",
+  player: { weight: 800, size: 0.9, ink: "#a3261b" },
+  monster: { weight: 600, size: 1.05, ink: INK },
+  bold: 0.025,
+  halo: 0.1,
+  tilt: 0.06,
+};
 
 // Idle motion. Offsets are in tiles; t in seconds.
 const POSES = {
@@ -186,7 +196,7 @@ export class Renderer {
   view(a) {
     let v = this.views.get(a.id);
     if (!v) {
-      v = { x: a.x, y: a.y, fx: a.x, fy: a.y, t0: 0, dur: 1, phase: Math.random() * 6.28, dart: { ox: 0, oy: 0, tx: 0, ty: 0, next: 0 } };
+      v = { x: a.x, y: a.y, fx: a.x, fy: a.y, t0: 0, dur: 1, phase: Math.random() * 6.28, tilt: Math.random() * 2 - 1, dart: { ox: 0, oy: 0, tx: 0, ty: 0, next: 0 } };
       this.views.set(a.id, v);
     }
     return v;
@@ -318,35 +328,40 @@ export class Renderer {
     }
   }
 
-  metrics(ch, size) {
-    const key = ch + size;
+  metrics(ch, font) {
+    const key = ch + font;
     let m = this.glyphMetrics.get(key);
     if (!m) {
-      this.ctx.font = `${size}px ${GLYPH_FONT}`;
+      this.ctx.font = font;
       const mm = this.ctx.measureText(ch);
-      m = { asc: mm.actualBoundingBoxAscent || size * 0.5, desc: mm.actualBoundingBoxDescent || 0 };
+      m = { asc: mm.actualBoundingBoxAscent || this.TS * 0.5, desc: mm.actualBoundingBoxDescent || 0 };
       this.glyphMetrics.set(key, m);
     }
     return m;
   }
 
-  // Draws a glyph centred on (x, y), squashing and rotating about its feet.
-  drawGlyph(ctx, ch, x, y, size, color, p) {
-    const m = this.metrics(ch, size);
+  // Draws a letter centred on (x, y), squashing and rotating about its feet.
+  drawGlyph(ctx, ch, x, y, style, p) {
+    const size = style.size * this.TS, font = `${style.weight} ${size}px ${LETTERING.font}`;
+    const m = this.metrics(ch, font);
     ctx.save();
     ctx.globalAlpha = p.alpha ?? 1;
     ctx.translate(x, y + (m.asc + m.desc) / 2);
     if (p.rot) ctx.rotate(p.rot);
     ctx.scale(p.sx ?? 1, p.sy ?? 1);
-    ctx.font = `${size}px ${GLYPH_FONT}`;
+    ctx.font = font;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
     // A paper-coloured halo keeps the letter legible over grid and hatching.
-    ctx.lineWidth = size * 0.16;
-    ctx.strokeStyle = "rgba(247, 242, 230, 0.85)";
+    ctx.lineWidth = size * LETTERING.halo;
+    ctx.strokeStyle = "rgba(247, 242, 230, 0.9)";
     ctx.strokeText(ch, 0, -m.desc);
-    ctx.fillStyle = color;
+    // A little extra weight, to stand up to the heavy map lines.
+    ctx.lineWidth = size * LETTERING.bold;
+    ctx.strokeStyle = style.ink;
+    ctx.strokeText(ch, 0, -m.desc);
+    ctx.fillStyle = style.ink;
     ctx.fillText(ch, 0, -m.desc);
     ctx.restore();
   }
@@ -382,16 +397,23 @@ export class Renderer {
   drawActor(ctx, a, v, now, t, motion) {
     const TS = this.TS;
     const { cx, cy, bx, baseY, p } = this.pose(a, v, now, t, motion);
-    // Pencil shadow on the floor, smaller while airborne.
+    // A hatched shadow: three short pen strokes on the floor, drawn in
+    // closer while the creature is in the air.
+    const w = TS * 0.22 * (1 - p.shadow * 0.35), sx = bx + (cx - bx) * 0.6, sy = baseY + TS * 0.38;
     ctx.save();
-    ctx.globalAlpha = 0.16 * v.alpha;
-    ctx.fillStyle = INK;
+    ctx.globalAlpha = 0.55 * v.alpha;
+    ctx.strokeStyle = INK;
+    ctx.lineCap = "round";
+    ctx.lineWidth = Math.max(1, TS * 0.04);
     ctx.beginPath();
-    ctx.ellipse(bx + (cx - bx) * 0.6, baseY + TS * 0.36, TS * 0.26 * (1 - p.shadow * 0.35), TS * 0.065, 0, 0, Math.PI * 2);
-    ctx.fill();
+    for (let k = -1; k <= 1; k++) {
+      ctx.moveTo(sx + k * w * 0.6 - w * 0.2, sy + w * 0.25);
+      ctx.lineTo(sx + k * w * 0.6 + w * 0.2, sy - w * 0.25);
+    }
+    ctx.stroke();
     ctx.restore();
-    const player = a === this.world.player;
-    this.drawGlyph(ctx, a.glyph, cx, cy, TS * (player ? 0.95 : 1.05), player ? PLAYER_INK : INK, { ...p, alpha: v.alpha });
+    const style = a === this.world.player ? LETTERING.player : LETTERING.monster;
+    this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha });
   }
 }
 

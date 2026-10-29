@@ -57,7 +57,8 @@ window.versal = { get world() { return world; }, renderer };
 
 (async () => {
   try {
-    await document.fonts.load('48px "UnifrakturMaguntia"');
+    await document.fonts.load('800 48px "Texturina"', "@g");
+    await document.fonts.load('600 48px "Texturina"', "@g");
     await document.fonts.load('italic 16px "IM Fell English"');
   } catch {
     // Fall back to whatever serif is available.
