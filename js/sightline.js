@@ -79,6 +79,19 @@ export class Walls {
     const path = new Path2D();
     pts.forEach(([x, y], i) => (i ? path.lineTo(x, y) : path.moveTo(x, y)));
     path.closePath();
+    // What can be seen when looking `depth` further into the walls along
+    // each line of sight: the outline pushed outward along its rays. Only
+    // wall faces the player actually looks at are reached, never round a
+    // corner.
+    path.beyond = (depth) => {
+      const out = new Path2D();
+      pts.forEach(([x, y], i) => {
+        const dx = x - px, dy = y - py, d = Math.hypot(dx, dy) || 1, k = (d + depth) / d;
+        i ? out.lineTo(px + dx * k, py + dy * k) : out.moveTo(px + dx * k, py + dy * k);
+      });
+      out.closePath();
+      return out;
+    };
     return path;
   }
 }

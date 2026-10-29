@@ -236,38 +236,33 @@ export class Renderer {
     this.sightPath = this.walls.visible(px, py, Math.max(sight, light) + TS);
     this.sightFrom = [px, py];
 
-    // In sight now: the visible polygon within reach, plus the rock just past
-    // the walls it meets. `grow` widens it all outward, for the soft edge.
+    // In sight now: the visible floor within reach, plus the rock just past
+    // the wall faces it looks at. `grow` reaches further into the rock only,
+    // for the soft edge (never onto floor that is in shadow).
     const drawSight = (canvas, grow) => {
       const g = canvas.getContext("2d");
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, canvas.width, canvas.height);
       g.setTransform(k, 0, 0, k, 0, 0);
-      g.fillStyle = g.strokeStyle = "#fff";
-      g.lineJoin = "round";
+      g.fillStyle = "#fff";
       g.save();
       g.beginPath();
-      g.arc(px, py, sight + grow, 0, Math.PI * 2);
+      g.arc(px, py, sight, 0, Math.PI * 2);
       g.clip();
       g.fill(this.sightPath);
-      if (grow > 0) {
-        g.lineWidth = grow * 2;
-        g.stroke(this.sightPath);
-      }
       g.restore();
       g.save();
       g.clip(this.rock, "evenodd");
       g.beginPath();
       g.arc(px, py, sight + BAND.sight * TS + grow, 0, Math.PI * 2);
       g.clip();
-      g.lineWidth = (BAND.sight * TS + grow) * 2;
-      g.stroke(this.sightPath);
+      g.fill(this.sightPath.beyond(BAND.sight * TS + grow));
       g.restore();
     };
     drawSight(this.visHard, 0);
     this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
-    // The soft in-sight mask blurs a widened copy, so the fade happens
-    // outside what is really in sight and that stays at full ink.
+    // The soft in-sight mask blurs a copy reaching further into the rock, so
+    // walls and hatching in sight keep full ink.
     drawSight(this.visWide, v.softness * TS * 0.9);
 
     // The light: bright at the player, fading out at its radius, reaching only
@@ -294,9 +289,7 @@ export class Renderer {
     lg.fill(this.sightPath);
     lg.save();
     lg.clip(this.rock, "evenodd");
-    lg.lineWidth = BAND.light * TS * 2;
-    lg.lineJoin = "round";
-    lg.stroke(this.sightPath);
+    lg.fill(this.sightPath.beyond(BAND.light * TS));
     lg.restore();
     lg.filter = "none";
   }
