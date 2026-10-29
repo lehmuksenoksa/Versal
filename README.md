@@ -8,6 +8,8 @@ and some goblins.
   hatching in the rock, and a hand-drawn floor grid.
 - The player (`@`) and goblins (`g`) are blackletter glyphs, set in UnifrakturMaguntia.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
+- The player sees only what lies in their field of view and remembers what they have seen;
+  unexplored ground stays blank paper, and they carry a warm light.
 
 ## Running it
 
@@ -30,9 +32,12 @@ in the browser console.
 | `js/dungeon.js` | Rooms and caves, corridors, doors and furniture. |
 | `js/maprender.js` | The hand-inked map: wall outlines and strokes, shadow, floor grid, furniture, room numbers. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
+| `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
+| `mockups/visibility.html` | The game with a panel for tuning sight, memory, unknown ground and light. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
-| `js/world.js` | The player, goblin packs and their milling about. |
-| `js/render.js` | Per-frame drawing: camera, doors, glyph poses and movement tweens. |
+| `js/world.js` | The player, goblin packs and their milling about; field of view and memory. |
+| `js/fov.js` | Recursive shadowcasting field of view. |
+| `js/render.js` | Per-frame drawing: camera, sight, memory and light (`VIS_DEFAULTS`), glyph poses and tweens. |
 | `js/main.js` | Input and the main loop. |
 
 ## Fonts

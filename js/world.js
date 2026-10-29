@@ -1,11 +1,14 @@
 // The world: one map, the player, and a few packs of goblins milling about.
-// Turn-based: goblins take a step each time the player does.
+// Turn-based: goblins take a step each time the player does. The player sees
+// what lies in their field of view, and remembers what they have seen.
 
 import { RNG } from "./rng.js";
-import { generateLevel, T, isWalkable, DIRS8 } from "./dungeon.js";
+import { generateLevel, T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
+import { computeFov } from "./fov.js";
 
 export class World {
-  constructor(seed) {
+  constructor(seed, { sight = 9 } = {}) {
+    this.sight = sight;
     this.rng = new RNG(seed);
     this.seed = this.rng.seed;
     this.events = [];
@@ -15,7 +18,21 @@ export class World {
     this.actors = [this.player];
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom));
     for (const room of rooms.slice(0, 4)) this.spawnPack(room, this.rng.int(4, 7));
+    this.visible = new Uint8Array(level.w * level.h);
+    this.seen = new Uint8Array(level.w * level.h);
+    this.updateFov();
   }
+
+  updateFov() {
+    const { w, h } = this.level;
+    this.visible.fill(0);
+    computeFov(w, h, this.player.x, this.player.y, this.sight, (x, y) => !isOpen(this.tileAt(x, y)), (x, y) => {
+      this.visible[y * w + x] = 1;
+      this.seen[y * w + x] = 1;
+    });
+  }
+
+  isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }
 
   spawnPack(room, n) {
     let leader = null;
@@ -52,6 +69,7 @@ export class World {
 
   tick() {
     for (const g of this.actors) if (g !== this.player) this.mill(g);
+    this.updateFov();
     return true;
   }
 

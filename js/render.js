@@ -1,5 +1,5 @@
-// Per-frame drawing: the pre-inked map and the animated blackletter glyphs
-// for the player and the goblins.
+// Per-frame drawing: the pre-inked map, what the player can see and remembers,
+// lighting, and the animated blackletter glyphs for the player and the goblins.
 
 import { renderMap, INK, PAPER } from "./maprender.js";
 
@@ -24,6 +24,31 @@ const POSES = {
 // [range in tiles, min and max seconds between darts]
 const DART = [0.22, 0.6, 1.3];
 
+// How sight, memory and light are shown. The visibility mockup
+// (mockups/visibility.html) edits these live.
+export const VIS_DEFAULTS = {
+  sight: 9, // tiles the player can see (used by the World)
+  unknown: "paper", // what hides unexplored ground: "paper" (the blank page) or "dark"
+  edge: "soft", // edge of the seen area: "soft", "ragged" (inked, irregular) or "tiles"
+  softness: 0.6, // width of a soft or ragged edge, in tiles
+  memory: "pencil", // remembered but out of sight: "faded", "pencil", "sepia" or "unchanged"
+  fade: 0.35, // how far remembered areas wash out toward the paper
+  reveal: 0.3, // seconds for newly seen ground to ink in
+  light: "candle", // "none" or "candle" (a warm light carried by the player)
+  radius: 8, // light radius in tiles
+  dark: 0.3, // darkness beyond the light
+  warmth: 0.35, // warm tint near the light
+  flicker: 0.3,
+  lightUnknown: "no", // does the light also fall on unexplored ground? "no" or "yes"
+};
+const MEMORY_FILTERS = {
+  faded: "none",
+  pencil: "grayscale(1) contrast(0.6) brightness(1.12)",
+  sepia: "sepia(0.9) contrast(0.72) brightness(1.06)",
+  unchanged: "none",
+};
+const MASK_RES = 8; // mask pixels per tile
+
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
@@ -35,11 +60,29 @@ export class Renderer {
     this.cam = { x: 0, y: 0, snap: true };
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     this.glyphMetrics = new Map();
+    this.vis = { ...VIS_DEFAULTS };
+    this.layer = document.createElement("canvas");
     this.resize();
+  }
+
+  // Change how sight, memory and light are shown.
+  setVis(changes) {
+    const old = this.vis;
+    this.vis = { ...old, ...changes };
+    if (!this.world) return;
+    if (this.vis.memory !== old.memory || this.vis.fade !== old.fade) this.buildMemory();
+    if (this.vis.edge !== old.edge || this.vis.softness !== old.softness) this.maskDirty = true;
+    if (this.vis.sight !== old.sight) {
+      this.world.sight = this.vis.sight;
+      this.world.updateFov();
+    }
   }
 
   setWorld(world) {
     this.world = world;
+    this.views.clear();
+    this.visA = null; // start the new map unseen, so it inks in
+    this.cam.snap = true;
     this.buildMap();
   }
 
@@ -48,8 +91,8 @@ export class Renderer {
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
     this.vw = Math.max(1, r.width);
     this.vh = Math.max(1, r.height);
-    this.canvas.width = Math.round(this.vw * this.dpr);
-    this.canvas.height = Math.round(this.vh * this.dpr);
+    this.canvas.width = this.layer.width = Math.round(this.vw * this.dpr);
+    this.canvas.height = this.layer.height = Math.round(this.vh * this.dpr);
     const ts = this.vw < 560 ? 28 : this.vw < 1000 ? 34 : 40;
     if (ts !== this.TS) {
       this.TS = ts;
@@ -59,7 +102,85 @@ export class Renderer {
   }
 
   buildMap() {
-    this.map = renderMap(this.world.level, this.TS, this.dpr, this.world.seed).canvas;
+    const L = this.world.level;
+    this.map = renderMap(L, this.TS, this.dpr, this.world.seed).canvas;
+    this.buildMemory();
+    // How visible and how known each tile is, easing toward the world's
+    // current state so newly seen ground inks in.
+    if (!this.visA || this.visA.length !== L.w * L.h) {
+      this.visA = new Float32Array(L.w * L.h);
+      this.seenA = new Float32Array(L.w * L.h);
+      this.tileMask = document.createElement("canvas");
+      this.tileMask.width = L.w;
+      this.tileMask.height = L.h;
+      this.tileImg = this.tileMask.getContext("2d").createImageData(L.w, L.h);
+      this.maskVis = this.makeMask(L);
+      this.maskSeen = this.makeMask(L);
+      this.grain = edgeNoise(L.w * MASK_RES, L.h * MASK_RES);
+    }
+    this.maskDirty = true;
+  }
+
+  makeMask(L) {
+    const c = document.createElement("canvas");
+    c.width = L.w * MASK_RES;
+    c.height = L.h * MASK_RES;
+    return c;
+  }
+
+  // The map as remembered: washed out, greyed or browned.
+  buildMemory() {
+    const v = this.vis;
+    if (v.memory === "unchanged") { this.memory = this.map; return; }
+    const c = document.createElement("canvas");
+    c.width = this.map.width;
+    c.height = this.map.height;
+    const g = c.getContext("2d");
+    g.filter = MEMORY_FILTERS[v.memory];
+    g.drawImage(this.map, 0, 0);
+    g.filter = "none";
+    g.fillStyle = `rgba(247, 242, 230, ${v.fade})`;
+    g.fillRect(0, 0, c.width, c.height);
+    this.memory = c;
+  }
+
+  updateMasks(dt) {
+    const w = this.world, v = this.vis;
+    const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
+    let changed = this.maskDirty;
+    for (let i = 0; i < this.visA.length; i++) {
+      const tv = w.visible[i], ts = w.seen[i];
+      const nv = this.visA[i] + (tv - this.visA[i]) * rate, ns = this.seenA[i] + (ts - this.seenA[i]) * rate;
+      this.visA[i] = Math.abs(nv - tv) < 0.004 ? tv : nv;
+      this.seenA[i] = Math.abs(ns - ts) < 0.004 ? ts : ns;
+      if (nv !== tv || ns !== ts) changed = true;
+    }
+    if (!changed) return;
+    this.maskDirty = false;
+    this.paintMask(this.maskVis, this.visA);
+    this.paintMask(this.maskSeen, this.seenA);
+  }
+
+  // Scale a per-tile value up to a smooth mask; "ragged" thresholds it
+  // against a noise pattern for an irregular, inked edge.
+  paintMask(mask, values) {
+    const v = this.vis, d = this.tileImg.data;
+    for (let i = 0; i < values.length; i++) d[i * 4 + 3] = Math.round(values[i] * 255);
+    this.tileMask.getContext("2d").putImageData(this.tileImg, 0, 0);
+    const g = mask.getContext("2d", { willReadFrequently: v.edge === "ragged" });
+    g.clearRect(0, 0, mask.width, mask.height);
+    g.imageSmoothingEnabled = v.edge !== "tiles";
+    g.filter = v.edge === "tiles" ? "none" : `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
+    g.drawImage(this.tileMask, 0, 0, mask.width, mask.height);
+    g.filter = "none";
+    if (v.edge !== "ragged") return;
+    const img = g.getImageData(0, 0, mask.width, mask.height), p = img.data, n = this.grain;
+    for (let i = 0; i < n.length; i++) {
+      const a = p[i * 4 + 3] / 255;
+      if (a <= 0 || a >= 1) continue;
+      p[i * 4 + 3] = a + (n[i] - 0.5) * 0.9 > 0.5 ? 255 : 0;
+    }
+    g.putImageData(img, 0, 0);
   }
 
   view(a) {
@@ -125,20 +246,76 @@ export class Renderer {
     ctx.fillStyle = PAPER;
     ctx.fillRect(0, 0, mw, mh);
     ctx.restore();
-    const sx0 = Math.max(0, cx), sy0 = Math.max(0, cy);
-    const sx1 = Math.min(mw, cx + this.vw), sy1 = Math.min(mh, cy + this.vh);
-    if (sx1 > sx0 && sy1 > sy0)
-      ctx.drawImage(this.map, sx0 * this.dpr, sy0 * this.dpr, (sx1 - sx0) * this.dpr, (sy1 - sy0) * this.dpr, sx0, sy0, sx1 - sx0, sy1 - sy0);
+    const world = [this.dpr, 0, 0, this.dpr, -cx * this.dpr, -cy * this.dpr];
+    const drawRegion = (g, img) => {
+      const sx0 = Math.max(0, cx), sy0 = Math.max(0, cy);
+      const sx1 = Math.min(mw, cx + this.vw), sy1 = Math.min(mh, cy + this.vh);
+      if (sx1 > sx0 && sy1 > sy0)
+        g.drawImage(img, sx0 * this.dpr, sy0 * this.dpr, (sx1 - sx0) * this.dpr, (sy1 - sy0) * this.dpr, sx0, sy0, sx1 - sx0, sy1 - sy0);
+    };
+    // Draw `paint` into the offscreen layer, keep (or cut away) the masked
+    // part, and lay the result over the canvas.
+    const masked = (paint, mask, op) => {
+      const g = this.layer.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, this.layer.width, this.layer.height);
+      g.setTransform(...world);
+      paint(g);
+      g.globalCompositeOperation = op;
+      g.imageSmoothingEnabled = true;
+      g.drawImage(mask, 0, 0, mw, mh);
+      g.globalCompositeOperation = "source-over";
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(this.layer, 0, 0);
+      ctx.setTransform(...world);
+    };
 
-    for (const a of [...w.actors].sort((a, b) => a.y - b.y)) this.drawActor(ctx, a, this.view(a), now, t, motion);
+    this.updateMasks(dt);
+    const v = this.vis;
+    // Remembered ground everywhere, the fresh ink only where the player can see.
+    drawRegion(ctx, this.memory);
+    if (this.memory !== this.map) masked((g) => drawRegion(g, this.map), this.maskVis, "destination-in");
 
-    // Candlelit vignette in screen space.
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    const vg = ctx.createRadialGradient(this.vw / 2, this.vh / 2, Math.min(this.vw, this.vh) * 0.35, this.vw / 2, this.vh / 2, Math.max(this.vw, this.vh) * 0.75);
-    vg.addColorStop(0, "rgba(40, 24, 10, 0)");
-    vg.addColorStop(1, "rgba(40, 24, 10, 0.35)");
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, this.vw, this.vh);
+    for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
+      const view = this.view(a);
+      // Goblins show only while in sight, fading in and out.
+      const target = a === w.player || w.isVisible(a.x, a.y) ? 1 : 0;
+      if (view.alpha === undefined) view.alpha = target;
+      view.alpha += (target - view.alpha) * Math.min(1, dt * 8);
+      if (view.alpha > 0.02) this.drawActor(ctx, a, view, now, t, motion);
+    }
+
+    const candle = () => {
+      // A warm light carried by the player, darkening toward its edge.
+      const fl = 1 + v.flicker * 0.05 * (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2));
+      const R = v.radius * TS * fl;
+      const g = ctx.createRadialGradient(px, py, R * 0.1, px, py, R);
+      g.addColorStop(0, `rgba(255, 214, 150, ${v.warmth * 0.4})`);
+      g.addColorStop(0.5, `rgba(255, 205, 140, ${v.warmth * 0.18})`);
+      g.addColorStop(1, `rgba(40, 24, 10, ${v.dark})`);
+      ctx.save();
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = g;
+      ctx.fillRect(cx, cy, this.vw, this.vh);
+      ctx.restore();
+    };
+    if (v.light === "candle" && v.lightUnknown !== "yes") candle();
+    // Ground never seen is hidden: blank paper, or darkness.
+    masked((g) => {
+      g.fillStyle = v.unknown === "dark" ? DESK : PAPER;
+      g.fillRect(0, 0, mw, mh);
+    }, this.maskSeen, "destination-out");
+
+    if (v.light === "candle" && v.lightUnknown === "yes") candle();
+    if (v.light !== "candle") {
+      // Without a light, a gentle vignette in screen space.
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      const vg = ctx.createRadialGradient(this.vw / 2, this.vh / 2, Math.min(this.vw, this.vh) * 0.35, this.vw / 2, this.vh / 2, Math.max(this.vw, this.vh) * 0.75);
+      vg.addColorStop(0, "rgba(40, 24, 10, 0)");
+      vg.addColorStop(1, "rgba(40, 24, 10, 0.35)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, this.vw, this.vh);
+    }
   }
 
   metrics(ch, size) {
@@ -157,6 +334,7 @@ export class Renderer {
   drawGlyph(ctx, ch, x, y, size, color, p) {
     const m = this.metrics(ch, size);
     ctx.save();
+    ctx.globalAlpha = p.alpha ?? 1;
     ctx.translate(x, y + (m.asc + m.desc) / 2);
     if (p.rot) ctx.rotate(p.rot);
     ctx.scale(p.sx ?? 1, p.sy ?? 1);
@@ -206,13 +384,27 @@ export class Renderer {
     const { cx, cy, bx, baseY, p } = this.pose(a, v, now, t, motion);
     // Pencil shadow on the floor, smaller while airborne.
     ctx.save();
-    ctx.globalAlpha = 0.16;
+    ctx.globalAlpha = 0.16 * v.alpha;
     ctx.fillStyle = INK;
     ctx.beginPath();
     ctx.ellipse(bx + (cx - bx) * 0.6, baseY + TS * 0.36, TS * 0.26 * (1 - p.shadow * 0.35), TS * 0.065, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     const player = a === this.world.player;
-    this.drawGlyph(ctx, a.glyph, cx, cy, TS * (player ? 0.95 : 1.05), player ? PLAYER_INK : INK, p);
+    this.drawGlyph(ctx, a.glyph, cx, cy, TS * (player ? 0.95 : 1.05), player ? PLAYER_INK : INK, { ...p, alpha: v.alpha });
   }
+}
+
+// Value noise plus fine grain over the mask, for the ragged edge.
+function edgeNoise(w, h) {
+  const cell = 6, gw = Math.ceil(w / cell) + 2, lat = Float32Array.from({ length: gw * (Math.ceil(h / cell) + 2) }, Math.random);
+  const out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const fx = x / cell, fy = y / cell, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, t = fy - j;
+      const a = lat[j * gw + i] + (lat[j * gw + i + 1] - lat[j * gw + i]) * u;
+      const b = lat[(j + 1) * gw + i] + (lat[(j + 1) * gw + i + 1] - lat[(j + 1) * gw + i]) * u;
+      out[y * w + x] = (a + (b - a) * t) * 0.75 + Math.random() * 0.25;
+    }
+  return out;
 }
