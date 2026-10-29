@@ -635,7 +635,12 @@ function compose() {
   };
   // The floor and the band of rock where its walls are inked: all known
   // ground, and ground at the soft edge of sight.
-  const near = (j) => isKnown[j] || soft[j] > 0 || (!isFloor(j) && d2[j] < band);
+  // (Rock counts only within the band of such floor, never further: past
+  // it lie the walls of places not yet seen.)
+  const edgeFloor = new Uint8Array(n);
+  for (let j = 0; j < n; j++) edgeFloor[j] = isFloor(j) && (isKnown[j] || soft[j] > 0) ? 1 : 0;
+  const dEdge = nearestSeeds(edgeFloor, mw, mh).d2;
+  const near = (j) => (isFloor(j) ? edgeFloor[j] === 1 : dEdge[j] < band);
   const floorMask = maskOf((j) => (isKnown[j] || !isFloor(j) ? (near(j) ? 1 : 0) : soft[j]));
   const sightMask = maskOf((j) => (near(j) ? soft[j] : 0));
   const memMask = maskOf((j) => (near(j) && memOf(j) ? 1 - soft[j] : 0));
