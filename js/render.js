@@ -39,18 +39,18 @@ const DART = [0.22, 0.6, 1.3];
 // How sight, memory and light are shown. The visibility mockup
 // (mockups/visibility.html) edits these live.
 export const VIS_DEFAULTS = {
-  sight: 9, // how far the player sees, in tiles
+  sight: 7, // how far the player sees, in tiles
   unknown: "dark", // what hides unexplored ground: "paper" (the blank page) or "dark"
   softness: 2, // width of the soft edge of what's in sight, in tiles
   memory: "sepia", // remembered but out of sight: "faded", "pencil", "sepia" or "unchanged"
   fade: 0.85, // how far remembered areas wash out toward the paper
   reveal: 0.3, // seconds for newly seen ground to ink in
   light: "candle", // "none" or "candle" (a warm light carried by the player)
-  radius: 3, // light radius in tiles
+  radius: 5, // light radius in tiles
   dark: 0.7, // darkness beyond the light
   warmth: 1, // warm tint near the light
   flicker: 0.3,
-  shadowSoft: 0.3, // how soft the edges of the light's shadows are, in tiles (0 is hard)
+  shadowSoft: 0.15, // how soft the edges of the light's shadows are, in tiles (0 is hard)
   lightUnknown: "yes", // does the light also fall on unexplored ground? "no" or "yes"
   rock: 0.5, // how much darker the rock outside the rooms is than the floor
 };
@@ -411,11 +411,19 @@ export class Renderer {
     // but where the light reaches, and a warm tint within it. Walls cast
     // shadows because the light only reaches what is in sight.
     const candle = () => {
-      const fl = 1 + v.flicker * 0.05 * (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2));
+      // Flicker dims the light a little, rather than resizing it, so the
+      // shadows stay exactly where the walls cast them.
+      const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
+      const fl = 1 - v.flicker * 0.15 * (wave + 1) / 2;
       const g = this.layer.getContext("2d");
       // The light mask, flickering in size about the player.
       const b = this.lightBox;
-      const light = () => b && g.drawImage(this.maskLight, px + (b.x - px) * fl, py + (b.y - py) * fl, b.w * fl, b.w * fl);
+      const light = () => {
+        if (!b) return;
+        g.globalAlpha = fl;
+        g.drawImage(this.maskLight, b.x, b.y, b.w, b.w);
+        g.globalAlpha = 1;
+      };
       const shade = (paint) => {
         g.setTransform(1, 0, 0, 1, 0, 0);
         g.clearRect(0, 0, this.layer.width, this.layer.height);
