@@ -18,10 +18,14 @@ const GRID = { wobble: 0.8, breaks: 0.35 };
 
 // With `plan` set, only the floor and the walls are drawn: no hatching or grid.
 // `hatch: false` leaves out just the hatching, and `paper: false` leaves the
-// rock transparent (for laying over hatching drawn some other way).
+// rock transparent (for laying over hatching drawn some other way). `floor`
+// (the floor and its shadow), `grid`, `walls` and `keys` (the room numbers)
+// can each be left out too, to draw them as separate layers.
 // Returns the canvas, the floor outline (a path and its loops) and the
 // hatching strokes.
-export function renderMap(level, TS, scale, seed, { plan = false, hatch: withHatch = !plan, paper = true } = {}) {
+export function renderMap(level, TS, scale, seed, {
+  plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, grid = !plan, walls = true, keys = true,
+} = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(W * TS * scale);
@@ -47,18 +51,19 @@ export function renderMap(level, TS, scale, seed, { plan = false, hatch: withHat
   const hatch = { ...hatchSettings(TS), record: [] };
   if (withHatch) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatch, hatchRng);
   // Floors are painted over the hatching, which leaves it cut cleanly at the walls.
-  ctx.fillStyle = PAPER;
-  ctx.fill(floor, "evenodd");
-
   ctx.save();
   ctx.clip(floor, "evenodd");
-  drawShadow(ctx, level, TS, floor);
+  if (withFloor) {
+    ctx.fillStyle = PAPER;
+    ctx.fill(floor, "evenodd");
+    drawShadow(ctx, level, TS, floor);
+  }
   const gridRng = rng.fork();
-  if (!plan) drawGrid(ctx, W, H, TS, gridRng, open);
+  if (grid) drawGrid(ctx, W, H, TS, gridRng, open);
   ctx.restore();
 
-  drawWalls(ctx, loops, TS, rng);
-  drawRoomKeys(ctx, level, TS);
+  if (walls) drawWalls(ctx, loops, TS, rng);
+  if (keys) drawRoomKeys(ctx, level, TS);
 
   return { canvas, ctx, floor, loops, strokes: hatch.record };
 }

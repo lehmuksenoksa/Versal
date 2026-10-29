@@ -56,7 +56,7 @@
 <div id="stage"><canvas id="view" aria-label="Dungeon map"></canvas></div>
 <aside>
   <h1>Hatching expression</h1>
-  <p>One hatching for all the rock: our cells with zones, drawn as if the whole map were solid stone. The pattern never changes. A depth map from the known walls, black near them and white away from them, sets how heavily it is inked. What is in sight and what is only remembered each make a depth map; the darker one inks each spot.</p>
+  <p>One hatching for all the rock: our cells with zones, drawn as if the whole map were solid stone. The pattern never changes. A depth map from the known walls, black near them and white away from them, sets how heavily it is inked. What is in sight and what is only remembered each make a depth map; the darker one inks each spot. Click a room or corridor to cycle it: unknown, in sight, remembered.</p>
   <p id="status"></p>
   <div class="buttons">
     <button id="copy" type="button">Copy settings</button>
@@ -70,7 +70,6 @@
 
   <fieldset>
     <legend>Ground</legend>
-    <p style="margin:0;color:var(--muted);font-size:13px">Click a room or corridor to cycle it: unknown, in sight, remembered.</p>
     <div class="buttons">
       <button id="some" class="plain" type="button">Partly explored</button>
       <button id="all" class="plain" type="button">All in sight</button>
@@ -80,10 +79,26 @@
   </fieldset>
 
   <fieldset>
+    <legend>In sight</legend>
+    <label for="seeFloor">Floor colour <input id="seeFloor" type="color"></label>
+    <label for="seeMarkC">Floor markings (grid and numbers) <input id="seeMarkC" type="color"></label>
+    <label for="seeMark">Their strength <output id="seeMark-v"></output><input id="seeMark" type="range" min="0" max="1" step="0.05"></label>
+    <label for="seeWallC">Walls <input id="seeWallC" type="color"></label>
+    <label for="seeWall">Their strength <output id="seeWall-v"></output><input id="seeWall" type="range" min="0" max="1" step="0.05"></label>
+    <label for="seeHatchC">Hatching <input id="seeHatchC" type="color"></label>
+    <label for="seeHatch">Its strength <output id="seeHatch-v"></output><input id="seeHatch" type="range" min="0" max="1" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
     <legend>Remembered, out of sight</legend>
     <label for="memDepth">Its walls hatch as dark as <output id="memDepth-v"></output><input id="memDepth" type="range" min="0" max="1" step="0.05"></label>
-    <label for="memInk">Its hatching inked at <output id="memInk-v"></output><input id="memInk" type="range" min="0" max="1" step="0.05"></label>
-    <label for="memWash">Its floor and walls washed out by <output id="memWash-v"></output><input id="memWash" type="range" min="0" max="0.9" step="0.05"></label>
+    <label for="memFloor">Floor colour <input id="memFloor" type="color"></label>
+    <label for="memMarkC">Floor markings (grid and numbers) <input id="memMarkC" type="color"></label>
+    <label for="memMark">Their strength <output id="memMark-v"></output><input id="memMark" type="range" min="0" max="1" step="0.05"></label>
+    <label for="memWallC">Walls <input id="memWallC" type="color"></label>
+    <label for="memWall">Their strength <output id="memWall-v"></output><input id="memWall" type="range" min="0" max="1" step="0.05"></label>
+    <label for="memHatchC">Hatching <input id="memHatchC" type="color"></label>
+    <label for="memHatch">Its strength <output id="memHatch-v"></output><input id="memHatch" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -113,13 +128,16 @@
     <legend>Unexplored ground</legend>
     <label for="outColor">Colour <input id="outColor" type="color"></label>
     <div class="buttons swatches" data-target="outColor">
-      <button type="button" class="plain" data-c="#f7f2e6">Paper</button>
-      <button type="button" class="plain" data-c="#2b221c">Desk</button>
+      <button type="button" class="plain" data-c="#000000">Black</button>
       <button type="button" class="plain" data-c="#1b1815">Ink</button>
-      <button type="button" class="plain" data-c="#8a7f72">Warm grey</button>
-      <button type="button" class="plain" data-c="#c9b48f">Sepia</button>
+      <button type="button" class="plain" data-c="#2b221c">Desk</button>
     </div>
-    <label for="fadeBy">Fades in <select id="fadeBy"><option value="distance">By distance from known floor</option><option value="hatching">Where the hatching gives out</option></select></label>
+    <label for="fadeStyle">Fades in as <select id="fadeStyle">
+      <option value="gradient">A smooth gradient</option>
+      <option value="edge">A ragged edge</option>
+      <option value="strokes">The hatching thickening into black</option>
+      <option value="stipple">Stippling, denser and denser</option></select></label>
+    <label for="fadeBy">Measured <select id="fadeBy"><option value="distance">By distance from known floor</option><option value="hatching">From where the hatching gives out</option></select></label>
     <label for="fadeStart" data-fade="distance">Starting <output id="fadeStart-v"></output><input id="fadeStart" type="range" min="0" max="8" step="0.25"></label>
     <label for="fadeWidth" data-fade="distance">Over <output id="fadeWidth-v"></output><input id="fadeWidth" type="range" min="0" max="8" step="0.25"></label>
   </fieldset>
@@ -156,12 +174,20 @@ const R = 8; // mask pixels per tile
 const WALL_BAND = 0.5;
 // What is known of each room and corridor.
 const UNKNOWN = 0, REMEMBERED = 1, SIGHT = 2;
-const DEFAULTS = { depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2, keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1, memDepth: 0.6, memInk: 0.6, memWash: 0.3, outColor: "#2b221c", fadeBy: "distance", fadeStart: 2, fadeWidth: 3, rockColor: "#968e84", rockTone: 0.5, rockBy: "flat", show: "map", zoom: 0.3 };
+const DEFAULTS = {
+  depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
+  keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
+  seeFloor: "#ffffff", seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
+  memDepth: 0.6, memFloor: "#e8e0d0", memMarkC: "#8a7f72", memMark: 0.4, memWallC: "#6b5f52", memWall: 1, memHatchC: "#6b5f52", memHatch: 0.8,
+  outColor: "#000000", fadeStyle: "gradient", fadeBy: "distance", fadeStart: 2, fadeWidth: 3,
+  rockColor: "#968e84", rockTone: 0.5, rockBy: "flat", show: "map", zoom: 0.3,
+};
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: (v) => `${v} tiles`, rockTone: pct,
-  memDepth: pct, memInk: pct, memWash: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
+  seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
+  memDepth: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
 const $ = (id) => document.getElementById(id);
@@ -209,17 +235,27 @@ function newMap(seed = (Math.random() * 2 ** 32) >>> 0) {
       units++;
     }
   M = { seed, level, W, H, solid, unitOf, units, state: new Uint8Array(units), noise: valueNoise(new RNG(seed ^ 0x7a9), W * TS, H * TS, TS * 3.5) };
+  M.fine = valueNoise(new RNG(seed ^ 0xf1e), W * TS, H * TS, TS * 0.5);
+  // Stipple dots: scattered over the whole map, each with a rank (which
+  // comes in first) and a size.
+  const dr = new RNG(seed ^ 0xd07);
+  M.dots = Array.from({ length: W * H * 40 }, () => [dr.range(0, W * TS), dr.range(0, H * TS), dr.next(), dr.range(0.6, 1.4)]);
   explore();
   drawBase();
 }
 
 // The parts that depend only on the map and the zoom: the paper, and the
-// map without its hatching (floor, shadow, grid and walls over clear rock).
+// map without its hatching.
 function drawBase() {
   const { level, W, H, seed } = M, scale = (window.devicePixelRatio || 1) * S.zoom;
   M.scale = scale;
-  const drawn = renderMap(level, TS, scale, seed, { hatch: false, paper: false });
-  M.walls = drawn.canvas;
+  // The map without its hatching, as separate layers over clear rock: the
+  // floor (with its shadow), its markings (grid and room numbers), and the walls.
+  const layer = (o) => renderMap(level, TS, scale, seed, { hatch: false, paper: false, floor: false, grid: false, walls: false, keys: false, ...o });
+  const drawn = layer({ floor: true });
+  M.floorLayer = drawn.canvas;
+  M.markLayer = layer({ grid: true, keys: true }).canvas;
+  M.wallLayer = layer({ walls: true }).canvas;
   M.paper = document.createElement("canvas");
   M.paper.width = drawn.canvas.width;
   M.paper.height = drawn.canvas.height;
@@ -482,8 +518,9 @@ function compose() {
       return;
     }
   }
+  // The hatching, each stroke inked as what it is darkest from: the walls in
+  // sight, or only memory.
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.fillStyle = S.show === "both" ? "#a3261b" : INK;
   let drawnStrokes = 0;
   const widthAt = (x, y) => ramp(greyAt(x, y), S.wBlack, S.wGrey, 0);
   for (const st of solid) {
@@ -492,8 +529,10 @@ function compose() {
     // Drop strokes by rank: a group's own rank, plus more for each later
     // stroke in it, so groups lose their last strokes first.
     if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
-    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, S.inkGrey) * (fromMem[cell(x, y)] ? S.memInk : 1);
+    const mem = fromMem[cell(x, y)];
+    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, S.inkGrey) * (mem ? S.memHatch : S.seeHatch);
     if (keep < 0.03 || ink < 0.02) continue;
+    ctx.fillStyle = S.show === "both" ? "#a3261b" : mem ? S.memHatchC : S.seeHatchC;
     // Each stroke on its own: overlapping strokes can wind opposite ways.
     ctx.globalAlpha = ink;
     ctx.beginPath();
@@ -503,53 +542,106 @@ function compose() {
   }
   ctx.globalAlpha = 1;
 
-  // The known rooms and corridors, with their walls' ink reaching a little
-  // into the rock.
-  const mask = document.createElement("canvas");
-  mask.width = mw;
-  mask.height = mh;
-  const img = new ImageData(mw, mh);
-  for (let j = 0; j < n; j++) if (isKnown[j] || (pixUnit[j] < 0 && Math.sqrt(d2[j]) / R < WALL_BAND)) img.data[j * 4 + 3] = 255;
-  mask.getContext("2d").putImageData(img, 0, 0);
-  const layer = document.createElement("canvas");
-  layer.width = canvas.width;
-  layer.height = canvas.height;
-  const lg = layer.getContext("2d");
-  lg.drawImage(M.walls, 0, 0);
-  lg.globalCompositeOperation = "destination-in";
-  lg.imageSmoothingEnabled = true;
-  lg.drawImage(mask, 0, 0, layer.width, layer.height);
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(layer, 0, 0);
-
-  // Remembered rooms and corridors washed toward the paper: their floor, and
-  // their walls' ink where they are nearer than any floor in sight.
-  if (S.memWash > 0 && isMem.some((v) => v)) {
-    const dM = nearestSeeds(isMem, mw, mh).d2, dS = nearestSeeds(isSight, mw, mh).d2;
-    const wash = new ImageData(mw, mh);
-    for (let j = 0; j < n; j++)
-      if (isMem[j] || (pixUnit[j] < 0 && Math.sqrt(dM[j]) / R < WALL_BAND && dM[j] <= dS[j])) wash.data[j * 4 + 3] = 255;
-    mask.getContext("2d").putImageData(wash, 0, 0);
-    lg.globalCompositeOperation = "source-over";
-    lg.clearRect(0, 0, layer.width, layer.height);
-    lg.fillStyle = PAPER;
-    lg.fillRect(0, 0, layer.width, layer.height);
-    lg.globalCompositeOperation = "destination-in";
-    lg.drawImage(mask, 0, 0, layer.width, layer.height);
-    ctx.globalAlpha = S.memWash;
-    ctx.drawImage(layer, 0, 0);
+  // What is in sight and what is remembered, at mask resolution: the floor,
+  // and the rock within WALL_BAND of it (for the walls' ink), going to
+  // whichever floor is nearer.
+  const dS = nearestSeeds(isSight, mw, mh).d2, dM = nearestSeeds(isMem, mw, mh).d2, band = (WALL_BAND * R) ** 2;
+  const inSight = (j) => isSight[j] || (pixUnit[j] < 0 && dS[j] < band && dS[j] <= dM[j]);
+  const inMem = (j) => isMem[j] || (pixUnit[j] < 0 && dM[j] < band && dM[j] < dS[j]);
+  const maskOf = (fn) => {
+    const img = new ImageData(mw, mh), c = document.createElement("canvas");
+    for (let j = 0; j < n; j++) if (fn(j)) img.data[j * 4 + 3] = 255;
+    c.width = mw;
+    c.height = mh;
+    c.getContext("2d").putImageData(img, 0, 0);
+    return c;
+  };
+  const sightMask = maskOf(inSight), memMask = maskOf(inMem);
+  // Lay a layer of the map, cut to a mask, recoloured (unless `colour` is
+  // null) and at the given strength.
+  const work = document.createElement("canvas");
+  work.width = canvas.width;
+  work.height = canvas.height;
+  const wg = work.getContext("2d");
+  const lay = (src, mask, colour, strength) => {
+    if (strength <= 0) return;
+    wg.globalCompositeOperation = "source-over";
+    wg.clearRect(0, 0, work.width, work.height);
+    wg.drawImage(src, 0, 0);
+    if (colour) {
+      wg.globalCompositeOperation = "source-in";
+      wg.fillStyle = colour;
+      wg.fillRect(0, 0, work.width, work.height);
+    }
+    wg.globalCompositeOperation = "destination-in";
+    wg.imageSmoothingEnabled = true;
+    wg.drawImage(mask, 0, 0, work.width, work.height);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = Math.min(1, strength);
+    ctx.drawImage(work, 0, 0);
     ctx.globalAlpha = 1;
+  };
+  // The floor (painted over the hatching), tinted; then its markings and
+  // the walls.
+  lay(M.floorLayer, sightMask, null, 1);
+  lay(M.floorLayer, memMask, null, 1);
+  overlay(S.seeFloor, (j) => isSight[j], "multiply");
+  overlay(S.memFloor, (j) => isMem[j], "multiply");
+  lay(M.markLayer, sightMask, S.seeMarkC, S.seeMark);
+  lay(M.markLayer, memMask, S.memMarkC, S.memMark);
+  lay(M.wallLayer, sightMask, S.seeWallC, S.seeWall);
+  lay(M.wallLayer, memMask, S.memWallC, S.memWall);
+
+  // Unexplored ground. `u` runs from 0 where it starts to 1 where it is
+  // solid: by distance from the known floor (with the ragged edge), or from
+  // where the hatching gives out.
+  const uAt = (j) => {
+    if (j < 0) return 1;
+    if (isKnown[j]) return -1;
+    if (S.fadeBy === "hatching") return (grey[j] - 0.4) / 0.6;
+    const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
+    const k = Math.max(0.1, 1 + S.ragged * (2 * M.noise(x, y) - 1));
+    const d = Math.sqrt(d2[j]) / R, a = S.fadeStart * k, w = Math.max(0.01, S.fadeWidth * k);
+    return (d - a) / w;
+  };
+  const u = new Float32Array(n);
+  for (let j = 0; j < n; j++) u[j] = uAt(j);
+  if (S.show === "map") {
+    if (S.fadeStyle === "gradient") overlay(S.outColor, (j) => smooth(u[j]), "source-over");
+    else if (S.fadeStyle === "edge") {
+      // A sharp edge halfway through, wandering with a finer noise.
+      overlay(S.outColor, (j) => {
+        const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
+        return smooth((u[j] - 0.5 + (M.fine(x, y) - 0.5) * 0.5) / 0.1);
+      }, "source-over");
+    } else {
+      // Solid only toward the far end; before that, the hatching's strokes
+      // (all of them) thickening, or dots coming in denser and bigger.
+      overlay(S.outColor, (j) => smooth((u[j] - 0.55) / 0.45), "source-over");
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      ctx.fillStyle = S.outColor;
+      const uXY = (x, y) => u[cell(x, y)] ?? 1;
+      if (S.fadeStyle === "strokes") {
+        for (const st of solid) {
+          const [x, y] = st.path[st.path.length >> 1], v = uXY(x, y);
+          if (!(v > 0)) continue;
+          ctx.beginPath();
+          inkRecorded(ctx, st, 1, 1, (px, py) => Math.max(0, 1 + 5 * Math.min(1, uXY(px, py))));
+          ctx.fill();
+        }
+      } else {
+        ctx.beginPath();
+        for (const [x, y, rank, size] of M.dots) {
+          const v = uXY(x, y);
+          if (!(v > 0) || rank > v) continue;
+          const r = TS * 0.05 * size * (0.6 + Math.min(1, v));
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+        }
+        ctx.fill();
+      }
+    }
   }
-  // Unexplored ground, fading in by distance from the known floor (with the
-  // ragged edge) or where the hatching gives out.
-  if (S.show === "map")
-    overlay(S.outColor, (j) => {
-      if (isKnown[j]) return 0;
-      if (S.fadeBy === "hatching") return smooth((grey[j] - 0.4) / 0.6);
-      const k = Math.max(0.1, 1 + S.ragged * (2 * M.noise(((j % mw) + 0.5) * (TS / R), (((j / mw) | 0) + 0.5) * (TS / R)) - 1));
-      const d = Math.sqrt(d2[j]) / R, a = S.fadeStart * k, w = S.fadeWidth * k;
-      return w > 0 ? smooth((d - a) / w) : d >= a ? 1 : 0;
-    }, "source-over");
   const count = (v) => state.reduce((a, b) => a + (b === v ? 1 : 0), 0);
   $("status").textContent = `${count(SIGHT)} in sight, ${count(REMEMBERED)} remembered, of ${state.length} rooms and corridors; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
 }
