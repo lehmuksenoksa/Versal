@@ -8,8 +8,9 @@ and some goblins.
   hatching in the rock, and a hand-drawn floor grid.
 - The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
-- The player sees only what lies in their field of view and remembers what they have seen;
-  unexplored ground stays blank paper, and they carry a warm light.
+- The player sees only what lies in their line of sight, cast against the walls, and remembers what
+  they have seen in faded sepia; unexplored ground stays dark. They carry a small warm light that
+  walls shadow, and the rock outside the rooms is toned darker than the floor.
 
 ## Running it
 
@@ -36,7 +37,8 @@ in the browser console.
 | `mockups/visibility.html` | The game with a panel for tuning sight, memory, unknown ground and light. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
 | `js/world.js` | The player, goblin packs and their milling about; field of view and memory. |
-| `js/fov.js` | Recursive shadowcasting field of view. |
+| `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
+| `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/render.js` | Per-frame drawing: camera, sight, memory and light (`VIS_DEFAULTS`), glyph poses and tweens. |
 | `js/main.js` | Input and the main loop. |
 

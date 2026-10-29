@@ -2,6 +2,7 @@
 // lighting, and the animated letters for the player and the goblins.
 
 import { renderMap, INK, PAPER } from "./maprender.js";
+import { Walls } from "./sightline.js";
 
 const DESK = "#2b221c";
 export const ZOOM = { start: 0.75, min: 0.4, max: 2, step: 1.25 };
@@ -38,21 +39,23 @@ const DART = [0.22, 0.6, 1.3];
 // How sight, memory and light are shown. The visibility mockup
 // (mockups/visibility.html) edits these live.
 export const VIS_DEFAULTS = {
-  sight: 9, // tiles the player can see (used by the World)
-  unknown: "paper", // what hides unexplored ground: "paper" (the blank page) or "dark"
-  edge: "soft", // edge of the seen area: "soft", "ragged" (inked, irregular) or "tiles"
-  softness: 0.6, // width of a soft or ragged edge, in tiles
-  memory: "pencil", // remembered but out of sight: "faded", "pencil", "sepia" or "unchanged"
-  fade: 0.35, // how far remembered areas wash out toward the paper
+  sight: 9, // how far the player sees, in tiles
+  unknown: "dark", // what hides unexplored ground: "paper" (the blank page) or "dark"
+  softness: 2, // width of the soft edge of what's in sight, in tiles
+  memory: "sepia", // remembered but out of sight: "faded", "pencil", "sepia" or "unchanged"
+  fade: 0.85, // how far remembered areas wash out toward the paper
   reveal: 0.3, // seconds for newly seen ground to ink in
   light: "candle", // "none" or "candle" (a warm light carried by the player)
-  radius: 8, // light radius in tiles
-  dark: 0.3, // darkness beyond the light
-  warmth: 0.35, // warm tint near the light
+  radius: 3, // light radius in tiles
+  dark: 0.7, // darkness beyond the light
+  warmth: 1, // warm tint near the light
   flicker: 0.3,
-  lightUnknown: "no", // does the light also fall on unexplored ground? "no" or "yes"
+  lightUnknown: "yes", // does the light also fall on unexplored ground? "no" or "yes"
   rock: 0.5, // how much darker the rock outside the rooms is than the floor
 };
+// Sight and light reach this far past a wall into the rock, so the walls and
+// the hatching just behind them show.
+const BAND = { sight: 2.4, light: 0.6 };
 const MEMORY_FILTERS = {
   faded: "none",
   pencil: "grayscale(1) contrast(0.6) brightness(1.12)",
@@ -83,8 +86,9 @@ export class Renderer {
     const old = this.vis;
     this.vis = { ...old, ...changes };
     if (!this.world) return;
-    if (this.vis.memory !== old.memory || this.vis.fade !== old.fade) this.buildMemory();
-    if (this.vis.edge !== old.edge || this.vis.softness !== old.softness) this.maskDirty = true;
+    if (this.vis.rock !== old.rock) this.toneMap();
+    if (this.vis.memory !== old.memory || this.vis.fade !== old.fade || this.vis.rock !== old.rock) this.buildMemory();
+    this.sightFrom = null; // recompute sight and light
     if (this.vis.sight !== old.sight) {
       this.world.sight = this.vis.sight;
       this.world.updateFov();
@@ -94,7 +98,7 @@ export class Renderer {
   setWorld(world) {
     this.world = world;
     this.views.clear();
-    this.visA = null; // start the new map unseen, so it inks in
+    this.seenHard = null; // start the new map unseen, so it inks in
     this.cam.snap = true;
     this.buildMap();
   }
@@ -128,26 +132,21 @@ export class Renderer {
     const L = this.world.level;
     this.mapScale = this.dpr * this.zoom;
     const drawn = renderMap(L, this.TS, this.mapScale, this.world.seed);
-    this.map = drawn.canvas;
+    this.rawMap = drawn.canvas;
     // Everything but the floor: the rock outside the rooms.
     this.rock = new Path2D();
     this.rock.rect(-L.w * this.TS, -L.h * this.TS, L.w * this.TS * 3, L.h * this.TS * 3);
     this.rock.addPath(drawn.floor);
+    this.toneMap();
+    this.walls = new Walls(drawn.loops, this.TS * 2);
     this.buildMemory();
-    // How visible and how known each tile is, easing toward the world's
-    // current state so newly seen ground inks in.
-    if (!this.visA || this.visA.length !== L.w * L.h) {
-      this.visA = new Float32Array(L.w * L.h);
-      this.seenA = new Float32Array(L.w * L.h);
-      this.tileMask = document.createElement("canvas");
-      this.tileMask.width = L.w;
-      this.tileMask.height = L.h;
-      this.tileImg = this.tileMask.getContext("2d").createImageData(L.w, L.h);
-      this.maskVis = this.makeMask(L);
-      this.maskSeen = this.makeMask(L);
-      this.grain = edgeNoise(L.w * MASK_RES, L.h * MASK_RES);
+    // What is in sight now and what has been seen, as masks over the map:
+    // "hard" is exact, "soft" eases toward it (so new ground inks in) with
+    // a blurred edge.
+    if (!this.seenHard) {
+      [this.visHard, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp, this.maskLight] = [0, 0, 0, 0, 0, 0].map(() => this.makeMask(L));
+      this.hit = document.createElement("canvas").getContext("2d");
     }
-    this.maskDirty = true;
   }
 
   makeMask(L) {
@@ -155,6 +154,22 @@ export class Renderer {
     c.width = L.w * MASK_RES;
     c.height = L.h * MASK_RES;
     return c;
+  }
+
+  // The map with the rock outside the rooms darkened (the ink stays black).
+  toneMap() {
+    const v = this.vis;
+    if (!(v.rock > 0)) { this.map = this.rawMap; return; }
+    const c = this.map && this.map !== this.rawMap && this.map.width === this.rawMap.width && this.map.height === this.rawMap.height ? this.map : document.createElement("canvas");
+    c.width = this.rawMap.width;
+    c.height = this.rawMap.height;
+    const g = c.getContext("2d");
+    g.drawImage(this.rawMap, 0, 0);
+    g.setTransform(this.mapScale, 0, 0, this.mapScale, 0, 0);
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = `rgba(150, 142, 132, ${v.rock})`;
+    g.fill(this.rock, "evenodd");
+    this.map = c;
   }
 
   // The map as remembered: washed out, greyed or browned.
@@ -173,43 +188,100 @@ export class Renderer {
     this.memory = c;
   }
 
-  updateMasks(dt) {
-    const w = this.world, v = this.vis;
-    const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
-    let changed = this.maskDirty;
-    for (let i = 0; i < this.visA.length; i++) {
-      const tv = w.visible[i], ts = w.seen[i];
-      const nv = this.visA[i] + (tv - this.visA[i]) * rate, ns = this.seenA[i] + (ts - this.seenA[i]) * rate;
-      this.visA[i] = Math.abs(nv - tv) < 0.004 ? tv : nv;
-      this.seenA[i] = Math.abs(ns - ts) < 0.004 ? ts : ns;
-      if (nv !== tv || ns !== ts) changed = true;
+  // Sight and light are recomputed when the player's drawn position moves;
+  // the soft masks then ease toward the new state for a moment.
+  updateMasks(dt, now, px, py) {
+    const v = this.vis;
+    const moved = !this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py;
+    if (moved) {
+      this.castSight(px, py);
+      this.easeUntil = now + v.reveal * 1500 + 200;
     }
-    if (!changed) return;
-    this.maskDirty = false;
-    this.paintMask(this.maskVis, this.visA);
-    this.paintMask(this.maskSeen, this.seenA);
+    if (now > this.easeUntil) return;
+    this.easeMasks(dt);
   }
 
-  // Scale a per-tile value up to a smooth mask; "ragged" thresholds it
-  // against a noise pattern for an irregular, inked edge.
-  paintMask(mask, values) {
-    const v = this.vis, d = this.tileImg.data;
-    for (let i = 0; i < values.length; i++) d[i * 4 + 3] = Math.round(values[i] * 255);
-    this.tileMask.getContext("2d").putImageData(this.tileImg, 0, 0);
-    const g = mask.getContext("2d", { willReadFrequently: v.edge === "ragged" });
-    g.clearRect(0, 0, mask.width, mask.height);
-    g.imageSmoothingEnabled = v.edge !== "tiles";
-    g.filter = v.edge === "tiles" ? "none" : `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
-    g.drawImage(this.tileMask, 0, 0, mask.width, mask.height);
-    g.filter = "none";
-    if (v.edge !== "ragged") return;
-    const img = g.getImageData(0, 0, mask.width, mask.height), p = img.data, n = this.grain;
-    for (let i = 0; i < n.length; i++) {
-      const a = p[i * 4 + 3] / 255;
-      if (a <= 0 || a >= 1) continue;
-      p[i * 4 + 3] = a + (n[i] - 0.5) * 0.9 > 0.5 ? 255 : 0;
+  castSight(px, py) {
+    const v = this.vis, TS = this.TS, k = MASK_RES / TS;
+    const sight = v.sight * TS, light = v.light === "candle" ? v.radius * TS * 1.1 : 0;
+    this.sightPath = this.walls.visible(px, py, Math.max(sight, light) + TS);
+    this.sightFrom = [px, py];
+
+    // In sight now: the visible polygon within reach, plus the rock just past
+    // the walls it meets.
+    const g = this.visHard.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, this.visHard.width, this.visHard.height);
+    g.setTransform(k, 0, 0, k, 0, 0);
+    g.fillStyle = g.strokeStyle = "#fff";
+    g.save();
+    g.beginPath();
+    g.arc(px, py, sight, 0, Math.PI * 2);
+    g.clip();
+    g.fill(this.sightPath);
+    g.restore();
+    g.save();
+    g.clip(this.rock, "evenodd");
+    g.beginPath();
+    g.arc(px, py, sight + BAND.sight * TS, 0, Math.PI * 2);
+    g.clip();
+    g.lineWidth = BAND.sight * TS * 2;
+    g.lineJoin = "round";
+    g.stroke(this.sightPath);
+    g.restore();
+    this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
+
+    // The light: bright at the player, fading out at its radius, reaching only
+    // what can be seen from here (and the face of the walls).
+    const lg = this.maskLight.getContext("2d");
+    lg.setTransform(1, 0, 0, 1, 0, 0);
+    lg.clearRect(0, 0, this.maskLight.width, this.maskLight.height);
+    if (!light) return;
+    lg.setTransform(k, 0, 0, k, 0, 0);
+    const R = v.radius * TS;
+    const grad = lg.createRadialGradient(px, py, 0, px, py, R);
+    grad.addColorStop(0, "rgba(0, 0, 0, 1)");
+    grad.addColorStop(0.55, "rgba(0, 0, 0, 0.8)");
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    lg.filter = `blur(${0.3 * MASK_RES}px)`;
+    lg.fillStyle = lg.strokeStyle = grad;
+    lg.fill(this.sightPath);
+    lg.save();
+    lg.clip(this.rock, "evenodd");
+    lg.lineWidth = BAND.light * TS * 2;
+    lg.lineJoin = "round";
+    lg.stroke(this.sightPath);
+    lg.restore();
+    lg.filter = "none";
+  }
+
+  easeMasks(dt) {
+    const v = this.vis;
+    // Ease the soft masks toward the hard ones: soft = soft + (blur(hard) - soft) * rate.
+    const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
+    const blur = `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
+    const tmp = this.maskTmp.getContext("2d");
+    for (const [hard, soft] of [[this.visHard, this.maskVis], [this.seenHard, this.maskSeen]]) {
+      const sg = soft.getContext("2d");
+      tmp.clearRect(0, 0, soft.width, soft.height);
+      tmp.drawImage(soft, 0, 0);
+      sg.clearRect(0, 0, soft.width, soft.height);
+      sg.globalAlpha = 1 - rate;
+      sg.drawImage(this.maskTmp, 0, 0);
+      sg.globalAlpha = rate;
+      sg.globalCompositeOperation = "lighter";
+      sg.filter = blur;
+      sg.drawImage(hard, 0, 0);
+      sg.filter = "none";
+      sg.globalCompositeOperation = "source-over";
+      sg.globalAlpha = 1;
     }
-    g.putImageData(img, 0, 0);
+  }
+
+  // Is the map point (x, y) in sight?
+  inSight(x, y) {
+    const [px, py] = this.sightFrom;
+    return Math.hypot(x - px, y - py) <= this.vis.sight * this.TS && this.hit.isPointInPath(this.sightPath, x, y);
   }
 
   view(a) {
@@ -301,42 +373,51 @@ export class Renderer {
       ctx.setTransform(...world);
     };
 
-    this.updateMasks(dt);
+    this.updateMasks(dt, now, px, py);
     const v = this.vis;
     // Remembered ground everywhere, the fresh ink only where the player can see.
     drawRegion(ctx, this.memory);
     if (this.memory !== this.map) masked((g) => drawRegion(g, this.map), this.maskVis, "destination-in");
-    if (v.rock > 0) {
-      // Darken the rock outside the rooms, leaving the ink black.
-      ctx.save();
-      ctx.globalCompositeOperation = "multiply";
-      ctx.fillStyle = `rgba(150, 142, 132, ${v.rock})`;
-      ctx.fill(this.rock, "evenodd");
-      ctx.restore();
-    }
-
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const view = this.view(a);
       // Goblins show only while in sight, fading in and out.
-      const target = a === w.player || w.isVisible(a.x, a.y) ? 1 : 0;
+      const target = a === w.player || this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS) ? 1 : 0;
       if (view.alpha === undefined) view.alpha = target;
       view.alpha += (target - view.alpha) * Math.min(1, dt * 8);
       if (view.alpha > 0.02) this.drawActor(ctx, a, view, now, t, motion);
     }
 
+    // A warm light carried by the player (see castSight): darkness everywhere
+    // but where the light reaches, and a warm tint within it. Walls cast
+    // shadows because the light only reaches what is in sight.
     const candle = () => {
-      // A warm light carried by the player, darkening toward its edge.
       const fl = 1 + v.flicker * 0.05 * (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2));
-      const R = v.radius * TS * fl;
-      const g = ctx.createRadialGradient(px, py, R * 0.1, px, py, R);
-      g.addColorStop(0, `rgba(255, 214, 150, ${v.warmth * 0.4})`);
-      g.addColorStop(0.5, `rgba(255, 205, 140, ${v.warmth * 0.18})`);
-      g.addColorStop(1, `rgba(40, 24, 10, ${v.dark})`);
-      ctx.save();
-      ctx.globalCompositeOperation = "multiply";
-      ctx.fillStyle = g;
-      ctx.fillRect(cx, cy, vw, vh);
-      ctx.restore();
+      const g = this.layer.getContext("2d");
+      // The light mask, flickering in size about the player.
+      const light = () => g.drawImage(this.maskLight, px - px * fl, py - py * fl, mw * fl, mh * fl);
+      const shade = (paint) => {
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.clearRect(0, 0, this.layer.width, this.layer.height);
+        g.setTransform(...world);
+        g.imageSmoothingEnabled = true;
+        paint();
+        g.globalCompositeOperation = "source-over";
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = "multiply";
+        ctx.drawImage(this.layer, 0, 0);
+        ctx.restore();
+      };
+      // One pass: the warm tint where the light falls, darkness behind it.
+      shade(() => {
+        g.fillStyle = `rgba(255, 205, 140, ${v.warmth * 0.4})`;
+        g.fillRect(cx, cy, vw, vh);
+        g.globalCompositeOperation = "destination-in";
+        light();
+        g.globalCompositeOperation = "destination-over";
+        g.fillStyle = `rgba(40, 24, 10, ${v.dark})`;
+        g.fillRect(cx, cy, vw, vh);
+      });
     };
     if (v.light === "candle" && v.lightUnknown !== "yes") candle();
     // Ground never seen is hidden: blank paper, or darkness.
@@ -444,20 +525,6 @@ export class Renderer {
     const style = a === this.world.player ? LETTERING.player : LETTERING.monster;
     this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha });
   }
-}
-
-// Value noise plus fine grain over the mask, for the ragged edge.
-function edgeNoise(w, h) {
-  const cell = 6, gw = Math.ceil(w / cell) + 2, lat = Float32Array.from({ length: gw * (Math.ceil(h / cell) + 2) }, Math.random);
-  const out = new Float32Array(w * h);
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const fx = x / cell, fy = y / cell, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, t = fy - j;
-      const a = lat[j * gw + i] + (lat[j * gw + i + 1] - lat[j * gw + i]) * u;
-      const b = lat[(j + 1) * gw + i] + (lat[(j + 1) * gw + i + 1] - lat[(j + 1) * gw + i]) * u;
-      out[y * w + x] = (a + (b - a) * t) * 0.75 + Math.random() * 0.25;
-    }
-  return out;
 }
 
 // Zoom with the mouse wheel or trackpad, the + and - keys, and 0 to reset.
