@@ -83,7 +83,8 @@
     <label for="lightFull">Full brightness out to <output id="lightFull-v"></output><input id="lightFull" type="range" min="0" max="0.95" step="0.05"></label>
     <label for="lightWall">Lights the walls and rock to <output id="lightWall-v"></output><input id="lightWall" type="range" min="0" max="4" step="0.25"></label>
     <label for="flame">Size of the flame (sets how soft the shadows are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
-    <label for="flicker">Flicker <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
+    <label for="flicker">Flicker in brightness <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
+    <label for="flickerSize">Flicker in size <output id="flickerSize-v"></output><input id="flickerSize" type="range" min="0" max="0.2" step="0.01"></label>
     <label for="warmth">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
@@ -186,7 +187,7 @@ const STEP_MS = 140; // a step from tile to tile
 const PAPER_RGB = [247, 242, 230];
 const DEFAULTS = {
   sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
-  radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, warmth: 0.7,
+  radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
   darkColor: "#16181d", dark: 0.75, memShade: 0.3,
   seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
   memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
@@ -198,14 +199,14 @@ const DEFAULTS = {
 };
 // Settings that only change how sight and light are laid over the drawing;
 // the rest mean redrawing it.
-const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "lightWall", "flame", "flicker", "warmth", "darkColor", "dark", "memShade"]);
+const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "dark", "memShade"]);
 const pct = (v) => `${Math.round(v * 100)}%`;
 const tiles = (v) => `${v} tiles`;
 const fmt = {
   sight: tiles, sightFade: (v) => (+v ? tiles(v) : "nothing: a sharp edge"), blockSoft: (v) => (+v ? tiles(v) : "nothing: a sharp edge"),
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, lightWall: (v) => `${v} tiles past the wall's face`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
-  flicker: pct, warmth: pct, dark: pct, memShade: pct,
+  flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct, dark: pct, memShade: pct,
   seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct,
@@ -742,7 +743,8 @@ function easeSight(dt) {
 // The candle: a flame of some size, so each wall casts a shadow that is
 // sharp close to it and softer further off (the light is the sum of what
 // can be seen from a few points across the flame). Full brightness out to
-// `lightFull` of its reach, then fading out; it flickers.
+// `lightFull` of its reach, then fading out; it flickers in brightness and
+// in size.
 function castLight(px, py, t) {
   const { light } = M.view, g = light.getContext("2d"), rad = S.radius * TS;
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -750,15 +752,19 @@ function castLight(px, py, t) {
   if (!(rad > 0)) return;
   // The light's points: the middle of the flame, and four round its edge.
   if (!M.lightFrom || M.lightFrom[0] !== px || M.lightFrom[1] !== py || M.lightFrom[2] !== S.flame) {
-    const f = S.flame * TS, reach = rad + TS;
+    const f = S.flame * TS, reach = rad * (1 + S.flickerSize) + TS;
     const pts = f > 0 ? [[0, 0], [f, 0], [-f, 0], [0, f], [0, -f]] : [[0, 0]];
     M.lightPaths = pts.map(([dx, dy]) => M.sightWalls.visible(px + dx, py + dy, reach));
     M.lightFrom = [px, py, S.flame];
   }
   const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
   const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
+  // The size flickers too, on a wave of its own: the whole pool of light
+  // grows and shrinks a little.
+  const swell = (Math.sin(t * 5.1) + 0.5 * Math.sin(t * 8.9 + 0.7) + 0.3 * Math.sin(t * 13.3 + 2)) / 1.8;
+  const size = rad * (1 + S.flickerSize * swell);
   g.setTransform(M.scale, 0, 0, M.scale, 0, 0);
-  const grad = g.createRadialGradient(px, py, 0, px, py, rad);
+  const grad = g.createRadialGradient(px, py, 0, px, py, size);
   grad.addColorStop(0, "#000");
   for (let k = 0; k <= 8; k++) grad.addColorStop(S.lightFull + (1 - S.lightFull) * (k / 8), `rgba(0, 0, 0, ${smooth(1 - k / 8)})`);
   g.save();
