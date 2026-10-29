@@ -61,7 +61,7 @@
 <body>
 <header>
   <h1>Hatching mockups</h1>
-  <p>Ways to fill the rock around the same sample map. The default settings imitate the hatching in Dyson Logos' map. The controls change alternatives A to C (the wall controls change all four). Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
+  <p>Ways to fill the rock around the same sample map. The default settings imitate the hatching in Dyson Logos' map. The controls change alternatives A, B, C and E (the wall controls change all five). Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
 </header>
 
 <div class="controls">
@@ -74,12 +74,16 @@
   <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
   <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
   <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
+  <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
   <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
   <button id="reseed" type="button">New layout</button>
   <fieldset class="profile">
     <legend>Walls</legend>
     <label for="wallw">Wall weight <output id="wallw-v"></output><input id="wallw" type="range" min="2" max="12" step="0.25" value="6"></label>
-    <label for="wallwob">Wall wobble <output id="wallwob-v"></output><input id="wallwob" type="range" min="0" max="3" step="0.1" value="0.9"></label>
+    <label for="wallin">Weight inside the room <output id="wallin-v"></output><input id="wallin" type="range" min="0" max="0.5" step="0.05" value="0.2"></label>
+    <label for="wallseg">Wall stroke length <output id="wallseg-v"></output><input id="wallseg" type="range" min="0.3" max="3" step="0.05" value="0.9"></label>
+    <label for="wallkink">Wall stroke tilt <output id="wallkink-v"></output><input id="wallkink" type="range" min="0" max="3" step="0.1" value="1"></label>
+    <label for="wallwob">Wall stroke bow <output id="wallwob-v"></output><input id="wallwob" type="range" min="0" max="3" step="0.1" value="0.4"></label>
     <label for="wallvary">Wall thickness variation <output id="wallvary-v"></output><input id="wallvary" type="range" min="0" max="0.6" step="0.05" value="0.25"></label>
   </fieldset>
   <fieldset class="profile">
@@ -94,6 +98,8 @@
 </div>
 
 <div class="grid">
+  <figure><canvas id="c-grown" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-grown"></span><b>E. Grown from the walls</b><span>A few groups stand out from the walls first. Each later generation of groups grows from the sides of the strokes before it, until the rock is full; a last pass fills the remaining gaps with small groups.</span></figcaption></figure>
   <figure><canvas id="c-bundles" width="576" height="384"></canvas>
     <figcaption><span class="ms" id="ms-bundles"></span><b>A. Abutting bundles</b><span>Groups of up to five parallel strokes, laid down outward from the walls. Each stroke runs until it meets the side of an earlier stroke, a wall, or the edge of the hatched area, so ends land on lines, never on other ends.</span></figcaption></figure>
   <figure><canvas id="c-fans" width="576" height="384"></canvas>
@@ -172,6 +178,8 @@ for (let j = 0; j < FH; j++)
       }
     DIST[j * FW + i] = best;
   }
+
+const distAt = (x, y) => DIST[Math.min(FH - 1, Math.max(0, Math.floor(y / FR))) * FW + Math.min(FW - 1, Math.max(0, Math.floor(x / FR)))];
 
 function valueNoise(rng, cell) {
   const gw = Math.ceil(W / cell) + 2, gh = Math.ceil(H / cell) + 2;
@@ -270,7 +278,9 @@ function inkStroke(ctx, s, o, rng, g) {
   if (len < 0.5) return;
   const nx = -dy / len, ny = dx / len, n = Math.max(6, Math.round(len / 3));
   const bow = g.bend * len * rng.range(0.8, 1.2), ph = rng.range(0, 6.28);
-  const scale = o.weight * (1 + rng.range(-1, 1) * o.vary * 0.5);
+  // Heavier close to the walls, easing off toward the far edge of the hatching.
+  const near = 1 + o.nearw * Math.max(0, 1 - distAt((s.x0 + s.x1) / 2, (s.y0 + s.y1) / 2) / (o.depth * TS));
+  const scale = o.weight * near * (1 + rng.range(-1, 1) * o.vary * 0.5);
   const w0 = profile(o, 0) * scale, w1 = profile(o, 1) * scale;
   const L = [], R = [];
   s.path = [];
@@ -307,12 +317,12 @@ function addStroke(store, s) {
 }
 
 // ---------- A and B: abutting bundles --------------------------------------------
-function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
+function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = [0, 1] } = {}) {
   if (!store.all.length) for (const w of WALLS) store.add({ ...w, w: o.wallw });
   const sp = o.spacing, maxT = o.length * TS;
   // Two passes: full groups laid from the walls outward, then smaller groups
   // tucked into the gaps that are left.
-  for (const pass of [0, 1]) {
+  for (const pass of passes) {
   const fill = pass === 1;
   const cand = [];
   for (let n = Math.round(((W * H) / (sp * sp)) * (fill ? 6 : 1.5)); n > 0; n--) {
@@ -387,6 +397,56 @@ function edgeDashes(ctx, rng, mask, store, o) {
     inkStroke(ctx, s, { ...o, weight: o.weight * 0.85 }, rng, { bend: 0 });
     addStroke(store, s);
   }
+}
+
+// ---------- E: grown from the walls, generation by generation --------------------
+function grown(ctx, rng, mask, o) {
+  const store = SegStore();
+  for (const w of WALLS) store.add({ ...w, w: o.wallw });
+  const sp = o.spacing, minLen = sp * o.minlen;
+  const walls = WALLS.map((w) => ({ ...w, wall: true, w: o.wallw }));
+  let parents = walls;
+  for (let gen = 0; gen < 40 && parents.length; gen++) {
+    const next = [];
+    // Walls get another turn every few generations, to fill in along them.
+    if (gen > 0 && gen % 3 === 0) parents = parents.concat(walls);
+    for (const P of rng.shuffle(parents)) {
+      const len = Math.hypot(P.x1 - P.x0, P.y1 - P.y0);
+      if (len < sp) continue;
+      const ux = (P.x1 - P.x0) / len, uy = (P.y1 - P.y0) / len;
+      const sides = P.wall ? [[P.nx, P.ny]] : [[-uy, ux], [uy, -ux]];
+      const offset = P.wall ? o.wallw * 0.5 : P.w * 0.5 + 0.5;
+      const firstWalls = P.wall && gen === 0;
+      let at = rng.range(0, firstWalls ? TS * 1.2 : sp);
+      while (at < len - sp * 0.5) {
+        const [sx, sy] = sides[rng.int(0, sides.length - 1)];
+        // Turn well away from the parent line, toward the chosen side.
+        const lim = P.wall ? 1.05 : 0.95;
+        const phi = rng.range(lim, Math.PI - lim);
+        const dx = Math.cos(phi) * ux + Math.sin(phi) * sx, dy = Math.cos(phi) * uy + Math.sin(phi) * sy;
+        const along = sp / Math.sin(phi); // keeps the strokes sp apart
+        const n = Math.max(1, Math.min(o.maxLines, rng.int(3, 5)));
+        const reach = o.length * TS * rng.range(0.75, 1);
+        const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
+        for (let k = 0; k < n && at < len; k++, at += along) {
+          const bx = P.x0 + ux * at + sx * offset, by = P.y0 + uy * at + sy * offset;
+          if (!mask.inside(bx + dx * 2, by + dy * 2)) break;
+          const t = cast(store, mask, bx, by, dx, dy, reach + rng.range(-0.3, 0.3) * sp);
+          if (t < minLen) break;
+          const s = { x0: bx, y0: by, x1: bx + dx * t, y1: by + dy * t };
+          let crowded = false;
+          for (const f of [0.35, 0.65, 0.95]) if (store.nearest(bx + dx * t * f, by + dy * t * f, sp).d < sp * 0.45) crowded = true;
+          if (crowded) break;
+          inkStroke(ctx, s, o, rng, g);
+          addStroke(store, s);
+          next.push({ x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1, w: s.w });
+        }
+        at += firstWalls ? TS * rng.range(0.8, 2) : sp * rng.range(1, 2.5);
+      }
+    }
+    parents = next;
+  }
+  bundles(ctx, rng, mask, o, { store, passes: [1] });
 }
 
 // ---------- C: radiating from the walls, then bundles ------------------------------
@@ -503,41 +563,62 @@ function drawRooms(ctx, o) {
   drawWalls(ctx, o, RNG(seed ^ 0x51ed27));
 }
 
-// Walls as hand-inked ribbons: the centre line wanders a little and the
-// thickness swells and thins along the wall. Ends are rounded, so runs meeting
-// at a corner join cleanly.
+// Walls as chains of short pen strokes. Each stroke is tilted slightly off
+// the wall line, bowed a little and swells in the middle; neighbours share
+// their end points, and corners stay on the corner. Most of the weight sits
+// outside the room, in the rock.
 function drawWalls(ctx, o, rng) {
   ctx.fillStyle = INK;
+  const shift = o.wallw * (0.5 - o.wallin);
   for (const w of WALLS) {
-    const dx = w.x1 - w.x0, dy = w.y1 - w.y0, len = Math.hypot(dx, dy), nx = -dy / len, ny = dx / len;
-    const n = Math.max(4, Math.round(len / 3));
-    const p = [0, 0, 0, 0].map(() => rng.range(0, 6.28));
-    const f = [rng.range(0.025, 0.05), rng.range(0.09, 0.16), rng.range(0.05, 0.09), rng.range(0.2, 0.35)];
-    const half = (d) => (o.wallw / 2) * (1 + o.wallvary * (0.65 * Math.sin(d * f[2] + p[2]) + 0.35 * Math.sin(d * f[3] + p[3])));
-    const L = [], R = [];
-    for (let i = 0; i <= n; i++) {
-      const t = i / n, d = t * len, env = Math.min(1, d / 6, (len - d) / 6);
-      const off = o.wallwob * env * (0.65 * Math.sin(d * f[0] + p[0]) + 0.35 * Math.sin(d * f[1] + p[1]));
-      const cx = w.x0 + dx * t + nx * off, cy = w.y0 + dy * t + ny * off, h = half(d);
-      L.push([cx + nx * h, cy + ny * h]); R.push([cx - nx * h, cy - ny * h]);
+    const dx = w.x1 - w.x0, dy = w.y1 - w.y0, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+    const seg = o.wallseg * TS;
+    // Shifted into the rock, neighbouring runs no longer meet at the corner:
+    // at a room's corner (rock continues past the end) the run is extended by
+    // `shift`; where rock juts into the floor it is shortened by `shift`.
+    const rockPast = (x, y, sgn) => !open(Math.floor((x + (ux * sgn + w.nx) * TS * 0.5) / TS), Math.floor((y + (uy * sgn + w.ny) * TS * 0.5) / TS));
+    const e0 = rockPast(w.x0, w.y0, -1) ? shift : -shift, e1 = rockPast(w.x1, w.y1, 1) ? shift : -shift;
+    // Points along the wall: [distance along, sideways offset].
+    const pts = [[-e0, 0]];
+    for (let at = 0; ; ) {
+      at += seg * rng.range(0.7, 1.3);
+      if (at > len - seg * 0.4) break;
+      pts.push([at, rng.range(-1, 1) * o.wallkink]);
     }
+    pts.push([len + e1, 0]);
+    const P = pts.map(([a, c]) => [w.x0 + ux * a + w.nx * (shift + c), w.y0 + uy * a + w.ny * (shift + c)]);
+    for (let i = 0; i < P.length - 1; i++) wallStroke(ctx, P[i], P[i + 1], o, rng);
+  }
+}
+
+function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
+  const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+  const n = Math.max(4, Math.round(len / 3));
+  const bow = rng.range(-1, 1) * o.wallwob;
+  const ends = 1 - o.wallvary * rng.range(0, 0.6), mid = 1 + o.wallvary * rng.range(-0.3, 1);
+  const half = (t) => (o.wallw / 2) * (ends + (mid - ends) * Math.sin(Math.PI * t));
+  const L = [], R = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, off = bow * Math.sin(Math.PI * t), h = half(t);
+    const cx = x0 + dx * t + nx * off, cy = y0 + dy * t + ny * off;
+    L.push([cx + nx * h, cy + ny * h]); R.push([cx - nx * h, cy - ny * h]);
+  }
+  ctx.beginPath();
+  L.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+  ctx.closePath();
+  ctx.fill();
+  for (const [x, y, t] of [[x0, y0, 0], [x1, y1, 1]]) {
     ctx.beginPath();
-    L.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
-    ctx.closePath();
+    ctx.arc(x, y, half(t), 0, Math.PI * 2);
     ctx.fill();
-    for (const [x, y, d] of [[w.x0, w.y0, 0], [w.x1, w.y1, len]]) {
-      ctx.beginPath();
-      ctx.arc(x, y, half(d), 0, Math.PI * 2);
-      ctx.fill();
-    }
   }
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "flecks", "pstart", "pmid", "pend", "wallw", "wallwob", "wallvary"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
@@ -565,13 +646,25 @@ function paint(id, fn) {
   document.getElementById("ms-" + id).textContent = `${Math.round(performance.now() - t0)} ms`;
 }
 
+// Panels are painted one per frame, so the page stays responsive; a newer
+// request abandons an older one part-way.
+let job = 0;
 function render(includeCurrent) {
-  const o = params();
-  const run = (id, fn) => paint(id, (ctx) => { const rng = RNG(seed); fn(ctx, rng, makeMask(RNG(seed ^ 0x9e3779b9), o.depth)); });
-  run("bundles", (ctx, rng, mask) => bundles(ctx, rng, mask, o));
-  run("fans", (ctx, rng, mask) => bundles(ctx, rng, mask, o, { fan: true }));
-  run("radiate", (ctx, rng, mask) => radiating(ctx, rng, mask, o));
-  if (includeCurrent) paint("current", (ctx) => current(ctx, RNG(seed)));
+  const o = params(), mine = ++job;
+  const run = (id, fn) => () => paint(id, (ctx) => { const rng = RNG(seed); fn(ctx, rng, makeMask(RNG(seed ^ 0x9e3779b9), o.depth)); });
+  const steps = [
+    run("grown", (ctx, rng, mask) => grown(ctx, rng, mask, o)),
+    run("bundles", (ctx, rng, mask) => bundles(ctx, rng, mask, o)),
+    run("fans", (ctx, rng, mask) => bundles(ctx, rng, mask, o, { fan: true })),
+    run("radiate", (ctx, rng, mask) => radiating(ctx, rng, mask, o)),
+  ];
+  if (includeCurrent) steps.push(() => paint("current", (ctx) => current(ctx, RNG(seed))));
+  const next = () => {
+    if (mine !== job || !steps.length) return;
+    steps.shift()();
+    requestAnimationFrame(next);
+  };
+  next();
 }
 
 // The thickness profile editor: the stroke's silhouette with three handles.
