@@ -50,7 +50,7 @@ export function renderMap(level, TS, scale, seed) {
   drawWalls(ctx, loops, TS, rng);
   drawRoomKeys(ctx, level, TS);
 
-  return { canvas, ctx };
+  return { canvas, ctx, floor };
 }
 
 // ---------- outlines ---------------------------------------------------------

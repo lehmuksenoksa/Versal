@@ -86,6 +86,11 @@
   </fieldset>
 
   <fieldset>
+    <legend>Rock</legend>
+    <label for="rock">Rock outside the rooms darkened by <output id="rock-v"></output><input id="rock" type="range" min="0" max="1" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
     <legend>Light</legend>
     <label for="light">Light <select id="light"><option value="candle">Candle carried by the player</option><option value="none">None</option></select></label>
     <label for="radius">Light radius <output id="radius-v"></output><input id="radius" type="range" min="2" max="16" step="0.5"></label>
@@ -115,7 +120,7 @@ let world = null, lastMove = 0;
 const fmt = {
   sight: (v) => `${v} tiles`, reveal: (v) => (+v ? `${v} s` : "instant"), softness: (v) => `${v} tiles`,
   fade: (v) => `${Math.round(v * 100)}%`, radius: (v) => `${v} tiles`, dark: (v) => `${Math.round(v * 100)}%`,
-  warmth: (v) => `${Math.round(v * 100)}%`, flicker: (v) => `${Math.round(v * 100)}%`,
+  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, flicker: (v) => `${Math.round(v * 100)}%`,
 };
 const keys = Object.keys(VIS_DEFAULTS);
 function show(vis) {

@@ -51,6 +51,7 @@ export const VIS_DEFAULTS = {
   warmth: 0.35, // warm tint near the light
   flicker: 0.3,
   lightUnknown: "no", // does the light also fall on unexplored ground? "no" or "yes"
+  rock: 0.5, // how much darker the rock outside the rooms is than the floor
 };
 const MEMORY_FILTERS = {
   faded: "none",
@@ -126,7 +127,12 @@ export class Renderer {
   buildMap() {
     const L = this.world.level;
     this.mapScale = this.dpr * this.zoom;
-    this.map = renderMap(L, this.TS, this.mapScale, this.world.seed).canvas;
+    const drawn = renderMap(L, this.TS, this.mapScale, this.world.seed);
+    this.map = drawn.canvas;
+    // Everything but the floor: the rock outside the rooms.
+    this.rock = new Path2D();
+    this.rock.rect(-L.w * this.TS, -L.h * this.TS, L.w * this.TS * 3, L.h * this.TS * 3);
+    this.rock.addPath(drawn.floor);
     this.buildMemory();
     // How visible and how known each tile is, easing toward the world's
     // current state so newly seen ground inks in.
@@ -300,6 +306,14 @@ export class Renderer {
     // Remembered ground everywhere, the fresh ink only where the player can see.
     drawRegion(ctx, this.memory);
     if (this.memory !== this.map) masked((g) => drawRegion(g, this.map), this.maskVis, "destination-in");
+    if (v.rock > 0) {
+      // Darken the rock outside the rooms, leaving the ink black.
+      ctx.save();
+      ctx.globalCompositeOperation = "multiply";
+      ctx.fillStyle = `rgba(150, 142, 132, ${v.rock})`;
+      ctx.fill(this.rock, "evenodd");
+      ctx.restore();
+    }
 
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const view = this.view(a);
