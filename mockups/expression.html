@@ -113,6 +113,7 @@
 
   <fieldset>
     <legend>Remembered, out of sight</legend>
+    <label for="memWeight">Hatching as heavy as <output id="memWeight-v"></output><input id="memWeight" type="range" min="0" max="1" step="0.05"></label>
     <label for="memFloorMix">Floor colour, from paper to the rock's <output id="memFloorMix-v"></output><input id="memFloorMix" type="range" min="0" max="1" step="0.05"></label>
     <label for="memMarkC">Floor markings (grid and numbers) <input id="memMarkC" type="color"></label>
     <label for="memMark">Their strength <output id="memMark-v"></output><input id="memMark" type="range" min="0" max="1" step="0.05"></label>
@@ -190,7 +191,7 @@ const DEFAULTS = {
   radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
   darkColor: "#16181d", dark: 0.75, memShade: 0.3,
   seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
+  memWeight: 0.35, memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
   depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
   outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
@@ -207,7 +208,7 @@ const fmt = {
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, lightWall: (v) => `${v} tiles past the wall's face`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
   flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct, dark: pct, memShade: pct,
-  seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
+  memWeight: pct, seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: tiles, rockTone: pct, zoom: pct,
@@ -565,25 +566,31 @@ function rebuild() {
   // to `white`.
   const ramp = (g, black, mid, white) => (g < 0.5 ? black + (mid - black) * g * 2 : mid + (white - mid) * (g - 0.5) * 2);
 
-  // The hatching, once, as ink on clear: the looks colour it.
-  const ink = blank(cw, ch), ig = ink.getContext("2d");
-  ig.setTransform(scale, 0, 0, scale, 0, 0);
-  ig.fillStyle = "#000";
-  const widthAt = (x, y) => ramp(greyAt(x, y), S.wBlack, S.wGrey, 0);
-  for (const st of solid) {
-    const [x, y] = st.path[st.path.length >> 1], g = greyAt(x, y);
-    if (g >= 0.999) continue;
-    // Drop strokes by rank: a group's own rank, plus more for each later
-    // stroke in it, so groups lose their last strokes first.
-    if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
-    const keep = ramp(g, 1, S.lenGrey, 0), a = ramp(g, 1, S.inkGrey, S.inkGrey);
-    if (keep < 0.03 || a < 0.02) continue;
-    ig.globalAlpha = a;
-    ig.beginPath();
-    inkRecorded(ig, st, keep, 1, widthAt);
-    ig.fill();
-  }
-  ig.globalAlpha = 1;
+  // The hatching as ink on clear, which the looks colour: at full weight,
+  // and (for the remembered look) with the depth map's darkness scaled by
+  // `weight`, so fewer, thinner, shorter strokes keep closer to the walls.
+  const inkAt = (weight) => {
+    const ink = blank(cw, ch), ig = ink.getContext("2d");
+    ig.setTransform(scale, 0, 0, scale, 0, 0);
+    ig.fillStyle = "#000";
+    const gAt = (x, y) => 1 - (1 - greyAt(x, y)) * weight;
+    const widthAt = (x, y) => ramp(gAt(x, y), S.wBlack, S.wGrey, 0);
+    for (const st of solid) {
+      const [x, y] = st.path[st.path.length >> 1], g = gAt(x, y);
+      if (g >= 0.999) continue;
+      // Drop strokes by rank: a group's own rank, plus more for each later
+      // stroke in it, so groups lose their last strokes first.
+      if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
+      const keep = ramp(g, 1, S.lenGrey, 0), a = ramp(g, 1, S.inkGrey, S.inkGrey);
+      if (keep < 0.03 || a < 0.02) continue;
+      ig.globalAlpha = a;
+      ig.beginPath();
+      inkRecorded(ig, st, keep, 1, widthAt);
+      ig.fill();
+    }
+    return ink;
+  };
+  const inks = { see: inkAt(1), mem: inkAt(S.memWeight) };
 
   // Known floor and the band of rock where its walls are inked.
   // (Rock in the band goes with its nearest glimpsed floor.)
@@ -612,7 +619,7 @@ function rebuild() {
     const c = blank(cw, ch), g = c.getContext("2d");
     g.drawImage(M.paper, 0, 0);
     if (S.rockTone > 0) overlay(g, S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1), "multiply");
-    lay(g, ink, null, S[pre + "HatchC"], S[pre + "Hatch"]);
+    lay(g, inks[pre], null, S[pre + "HatchC"], S[pre + "Hatch"]);
     // Floor seen at all is cleared of hatching, in the rock's tone; the floor
     // itself goes over that as strongly as it was seen.
     lay(g, M.floorLayer, glimpsedMask, stone, 1);
