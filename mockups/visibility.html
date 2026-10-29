@@ -92,9 +92,12 @@
   <fieldset>
     <legend>Rock</legend>
     <label for="rock">Rock outside the rooms darkened by <output id="rock-v"></output><input id="rock" type="range" min="0" max="1" step="0.05"></label>
-    <label for="rockShow">Rock shown in sight <select id="rockShow"><option value="nearest">All rock nearer to seen floor than to unseen floor</option><option value="sightlines">Only past the walls in view, along sightlines</option></select></label>
-    <label for="rockReach">Reaching into the rock up to <output id="rockReach-v"></output><input id="rockReach" type="range" min="0.5" max="6" step="0.25"></label>
+    <label for="rockShow">Rock shown in sight <select id="rockShow"><option value="zones">The map near the walls, then hatching that thins out</option><option value="nearest">The map near the walls, nothing beyond</option><option value="sightlines">The map only past the walls in view, along sightlines</option></select></label>
+    <label for="rockReach">The map reaches into the rock up to <output id="rockReach-v"></output><input id="rockReach" type="range" min="0.5" max="6" step="0.25"></label>
     <label for="rockNear">Walls shown when floor within this of them is in sight <output id="rockNear-v"></output><input id="rockNear" type="range" min="0" max="3" step="0.25"></label>
+    <label for="deepReach">Thinning hatching reaches <output id="deepReach-v"></output><input id="deepReach" type="range" min="1" max="10" step="0.25"></label>
+    <label for="deepFull">Full hatching up to <output id="deepFull-v"></output><input id="deepFull" type="range" min="0" max="5" step="0.25"></label>
+    <label for="deepShort">Strokes shrink, at the far end, to <output id="deepShort-v"></output><input id="deepShort" type="range" min="0.05" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -128,7 +131,7 @@ let world = null, lastMove = 0;
 const fmt = {
   sight: (v) => `${v} tiles`, reveal: (v) => (+v ? `${v} s` : "instant"), softness: (v) => `${v} tiles`,
   fade: (v) => `${Math.round(v * 100)}%`, radius: (v) => `${v} tiles`, dark: (v) => `${Math.round(v * 100)}%`,
-  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, rockReach: (v) => `${v} tiles`, rockNear: (v) => (+v ? `${v} tiles` : "only their own floor"), flicker: (v) => `${Math.round(v * 100)}%`, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
+  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, rockReach: (v) => `${v} tiles`, deepReach: (v) => `${v} tiles from the floor in sight`, deepFull: (v) => `${v} tiles`, deepShort: (v) => `${Math.round(v * 100)}% of their length`, rockNear: (v) => (+v ? `${v} tiles` : "only their own floor"), flicker: (v) => `${Math.round(v * 100)}%`, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
 };
 const keys = Object.keys(VIS_DEFAULTS);
 function show(vis) {

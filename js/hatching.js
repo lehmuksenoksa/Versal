@@ -318,6 +318,54 @@ export function hatchRock(ctx, geo, o, rng) {
   }
 }
 
+// The hatching of a map that is solid rock throughout, as a list of strokes
+// rather than ink: no walls, so the cells lie every which way. Each stroke
+// has its centreline (`path`), full width (`scale`) and a `rank` from 0 to 1:
+// a group's rank, plus more for each later stroke in the group. The renderer
+// thins it out away from the walls in sight (see Renderer.drawDeep).
+export function hatchSolid(W, H, TS, rng) {
+  const o = { ...hatchSettings(TS), depth: 1e4, nearw: 0, flecks: 0, record: [] };
+  const far = TS * 50;
+  const nop = () => {};
+  const ctx = { beginPath: nop, moveTo: nop, lineTo: nop, closePath: nop, fill: nop, arc: nop };
+  hatchRock(ctx, { W, H, TS, walls: [], distAt: () => far }, o, rng);
+  for (const st of o.record) {
+    if (st.g.rank === undefined) st.g.rank = rng.next();
+    st.rank = 0.65 * st.g.rank + 0.35 * Math.min(1, st.idx / 3);
+    delete st.g;
+  }
+  return o.record;
+}
+
+// Add one recorded stroke to the current path of `ctx` (the caller fills
+// it), keeping only the middle `keep` of its length; the ends taper as a
+// whole stroke's would.
+export function inkRecorded(ctx, st, keep) {
+  const P = st.path, n = P.length - 1;
+  if (n < 1) return;
+  const a = ((1 - keep) / 2) * n, b = ((1 + keep) / 2) * n;
+  const at = (t) => {
+    const i = Math.min(n - 1, Math.floor(t)), f = t - i;
+    return [P[i][0] + (P[i + 1][0] - P[i][0]) * f, P[i][1] + (P[i + 1][1] - P[i][1]) * f];
+  };
+  const m = Math.max(3, Math.round((b - a) * 1.5)), C = [], R = [];
+  for (let k = 0; k <= m; k++) C.push(at(a + ((b - a) * k) / m));
+  for (let k = 0; k <= m; k++) {
+    const [x0, y0] = C[Math.max(0, k - 1)], [x1, y1] = C[Math.min(m, k + 1)];
+    const dl = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / dl, ny = (x1 - x0) / dl;
+    const w = (profile(HATCH, k / m) * st.scale) / 2;
+    k ? ctx.lineTo(C[k][0] + nx * w, C[k][1] + ny * w) : ctx.moveTo(C[k][0] + nx * w, C[k][1] + ny * w);
+    R.push([C[k][0] - nx * w, C[k][1] - ny * w]);
+  }
+  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+  ctx.closePath();
+  for (const [[x, y], t] of [[C[0], 0], [C[m], 1]]) {
+    const r = (profile(HATCH, t) * st.scale) / 2;
+    ctx.moveTo(x + r, y);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+  }
+}
+
 const INK_FILL = "#1b1815";
 
 // ---------- strokes ----------------------------------------------------------------
@@ -348,6 +396,8 @@ function inkStroke(ctx, s, o, rng, g, distAt, TS, weight) {
     R.push([cx - nx * w, cy - ny * w]);
     s.path.push([cx, cy]);
   }
+  // A stroke's place in its group: thinning drops a group's last strokes first.
+  if (o.record) o.record.push({ path: s.path, scale, g, idx: (g.n = (g.n || 0) + 1) - 1 });
   ctx.beginPath();
   L.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
   for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);

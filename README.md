@@ -9,9 +9,9 @@ and some goblins.
 - The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
 - The player sees only what lies in their line of sight, cast against the walls, and remembers what
-  they have seen as a plain plan of the walls; unexplored ground stays dark. The rock around floor in
-  sight shows, but only up to halfway to any floor not yet seen, so the hatching never outlines an
-  unexplored room. They carry a small warm light that walls shadow, and the rock outside the rooms
+  they have seen as a plain plan of the walls; unexplored ground stays dark. Near the floor in sight the
+  map's own hatching shows, but never close to floor not yet seen; beyond it, hatching drawn as if the
+  whole map were solid rock thins out with distance, so it gives away nothing unexplored. They carry a small warm light that walls shadow, and the rock outside the rooms
   is toned darker than the floor.
 
 ## Running it

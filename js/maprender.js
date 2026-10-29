@@ -17,6 +17,8 @@ const WALL = { weight: 8, inside: 0.1, seg: 0.3, kink: 1.2, bow: 0.3, vary: 0 };
 const GRID = { wobble: 0.8, breaks: 0.35 };
 
 // With `plan` set, only the floor and the walls are drawn: no hatching or grid.
+// Returns the canvas, the floor outline (a path and its loops) and the
+// hatching strokes.
 export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
@@ -38,7 +40,9 @@ export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
 
   drawPaper(ctx, W * TS, H * TS, rng);
   const hatchRng = rng.fork(); // taken either way, so the walls come out the same
-  if (!plan) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatchSettings(TS), hatchRng);
+  // The strokes are kept too, so the renderer knows where the rock is inked.
+  const hatch = { ...hatchSettings(TS), record: [] };
+  if (!plan) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatch, hatchRng);
   // Floors are painted over the hatching, which leaves it cut cleanly at the walls.
   ctx.fillStyle = PAPER;
   ctx.fill(floor, "evenodd");
@@ -53,7 +57,7 @@ export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
   drawWalls(ctx, loops, TS, rng);
   drawRoomKeys(ctx, level, TS);
 
-  return { canvas, ctx, floor, loops };
+  return { canvas, ctx, floor, loops, strokes: hatch.record };
 }
 
 // ---------- outlines ---------------------------------------------------------
