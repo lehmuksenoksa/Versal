@@ -167,6 +167,10 @@ export class Expression {
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
     this.job = null;
+    // The exact shape of all that has been seen, at full resolution, recast
+    // from every place it was seen from (see learn).
+    this.seenShape = blank(cw, ch);
+    for (const v of this.viewpoints?.values() ?? []) this.addShape(v);
     if (this.player) {
       this.learn(this.player.x, this.player.y);
       this.rebuild();
@@ -190,6 +194,8 @@ export class Expression {
   // Forget everything seen.
   forget() {
     this.seen.fill(0);
+    this.viewpoints?.clear();
+    this.seenShape?.getContext("2d").clearRect(0, 0, this.seenShape.width, this.seenShape.height);
     if (this.player) this.learn(this.player.x, this.player.y);
   }
 
@@ -206,23 +212,66 @@ export class Expression {
     g.fill(path);
     const a = g.getImageData(0, 0, mw, mh).data;
     let grew = false;
-    const vis = new Float32Array(mw * mh);
-    for (let j = 0; j < mw * mh; j++) {
-      if (!floor[j] || a[j * 4 + 3] < 128) continue;
+    const vis = new Float32Array(mw * mh), level = (j) => {
       const d = Math.hypot(((j % mw) + 0.5) / R - px / TS, (((j / mw) | 0) + 0.5) / R - py / TS);
-      const v = S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
-      if (!(v > 0.01)) continue;
-      vis[j] = v;
-      // Only a real change is worth redrawing for (seeing ground a little
-      // better as the player comes closer is not).
-      if (v > seen[j]) {
-        if (v - seen[j] > 0.15 || (seen[j] < 0.5 && v >= 0.5)) grew = true;
-        seen[j] = v;
+      return S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
+    };
+    // In sight: floor at least half inside the view (`vis`, for what is in
+    // sight now). Remembered as seen: any of it inside, and the floor next to
+    // that, so the coarse record reaches past the true edge of the view; the
+    // drawing is trimmed to that edge by `seenShape`.
+    const touched = new Uint8Array(mw * mh);
+    for (let j = 0; j < mw * mh; j++) {
+      if (!floor[j] || a[j * 4 + 3] === 0) continue;
+      touched[j] = 1;
+      if (a[j * 4 + 3] >= 128) vis[j] = level(j);
+    }
+    for (let y = 0; y < mh; y++)
+      for (let x = 0; x < mw; x++) {
+        const j = y * mw + x;
+        if (!floor[j]) continue;
+        let near = touched[j];
+        for (let k = 0; k < 9 && !near; k++) {
+          const nx = x + (k % 3) - 1, ny = y + ((k / 3) | 0) - 1;
+          near = nx >= 0 && ny >= 0 && nx < mw && ny < mh && touched[ny * mw + nx];
+        }
+        if (!near) continue;
+        const v = level(j);
+        if (!(v > 0.01)) continue;
+        // Only a real change is worth redrawing for (seeing ground a little
+        // better as the player comes closer is not).
+        if (v > seen[j]) {
+          if (v - seen[j] > 0.15 || (seen[j] < 0.5 && v >= 0.5)) grew = true;
+          seen[j] = v;
+        }
       }
+    const key = `${tx},${ty},${far}`;
+    if (!this.viewpoints) this.viewpoints = new Map();
+    if (!this.viewpoints.has(key)) {
+      const v = { path, px, py, far };
+      this.viewpoints.set(key, v);
+      this.addShape(v);
     }
     this.visNow = vis;
     this.sightRock(vis);
     return grew;
+  }
+
+  // Add one view to `seenShape`: the floor seen from (px, py) out to `far`
+  // tiles, and the rock just past the wall faces seen (where their ink is).
+  addShape({ path, px, py, far }) {
+    if (!this.seenShape) return;
+    const g = this.seenShape.getContext("2d"), TS = this.TS;
+    g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    g.save();
+    g.beginPath();
+    g.arc(px, py, (far + WALL_BAND) * TS, 0, Math.PI * 2);
+    g.clip();
+    g.fillStyle = "#000";
+    g.fill(path);
+    g.clip(this.rock, "evenodd");
+    g.fill(path.beyond(WALL_BAND * TS));
+    g.restore();
   }
 
   // How well the map point (x, y) is in sight from the player's tile, 0 to 1.
@@ -378,7 +427,7 @@ export class Expression {
 
   // Lay a colour over canvas `g` from mask resolution: `alpha(j)` from 0 to 1
   // at each mask pixel, with the given compositing.
-  overlay(g, hex, alpha, op) {
+  overlay(g, hex, alpha, op, shape = null) {
     const { mw, mh } = this, [r, gr, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
     const img = new ImageData(mw, mh);
     for (let j = 0; j < mw * mh; j++) {
@@ -391,6 +440,11 @@ export class Expression {
     }
     const c = blank(mw, mh);
     c.getContext("2d").putImageData(img, 0, 0);
+    if (shape) {
+      // Cut to the shape at full resolution first.
+      this.lay(g, c, null, null, 1, shape, op);
+      return;
+    }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = op;
     g.imageSmoothingEnabled = true;
@@ -398,15 +452,17 @@ export class Expression {
     g.globalCompositeOperation = "source-over";
   }
 
-  // Draw `src` onto `g`, cut to `mask` (mask resolution; none for all of it),
-  // recoloured unless `colour` is null, at the given strength.
-  lay(g, src, mask, colour, strength) {
+  // Draw `src` onto `g` (scaled to fit), cut to `mask` (mask resolution; none
+  // for all of it) and to `shape` (full resolution) if given, recoloured
+  // unless `colour` is null, at the given strength, with compositing `op`.
+  lay(g, src, mask, colour, strength, shape = null, op = "source-over") {
     if (strength <= 0) return;
     const w = this.scratch, wg = w.getContext("2d");
     wg.setTransform(1, 0, 0, 1, 0, 0);
     wg.globalCompositeOperation = "source-over";
     wg.clearRect(0, 0, w.width, w.height);
-    wg.drawImage(src, 0, 0);
+    wg.imageSmoothingEnabled = true;
+    wg.drawImage(src, 0, 0, w.width, w.height);
     if (colour) {
       wg.globalCompositeOperation = "source-in";
       wg.fillStyle = colour;
@@ -417,9 +473,15 @@ export class Expression {
       wg.imageSmoothingEnabled = true;
       wg.drawImage(mask, 0, 0, w.width, w.height);
     }
+    if (shape) {
+      wg.globalCompositeOperation = "destination-in";
+      wg.drawImage(shape, 0, 0);
+    }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalAlpha = Math.min(1, strength);
+    g.globalCompositeOperation = op;
     g.drawImage(w, 0, 0);
+    g.globalCompositeOperation = "source-over";
     g.globalAlpha = 1;
   }
 
@@ -454,6 +516,9 @@ export class Expression {
     }
     const { d2 } = nearestSeeds(known, mw, mh);
     yield;
+    // (A copy: more may be seen while this is being done.)
+    const shape = blank(cw, ch);
+    shape.getContext("2d").drawImage(this.seenShape, 0, 0);
     const grey = yield* this.depthSteps(known, d2);
     const cell = (x, y) => {
       const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
@@ -523,15 +588,15 @@ export class Expression {
       yield;
       this.lay(g, inks[pre], null, S[pre + "HatchC"], S[pre + "Hatch"]);
       yield;
-      this.lay(g, this.floorLayer, glimpsedMask, stone, 1);
+      this.lay(g, this.floorLayer, glimpsedMask, stone, 1, shape);
       yield;
-      this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, mask, null, 1);
+      this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, mask, null, 1, shape);
       yield;
-      this.overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), "multiply");
+      this.overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), "multiply", shape);
       yield;
-      this.lay(g, this.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"]);
+      this.lay(g, this.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"], shape);
       yield;
-      this.lay(g, this.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"]);
+      this.lay(g, this.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"], shape);
       yield;
       return c;
     }.bind(this);
@@ -702,10 +767,14 @@ export class Expression {
         c.globalCompositeOperation = "lighter";
         c.globalAlpha = 1 / paths.length;
       }
+      // (The rock part softened, so the light fades off into the rock
+      // rather than stopping at an edge.)
+      r.filter = S.lightWall > 0 ? `blur(${S.lightWall * TS * res * 0.35}px)` : "none";
       for (const p of paths) {
         g.fill(p);
         r.fill(p.beyond(S.lightWall * TS));
       }
+      r.filter = "none";
       // The rock part: cut to the rock, then added in.
       r.globalAlpha = 1;
       r.globalCompositeOperation = "destination-in";
