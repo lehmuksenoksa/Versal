@@ -81,6 +81,7 @@
     <legend>Candle</legend>
     <label for="radius">Reaches <output id="radius-v"></output><input id="radius" type="range" min="0" max="16" step="0.5"></label>
     <label for="lightFull">Full brightness out to <output id="lightFull-v"></output><input id="lightFull" type="range" min="0" max="0.95" step="0.05"></label>
+    <label for="lightWall">Lights the walls and rock to <output id="lightWall-v"></output><input id="lightWall" type="range" min="0" max="4" step="0.25"></label>
     <label for="flame">Size of the flame (sets how soft the shadows are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
     <label for="flicker">Flicker <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
     <label for="warmth">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
@@ -181,13 +182,11 @@ const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink, and
 // sight reaches this far into the rock past a wall face it looks at.
 const WALL_BAND = 0.5;
-// The light reaches this far (in tiles) into the rock past a wall it falls on.
-const LIGHT_BAND = 0.6;
 const STEP_MS = 140; // a step from tile to tile
 const PAPER_RGB = [247, 242, 230];
 const DEFAULTS = {
   sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
-  radius: 5, lightFull: 0.3, flame: 0.3, flicker: 0.4, warmth: 0.5,
+  radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, warmth: 0.7,
   darkColor: "#16181d", dark: 0.6, memShade: 0.3,
   seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
   memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
@@ -199,13 +198,13 @@ const DEFAULTS = {
 };
 // Settings that only change how sight and light are laid over the drawing;
 // the rest mean redrawing it.
-const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "flame", "flicker", "warmth", "darkColor", "dark", "memShade"]);
+const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "lightWall", "flame", "flicker", "warmth", "darkColor", "dark", "memShade"]);
 const pct = (v) => `${Math.round(v * 100)}%`;
 const tiles = (v) => `${v} tiles`;
 const fmt = {
   sight: tiles, sightFade: (v) => (+v ? tiles(v) : "nothing: a sharp edge"), blockSoft: (v) => (+v ? tiles(v) : "nothing: a sharp edge"),
   reveal: (v) => (+v ? `${v} s` : "instantly"),
-  radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
+  radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, lightWall: (v) => `${v} tiles past the wall's face`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
   flicker: pct, warmth: pct, dark: pct, memShade: pct,
   seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
@@ -765,7 +764,7 @@ function castLight(px, py, t) {
     g.fill(p);
     g.save();
     g.clip(M.rock, "evenodd");
-    g.fill(p.beyond(LIGHT_BAND * TS));
+    g.fill(p.beyond(S.lightWall * TS));
     g.restore();
   }
   g.restore();
