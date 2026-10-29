@@ -61,7 +61,7 @@
 <body>
 <header>
   <h1>Hatching mockups</h1>
-  <p>Ways to fill the rock around the same sample map. The default settings imitate the hatching in Dyson Logos' map. The controls change alternatives A, B, C and E (the wall controls change all five). Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
+  <p>Ways to fill the rock around the same sample map. The default settings imitate the hatching in Dyson Logos' map. The controls change alternatives A, B, C and E (the wall and grid controls change all five). Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
 </header>
 
 <div class="controls">
@@ -74,17 +74,20 @@
   <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
   <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
   <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
+  <label for="mingroup">Fewest strokes per group <output id="mingroup-v"></output><input id="mingroup" type="range" min="1" max="5" step="1" value="3"></label>
   <label for="shrink">Shorter with each stroke (E) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
   <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
   <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
   <button id="reseed" type="button">New layout</button>
   <fieldset class="profile">
-    <legend>Walls</legend>
+    <legend>Walls and floor grid</legend>
     <label for="wallw">Wall weight <output id="wallw-v"></output><input id="wallw" type="range" min="2" max="12" step="0.25" value="6"></label>
     <label for="wallin">Weight inside the room <output id="wallin-v"></output><input id="wallin" type="range" min="0" max="0.5" step="0.05" value="0.2"></label>
     <label for="wallseg">Wall stroke length <output id="wallseg-v"></output><input id="wallseg" type="range" min="0.3" max="3" step="0.05" value="0.9"></label>
     <label for="wallkink">Wall stroke tilt <output id="wallkink-v"></output><input id="wallkink" type="range" min="0" max="3" step="0.1" value="1"></label>
     <label for="wallwob">Wall stroke bow <output id="wallwob-v"></output><input id="wallwob" type="range" min="0" max="3" step="0.1" value="0.4"></label>
+    <label for="gridwob">Grid wobble <output id="gridwob-v"></output><input id="gridwob" type="range" min="0" max="2.5" step="0.1" value="0.8"></label>
+    <label for="gridbreak">Grid breaks <output id="gridbreak-v"></output><input id="gridbreak" type="range" min="0" max="1" step="0.05" value="0.35"></label>
     <label for="wallvary">Wall thickness variation <output id="wallvary-v"></output><input id="wallvary" type="range" min="0" max="0.6" step="0.05" value="0.25"></label>
   </fieldset>
   <fieldset class="profile">
@@ -370,7 +373,9 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = 
     const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
     // One target length per group, so free ends line up.
     const reachF = maxT * rng.range(0.45, 0.6), reachB = maxT * rng.range(0.45, 0.6);
-    const n = Math.max(1, Math.min(o.maxLines, fill ? rng.int(2, 3) : rng.int(3, 5)));
+    const n = Math.max(1, Math.min(o.maxLines, fill ? rng.int(2, 4) : rng.int(3, 5)));
+    const need = Math.min(n, fill ? Math.max(2, o.mingroup - 1) : o.mingroup);
+    const pend = [];
     const side = rng.chance(0.5) ? 1 : -1;
     const vx = -Math.sin(ang) * side, vy = Math.cos(ang) * side;
     for (let k = 0; k < n; k++) {
@@ -382,7 +387,9 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = 
       const tf = cast(store, mask, qx, qy, dx, dy, reachF + jitter());
       const tb = cast(store, mask, qx, qy, -dx, -dy, reachB + jitter());
       // A stroke that can't be drawn ends the group rather than leaving a hole in it.
-      if (tf + tb < sp * o.minlen * (fill ? 0.6 : 1)) break;
+      // Close to a wall, short strokes may plug the wedges.
+      const k0 = fill ? (mask.dist(qx, qy) < TS * 0.7 ? 0.35 : 0.6) : 1;
+      if (tf + tb < sp * o.minlen * k0) break;
       const s = startAhead
         ? { x0: qx + dx * tf, y0: qy + dy * tf, x1: qx - dx * tb, y1: qy - dy * tb }
         : { x0: qx - dx * tb, y0: qy - dy * tb, x1: qx + dx * tf, y1: qy + dy * tf };
@@ -391,6 +398,11 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = 
       for (const f of [0.2, 0.5, 0.8]) if (store.nearest(s.x0 + (s.x1 - s.x0) * f, s.y0 + (s.y1 - s.y0) * f, sp).d < sp * 0.5) crowded = true;
       if (antiParallel && store.around((s.x0 + s.x1) / 2, (s.y0 + s.y1) / 2, sp * 1.6).some((q) => q.group !== group && q.nx === undefined && lineAngleDiff(segAngle(q), a) < 0.3)) crowded = true;
       if (crowded) break;
+      pend.push(s);
+    }
+    // Too few strokes fit: drop the group rather than leave a lone stroke.
+    if (pend.length < need) continue;
+    for (const s of pend) {
       inkStroke(ctx, s, o, rng, g);
       addStroke(store, s, group);
     }
@@ -456,52 +468,76 @@ function grown(ctx, rng, mask, o) {
           if (Math.max(...room) < minLen * 0.6) { at += sp; continue; }
           [sx, sy] = sides[room[0] >= room[1] ? 0 : 1];
         }
-        // Turn well away from the parent line, toward the chosen side, and
-        // away from the strokes already nearby, so that two groups never lie
-        // side by side running the same way.
-        const lim = P.wall ? 1.05 : 0.95;
-        const bx0 = P.x0 + ux * at + sx * offset, by0 = P.y0 + uy * at + sy * offset;
-        const nearby = store.around(bx0, by0, sp * 2.2).filter((q) => q.nx === undefined).map(segAngle);
-        let phi = 0, dx = 0, dy = 0, best = -1;
-        for (let k = 0; k < 8; k++) {
-          const f = rng.range(lim, Math.PI - lim);
-          const ex = Math.cos(f) * ux + Math.sin(f) * sx, ey = Math.cos(f) * uy + Math.sin(f) * sy;
-          const a = Math.atan2(ey, ex);
-          const score = nearby.reduce((m, b) => Math.min(m, lineAngleDiff(a, b)), Math.PI / 2);
-          if (score > best) { best = score; phi = f; dx = ex; dy = ey; }
-        }
-        if (best < 0.4) { at += sp; continue; }
-        const along = sp / Math.sin(phi); // keeps the strokes sp apart
-        const n = Math.max(1, Math.min(o.maxLines, rng.int(3, 5)));
-        const reach = o.length * TS * rng.range(0.85, 1.05);
-        const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
-        const group = {};
-        const dir = Math.atan2(dy, dx);
-        for (let k = 0; k < n && at < len; k++, at += along) {
-          const bx = P.x0 + ux * at + sx * offset, by = P.y0 + uy * at + sy * offset;
-          if (!mask.inside(bx + dx * 2, by + dy * 2)) break;
-          // Each stroke in the group is a little shorter than the one before.
-          const want = reach * Math.max(0.1, 1 - o.shrink * k) + rng.range(-0.15, 0.15) * sp;
-          const t = cast(store, mask, bx, by, dx, dy, want);
-          if (t < minLen) break;
-          const s = { x0: bx, y0: by, x1: bx + dx * t, y1: by + dy * t };
-          let crowded = false;
-          for (const f of [0.35, 0.65, 0.95]) if (store.nearest(bx + dx * t * f, by + dy * t * f, sp).d < sp * 0.45) crowded = true;
-          // Stop rather than run alongside another group going the same way.
-          const mx = bx + dx * t * 0.5, my = by + dy * t * 0.5;
-          if (store.around(mx, my, sp * 1.6).some((q) => q.group !== group && q.nx === undefined && lineAngleDiff(segAngle(q), dir) < 0.3)) crowded = true;
-          if (crowded) break;
-          inkStroke(ctx, s, o, rng, g);
-          addStroke(store, s, group);
-          next.push({ x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1, w: s.w });
-          all.push(next[next.length - 1]);
-        }
-        at += firstWalls ? TS * rng.range(0.8, 2) : sp * rng.range(1, 2.5);
+        const reached = tryGroup(P, at, sx, sy, offset, P.wall ? 1.05 : 0.95, minLen, o.mingroup, next);
+        if (reached === null) { at += sp; continue; }
+        at = reached + (firstWalls ? TS * rng.range(0.8, 2) : sp * rng.range(1, 2.5));
       }
     }
     parents = next;
   }
+
+  // Walk along every wall and plug any white left against it with a short group.
+  for (let sweep = 0; sweep < 2; sweep++)
+    for (const w of rng.shuffle([...walls])) {
+      const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0), ux = (w.x1 - w.x0) / len, uy = (w.y1 - w.y0) / len;
+      for (let at = sp * 0.3; at < len - sp * 0.3; ) {
+        const gx = w.x0 + ux * at + w.nx * (o.wallw * 0.8 + sp * 0.6), gy = w.y0 + uy * at + w.ny * (o.wallw * 0.8 + sp * 0.6);
+        const reached = mask.inside(gx, gy) && store.nearest(gx, gy, sp).d > sp * 0.8
+          ? tryGroup(w, at, w.nx, w.ny, o.wallw * 0.5, 0.6, sp * 1.5, Math.max(2, o.mingroup - 1), null)
+          : null;
+        at = reached === null ? at + sp * 0.5 : reached;
+      }
+    }
+
   bundles(ctx, rng, mask, o, { store, passes: [1], antiParallel: true });
+
+  // One group grown from parent line P, starting `at` along it, on the side
+  // (sx, sy). Returns how far along P it reached, or null if fewer than
+  // `need` strokes fit.
+  function tryGroup(P, at, sx, sy, offset, lim, minL, need, next) {
+    const len = Math.hypot(P.x1 - P.x0, P.y1 - P.y0), ux = (P.x1 - P.x0) / len, uy = (P.y1 - P.y0) / len;
+    // Turn well away from the parent line, toward the chosen side, and away
+    // from the strokes already nearby, so two groups never lie side by side
+    // running the same way.
+    const bx0 = P.x0 + ux * at + sx * offset, by0 = P.y0 + uy * at + sy * offset;
+    const nearby = store.around(bx0, by0, sp * 2.2).filter((q) => q.nx === undefined).map(segAngle);
+    let phi = 0, dx = 0, dy = 0, best = -1;
+    for (let k = 0; k < 8; k++) {
+      const f = rng.range(lim, Math.PI - lim);
+      const ex = Math.cos(f) * ux + Math.sin(f) * sx, ey = Math.cos(f) * uy + Math.sin(f) * sy;
+      const score = nearby.reduce((m, b) => Math.min(m, lineAngleDiff(Math.atan2(ey, ex), b)), Math.PI / 2);
+      if (score > best) { best = score; phi = f; dx = ex; dy = ey; }
+    }
+    if (best < 0.4) return null;
+    const along = sp / Math.sin(phi); // keeps the strokes sp apart
+    const n = Math.min(o.maxLines, rng.int(Math.max(3, need), Math.max(5, need)));
+    const reach = o.length * TS * rng.range(0.85, 1.05);
+    const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
+    const group = {}, dir = Math.atan2(dy, dx), pend = [];
+    for (let k = 0; k < n && at < len; k++, at += along) {
+      const bx = P.x0 + ux * at + sx * offset, by = P.y0 + uy * at + sy * offset;
+      if (!mask.inside(bx + dx * 2, by + dy * 2)) break;
+      // Each stroke in the group is a little shorter than the one before.
+      const want = reach * Math.max(0.1, 1 - o.shrink * k) + rng.range(-0.15, 0.15) * sp;
+      const t = cast(store, mask, bx, by, dx, dy, want);
+      if (t < minL) break;
+      let crowded = false;
+      for (const f of [0.35, 0.65, 0.95]) if (store.nearest(bx + dx * t * f, by + dy * t * f, sp).d < sp * 0.45) crowded = true;
+      // Stop rather than run alongside another group going the same way.
+      if (store.around(bx + dx * t * 0.5, by + dy * t * 0.5, sp * 1.6).some((q) => q.group !== group && q.nx === undefined && lineAngleDiff(segAngle(q), dir) < 0.3)) crowded = true;
+      if (crowded) break;
+      pend.push({ x0: bx, y0: by, x1: bx + dx * t, y1: by + dy * t });
+    }
+    if (pend.length < Math.min(need, n)) return null;
+    for (const s of pend) {
+      inkStroke(ctx, s, o, rng, g);
+      addStroke(store, s, group);
+      const rec = { x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1, w: s.w };
+      all.push(rec);
+      if (next) next.push(rec);
+    }
+    return at;
+  }
 }
 
 // ---------- C: radiating from the walls, then bundles ------------------------------
@@ -606,16 +642,36 @@ function drawRooms(ctx, o) {
   ctx.fillStyle = "rgba(70, 62, 55, 0.3)";
   ctx.fill(rock, "evenodd");
   ctx.restore();
-  ctx.strokeStyle = "rgba(27, 24, 21, 0.55)";
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
+  drawGrid(ctx, o, RNG(seed ^ 0x6a09e667));
+  drawWalls(ctx, o, RNG(seed ^ 0x51ed27));
+}
+
+// The floor grid, one thin pen stroke per tile edge: each slightly tilted and
+// bowed, often stopping short of a crossing, now and then broken mid-way.
+function drawGrid(ctx, o, rng) {
+  ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
+  ctx.lineCap = "round";
+  const edge = (x0, y0, x1, y1) => {
+    const ux = (x1 - x0) / TS, uy = (y1 - y0) / TS, nx = -uy, ny = ux;
+    const a = rng.chance(o.gridbreak) ? rng.range(1, 3.5) : -0.4;
+    const b = TS - (rng.chance(o.gridbreak) ? rng.range(1, 3.5) : -0.4);
+    const pieces = rng.chance(o.gridbreak * 0.5) ? (() => { const m = rng.range(0.3, 0.7) * TS, gp = rng.range(1.5, 3.5); return [[a, m - gp / 2], [m + gp / 2, b]]; })() : [[a, b]];
+    for (const [p, q] of pieces) {
+      const s0 = rng.range(-0.5, 0.5) * o.gridwob, s1 = rng.range(-0.5, 0.5) * o.gridwob, bow = rng.range(-1, 1) * o.gridwob;
+      const P0 = [x0 + ux * p + nx * s0, y0 + uy * p + ny * s0], P1 = [x0 + ux * q + nx * s1, y0 + uy * q + ny * s1];
+      const m = (p + q) / 2, sm = (s0 + s1) / 2 + bow;
+      ctx.lineWidth = rng.range(0.6, 1.05);
+      ctx.beginPath();
+      ctx.moveTo(P0[0], P0[1]);
+      ctx.quadraticCurveTo(x0 + ux * m + nx * sm, y0 + uy * m + ny * sm, P1[0], P1[1]);
+      ctx.stroke();
+    }
+  };
   for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
     if (!open(x, y)) continue;
-    if (open(x + 1, y)) { ctx.moveTo((x + 1) * TS, y * TS); ctx.lineTo((x + 1) * TS, (y + 1) * TS); }
-    if (open(x, y + 1)) { ctx.moveTo(x * TS, (y + 1) * TS); ctx.lineTo((x + 1) * TS, (y + 1) * TS); }
+    if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS);
+    if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS);
   }
-  ctx.stroke();
-  drawWalls(ctx, o, RNG(seed ^ 0x51ed27));
 }
 
 // Walls as chains of short pen strokes. Each stroke is tilted slightly off
@@ -671,9 +727,9 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
@@ -772,7 +828,7 @@ for (const id of ids)
     if (PKEYS.includes(id)) drawProfile();
     if (pending) return;
     pending = true;
-    requestAnimationFrame(() => { pending = false; render(id.startsWith("wall")); });
+    requestAnimationFrame(() => { pending = false; render(id.startsWith("wall") || id.startsWith("grid")); });
   });
 drawProfile();
 document.getElementById("reseed").addEventListener("click", () => { seed = (Math.random() * 2 ** 32) >>> 0; render(true); });
