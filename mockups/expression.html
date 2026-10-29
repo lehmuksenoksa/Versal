@@ -80,7 +80,7 @@
 
   <fieldset>
     <legend>In sight</legend>
-    <label for="seeFloor">Floor colour <input id="seeFloor" type="color"></label>
+    <label for="seeFloorMix">Floor colour, from paper to the rock's <output id="seeFloorMix-v"></output><input id="seeFloorMix" type="range" min="0" max="1" step="0.05"></label>
     <label for="seeMarkC">Floor markings (grid and numbers) <input id="seeMarkC" type="color"></label>
     <label for="seeMark">Their strength <output id="seeMark-v"></output><input id="seeMark" type="range" min="0" max="1" step="0.05"></label>
     <label for="seeWallC">Walls <input id="seeWallC" type="color"></label>
@@ -92,7 +92,7 @@
   <fieldset>
     <legend>Remembered, out of sight</legend>
     <label for="memDepth">Its walls hatch as dark as <output id="memDepth-v"></output><input id="memDepth" type="range" min="0" max="1" step="0.05"></label>
-    <label for="memFloor">Floor colour <input id="memFloor" type="color"></label>
+    <label for="memFloorMix">Floor colour, from paper to the rock's <output id="memFloorMix-v"></output><input id="memFloorMix" type="range" min="0" max="1" step="0.05"></label>
     <label for="memMarkC">Floor markings (grid and numbers) <input id="memMarkC" type="color"></label>
     <label for="memMark">Their strength <output id="memMark-v"></output><input id="memMark" type="range" min="0" max="1" step="0.05"></label>
     <label for="memWallC">Walls <input id="memWallC" type="color"></label>
@@ -177,16 +177,16 @@ const UNKNOWN = 0, REMEMBERED = 1, SIGHT = 2;
 const DEFAULTS = {
   depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
-  seeFloor: "#ffffff", seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memDepth: 0.6, memFloor: "#e8e0d0", memMarkC: "#8a7f72", memMark: 0.4, memWallC: "#6b5f52", memWall: 1, memHatchC: "#6b5f52", memHatch: 0.8,
-  outColor: "#000000", fadeStyle: "gradient", fadeBy: "distance", fadeStart: 2, fadeWidth: 3,
-  rockColor: "#968e84", rockTone: 0.5, rockBy: "flat", show: "map", zoom: 0.3,
+  seeFloorMix: 0, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
+  memDepth: 0.3, memFloorMix: 0.5, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.8, memHatchC: "#6b5f52", memHatch: 1,
+  outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
+  rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat", show: "map", zoom: 0.3,
 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: (v) => `${v} tiles`, rockTone: pct,
-  seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
+  seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   memDepth: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
@@ -585,8 +585,9 @@ function compose() {
   // the walls.
   lay(M.floorLayer, sightMask, null, 1);
   lay(M.floorLayer, memMask, null, 1);
-  overlay(S.seeFloor, (j) => isSight[j], "multiply");
-  overlay(S.memFloor, (j) => isMem[j], "multiply");
+  // Floor tinted part of the way to the rock's colour (all the way is the
+  // same tone as the rock).
+  overlay(S.rockColor, (j) => (isSight[j] ? S.rockTone * S.seeFloorMix : isMem[j] ? S.rockTone * S.memFloorMix : 0), "multiply");
   lay(M.markLayer, sightMask, S.seeMarkC, S.seeMark);
   lay(M.markLayer, memMask, S.memMarkC, S.memMark);
   lay(M.wallLayer, sightMask, S.seeWallC, S.seeWall);
