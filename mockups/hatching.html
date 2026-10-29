@@ -75,9 +75,11 @@
   <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
   <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
   <label for="mingroup">Fewest strokes per group <output id="mingroup-v"></output><input id="mingroup" type="range" min="1" max="5" step="1" value="3"></label>
-  <label for="wallang">Min angle to walls (E2, F, G) <output id="wallang-v"></output><input id="wallang" type="range" min="0" max="1.2" step="0.05" value="0.55"></label>
+  <label for="wallang">Min angle to walls (E2, F, G, H) <output id="wallang-v"></output><input id="wallang" type="range" min="0" max="1.2" step="0.05" value="0.55"></label>
   <label for="dots">Groups ending in a dot (E2, F, G) <output id="dots-v"></output><input id="dots" type="range" min="0" max="1" step="0.05" value="0.6"></label>
   <label for="holes">Fill holes wider than (G) <output id="holes-v"></output><input id="holes" type="range" min="0.6" max="2" step="0.05" value="1"></label>
+  <label for="tri">Triangle size (H) <output id="tri-v"></output><input id="tri" type="range" min="0.5" max="2" step="0.05" value="1.2"></label>
+  <label for="seam">Ragged seams (H) <output id="seam-v"></output><input id="seam" type="range" min="0" max="1" step="0.05" value="0.3"></label>
   <label for="shrink">Shorter with each stroke (E, E2) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
   <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
   <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
@@ -105,6 +107,8 @@
 </div>
 
 <div class="grid">
+  <figure><canvas id="c-tris" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-tris"></span><b>H. Triangles</b><span>The rock near the walls is cut into triangles (lined up with the walls). Each triangle is filled with strokes parallel to one of its edges, starting right along that edge and shortening to a dot at the opposite corner. No triangle's strokes run along a wall, and neighbouring triangles never share a direction.</span></figcaption></figure>
   <figure><canvas id="c-hunt" width="576" height="384"></canvas>
     <figcaption><span class="ms" id="ms-hunt"></span><b>G. Wedge cascade with hole hunting</b><span>F, then the remaining holes are hunted down, biggest first: one stroke laid across a small hole, two or three across bigger ones, each running from line to line at an angle unlike its neighbours. Defaults match Dyson's measured ink (about 50%) and share of holes (2&ndash;3%).</span></figcaption></figure>
   <figure><canvas id="c-grown" width="576" height="384"></canvas>
@@ -682,6 +686,124 @@ function grown(ctx, rng, mask, o, opts = {}) {
   return store;
 }
 
+// ---------- H: triangles ---------------------------------------------------------------
+
+// Delaunay triangulation (Bowyer-Watson). Returns triangles as {a, b, c} indices.
+function delaunay(pts) {
+  const n = pts.length, big = 1e5;
+  const P = pts.concat([[-big, -big], [2 * big, -big], [-big, 2 * big]]);
+  const tri = (a, b, c) => {
+    const [ax, ay] = P[a], [bx, by] = P[b], [cx, cy] = P[c];
+    const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+    const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+    const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+    return { a, b, c, ux, uy, r2: (ax - ux) ** 2 + (ay - uy) ** 2 };
+  };
+  let tris = [tri(n, n + 1, n + 2)];
+  for (let i = 0; i < n; i++) {
+    const [x, y] = P[i], edges = new Map(), keep = [];
+    for (const t of tris) {
+      if ((x - t.ux) ** 2 + (y - t.uy) ** 2 < t.r2) {
+        for (const [a, b] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]]) {
+          const k = a < b ? a + "," + b : b + "," + a;
+          edges.set(k, edges.has(k) ? null : [a, b]);
+        }
+      } else keep.push(t);
+    }
+    tris = keep;
+    for (const e of edges.values()) if (e) tris.push(tri(e[0], e[1], i));
+  }
+  return tris.filter((t) => t.a < n && t.b < n && t.c < n);
+}
+
+// Triangulate the rock near the walls; fill each triangle with strokes parallel
+// to one of its edges, never along a wall and never parallel to a neighbour.
+function triangles(ctx, rng, mask, o) {
+  const sp = o.spacing, r = o.tri * TS, pts = [], wallPt = new Set();
+  // Points along the walls first, so triangle edges line up with them.
+  for (const w of WALLS) {
+    const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0), n = Math.max(1, Math.round(len / (r * 0.85)));
+    for (let k = 0; k <= n; k++) {
+      const x = w.x0 + ((w.x1 - w.x0) * k) / n, y = w.y0 + ((w.y1 - w.y0) * k) / n;
+      if (pts.some(([px, py]) => Math.hypot(px - x, py - y) < r * 0.4)) continue;
+      wallPt.add(pts.length);
+      pts.push([x, y]);
+    }
+  }
+  // Then scattered through the rock, no two closer than r.
+  for (let k = 0; k < 4000; k++) {
+    const x = rng.range(-r, W + r), y = rng.range(-r, H + r);
+    const d = distAt(x, y);
+    if (d <= 0 || d > (o.depth + 0.6) * TS) continue;
+    if (pts.some(([px, py]) => Math.hypot(px - x, py - y) < r * rng.range(0.7, 1.35))) continue;
+    pts.push([x, y]);
+  }
+  const tris = delaunay(pts).filter((t) => {
+    const gx = (pts[t.a][0] + pts[t.b][0] + pts[t.c][0]) / 3, gy = (pts[t.a][1] + pts[t.b][1] + pts[t.c][1]) / 3;
+    return distAt(gx, gy) > 0 && mask.inside(gx, gy);
+  });
+  const key = (a, b) => (a < b ? a + "," + b : b + "," + a);
+  const byEdge = new Map();
+  for (const t of tris) for (const [a, b] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]]) {
+    const k = key(a, b);
+    if (!byEdge.has(k)) byEdge.set(k, []);
+    byEdge.get(k).push(t);
+  }
+  const onWall = (a, b) => wallPt.has(a) && wallPt.has(b) && distAt((pts[a][0] + pts[b][0]) / 2, (pts[a][1] + pts[b][1]) / 2) < 1.5;
+
+  // Choose each triangle's stroke direction, nearest the walls first.
+  const order = rng.shuffle([...tris]).map((t) => {
+    t.g = [(pts[t.a][0] + pts[t.b][0] + pts[t.c][0]) / 3, (pts[t.a][1] + pts[t.b][1] + pts[t.c][1]) / 3];
+    return t;
+  }).sort((p, q) => distAt(...p.g) - distAt(...q.g));
+  for (const t of order) {
+    let best = null;
+    for (const [a, b, c] of [[t.a, t.b, t.c], [t.b, t.c, t.a], [t.c, t.a, t.b]]) {
+      if (onWall(a, b)) continue;
+      const ang = Math.atan2(pts[b][1] - pts[a][1], pts[b][0] - pts[a][0]);
+      let score = Math.PI / 2;
+      for (const [p, q] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]])
+        for (const nb of byEdge.get(key(p, q))) if (nb !== t && nb.ang !== undefined) score = Math.min(score, lineAngleDiff(ang, nb.ang));
+      if (!wallAngleOK(t.g[0], t.g[1], ang, o)) score -= 0.6;
+      // Prefer an edge whose strokes fit within the group size.
+      const [ax, ay] = pts[a], [bx, by] = pts[b], [cx, cy] = pts[c];
+      const h = Math.abs((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) / Math.hypot(bx - ax, by - ay);
+      if (h / sp > o.maxLines + 0.5) score -= 0.3;
+      score += rng.range(0, 0.15);
+      if (!best || score > best.score) best = { score, a, b, c, ang, h };
+    }
+    if (best) Object.assign(t, { ang: best.ang, ea: best.a, eb: best.b, ec: best.c, h: best.h });
+  }
+
+  // Fill: strokes parallel to the chosen edge, from the edge toward the
+  // opposite corner, shortening to a dot there.
+  const store = SegStore();
+  for (const w of WALLS) store.add({ ...w, w: o.wallw });
+  const off0 = o.weight * 0.6, trim = o.weight * 0.45;
+  for (const t of order) {
+    if (t.ang === undefined) continue;
+    const [ax, ay] = pts[t.ea], [bx, by] = pts[t.eb], [cx, cy] = pts[t.ec];
+    const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve }, flip = rng.chance(0.5);
+    for (let d = off0; d < t.h - 0.8; d += sp) {
+      const f = d / t.h;
+      let px = ax + (cx - ax) * f, py = ay + (cy - ay) * f, qx = bx + (cx - bx) * f, qy = by + (cy - by) * f;
+      const L = Math.hypot(qx - px, qy - py);
+      // Ends stop a little short of the edges, by uneven amounts, so the
+      // seams between triangles look inked rather than ruled.
+      const t0 = trim + rng.range(0, o.seam) * sp, t1 = trim + rng.range(0, o.seam) * sp;
+      if (L > t0 + t1 + 0.6) {
+        const ux = (qx - px) / L, uy = (qy - py) / L;
+        px += ux * t0; py += uy * t0; qx -= ux * t1; qy -= uy * t1;
+      }
+      const s = flip ? { x0: qx, y0: qy, x1: px, y1: py } : { x0: px, y0: py, x1: qx, y1: qy };
+      inkStroke(ctx, s, o, rng, g);
+      addStroke(store, s);
+    }
+  }
+  edgeDashes(ctx, rng, mask, store, o);
+  return store;
+}
+
 // ---------- the room on top of the hatching ------------------------------------------
 function drawRooms(ctx, o) {
   const floor = new Path2D();
@@ -783,9 +905,9 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "seam", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
@@ -820,6 +942,7 @@ function render() {
   const o = params(), mine = ++job;
   const run = (id, fn) => () => paint(id, (ctx) => { const rng = RNG(seed); fn(ctx, rng, makeMask(RNG(seed ^ 0x9e3779b9), o.depth)); });
   const steps = [
+    run("tris", (ctx, rng, mask) => triangles(ctx, rng, mask, o)),
     run("hunt", (ctx, rng, mask) => grown(ctx, rng, mask, o, { wallRule: true, dots: true, wedges: true, hunt: true })),
     run("wedges", (ctx, rng, mask) => grown(ctx, rng, mask, o, { wallRule: true, dots: true, wedges: true })),
     run("grown2", (ctx, rng, mask) => grown(ctx, rng, mask, o, { wallRule: true, dots: true })),
