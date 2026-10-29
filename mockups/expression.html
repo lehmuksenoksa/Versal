@@ -72,8 +72,9 @@
     <legend>Player and light</legend>
     <label for="mode">What is in sight <select id="mode"><option value="player">What the player sees (click to place, arrows or WASD to walk)</option><option value="rooms">Rooms you choose (click to cycle a room)</option></select></label>
     <div class="buttons" data-mode="player"><button id="forget" class="plain" type="button">Forget what was seen</button></div>
-    <label for="sight" data-mode="player">Sight reaches <output id="sight-v"></output><input id="sight" type="range" min="2" max="16" step="0.5"></label>
-    <label for="sightSoft" data-mode="player">Edge of what is in sight fades over <output id="sightSoft-v"></output><input id="sightSoft" type="range" min="0" max="4" step="0.25"></label>
+    <label for="sight" data-mode="player">Sight is clear out to <output id="sight-v"></output><input id="sight" type="range" min="2" max="16" step="0.5"></label>
+    <label for="sightFade" data-mode="player">Then fades out with distance over <output id="sightFade-v"></output><input id="sightFade" type="range" min="0" max="6" step="0.25"></label>
+    <label for="blockSoft" data-mode="player">Where walls block the view, the edge softens over <output id="blockSoft-v"></output><input id="blockSoft" type="range" min="0" max="2" step="0.05"></label>
     <label for="radius" data-mode="player">Candlelight reaches <output id="radius-v"></output><input id="radius" type="range" min="0" max="16" step="0.5"></label>
     <label for="lightFull" data-mode="player">Full brightness out to <output id="lightFull-v"></output><input id="lightFull" type="range" min="0" max="0.95" step="0.05"></label>
     <label for="shadowSoft" data-mode="player">Its shadows' edges <output id="shadowSoft-v"></output><input id="shadowSoft" type="range" min="0" max="2" step="0.05"></label>
@@ -198,14 +199,14 @@ const DEFAULTS = {
   memDepth: 0.35, memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
   outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
   rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat",
-  mode: "player", sight: 8, sightSoft: 1, radius: 5, lightFull: 0.3, shadowSoft: 0.15, warmth: 1, dark: 0.6, memShade: 0.3,
+  mode: "player", sight: 8, sightFade: 2.5, blockSoft: 0.15, radius: 5, lightFull: 0.3, shadowSoft: 0.15, warmth: 1, dark: 0.6, memShade: 0.3,
   show: "map", zoom: 0.3,
 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: (v) => `${v} tiles`, rockTone: pct,
-  sight: (v) => `${v} tiles`, sightSoft: (v) => (+v ? `${v} tiles` : "a sharp edge"), lightFull: (v) => `${Math.round(v * 100)}% of the way`, memShade: pct, radius: (v) => (+v ? `${v} tiles` : "no light"), dark: pct, warmth: pct, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
+  sight: (v) => `${v} tiles`, sightFade: (v) => (+v ? `${v} tiles` : "nothing: a sharp edge"), blockSoft: (v) => (+v ? `${v} tiles` : "nothing: a sharp edge"), lightFull: (v) => `${Math.round(v * 100)}% of the way`, memShade: pct, radius: (v) => (+v ? `${v} tiles` : "no light"), dark: pct, warmth: pct, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
   seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   memDepth: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
@@ -472,26 +473,30 @@ function compose() {
   // floor only remembered.
   const isKnown = new Uint8Array(n), isSight = new Uint8Array(n), isMem = new Uint8Array(n);
   const playerMode = S.mode === "player";
+  const unblocked = new Uint8Array(n), reach = new Float32Array(n).fill(1);
   let sightPath = null, px = 0, py = 0;
   if (playerMode) {
     // What the player sees: the floor within reach of the sight polygon,
     // cast against the walls; what they have seen is remembered.
     px = (M.player.x + 0.5) * TS;
     py = (M.player.y + 0.5) * TS;
-    sightPath = M.sightWalls.visible(px, py, (Math.max(S.sight, S.radius * 1.1) + 1) * TS);
+    sightPath = M.sightWalls.visible(px, py, (Math.max(S.sight + S.sightFade, S.radius * 1.1) + 1) * TS);
+    // Two edges: where walls block the view (`unblocked`), and the reach,
+    // fading out with distance (`reach`). In sight where both are at least
+    // half.
     const c = document.createElement("canvas");
     c.width = mw;
     c.height = mh;
     const g = c.getContext("2d", { willReadFrequently: true });
     g.setTransform(R / TS, 0, 0, R / TS, 0, 0);
-    g.beginPath();
-    g.arc(px, py, S.sight * TS, 0, Math.PI * 2);
-    g.clip();
     g.fill(sightPath);
     const a = g.getImageData(0, 0, mw, mh).data;
     for (let j = 0; j < n; j++) {
+      const d = Math.hypot(((j % mw) + 0.5) / R - px / TS, (((j / mw) | 0) + 0.5) / R - py / TS);
+      reach[j] = S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
       if (pixUnit[j] < 0) continue;
-      if (a[j * 4 + 3] >= 128) { isSight[j] = 1; M.seen[j] = 1; }
+      unblocked[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
+      if (unblocked[j] && reach[j] >= 0.5) { isSight[j] = 1; M.seen[j] = 1; }
       else if (M.seen[j]) isMem[j] = 1;
       isKnown[j] = isSight[j] | isMem[j];
     }
@@ -595,18 +600,19 @@ function compose() {
   }
   ctx.globalAlpha = 1;
 
-  // How much each mask pixel is in sight, 0 to 1: floor in sight is 1,
-  // fading out over `sightSoft` tiles along the floor (never through a
-  // wall); rock goes with whichever known floor is nearer, softened.
+  // How much each mask pixel is in sight, 0 to 1. On the floor: unblocked,
+  // with that edge softened over `blockSoft` tiles along the floor (never
+  // through a wall), times the fade with distance. Rock goes with whichever
+  // known floor is nearer, softened, times the same fade.
   const dS = nearestSeeds(isSight, mw, mh).d2, dM = nearestSeeds(isMem, mw, mh).d2, band = (WALL_BAND * R) ** 2;
   const soft = new Float32Array(n), isFloor = (j) => pixUnit[j] >= 0;
   for (let j = 0; j < n; j++) soft[j] = isFloor(j) ? isSight[j] : dS[j] <= dM[j] && dS[j] < Infinity ? 1 : 0;
-  const rad = playerMode ? Math.round(S.sightSoft * R) : 0;
-  if (rad > 0) {
-    blur(soft, mw, mh, Math.max(1, Math.round(rad * 0.5)));
+  if (playerMode) {
+    const rad = Math.round(S.blockSoft * R);
+    if (rad > 0) blur(soft, mw, mh, Math.max(1, Math.round(rad * 0.5)));
     const step = new Int16Array(n).fill(-1);
     let front = [];
-    for (let j = 0; j < n; j++) if (isSight[j]) { step[j] = 0; front.push(j); }
+    for (let j = 0; j < n; j++) if (unblocked[j]) { step[j] = 0; front.push(j); }
     for (let k = 1; k <= rad && front.length; k++) {
       const next = [];
       for (const j of front) {
@@ -621,7 +627,10 @@ function compose() {
       }
       front = next;
     }
-    for (let j = 0; j < n; j++) if (isFloor(j)) soft[j] = step[j] < 0 ? 0 : smooth(1 - step[j] / (rad + 1));
+    for (let j = 0; j < n; j++) {
+      if (isFloor(j)) soft[j] = step[j] < 0 ? 0 : step[j] === 0 ? 1 : smooth(1 - step[j] / (rad + 1));
+      soft[j] *= reach[j];
+    }
   }
   // Remembered rather than in sight (for rock, by whichever floor is nearer).
   const memOf = (j) => (isFloor(j) ? isMem[j] : dM[j] < dS[j]);
