@@ -107,12 +107,15 @@
     </div>
   </details>
   <details class="group" open>
-    <summary>Cells <span>(panel H only)</span></summary>
+    <summary>Cells <span>(panels H and H2)</span></summary>
     <div class="row">
       <label for="tri">Cell size <output id="tri-v"></output><input id="tri" type="range" min="0.5" max="2" step="0.05" value="1.2"></label>
       <label for="stretch">Cell stretch <output id="stretch-v"></output><input id="stretch" type="range" min="1" max="4" step="0.1" value="2"></label>
       <label for="quads">Four-sided cells <output id="quads-v"></output><input id="quads" type="range" min="0" max="1" step="0.05" value="0.5"></label>
-      <label for="seam">Ragged seams <output id="seam-v"></output><input id="seam" type="range" min="0" max="1" step="0.05" value="0.3"></label>
+      <label for="seam">Staggered ends <output id="seam-v"></output><input id="seam" type="range" min="0" max="1.5" step="0.05" value="0.45"></label>
+      <label for="fan">Fan across a group <output id="fan-v"></output><input id="fan" type="range" min="0" max="0.35" step="0.01" value="0.14"></label>
+      <label for="angjit">Angle jitter per stroke <output id="angjit-v"></output><input id="angjit" type="range" min="0" max="0.12" step="0.005" value="0.04"></label>
+      <label for="gapvar">Gap variation <output id="gapvar-v"></output><input id="gapvar" type="range" min="0" max="0.45" step="0.01" value="0.22"></label>
     </div>
   </details>
   <details class="group" open>
@@ -951,24 +954,38 @@ function triangles(ctx, rng, mask, o, opts = {}) {
     const h = Math.max(...poly.map(([x, y]) => (x - ax) * nx + (y - ay) * ny));
     const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve }, flip = rng.chance(0.5);
     const cap = Math.min(o.maxLines, rng.int(3, 5));
-    let d = off0, k = 0;
-    for (; d < h - 0.8; d += sp * rng.range(0.95, 1.05)) {
-      if (k === cap && h - d > sp * 1.2) break;
-      const qx = ax + nx * d, qy = ay + ny * d;
+    // Where a line through (qx, qy) along (dx, dy) enters and leaves the cell.
+    const clip = (qx, qy, dx, dy) => {
       let t0 = Infinity, t1 = -Infinity;
       for (let j = 0; j < m; j++) {
         const [p1x, p1y] = poly[j], [p2x, p2y] = poly[(j + 1) % m];
-        const ex = p2x - p1x, ey = p2y - p1y, den = ux * ey - uy * ex;
+        const ex = p2x - p1x, ey = p2y - p1y, den = dx * ey - dy * ex;
         if (Math.abs(den) < 1e-9) continue;
         const wx = p1x - qx, wy = p1y - qy;
-        const t = (wx * ey - wy * ex) / den, u = (wx * uy - wy * ux) / den;
+        const t = (wx * ey - wy * ex) / den, u = (wx * dy - wy * dx) / den;
         if (u >= -1e-6 && u <= 1 + 1e-6) { t0 = Math.min(t0, t); t1 = Math.max(t1, t); }
       }
+      return [t0, t1];
+    };
+    // The group fans: each stroke turns a little further than the last, plus a
+    // small jitter of its own; gaps vary too.
+    const fanStep = ((rng.chance(0.5) ? 1 : -1) * o.fan * rng.range(0.5, 1)) / Math.max(1, cap - 1);
+    let d = off0, k = 0;
+    for (; d < h - 0.8; d += sp * (1 + rng.range(-1, 1) * o.gapvar)) {
+      if (k === cap && h - d > sp * 1.2) break;
+      let qx = ax + nx * d, qy = ay + ny * d;
+      let [t0, t1] = clip(qx, qy, ux, uy);
       if (!(t1 > t0)) continue;
-      // Ends stop a little short of the edges, by uneven amounts.
+      // Turn the stroke about its middle, then clip again.
+      const turn = fanStep * (k - (cap - 1) / 2) + rng.range(-1, 1) * o.angjit;
+      const cs = Math.cos(turn), sn = Math.sin(turn), dx = ux * cs - uy * sn, dy = ux * sn + uy * cs;
+      qx += ux * (t0 + t1) / 2; qy += uy * (t0 + t1) / 2;
+      [t0, t1] = clip(qx, qy, dx, dy);
+      if (!(t1 > t0)) continue;
+      // Ends stop short of the edges by uneven amounts, so they stagger.
       const e0 = trim + rng.range(0, o.seam) * sp, e1 = trim + rng.range(0, o.seam) * sp;
       if (t1 - t0 > e0 + e1 + 0.6) { t0 += e0; t1 -= e1; }
-      let s = { x0: qx + ux * t0, y0: qy + uy * t0, x1: qx + ux * t1, y1: qy + uy * t1 };
+      let s = { x0: qx + dx * t0, y0: qy + dy * t0, x1: qx + dx * t1, y1: qy + dy * t1 };
       if (flip) s = { x0: s.x1, y0: s.y1, x1: s.x0, y1: s.y0 };
       k++;
       s = fray(s);
@@ -1128,9 +1145,9 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "stretch", "quads", "seam", "zonew", "radtol", "nearz", "encl", "showzones", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "stretch", "quads", "seam", "fan", "angjit", "gapvar", "zonew", "radtol", "nearz", "encl", "showzones", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, stretch: (v) => `${v}×`, zonew: (v) => `${v}×`, radtol: (v) => `±${Math.round((v * 180) / Math.PI)}°`, nearz: (v) => `${v} tiles`, encl: (v) => `${v} tiles`, showzones: () => "", quads: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, stretch: (v) => `${v}×`, fan: (v) => `${Math.round((v * 180) / Math.PI)}°`, angjit: (v) => `±${((v * 180) / Math.PI).toFixed(1)}°`, gapvar: (v) => `±${Math.round(v * 100)}%`, zonew: (v) => `${v}×`, radtol: (v) => `±${Math.round((v * 180) / Math.PI)}°`, nearz: (v) => `${v} tiles`, encl: (v) => `${v} tiles`, showzones: () => "", quads: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
