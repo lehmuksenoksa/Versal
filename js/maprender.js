@@ -19,12 +19,13 @@ const GRID = { wobble: 0.8, breaks: 0.35 };
 // With `plan` set, only the floor and the walls are drawn: no hatching or grid.
 // `hatch: false` leaves out just the hatching, and `paper: false` leaves the
 // rock transparent (for laying over hatching drawn some other way). `floor`
-// (the floor and its shadow), `grid`, `walls` and `keys` (the room numbers)
-// can each be left out too, to draw them as separate layers.
+// (the floor and its shadow, or just the `shadow`), `grid`, `walls` and
+// `keys` (the room numbers) can each be left out too, to draw them as
+// separate layers.
 // Returns the canvas, the floor outline (a path and its loops) and the
 // hatching strokes.
 export function renderMap(level, TS, scale, seed, {
-  plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, grid = !plan, walls = true, keys = true,
+  plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, shadow = true, grid = !plan, walls = true, keys = true,
 } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
@@ -56,7 +57,7 @@ export function renderMap(level, TS, scale, seed, {
   if (withFloor) {
     ctx.fillStyle = PAPER;
     ctx.fill(floor, "evenodd");
-    drawShadow(ctx, level, TS, floor);
+    if (shadow) drawShadow(ctx, level, TS, floor);
   }
   const gridRng = rng.fork();
   if (grid) drawGrid(ctx, W, H, TS, gridRng, open);

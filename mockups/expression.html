@@ -271,6 +271,7 @@ function drawBase() {
   const layer = (o) => renderMap(level, TS, scale, seed, { hatch: false, paper: false, floor: false, grid: false, walls: false, keys: false, ...o });
   const drawn = layer({ floor: true });
   M.floorLayer = drawn.canvas;
+  M.floorPlain = layer({ floor: true, shadow: false }).canvas; // remembered floor: no shadow
   M.markLayer = layer({ grid: true, keys: true }).canvas;
   M.wallLayer = layer({ walls: true }).canvas;
   const cw = drawn.canvas.width, ch = drawn.canvas.height;
@@ -623,7 +624,7 @@ function rebuild() {
     // Floor seen at all is cleared of hatching, in the rock's tone; the floor
     // itself goes over that as strongly as it was seen.
     lay(g, M.floorLayer, glimpsedMask, stone, 1);
-    lay(g, M.floorLayer, mask, null, 1);
+    lay(g, pre === "mem" ? M.floorPlain : M.floorLayer, mask, null, 1);
     overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), "multiply");
     lay(g, M.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"]);
     lay(g, M.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"]);
