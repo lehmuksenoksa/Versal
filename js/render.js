@@ -42,7 +42,7 @@ export const VIS_DEFAULTS = {
   sight: 7, // how far the player sees, in tiles
   unknown: "dark", // what hides unexplored ground: "paper" (the blank page) or "dark"
   softness: 2, // width of the soft edge of what's in sight, in tiles
-  memory: "sepia", // remembered but out of sight: see MEMORY_STYLES
+  memory: "plan", // remembered but out of sight: see MEMORY_STYLES
   memDark: "yes", // does the darkness beyond the light also fall on remembered ground?
   fade: 0.85, // how far remembered areas wash out toward the paper
   reveal: 0.3, // seconds for newly seen ground to ink in
@@ -156,7 +156,7 @@ export class Renderer {
     // "hard" is exact, "soft" eases toward it (so new ground inks in) with
     // a blurred edge.
     if (!this.seenHard) {
-      [this.visHard, this.visWide, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp] = [0, 0, 0, 0, 0, 0].map(() => this.makeMask(L));
+      [this.visHard, this.visWide, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp, this.maskTarget] = [0, 0, 0, 0, 0, 0, 0].map(() => this.makeMask(L));
       this.maskLight = document.createElement("canvas");
       this.hit = document.createElement("canvas").getContext("2d");
     }
@@ -296,11 +296,23 @@ export class Renderer {
 
   easeMasks(dt) {
     const v = this.vis;
-    // Ease the soft masks toward the hard ones: soft = soft + (blur(hard) - soft) * rate.
+    // Ease the soft masks toward their targets: soft = soft + (target - soft) * rate.
+    // The target is the hard mask blurred, then trimmed back to the hard mask
+    // plus a hair's width, so the soft edge fades inward but never spreads
+    // through a wall onto floor behind it.
     const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
     const blur = `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
-    const tmp = this.maskTmp.getContext("2d");
+    const hair = `blur(${MASK_RES * 0.2}px)`;
+    const tmp = this.maskTmp.getContext("2d"), tg = this.maskTarget.getContext("2d");
     for (const [hard, soft] of [[this.visWide, this.maskVis], [this.seenHard, this.maskSeen]]) {
+      tg.clearRect(0, 0, soft.width, soft.height);
+      tg.filter = blur;
+      tg.drawImage(hard, 0, 0);
+      tg.globalCompositeOperation = "destination-in";
+      tg.filter = hair;
+      tg.drawImage(hard, 0, 0);
+      tg.filter = "none";
+      tg.globalCompositeOperation = "source-over";
       const sg = soft.getContext("2d");
       tmp.clearRect(0, 0, soft.width, soft.height);
       tmp.drawImage(soft, 0, 0);
@@ -309,9 +321,7 @@ export class Renderer {
       sg.drawImage(this.maskTmp, 0, 0);
       sg.globalAlpha = rate;
       sg.globalCompositeOperation = "lighter";
-      sg.filter = blur;
-      sg.drawImage(hard, 0, 0);
-      sg.filter = "none";
+      sg.drawImage(this.maskTarget, 0, 0);
       sg.globalCompositeOperation = "source-over";
       sg.globalAlpha = 1;
     }
