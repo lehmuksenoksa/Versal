@@ -69,6 +69,18 @@
   </div>
 
   <fieldset>
+    <legend>Player and light</legend>
+    <label for="mode">What is in sight <select id="mode"><option value="player">What the player sees (click to place, arrows or WASD to walk)</option><option value="rooms">Rooms you choose (click to cycle a room)</option></select></label>
+    <div class="buttons" data-mode="player"><button id="forget" class="plain" type="button">Forget what was seen</button></div>
+    <label for="sight" data-mode="player">Sight reaches <output id="sight-v"></output><input id="sight" type="range" min="2" max="16" step="0.5"></label>
+    <label for="radius" data-mode="player">Light radius <output id="radius-v"></output><input id="radius" type="range" min="0" max="16" step="0.5"></label>
+    <label for="dark" data-mode="player">Darkness beyond the light <output id="dark-v"></output><input id="dark" type="range" min="0" max="0.95" step="0.05"></label>
+    <label for="warmth" data-mode="player">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
+    <label for="shadowSoft" data-mode="player">Shadow edges <output id="shadowSoft-v"></output><input id="shadowSoft" type="range" min="0" max="2" step="0.05"></label>
+    <label for="memDark" data-mode="player">Darkness falls on remembered ground <select id="memDark"><option value="yes">Yes</option><option value="no">No</option></select></label>
+  </fieldset>
+
+  <fieldset data-mode="rooms">
     <legend>Ground</legend>
     <div class="buttons">
       <button id="some" class="plain" type="button">Partly explored</button>
@@ -167,6 +179,7 @@ import { generateLevel, isOpen } from "../js/dungeon.js";
 import { RNG } from "../js/rng.js";
 import { renderMap, drawPaper, INK, PAPER } from "../js/maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds } from "../js/hatching.js";
+import { Walls } from "../js/sightline.js";
 
 const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
@@ -174,18 +187,23 @@ const R = 8; // mask pixels per tile
 const WALL_BAND = 0.5;
 // What is known of each room and corridor.
 const UNKNOWN = 0, REMEMBERED = 1, SIGHT = 2;
+// The light reaches this far (in tiles) into the rock past a wall it falls on.
+const LIGHT_BAND = 0.6;
 const DEFAULTS = {
   depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
   seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
   memDepth: 0.35, memFloorMix: 0.85, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
   outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
-  rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat", show: "map", zoom: 0.3,
+  rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat",
+  mode: "player", sight: 8, radius: 5, dark: 0.7, warmth: 1, shadowSoft: 0.15, memDark: "yes",
+  show: "map", zoom: 0.3,
 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: (v) => `${v} tiles`, rockTone: pct,
+  sight: (v) => `${v} tiles`, radius: (v) => (+v ? `${v} tiles` : "no light"), dark: pct, warmth: pct, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
   seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   memDepth: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
@@ -241,6 +259,7 @@ function newMap(seed = (Math.random() * 2 ** 32) >>> 0) {
   const dr = new RNG(seed ^ 0xd07);
   M.dots = Array.from({ length: W * H * 40 }, () => [dr.range(0, W * TS), dr.range(0, H * TS), dr.next(), dr.range(0.6, 1.4)]);
   explore();
+  M.player = { x: level.start.x, y: level.start.y };
   drawBase();
 }
 
@@ -284,6 +303,13 @@ function drawBase() {
       pixUnit[y * mw + x] = u;
     }
   Object.assign(M, { mw, mh, pixUnit });
+  // For sight and light: the walls to cast against, and the rock (everything
+  // but the floor).
+  M.sightWalls = new Walls(drawn.loops, TS * 2);
+  M.rock = new Path2D();
+  M.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
+  M.rock.addPath(drawn.floor);
+  if (!M.seen) M.seen = new Uint8Array(mw * mh);
   canvas.width = drawn.canvas.width;
   canvas.height = drawn.canvas.height;
   canvas.style.width = `${(W * TS * S.zoom).toFixed(0)}px`;
@@ -443,12 +469,37 @@ function compose() {
   // Known floor (in sight or remembered), the floor in sight, and the
   // floor only remembered.
   const isKnown = new Uint8Array(n), isSight = new Uint8Array(n), isMem = new Uint8Array(n);
-  for (let j = 0; j < n; j++) {
-    const st = pixUnit[j] >= 0 ? state[pixUnit[j]] : UNKNOWN;
-    isKnown[j] = st !== UNKNOWN ? 1 : 0;
-    isSight[j] = st === SIGHT ? 1 : 0;
-    isMem[j] = st === REMEMBERED ? 1 : 0;
-  }
+  const playerMode = S.mode === "player";
+  let sightPath = null, px = 0, py = 0;
+  if (playerMode) {
+    // What the player sees: the floor within reach of the sight polygon,
+    // cast against the walls; what they have seen is remembered.
+    px = (M.player.x + 0.5) * TS;
+    py = (M.player.y + 0.5) * TS;
+    sightPath = M.sightWalls.visible(px, py, (Math.max(S.sight, S.radius * 1.1) + 1) * TS);
+    const c = document.createElement("canvas");
+    c.width = mw;
+    c.height = mh;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.setTransform(R / TS, 0, 0, R / TS, 0, 0);
+    g.beginPath();
+    g.arc(px, py, S.sight * TS, 0, Math.PI * 2);
+    g.clip();
+    g.fill(sightPath);
+    const a = g.getImageData(0, 0, mw, mh).data;
+    for (let j = 0; j < n; j++) {
+      if (pixUnit[j] < 0) continue;
+      if (a[j * 4 + 3] >= 128) { isSight[j] = 1; M.seen[j] = 1; }
+      else if (M.seen[j]) isMem[j] = 1;
+      isKnown[j] = isSight[j] | isMem[j];
+    }
+  } else
+    for (let j = 0; j < n; j++) {
+      const st = pixUnit[j] >= 0 ? state[pixUnit[j]] : UNKNOWN;
+      isKnown[j] = st !== UNKNOWN ? 1 : 0;
+      isSight[j] = st === SIGHT ? 1 : 0;
+      isMem[j] = st === REMEMBERED ? 1 : 0;
+    }
   const { d2 } = nearestSeeds(isKnown, mw, mh);
   // Two depth maps: from the walls in sight, and (weaker) from all the known
   // walls. Each spot takes the darker; `fromMem` marks where that is memory.
@@ -643,14 +694,96 @@ function compose() {
       }
     }
   }
-  const count = (v) => state.reduce((a, b) => a + (b === v ? 1 : 0), 0);
-  $("status").textContent = `${count(SIGHT)} in sight, ${count(REMEMBERED)} remembered, of ${state.length} rooms and corridors; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
+  if (playerMode && S.show === "map") {
+    drawLight(px, py, sightPath, isSight);
+    // The player.
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.font = `bold ${TS * 0.85}px Georgia, serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#a3261b";
+    ctx.fillText("@", px, py + TS * 0.03);
+  }
+  if (playerMode) $("status").textContent = `${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
+  else {
+    const count = (v) => state.reduce((a, b) => a + (b === v ? 1 : 0), 0);
+    $("status").textContent = `${count(SIGHT)} in sight, ${count(REMEMBERED)} remembered, of ${state.length} rooms and corridors; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
+  }
+}
+
+// The candle carried by the player: bright at the player, fading out at its
+// radius, reaching only what can be seen from there (and the face of the
+// walls it falls on), so walls cast shadows. Darkness everywhere else, and a
+// warm tint within it, both multiplied over the map.
+function drawLight(px, py, sightPath, isSight) {
+  const { scale } = M, rad = S.radius * TS;
+  const light = document.createElement("canvas");
+  light.width = canvas.width;
+  light.height = canvas.height;
+  const lg = light.getContext("2d");
+  if (rad > 0) {
+    lg.setTransform(scale, 0, 0, scale, 0, 0);
+    const grad = lg.createRadialGradient(px, py, 0, px, py, rad);
+    grad.addColorStop(0, "rgba(0, 0, 0, 1)");
+    grad.addColorStop(0.55, "rgba(0, 0, 0, 0.8)");
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    lg.filter = S.shadowSoft > 0 ? `blur(${S.shadowSoft * TS * scale}px)` : "none";
+    lg.fillStyle = grad;
+    lg.fill(sightPath);
+    lg.save();
+    lg.clip(M.rock, "evenodd");
+    lg.fill(sightPath.beyond(LIGHT_BAND * TS));
+    lg.restore();
+    lg.filter = "none";
+  }
+  const shade = document.createElement("canvas");
+  shade.width = canvas.width;
+  shade.height = canvas.height;
+  const sg = shade.getContext("2d");
+  const pass = (paint) => {
+    sg.globalCompositeOperation = "source-over";
+    sg.clearRect(0, 0, shade.width, shade.height);
+    paint();
+    sg.globalCompositeOperation = "source-over";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(shade, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+  };
+  if (S.dark > 0)
+    pass(() => {
+      sg.fillStyle = `rgba(40, 24, 10, ${S.dark})`;
+      sg.fillRect(0, 0, shade.width, shade.height);
+      sg.globalCompositeOperation = "destination-out";
+      sg.drawImage(light, 0, 0);
+      if (S.memDark === "no") {
+        // Leave remembered ground out of the darkness: only what is in sight
+        // (and the unexplored dark) darkens beyond the light.
+        const keep = document.createElement("canvas");
+        keep.width = M.mw;
+        keep.height = M.mh;
+        const img = new ImageData(M.mw, M.mh);
+        for (let j = 0; j < M.mw * M.mh; j++) if (!M.seen[j] || isSight[j]) img.data[j * 4 + 3] = 255;
+        keep.getContext("2d").putImageData(img, 0, 0);
+        sg.globalCompositeOperation = "destination-in";
+        sg.imageSmoothingEnabled = true;
+        sg.drawImage(keep, 0, 0, shade.width, shade.height);
+      }
+    });
+  if (S.warmth > 0 && rad > 0)
+    pass(() => {
+      sg.fillStyle = `rgba(255, 205, 140, ${S.warmth * 0.4})`;
+      sg.fillRect(0, 0, shade.width, shade.height);
+      sg.globalCompositeOperation = "destination-in";
+      sg.drawImage(light, 0, 0);
+    });
 }
 
 // Only the settings the chosen depth map uses.
 function showFor() {
   for (const el of document.querySelectorAll("[data-for]")) el.hidden = el.dataset.for !== S.depth;
   for (const el of document.querySelectorAll("[data-fade]")) el.hidden = el.dataset.fade !== S.fadeBy;
+  for (const el of document.querySelectorAll("[data-mode]")) el.hidden = el.dataset.mode !== S.mode;
 }
 function show(s) {
   for (const k of keys) {
@@ -662,6 +795,7 @@ for (const k of keys)
   $(k).addEventListener("input", () => {
     S[k] = $(k).type === "range" ? parseFloat($(k).value) : $(k).value;
     if (fmt[k]) $(k + "-v").textContent = fmt[k](S[k]);
+    if ($(k).tagName === "SELECT") $(k).blur();
     showFor();
     if (!M) return;
     if (k === "zoom") { clearTimeout(M.zoomWait); M.zoomWait = setTimeout(drawBase, 250); }
@@ -682,10 +816,34 @@ canvas.addEventListener("click", (e) => {
   const tx = Math.floor(((e.clientX - r.left) / r.width) * M.W), ty = Math.floor(((e.clientY - r.top) / r.height) * M.H);
   const u = M.unitOf[ty * M.W + tx];
   if (u < 0) return;
+  if (S.mode === "player") {
+    M.player = { x: tx, y: ty };
+    compose();
+    return;
+  }
   // Unknown, then in sight, then remembered, then unknown again.
   M.state[u] = [SIGHT, UNKNOWN, REMEMBERED][M.state[u]];
   compose();
 });
+// Walking: one tile at a time, onto floor; drawing waits for the last key.
+const STEPS = {
+  ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
+  w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
+};
+let walkWait = 0;
+window.addEventListener("keydown", (e) => {
+  if (!M || S.mode !== "player" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(e.target.tagName)) return;
+  const step = STEPS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+  if (!step) return;
+  e.preventDefault();
+  const x = M.player.x + step[0], y = M.player.y + step[1];
+  if (x < 0 || y < 0 || x >= M.W || y >= M.H || M.unitOf[y * M.W + x] < 0) return;
+  M.player = { x, y };
+  cancelAnimationFrame(walkWait);
+  walkWait = requestAnimationFrame(compose);
+});
+$("forget").addEventListener("click", () => { M.seen.fill(0); compose(); });
 $("all").addEventListener("click", () => { M.state.fill(SIGHT); compose(); });
 $("allmem").addEventListener("click", () => { M.state.fill(REMEMBERED); compose(); });
 $("none").addEventListener("click", () => { M.state.fill(UNKNOWN); compose(); });
