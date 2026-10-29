@@ -28,27 +28,23 @@
   }
   h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; letter-spacing: 0.01em; }
   header p { margin: 0 0 16px; max-width: 70ch; color: var(--muted); }
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: end;
-    padding: 12px 14px; margin-bottom: 18px;
-    background: var(--paper); border: 1px solid var(--rule);
-  }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 18px; }
+  .topbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .group { background: var(--paper); border: 1px solid var(--rule); padding: 8px 12px 10px; min-width: 0; }
+  .group summary { cursor: pointer; font-size: 16px; padding: 2px 0; }
+  .group summary span { color: var(--muted); font-size: 13px; }
+  .group[open] summary { margin-bottom: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
   .controls label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); min-width: 140px; }
   .controls output { color: var(--ink); font-variant-numeric: tabular-nums; }
   .controls input[type="range"] { width: 150px; accent-color: var(--accent); }
-  .profile {
-    flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center;
-    margin: 4px 0 0; padding: 8px 10px 10px; border: 1px solid var(--rule);
-  }
-  .profile legend { font-size: 13px; color: var(--ink); padding: 0 4px; }
-  .profile legend span { color: var(--muted); }
   #profile { width: 260px; height: 96px; max-width: 100%; background: var(--desk); cursor: ns-resize; touch-action: none; }
   .profile-sliders { display: flex; flex-wrap: wrap; gap: 10px 22px; }
   button {
     font: 15px var(--body); padding: 6px 14px; cursor: pointer;
     color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px;
   }
-  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
   figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 10px; min-width: 0; }
   canvas { display: block; width: 100%; height: auto; }
@@ -65,47 +61,76 @@
 </header>
 
 <div class="controls">
-  <label for="weight">Stroke weight <output id="weight-v"></output><input id="weight" type="range" min="0.8" max="6" step="0.1" value="3.2"></label>
-  <label for="vary">Random thickness <output id="vary-v"></output><input id="vary" type="range" min="0" max="1" step="0.05" value="0.15"></label>
-  <label for="curve">Curvature <output id="curve-v"></output><input id="curve" type="range" min="0" max="0.25" step="0.005" value="0.015"></label>
-  <label for="wobble">Hand wobble <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="3" step="0.1" value="0.4"></label>
-  <label for="maxlines">Max lines per group <output id="maxlines-v"></output><input id="maxlines" type="range" min="1" max="5" step="1" value="5"></label>
-  <label for="spacing">Line spacing <output id="spacing-v"></output><input id="spacing" type="range" min="3" max="12" step="0.25" value="7.5"></label>
-  <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
-  <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
-  <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
-  <label for="mingroup">Fewest strokes per group <output id="mingroup-v"></output><input id="mingroup" type="range" min="1" max="5" step="1" value="3"></label>
-  <label for="wallang">Min angle to walls (E2, F, G, H) <output id="wallang-v"></output><input id="wallang" type="range" min="0" max="1.2" step="0.05" value="0.55"></label>
-  <label for="dots">Groups ending in a dot (E2, F, G) <output id="dots-v"></output><input id="dots" type="range" min="0" max="1" step="0.05" value="0.6"></label>
-  <label for="holes">Fill holes wider than (G) <output id="holes-v"></output><input id="holes" type="range" min="0.6" max="2" step="0.05" value="1"></label>
-  <label for="tri">Triangle size (H) <output id="tri-v"></output><input id="tri" type="range" min="0.5" max="2" step="0.05" value="1.2"></label>
-  <label for="stretch">Cell stretch (H) <output id="stretch-v"></output><input id="stretch" type="range" min="1" max="4" step="0.1" value="2"></label>
-  <label for="quads">Four-sided cells (H) <output id="quads-v"></output><input id="quads" type="range" min="0" max="1" step="0.05" value="0.5"></label>
-  <label for="seam">Ragged seams (H) <output id="seam-v"></output><input id="seam" type="range" min="0" max="1" step="0.05" value="0.3"></label>
-  <label for="shrink">Shorter with each stroke (E, E2) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
-  <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
-  <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
-  <button id="reseed" type="button">New layout</button>
-  <fieldset class="profile">
-    <legend>Walls and floor grid</legend>
-    <label for="wallw">Wall weight <output id="wallw-v"></output><input id="wallw" type="range" min="2" max="12" step="0.25" value="6"></label>
-    <label for="wallin">Weight inside the room <output id="wallin-v"></output><input id="wallin" type="range" min="0" max="0.5" step="0.05" value="0.2"></label>
-    <label for="wallseg">Wall stroke length <output id="wallseg-v"></output><input id="wallseg" type="range" min="0.3" max="3" step="0.05" value="0.9"></label>
-    <label for="wallkink">Wall stroke tilt <output id="wallkink-v"></output><input id="wallkink" type="range" min="0" max="3" step="0.1" value="1"></label>
-    <label for="wallwob">Wall stroke bow <output id="wallwob-v"></output><input id="wallwob" type="range" min="0" max="3" step="0.1" value="0.4"></label>
-    <label for="gridwob">Grid wobble <output id="gridwob-v"></output><input id="gridwob" type="range" min="0" max="2.5" step="0.1" value="0.8"></label>
-    <label for="gridbreak">Grid breaks <output id="gridbreak-v"></output><input id="gridbreak" type="range" min="0" max="1" step="0.05" value="0.35"></label>
-    <label for="wallvary">Wall thickness variation <output id="wallvary-v"></output><input id="wallvary" type="range" min="0" max="0.6" step="0.05" value="0.25"></label>
-  </fieldset>
-  <fieldset class="profile">
-    <legend>Thickness along the stroke <span>(drag the dots; × stroke weight)</span></legend>
-    <canvas id="profile" width="260" height="96" aria-label="Thickness profile editor"></canvas>
-    <div class="profile-sliders">
-      <label for="pstart">Start <output id="pstart-v"></output><input id="pstart" type="range" min="0" max="3" step="0.05" value="1"></label>
-      <label for="pmid">Middle <output id="pmid-v"></output><input id="pmid" type="range" min="0" max="3" step="0.05" value="1.1"></label>
-      <label for="pend">End <output id="pend-v"></output><input id="pend" type="range" min="0" max="3" step="0.05" value="0.65"></label>
+  <div class="topbar"><button id="reseed" type="button">New layout</button><span>Click a group's title to fold it away.</span></div>
+  <details class="group" open>
+    <summary>Strokes</summary>
+    <div class="row">
+      <label for="weight">Stroke weight <output id="weight-v"></output><input id="weight" type="range" min="0.8" max="6" step="0.1" value="3.2"></label>
+      <label for="vary">Random thickness <output id="vary-v"></output><input id="vary" type="range" min="0" max="1" step="0.05" value="0.15"></label>
+      <label for="curve">Curvature <output id="curve-v"></output><input id="curve" type="range" min="0" max="0.25" step="0.005" value="0.015"></label>
+      <label for="wobble">Hand wobble <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="3" step="0.1" value="0.4"></label>
+      <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
     </div>
-  </fieldset>
+  </details>
+  <details class="group" open>
+    <summary>Thickness along the stroke <span>(drag the dots; &times; stroke weight)</span></summary>
+    <div class="row">
+      <canvas id="profile" width="260" height="96" aria-label="Thickness profile editor"></canvas>
+      <div class="profile-sliders">
+        <label for="pstart">Start <output id="pstart-v"></output><input id="pstart" type="range" min="0" max="3" step="0.05" value="1"></label>
+        <label for="pmid">Middle <output id="pmid-v"></output><input id="pmid" type="range" min="0" max="3" step="0.05" value="1.1"></label>
+        <label for="pend">End <output id="pend-v"></output><input id="pend" type="range" min="0" max="3" step="0.05" value="0.65"></label>
+      </div>
+    </div>
+  </details>
+  <details class="group" open>
+    <summary>Groups</summary>
+    <div class="row">
+      <label for="spacing">Line spacing <output id="spacing-v"></output><input id="spacing" type="range" min="3" max="12" step="0.25" value="7.5"></label>
+      <label for="maxlines">Max lines per group <output id="maxlines-v"></output><input id="maxlines" type="range" min="1" max="5" step="1" value="5"></label>
+      <label for="mingroup">Fewest strokes per group <output id="mingroup-v"></output><input id="mingroup" type="range" min="1" max="5" step="1" value="3"></label>
+      <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
+      <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
+      <label for="shrink">Shorter with each stroke (E, E2) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
+      <label for="dots">Groups ending in a dot (E2&ndash;G) <output id="dots-v"></output><input id="dots" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+    </div>
+  </details>
+  <details class="group" open>
+    <summary>Coverage</summary>
+    <div class="row">
+      <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3"></label>
+      <label for="wallang">Min angle to walls (E2&ndash;H) <output id="wallang-v"></output><input id="wallang" type="range" min="0" max="1.2" step="0.05" value="0.55"></label>
+      <label for="holes">Fill holes wider than (G) <output id="holes-v"></output><input id="holes" type="range" min="0.6" max="2" step="0.05" value="1"></label>
+      <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+    </div>
+  </details>
+  <details class="group" open>
+    <summary>Cells <span>(panel H only)</span></summary>
+    <div class="row">
+      <label for="tri">Cell size <output id="tri-v"></output><input id="tri" type="range" min="0.5" max="2" step="0.05" value="1.2"></label>
+      <label for="stretch">Cell stretch <output id="stretch-v"></output><input id="stretch" type="range" min="1" max="4" step="0.1" value="2"></label>
+      <label for="quads">Four-sided cells <output id="quads-v"></output><input id="quads" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+      <label for="seam">Ragged seams <output id="seam-v"></output><input id="seam" type="range" min="0" max="1" step="0.05" value="0.3"></label>
+    </div>
+  </details>
+  <details class="group" open>
+    <summary>Walls</summary>
+    <div class="row">
+      <label for="wallw">Wall weight <output id="wallw-v"></output><input id="wallw" type="range" min="2" max="12" step="0.25" value="6"></label>
+      <label for="wallin">Weight inside the room <output id="wallin-v"></output><input id="wallin" type="range" min="0" max="0.5" step="0.05" value="0.2"></label>
+      <label for="wallseg">Wall stroke length <output id="wallseg-v"></output><input id="wallseg" type="range" min="0.3" max="3" step="0.05" value="0.9"></label>
+      <label for="wallkink">Wall stroke tilt <output id="wallkink-v"></output><input id="wallkink" type="range" min="0" max="3" step="0.1" value="1"></label>
+      <label for="wallwob">Wall stroke bow <output id="wallwob-v"></output><input id="wallwob" type="range" min="0" max="3" step="0.1" value="0.4"></label>
+      <label for="wallvary">Wall thickness variation <output id="wallvary-v"></output><input id="wallvary" type="range" min="0" max="0.6" step="0.05" value="0.25"></label>
+    </div>
+  </details>
+  <details class="group" open>
+    <summary>Floor grid</summary>
+    <div class="row">
+      <label for="gridwob">Grid wobble <output id="gridwob-v"></output><input id="gridwob" type="range" min="0" max="2.5" step="0.1" value="0.8"></label>
+      <label for="gridbreak">Grid breaks <output id="gridbreak-v"></output><input id="gridbreak" type="range" min="0" max="1" step="0.05" value="0.35"></label>
+    </div>
+  </details>
 </div>
 
 <div class="grid">
