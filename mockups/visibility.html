@@ -65,6 +65,11 @@
   </div>
 
   <fieldset>
+    <legend>View</legend>
+    <label for="camera">Camera <select id="camera"><option value="fixed">Fixed, whole map</option><option value="follow">Follows the player</option></select></label>
+  </fieldset>
+
+  <fieldset>
     <legend>Sight</legend>
     <label for="sight">How far the player sees <output id="sight-v"></output><input id="sight" type="range" min="3" max="16" step="1"></label>
     <label for="reveal">Time for new ground to ink in <output id="reveal-v"></output><input id="reveal" type="range" min="0" max="1.5" step="0.05"></label>
@@ -138,8 +143,18 @@ for (const k of keys) {
   el.addEventListener("change", () => el.blur());
 }
 
+// With a fixed camera the whole map fits the view and nothing scrolls.
+function applyCamera() {
+  renderer.follow = $("camera").value === "follow";
+  renderer.cam.snap = true;
+  if (world) renderer.setZoom(renderer.follow ? 0.75 : renderer.fitZoom(world.level));
+}
+$("camera").addEventListener("change", (e) => { applyCamera(); e.target.blur(); });
+
 function newMap() {
   world = new World(undefined, { sight: renderer.vis.sight });
+  renderer.follow = $("camera").value === "follow";
+  if (!renderer.follow) renderer.zoom = renderer.fitZoom(world.level);
   renderer.setWorld(world);
 }
 $("newmap").addEventListener("click", newMap);
@@ -175,7 +190,7 @@ canvas.addEventListener("click", (e) => {
   const dx = Math.sign(t.x - world.player.x), dy = Math.sign(t.y - world.player.y);
   if (dx || dy) world.playerMove(dx, dy);
 });
-window.addEventListener("resize", () => renderer.resize());
+window.addEventListener("resize", () => { renderer.resize(); if (world && !renderer.follow) renderer.setZoom(renderer.fitZoom(world.level)); });
 bindZoom(renderer, canvas);
 
 function loop(now) {
