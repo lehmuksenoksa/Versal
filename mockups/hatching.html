@@ -47,10 +47,15 @@
     color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px;
   }
   button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
-  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 10px; min-width: 0; }
-  canvas { display: block; width: 100%; height: auto; }
-  figcaption { padding: 8px 2px 0; }
+  /* Panels keep the size the zoom gives them and wrap; a panel wider than the
+     screen scrolls sideways inside its own frame. */
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 10px; max-width: 100%; overflow-x: auto; }
+  figure canvas { display: block; width: var(--pw, 576px); height: auto; max-width: none; }
+  figcaption { padding: 8px 2px 0; width: var(--pw, 576px); max-width: calc(100vw - 56px); }
+  .zoom { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+  .zoom input { width: 160px; accent-color: var(--accent); }
+  .zoom output { min-width: 3.5em; font-variant-numeric: tabular-nums; }
   figcaption b { font-weight: normal; font-size: 18px; }
   figcaption span { display: block; color: var(--muted); font-size: 14px; }
   .ms { float: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -63,7 +68,9 @@
 </header>
 
 <div class="controls">
-  <div class="topbar"><button id="reseed" type="button">New layout</button><span>Click a group's title to fold it away.</span></div>
+  <div class="topbar"><button id="reseed" type="button">New layout</button>
+    <label class="zoom" for="zoom">Zoom <input id="zoom" type="range" min="0.5" max="3" step="0.25" value="1"><output id="zoom-v">100%</output></label>
+    <span>Click a group's title to fold it away.</span></div>
   <details class="group" open>
     <summary>Strokes</summary>
     <div class="row">
@@ -1160,10 +1167,28 @@ function params() {
   return o;
 }
 
+// Zoom: 100% shows one map pixel per screen pixel. Panels are painted at the
+// zoomed size, so they stay sharp.
+const zoomEl = document.getElementById("zoom");
+const zoom = () => parseFloat(zoomEl.value);
+function applyZoom() {
+  document.documentElement.style.setProperty("--pw", `${W * zoom()}px`);
+  document.getElementById("zoom-v").textContent = `${Math.round(zoom() * 100)}%`;
+  try { localStorage.setItem("hatching-zoom", zoomEl.value); } catch {}
+}
+try { const z = localStorage.getItem("hatching-zoom"); if (z) zoomEl.value = z; } catch {}
+applyZoom();
+zoomEl.addEventListener("input", () => {
+  applyZoom();
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; render(); });
+});
+
 function paint(id, fn) {
   const canvas = document.getElementById("c-" + id);
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = W * dpr; canvas.height = H * dpr;
+  const dpr = Math.min(3, (window.devicePixelRatio || 1) * zoom());
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
   const ctx = canvas.getContext("2d");
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = PAPER;
