@@ -184,6 +184,7 @@ const WALL_BAND = 0.5;
 // The light reaches this far (in tiles) into the rock past a wall it falls on.
 const LIGHT_BAND = 0.6;
 const STEP_MS = 140; // a step from tile to tile
+const PAPER_RGB = [247, 242, 230];
 const DEFAULTS = {
   sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
   radius: 5, lightFull: 0.3, flame: 0.3, flicker: 0.4, warmth: 0.5,
@@ -586,11 +587,22 @@ function rebuild() {
 
   // A look: paper, the rock toned, the hatching, then the floor (painted over
   // it), tinted toward the rock's colour, its markings and its walls.
+  const glimpsedMask = blank(mw, mh), gi = new ImageData(mw, mh);
+  for (let j = 0; j < n; j++) if (glimpsed[j]) gi.data[j * 4 + 3] = 255;
+  glimpsedMask.getContext("2d").putImageData(gi, 0, 0);
+  // The paper toned like the rock.
+  const stone = "#" + PAPER_RGB.map((p, i) => {
+    const r = parseInt(S.rockColor.slice(1 + 2 * i, 3 + 2 * i), 16);
+    return Math.round(p * (1 - S.rockTone + (S.rockTone * r) / 255)).toString(16).padStart(2, "0");
+  }).join("");
   const look = (pre) => {
     const c = blank(cw, ch), g = c.getContext("2d");
     g.drawImage(M.paper, 0, 0);
     if (S.rockTone > 0) overlay(g, S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1) * (floor[j] ? 1 - seen[j] : 1), "multiply");
     lay(g, ink, null, S[pre + "HatchC"], S[pre + "Hatch"]);
+    // Floor seen at all is cleared of hatching, in the rock's tone; the floor
+    // itself goes over that as strongly as it was seen.
+    lay(g, M.floorLayer, glimpsedMask, stone, 1);
     lay(g, M.floorLayer, mask, null, 1);
     overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * seen[j] : 0), "multiply");
     lay(g, M.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"]);
