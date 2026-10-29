@@ -39,7 +39,7 @@ const DART = [0.22, 0.6, 1.3];
 // How sight, memory and light are shown. The visibility mockup
 // (mockups/visibility.html) edits these live.
 export const VIS_DEFAULTS = {
-  sight: 7, // how far the player sees, in tiles
+  sight: 8, // how far the player sees, in tiles
   unknown: "dark", // what hides unexplored ground: "paper" (the blank page) or "dark"
   softness: 2, // width of the soft edge of what's in sight, in tiles
   memory: "plan", // remembered but out of sight: see MEMORY_STYLES
@@ -53,11 +53,17 @@ export const VIS_DEFAULTS = {
   flicker: 0.3,
   shadowSoft: 0.15, // how soft the edges of the light's shadows are, in tiles (0 is hard)
   lightUnknown: "yes", // does the light also fall on unexplored ground? "no" or "yes"
-  rock: 0.5, // how much darker the rock outside the rooms is than the floor
+  rock: 0.85, // how much darker the rock outside the rooms is than the floor
+  rockShow: "nearest", // which rock shows in sight: "nearest" or "sightlines" (see castSight)
+  rockReach: 2.5, // how far into the rock sight reaches, in tiles
+  rockNear: 1, // walls this far (in tiles of floor) from floor in sight show too
 };
-// Sight and light reach this far past a wall into the rock, so the walls and
-// the hatching just behind them show.
-const BAND = { sight: 2.4, light: 0.6 };
+// Light reaches this far past a wall into the rock, so the wall faces it
+// falls on are lit.
+const BAND = { light: 0.6 };
+// The rock is mapped out up to this far (in tiles) from the floor, for
+// `rockShow: "nearest"`.
+const ROCK_MAX = 6;
 // How remembered ground is drawn: a filter over the map (or over the plan,
 // the map with only floors and walls), then a wash toward the paper, or
 // toward the desk for the dark styles. `hatch` lays pencil shading over it.
@@ -150,6 +156,7 @@ export class Renderer {
     this.rock.rect(-L.w * this.TS, -L.h * this.TS, L.w * this.TS * 3, L.h * this.TS * 3);
     this.rock.addPath(drawn.floor);
     this.toneMap();
+    this.mapRock();
     this.walls = new Walls(drawn.loops, this.TS * 2);
     this.buildMemory();
     // What is in sight now and what has been seen, as masks over the map:
@@ -236,9 +243,9 @@ export class Renderer {
     this.sightPath = this.walls.visible(px, py, Math.max(sight, light) + TS);
     this.sightFrom = [px, py];
 
-    // In sight now: the visible floor within reach, plus the rock just past
-    // the wall faces it looks at. `grow` reaches further into the rock only,
-    // for the soft edge (never onto floor that is in shadow).
+    // In sight now: the visible floor within reach, plus some of the rock
+    // around it (see showRock). `grow` reaches further into the rock only, for
+    // the soft edge (never onto floor that is in shadow).
     const drawSight = (canvas, grow) => {
       const g = canvas.getContext("2d");
       g.setTransform(1, 0, 0, 1, 0, 0);
@@ -251,19 +258,24 @@ export class Renderer {
       g.clip();
       g.fill(this.sightPath);
       g.restore();
+      if (v.rockShow !== "sightlines") return;
+      // Only the rock just past the wall faces in view, along the lines of sight.
+      const band = v.rockReach * TS + grow;
       g.save();
       g.clip(this.rock, "evenodd");
       g.beginPath();
-      g.arc(px, py, sight + BAND.sight * TS + grow, 0, Math.PI * 2);
+      g.arc(px, py, sight + band, 0, Math.PI * 2);
       g.clip();
-      g.fill(this.sightPath.beyond(BAND.sight * TS + grow));
+      g.fill(this.sightPath.beyond(band));
       g.restore();
     };
-    drawSight(this.visHard, 0);
-    this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
     // The soft in-sight mask blurs a copy reaching further into the rock, so
     // walls and hatching in sight keep full ink.
-    drawSight(this.visWide, v.softness * TS * 0.9);
+    const grow = v.softness * 0.9;
+    drawSight(this.visHard, 0);
+    drawSight(this.visWide, grow * TS);
+    if (v.rockShow !== "sightlines") this.showRock(px / TS, py / TS, v.sight, v.rockReach, grow, v.rockNear);
+    this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
 
     // The light: bright at the player, fading out at its radius, reaching only
     // what can be seen from here (and the face of the walls). It is drawn at
@@ -292,6 +304,104 @@ export class Renderer {
     lg.fill(this.sightPath.beyond(BAND.light * TS));
     lg.restore();
     lg.filter = "none";
+  }
+
+  // Show the rock whose nearest floor is in sight, out to `reach` tiles from
+  // that floor (and `grow` further on the wide mask). Rock between seen floor
+  // and floor not yet seen shows only up to halfway, so the hatching never
+  // outlines a room or corridor before it is found. Floor within `near` tiles
+  // of floor in sight (walking over the floor, not through walls) counts as
+  // in sight here, so both walls of a corridor show when its floor does.
+  showRock(px, py, sight, reach, grow, near) {
+    const R = MASK_RES, mw = this.visHard.width, mh = this.visHard.height;
+    const wide = reach + grow, m = Math.ceil((sight + near + wide + 1) * R);
+    const x0 = Math.max(0, Math.floor(px * R) - m), y0 = Math.max(0, Math.floor(py * R) - m);
+    const x1 = Math.min(mw, Math.floor(px * R) + m), y1 = Math.min(mh, Math.floor(py * R) + m);
+    const bw = x1 - x0, bh = y1 - y0;
+    if (bw <= 0 || bh <= 0) return;
+    const gh = this.visHard.getContext("2d"), gw = this.visWide.getContext("2d");
+    gh.setTransform(1, 0, 0, 1, 0, 0);
+    gw.setTransform(1, 0, 0, 1, 0, 0);
+    const hard = gh.getImageData(x0, y0, bw, bh), wideImg = gw.getImageData(x0, y0, bw, bh);
+    const H = hard.data, W = wideImg.data;
+    const { owner, dist, floor } = this.rockMap;
+    // Floor in sight, then spread `near` tiles over the floor.
+    const inView = new Uint8Array(bw * bh);
+    let front = [];
+    for (let y = 0; y < bh; y++)
+      for (let x = 0; x < bw; x++) {
+        const j = y * bw + x;
+        if (floor[(y + y0) * mw + x + x0] && H[j * 4 + 3] >= 96) { inView[j] = 1; front.push(j); }
+      }
+    for (let step = Math.round(near * R); step > 0 && front.length; step--) {
+      const next = [];
+      for (const j of front) {
+        const x = j % bw, y = (j / bw) | 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy, n = ny * bw + nx;
+            if (nx < 0 || ny < 0 || nx >= bw || ny >= bh || inView[n] || !floor[(ny + y0) * mw + nx + x0]) continue;
+            inView[n] = 1;
+            next.push(n);
+          }
+      }
+      front = next;
+    }
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
+        const o = owner[y * mw + x];
+        if (o < 0) continue;
+        const d = dist[y * mw + x];
+        if (d > wide) continue;
+        const ox = (o % mw) - x0, oy = ((o / mw) | 0) - y0;
+        if (ox < 0 || oy < 0 || ox >= bw || oy >= bh || !inView[oy * bw + ox]) continue;
+        const j = ((y - y0) * bw + (x - x0)) * 4;
+        W[j] = W[j + 1] = W[j + 2] = W[j + 3] = 255;
+        if (d <= reach) H[j] = H[j + 1] = H[j + 2] = H[j + 3] = 255;
+      }
+    gh.putImageData(hard, x0, y0);
+    gw.putImageData(wideImg, x0, y0);
+  }
+
+  // For each mask pixel of rock within ROCK_MAX tiles of the floor: its
+  // nearest floor pixel (owner) and the distance to it in tiles. Floor pixels
+  // (marked in `floor`) and rock further out have owner -1.
+  mapRock() {
+    const L = this.world.level, R = MASK_RES, mw = L.w * R, mh = L.h * R, n = mw * mh;
+    if (this.rockMap?.level === L) return;
+    const c = document.createElement("canvas");
+    c.width = mw;
+    c.height = mh;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.setTransform(R / this.TS, 0, 0, R / this.TS, 0, 0);
+    g.fill(this.rock, "evenodd");
+    const a = g.getImageData(0, 0, mw, mh).data;
+    // Nearest floor pixel by two sweeps passing each pixel's nearest seed on
+    // to its neighbours (a vector distance transform).
+    const sx = new Int32Array(n).fill(-1), sy = new Int32Array(n), d2 = new Float64Array(n).fill(Infinity);
+    for (let i = 0; i < n; i++) if (a[i * 4 + 3] < 128) { sx[i] = i % mw; sy[i] = (i / mw) | 0; d2[i] = 0; }
+    const take = (x, y, nx, ny) => {
+      if (nx < 0 || ny < 0 || nx >= mw || ny >= mh) return;
+      const j = ny * mw + nx;
+      if (sx[j] < 0) return;
+      const i = y * mw + x, dx = x - sx[j], dy = y - sy[j], dd = dx * dx + dy * dy;
+      if (dd < d2[i]) { d2[i] = dd; sx[i] = sx[j]; sy[i] = sy[j]; }
+    };
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) { take(x, y, x - 1, y); take(x, y, x - 1, y - 1); take(x, y, x, y - 1); take(x, y, x + 1, y - 1); }
+      for (let x = mw - 1; x >= 0; x--) take(x, y, x + 1, y);
+    }
+    for (let y = mh - 1; y >= 0; y--) {
+      for (let x = mw - 1; x >= 0; x--) { take(x, y, x + 1, y); take(x, y, x + 1, y + 1); take(x, y, x, y + 1); take(x, y, x - 1, y + 1); }
+      for (let x = 0; x < mw; x++) take(x, y, x - 1, y);
+    }
+    const owner = new Int32Array(n).fill(-1), dist = new Float32Array(n), floor = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      floor[i] = d2[i] === 0 ? 1 : 0;
+      const d = Math.sqrt(d2[i]) / R;
+      if (d2[i] > 0 && d <= ROCK_MAX) { owner[i] = sy[i] * mw + sx[i]; dist[i] = d; }
+    }
+    this.rockMap = { level: L, owner, dist, floor };
   }
 
   easeMasks(dt) {

@@ -92,6 +92,9 @@
   <fieldset>
     <legend>Rock</legend>
     <label for="rock">Rock outside the rooms darkened by <output id="rock-v"></output><input id="rock" type="range" min="0" max="1" step="0.05"></label>
+    <label for="rockShow">Rock shown in sight <select id="rockShow"><option value="nearest">All rock nearer to seen floor than to unseen floor</option><option value="sightlines">Only past the walls in view, along sightlines</option></select></label>
+    <label for="rockReach">Reaching into the rock up to <output id="rockReach-v"></output><input id="rockReach" type="range" min="0.5" max="6" step="0.25"></label>
+    <label for="rockNear">Walls shown when floor within this of them is in sight <output id="rockNear-v"></output><input id="rockNear" type="range" min="0" max="3" step="0.25"></label>
   </fieldset>
 
   <fieldset>
@@ -125,7 +128,7 @@ let world = null, lastMove = 0;
 const fmt = {
   sight: (v) => `${v} tiles`, reveal: (v) => (+v ? `${v} s` : "instant"), softness: (v) => `${v} tiles`,
   fade: (v) => `${Math.round(v * 100)}%`, radius: (v) => `${v} tiles`, dark: (v) => `${Math.round(v * 100)}%`,
-  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, flicker: (v) => `${Math.round(v * 100)}%`, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
+  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, rockReach: (v) => `${v} tiles`, rockNear: (v) => (+v ? `${v} tiles` : "only their own floor"), flicker: (v) => `${Math.round(v * 100)}%`, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
 };
 const keys = Object.keys(VIS_DEFAULTS);
 function show(vis) {
