@@ -146,7 +146,7 @@ export class Renderer {
     // "hard" is exact, "soft" eases toward it (so new ground inks in) with
     // a blurred edge.
     if (!this.seenHard) {
-      [this.visHard, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp] = [0, 0, 0, 0, 0].map(() => this.makeMask(L));
+      [this.visHard, this.visWide, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp] = [0, 0, 0, 0, 0, 0].map(() => this.makeMask(L));
       this.maskLight = document.createElement("canvas");
       this.hit = document.createElement("canvas").getContext("2d");
     }
@@ -211,28 +211,38 @@ export class Renderer {
     this.sightFrom = [px, py];
 
     // In sight now: the visible polygon within reach, plus the rock just past
-    // the walls it meets.
-    const g = this.visHard.getContext("2d");
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, this.visHard.width, this.visHard.height);
-    g.setTransform(k, 0, 0, k, 0, 0);
-    g.fillStyle = g.strokeStyle = "#fff";
-    g.save();
-    g.beginPath();
-    g.arc(px, py, sight, 0, Math.PI * 2);
-    g.clip();
-    g.fill(this.sightPath);
-    g.restore();
-    g.save();
-    g.clip(this.rock, "evenodd");
-    g.beginPath();
-    g.arc(px, py, sight + BAND.sight * TS, 0, Math.PI * 2);
-    g.clip();
-    g.lineWidth = BAND.sight * TS * 2;
-    g.lineJoin = "round";
-    g.stroke(this.sightPath);
-    g.restore();
+    // the walls it meets. `grow` widens it all outward, for the soft edge.
+    const drawSight = (canvas, grow) => {
+      const g = canvas.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      g.setTransform(k, 0, 0, k, 0, 0);
+      g.fillStyle = g.strokeStyle = "#fff";
+      g.lineJoin = "round";
+      g.save();
+      g.beginPath();
+      g.arc(px, py, sight + grow, 0, Math.PI * 2);
+      g.clip();
+      g.fill(this.sightPath);
+      if (grow > 0) {
+        g.lineWidth = grow * 2;
+        g.stroke(this.sightPath);
+      }
+      g.restore();
+      g.save();
+      g.clip(this.rock, "evenodd");
+      g.beginPath();
+      g.arc(px, py, sight + BAND.sight * TS + grow, 0, Math.PI * 2);
+      g.clip();
+      g.lineWidth = (BAND.sight * TS + grow) * 2;
+      g.stroke(this.sightPath);
+      g.restore();
+    };
+    drawSight(this.visHard, 0);
     this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
+    // The soft in-sight mask blurs a widened copy, so the fade happens
+    // outside what is really in sight and that stays at full ink.
+    drawSight(this.visWide, v.softness * TS * 0.9);
 
     // The light: bright at the player, fading out at its radius, reaching only
     // what can be seen from here (and the face of the walls). It is drawn at
@@ -267,11 +277,11 @@ export class Renderer {
 
   easeMasks(dt) {
     const v = this.vis;
-    // Ease the soft masks toward the hard ones: soft = soft + (max-ish(hard, blur(hard)) - soft) * rate.
+    // Ease the soft masks toward the hard ones: soft = soft + (blur(hard) - soft) * rate.
     const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
     const blur = `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
     const tmp = this.maskTmp.getContext("2d");
-    for (const [hard, soft] of [[this.visHard, this.maskVis], [this.seenHard, this.maskSeen]]) {
+    for (const [hard, soft] of [[this.visWide, this.maskVis], [this.seenHard, this.maskSeen]]) {
       const sg = soft.getContext("2d");
       tmp.clearRect(0, 0, soft.width, soft.height);
       tmp.drawImage(soft, 0, 0);
@@ -280,12 +290,9 @@ export class Renderer {
       sg.drawImage(this.maskTmp, 0, 0);
       sg.globalAlpha = rate;
       sg.globalCompositeOperation = "lighter";
-      // The blurred edge only spreads outward: what is actually in sight
-      // stays at full strength (blur + hard, capped at 1 by "lighter").
       sg.filter = blur;
       sg.drawImage(hard, 0, 0);
       sg.filter = "none";
-      sg.drawImage(hard, 0, 0);
       sg.globalCompositeOperation = "source-over";
       sg.globalAlpha = 1;
     }
