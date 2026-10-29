@@ -267,7 +267,7 @@ export class Renderer {
 
   easeMasks(dt) {
     const v = this.vis;
-    // Ease the soft masks toward the hard ones: soft = soft + (blur(hard) - soft) * rate.
+    // Ease the soft masks toward the hard ones: soft = soft + (max-ish(hard, blur(hard)) - soft) * rate.
     const rate = v.reveal > 0 ? Math.min(1, dt / (v.reveal * 0.35)) : 1;
     const blur = `blur(${Math.max(0.01, v.softness * MASK_RES * 0.6)}px)`;
     const tmp = this.maskTmp.getContext("2d");
@@ -280,9 +280,12 @@ export class Renderer {
       sg.drawImage(this.maskTmp, 0, 0);
       sg.globalAlpha = rate;
       sg.globalCompositeOperation = "lighter";
+      // The blurred edge only spreads outward: what is actually in sight
+      // stays at full strength (blur + hard, capped at 1 by "lighter").
       sg.filter = blur;
       sg.drawImage(hard, 0, 0);
       sg.filter = "none";
+      sg.drawImage(hard, 0, 0);
       sg.globalCompositeOperation = "source-over";
       sg.globalAlpha = 1;
     }
