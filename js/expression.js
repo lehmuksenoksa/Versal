@@ -63,6 +63,10 @@ const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 // floor itself, its markings and walls come in.
 const clearOf = (v) => smooth((v - 0.1) / 0.35);
 const drawnAs = (v) => smooth((v - 0.4) / 0.6);
+// Out of date everywhere (see rebuildSteps); and the union of two areas
+// [x0, y0, x1, y1] (or either being ALL, or null for none).
+const ALL = "all";
+const unite = (a, b) => (a === ALL || b === ALL ? ALL : !a ? b : !b ? a : [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]);
 // Run a generator to the end; its result.
 const run = (gen) => {
   let r;
@@ -166,6 +170,8 @@ export class Expression {
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
     this.job = null;
+    this.bufs = this.hi = this.scratch = this.tints = null; // (made at the new size when drawn)
+    this.darkDirty = true;
     // The exact shape of all that has been seen, at full resolution, recast
     // from every place it was seen from (see learn).
     this.seenShape = blank(cw, ch);
@@ -187,12 +193,24 @@ export class Expression {
       this.learn(this.player.x, this.player.y);
       return true;
     }
-    return keys.some((k) => !LIVE_SETTINGS.has(k));
+    const redraw = keys.some((k) => !LIVE_SETTINGS.has(k));
+    if (redraw) {
+      this.outOfDate();
+      if (keys.some((k) => /C$|rockColor|rockTone/.test(k))) this.tints = null;
+    }
+    this.darkDirty = true;
+    return redraw;
+  }
+
+  // Everything to be redrawn in full.
+  outOfDate() {
+    for (const buf of this.bufs ?? []) buf.stale = ALL;
   }
 
   // Forget everything seen.
   forget() {
     this.seen.fill(0);
+    this.outOfDate();
     this.viewpoints?.clear();
     this.seenShape?.getContext("2d").clearRect(0, 0, this.seenShape.width, this.seenShape.height);
     if (this.player) this.learn(this.player.x, this.player.y);
@@ -247,6 +265,7 @@ export class Expression {
         if (v > seen[j]) {
           if (v - seen[j] > 0.15 || (seen[j] < 0.5 && v >= 0.5)) grew = true;
           seen[j] = v;
+          this.changed = unite(this.changed, [x, y, x + 1, y + 1]);
         }
       }
     const key = `${tx},${ty},${far}`;
@@ -454,40 +473,21 @@ export class Expression {
     return grey;
   }
 
-  // Lay a colour over canvas `g` from mask resolution: `alpha(j)` from 0 to 1
-  // at each mask pixel, with the given compositing.
-  overlay(g, hex, alpha, op, shape = null) {
-    const { mw, mh } = this, [r, gr, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    const img = new ImageData(mw, mh);
-    for (let j = 0; j < mw * mh; j++) {
-      const a = alpha(j);
-      if (!(a > 0)) continue;
-      img.data[j * 4] = r;
-      img.data[j * 4 + 1] = gr;
-      img.data[j * 4 + 2] = b;
-      img.data[j * 4 + 3] = Math.round(255 * Math.min(1, a));
-    }
-    const c = blank(mw, mh);
-    c.getContext("2d").putImageData(img, 0, 0);
-    if (shape) {
-      // Cut to the shape at full resolution first.
-      this.lay(g, c, null, null, 1, shape, op);
-      return;
-    }
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = op;
-    g.imageSmoothingEnabled = true;
-    g.drawImage(c, 0, 0, g.canvas.width, g.canvas.height);
-    g.globalCompositeOperation = "source-over";
-  }
-
-  // Draw `src` onto `g` (scaled to fit), cut to `mask` (mask resolution; none
-  // for all of it) and to `shape` (full resolution) if given, recoloured
-  // unless `colour` is null, at the given strength, with compositing `op`.
-  lay(g, src, mask, colour, strength, shape = null, op = "source-over") {
+  // Draw `src` onto `g` (scaled to fit), cut to `mask` (mask resolution, or
+  // full if `hiMask`; none for all of it) and to `shape` (full resolution)
+  // if given, recoloured unless `colour` is null, at the given strength,
+  // with compositing `op`. Only `this.area` (a canvas rectangle) is touched,
+  // if set.
+  lay(g, src, mask, colour, strength, shape = null, op = "source-over", hiMask = false) {
     if (strength <= 0) return;
     const w = this.scratch, wg = w.getContext("2d");
+    wg.save();
     wg.setTransform(1, 0, 0, 1, 0, 0);
+    if (this.area) {
+      wg.beginPath();
+      wg.rect(...this.area);
+      wg.clip();
+    }
     wg.globalCompositeOperation = "source-over";
     wg.clearRect(0, 0, w.width, w.height);
     wg.imageSmoothingEnabled = true;
@@ -500,12 +500,14 @@ export class Expression {
     if (mask) {
       wg.globalCompositeOperation = "destination-in";
       wg.imageSmoothingEnabled = true;
-      wg.drawImage(mask, 0, 0, w.width, w.height);
+      if (hiMask) wg.drawImage(mask, 0, 0);
+      else wg.drawImage(mask, 0, 0, w.width, w.height);
     }
     if (shape) {
       wg.globalCompositeOperation = "destination-in";
       wg.drawImage(shape, 0, 0);
     }
+    wg.restore();
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalAlpha = Math.min(1, strength);
     g.globalCompositeOperation = op;
@@ -519,6 +521,7 @@ export class Expression {
   // yet seen. The new drawing cross-fades in.
   rebuild() {
     this.job = this.again = null;
+    this.prev = null; // (no waiting for a fade)
     run(this.rebuildSteps());
   }
 
@@ -530,11 +533,22 @@ export class Expression {
     else this.job = this.rebuildSteps();
   }
 
-  // The work of redrawing, in slices.
+  // The work of redrawing, in slices. The looks and cover are kept in two
+  // sets of canvases, shown in turn: each redraw goes into the set not on
+  // show, and only where it is out of date (what changed since that set was
+  // last drawn, out to as far as such a change reaches); the rest of it is
+  // as it was.
   *rebuildSteps() {
     const { mw, mh, floor, seen, solid, scale, S, TS } = this, n = mw * mh;
     const cw = this.paper.width, ch = this.paper.height;
-    this.scratch = blank(cw, ch);
+    if (!this.bufs) this.bufs = [0, 1].map(() => ({ see: blank(cw, ch), mem: blank(cw, ch), cover: blank(cw, ch), stale: ALL }));
+    if (!this.scratch) this.scratch = blank(cw, ch);
+    if (!this.hi) this.hi = [blank(cw, ch), blank(cw, ch), blank(cw, ch)];
+    // What changed since the last redraw: both sets are now out of date there.
+    const changed = this.changed;
+    this.changed = null;
+    for (const buf of this.bufs) buf.stale = unite(buf.stale, changed);
+    const buf = this.bufs[this.stat === this.bufs[0] ? 1 : 0];
     // Known: floor seen at least half well (for the shape of the hatching and
     // the cover); the drawing of the floor and its walls fades with how well
     // it was seen.
@@ -545,13 +559,36 @@ export class Expression {
     }
     const { d2 } = nearestSeeds(known, mw, mh);
     yield;
-    // (A copy: more may be seen while this is being done.)
-    const shape = blank(cw, ch);
-    shape.getContext("2d").drawImage(this.seenShape, 0, 0);
     const grey = yield* this.depthSteps(known, d2);
+    // The set to draw into may still be fading out: wait for it.
+    while (this.prev === buf) yield;
+    // The area to redraw, in mask pixels: what is out of date, out to as far
+    // as a change can reach (the depth map, the walls' ink, the cover), and
+    // that in canvas pixels.
+    const reachOut = Math.ceil(R * (2 + Math.max(S.reach * (1 + S.ragged), 2.5 * S.reach, S.taper * (1 + S.ragged), S.opening, (S.fadeStart + S.fadeWidth) * (1 + S.ragged))));
+    const st = buf.stale === ALL ? [0, 0, mw, mh] : buf.stale;
+    if (!st) { buf.t = performance.now(); this.prev = this.stat; this.stat = buf; return; }
+    const ax0 = Math.max(0, st[0] - reachOut), ay0 = Math.max(0, st[1] - reachOut), ax1 = Math.min(mw, st[2] + reachOut), ay1 = Math.min(mh, st[3] + reachOut);
+    const k = (TS / R) * scale; // canvas pixels per mask pixel
+    const rx = Math.floor(ax0 * k), ry = Math.floor(ay0 * k), rw = Math.ceil(ax1 * k) - rx, rh = Math.ceil(ay1 * k) - ry;
+    // (Pixel values just outside are computed too, as the drawing blends
+    // between them.)
+    const area = [Math.max(0, ax0 - 2), Math.max(0, ay0 - 2), Math.min(mw, ax1 + 2), Math.min(mh, ay1 + 2)];
+    // Strokes reaching into the area: their middles at most two tiles out.
+    const sx0 = (ax0 * TS) / R - 2 * TS, sy0 = (ay0 * TS) / R - 2 * TS, sx1 = (ax1 * TS) / R + 2 * TS, sy1 = (ay1 * TS) / R + 2 * TS;
+    const nearArea = (x, y) => x >= sx0 && x <= sx1 && y >= sy0 && y <= sy1;
+    this.area = [rx, ry, rw, rh];
+    const clip = (g) => {
+      g.save();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.beginPath();
+      g.rect(rx, ry, rw, rh);
+      g.clip();
+    };
+
     const cell = (x, y) => {
-      const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
-      return i < 0 || k < 0 || i >= mw || k >= mh ? -1 : k * mw + i;
+      const i = Math.floor((x * R) / TS), j = Math.floor((y * R) / TS);
+      return i < 0 || j < 0 || i >= mw || j >= mh ? -1 : j * mw + i;
     };
     const greyAt = (x, y) => {
       const j = cell(x, y);
@@ -561,36 +598,10 @@ export class Expression {
     // to `white`.
     const ramp = (g, black, mid, white) => (g < 0.5 ? black + (mid - black) * g * 2 : mid + (white - mid) * (g - 0.5) * 2);
 
-    // The hatching as ink on clear, which the looks colour: at full weight,
-    // and (for the remembered look) with the depth map's darkness scaled by
-    // `weight`, so fewer, thinner, shorter strokes keep closer to the walls.
-    const inkAt = function* (weight) {
-      const ink = blank(cw, ch), ig = ink.getContext("2d");
-      ig.setTransform(scale, 0, 0, scale, 0, 0);
-      ig.fillStyle = "#000";
-      const gAt = (x, y) => 1 - (1 - greyAt(x, y)) * weight;
-      const widthAt = (x, y) => ramp(gAt(x, y), S.wBlack, S.wGrey, 0);
-      let count = 0;
-      for (const st of solid) {
-        if (++count % 2000 === 0) yield;
-        const [x, y] = st.path[st.path.length >> 1], g = gAt(x, y);
-        if (g >= 0.999) continue;
-        // Drop strokes by rank: a group's own rank, plus more for each later
-        // stroke in it, so groups lose their last strokes first.
-        if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
-        const keep = ramp(g, 1, S.lenGrey, 0), a = ramp(g, 1, S.inkGrey, S.inkGrey);
-        if (keep < 0.03 || a < 0.02) continue;
-        ig.globalAlpha = a;
-        ig.beginPath();
-        inkRecorded(ig, st, keep, 1, widthAt);
-        ig.fill();
-      }
-      return ink;
-    };
-    const inks = { see: yield* inkAt(1), mem: yield* inkAt(S.memWeight) };
-
-    // Known floor and the band of rock where its walls are inked.
-    // (Rock in the band goes with its nearest glimpsed floor.)
+    // Known floor and the band of rock where its walls are inked (rock in
+    // the band goes with its nearest glimpsed floor), and floor glimpsed,
+    // whose hatching is cleared: at mask resolution, then at full
+    // resolution cut to the exact shape of what has been seen.
     const band = (WALL_BAND * R) ** 2, mask = blank(mw, mh), img = new ImageData(mw, mh);
     const near = nearestSeeds(glimpsed, mw, mh);
     for (let j = 0; j < n; j++) {
@@ -598,62 +609,121 @@ export class Expression {
       img.data[j * 4 + 3] = Math.round(255 * a);
     }
     mask.getContext("2d").putImageData(img, 0, 0);
-    // Floor glimpsed has its hatching cleared, in the rock's tone.
     const glimpsedMask = blank(mw, mh), gi = new ImageData(mw, mh);
     for (let j = 0; j < n; j++) if (floor[j]) gi.data[j * 4 + 3] = Math.round(255 * clearOf(seen[j]));
     glimpsedMask.getContext("2d").putImageData(gi, 0, 0);
+    const [shape, maskHi, glimpsedHi] = this.hi;
+    for (const [c, from] of [[shape, null], [maskHi, mask], [glimpsedHi, glimpsedMask]]) {
+      const g = c.getContext("2d");
+      clip(g);
+      g.clearRect(rx, ry, rw, rh);
+      g.imageSmoothingEnabled = true;
+      // (The shape copied: more may be seen while this is being done.)
+      g.drawImage(from || this.seenShape, 0, 0, cw, ch);
+      if (from) {
+        g.globalCompositeOperation = "destination-in";
+        g.drawImage(shape, 0, 0);
+      }
+      g.restore();
+    }
+    yield;
     // The paper toned like the rock.
     const stone = "#" + PAPER_RGB.map((p, i) => {
       const r = parseInt(S.rockColor.slice(1 + 2 * i, 3 + 2 * i), 16);
       return Math.round(p * (1 - S.rockTone + (S.rockTone * r) / 255)).toString(16).padStart(2, "0");
     }).join("");
+    const rockTone = S.rockTone > 0 ? this.picture(S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1), area) : null;
 
-    // A look: paper, the rock toned, the hatching, then the floor (painted over
-    // it), tinted toward the rock's colour, its markings and its walls.
-    const look = function* (pre) {
-      const c = blank(cw, ch), g = c.getContext("2d");
+    // A look: paper, the rock toned, the hatching (drawn straight on, in the
+    // look's ink, strokes inked from the depth map; for the remembered look
+    // with its darkness scaled by `memWeight`, so fewer, thinner, shorter
+    // strokes keep closer to the walls), then the floor (painted over it),
+    // tinted toward the rock's colour, its markings and its walls.
+    const look = function* (pre, c) {
+      const g = c.getContext("2d");
+      clip(g);
       g.drawImage(this.paper, 0, 0);
-      if (S.rockTone > 0) this.overlay(g, S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1), "multiply");
+      if (rockTone) this.lay(g, rockTone, null, null, 1, null, "multiply");
       yield;
-      this.lay(g, inks[pre], null, S[pre + "HatchC"], S[pre + "Hatch"]);
+      const weight = pre === "mem" ? S.memWeight : 1, strength = S[pre + "Hatch"];
+      if (strength > 0) {
+        g.setTransform(scale, 0, 0, scale, 0, 0);
+        g.fillStyle = S[pre + "HatchC"];
+        const gAt = (x, y) => 1 - (1 - greyAt(x, y)) * weight;
+        const widthAt = (x, y) => ramp(gAt(x, y), S.wBlack, S.wGrey, 0);
+        let count = 0;
+        for (const st of solid) {
+          if (++count % 2000 === 0) yield;
+          const [x, y] = st.path[st.path.length >> 1];
+          if (!nearArea(x, y)) continue;
+          const gr = gAt(x, y);
+          if (gr >= 0.999) continue;
+          // Drop strokes by rank: a group's own rank, plus more for each later
+          // stroke in it, so groups lose their last strokes first.
+          if (st.rank >= ramp(gr, 1, S.keepGrey, 0)) continue;
+          const keep = ramp(gr, 1, S.lenGrey, 0), a = ramp(gr, 1, S.inkGrey, S.inkGrey);
+          if (keep < 0.03 || a < 0.02) continue;
+          g.globalAlpha = Math.min(1, a * strength);
+          g.beginPath();
+          inkRecorded(g, st, keep, 1, widthAt);
+          g.fill();
+        }
+        g.globalAlpha = 1;
+      }
       yield;
-      this.lay(g, this.floorLayer, glimpsedMask, stone, 1, shape);
+      this.lay(g, this.tinted(this.floorLayer, stone), glimpsedHi, null, 1, null, "source-over", true);
+      this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, maskHi, null, 1, null, "source-over", true);
       yield;
-      this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, mask, null, 1, shape);
+      if (S.rockTone > 0 && S[pre + "FloorMix"] > 0)
+        this.lay(g, this.picture(S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), area), null, null, 1, shape, "multiply");
       yield;
-      this.overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), "multiply", shape);
-      yield;
-      this.lay(g, this.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"], shape);
-      yield;
-      this.lay(g, this.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"], shape);
-      yield;
-      return c;
+      // The markings and walls together, cut to the floor's mask once.
+      const w = this.scratch, wg = w.getContext("2d");
+      clip(wg);
+      wg.clearRect(rx, ry, rw, rh);
+      for (const [layer, c2, a] of [[this.markLayer, S[pre + "MarkC"], S[pre + "Mark"]], [this.wallLayer, S[pre + "WallC"], S[pre + "Wall"]]]) {
+        if (!(a > 0)) continue;
+        wg.globalAlpha = Math.min(1, a);
+        wg.drawImage(this.tinted(layer, c2), 0, 0);
+      }
+      wg.globalAlpha = 1;
+      wg.globalCompositeOperation = "destination-in";
+      wg.drawImage(maskHi, 0, 0);
+      wg.restore();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(w, 0, 0);
+      g.restore();
     }.bind(this);
 
     // Ground not yet seen. `u` runs from 0 where the cover starts to 1 where it
     // is solid: by distance from the known floor (with the ragged edge), or
     // from where the hatching gives out.
     yield;
-    const u = new Float32Array(n);
-    for (let j = 0; j < n; j++) {
-      if (known[j]) { u[j] = -1; continue; }
-      if (S.fadeBy === "hatching") { u[j] = (grey[j] - 0.4) / 0.6; continue; }
-      const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
-      const k = Math.max(0.1, 1 + S.ragged * (2 * this.noise(x, y) - 1));
-      u[j] = (Math.sqrt(d2[j]) / R - S.fadeStart * k) / Math.max(0.01, S.fadeWidth * k);
-    }
-    const cover = blank(cw, ch), cg = cover.getContext("2d");
-    if (S.fadeStyle === "gradient") this.overlay(cg, S.outColor, (j) => smooth(u[j]), "source-over");
+    const u = new Float32Array(n).fill(1);
+    for (let y = area[1]; y < area[3]; y++)
+      for (let x = area[0]; x < area[2]; x++) {
+        const j = y * mw + x;
+        if (known[j]) { u[j] = -1; continue; }
+        if (S.fadeBy === "hatching") { u[j] = (grey[j] - 0.4) / 0.6; continue; }
+        const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R);
+        const kr = Math.max(0.1, 1 + S.ragged * (2 * this.noise(mx, my) - 1));
+        u[j] = (Math.sqrt(d2[j]) / R - S.fadeStart * kr) / Math.max(0.01, S.fadeWidth * kr);
+      }
+    const cg = buf.cover.getContext("2d");
+    clip(cg);
+    cg.clearRect(rx, ry, rw, rh);
+    const coverWith = (alpha) => this.lay(cg, this.picture(S.outColor, alpha, area), null, null, 1);
+    if (S.fadeStyle === "gradient") coverWith((j) => smooth(u[j]));
     else if (S.fadeStyle === "edge")
       // A sharp edge halfway through, wandering with a finer noise.
-      this.overlay(cg, S.outColor, (j) => {
+      coverWith((j) => {
         const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
         return smooth((u[j] - 0.5 + (this.fine(x, y) - 0.5) * 0.5) / 0.1);
-      }, "source-over");
+      });
     else {
       // Solid only toward the far end; before that, the hatching's strokes
       // (all of them) thickening, or dots coming in denser and bigger.
-      this.overlay(cg, S.outColor, (j) => smooth((u[j] - 0.55) / 0.45), "source-over");
+      coverWith((j) => smooth((u[j] - 0.55) / 0.45));
       cg.setTransform(scale, 0, 0, scale, 0, 0);
       cg.fillStyle = S.outColor;
       const uXY = (x, y) => u[cell(x, y)] ?? 1;
@@ -662,7 +732,7 @@ export class Expression {
         for (const st of solid) {
           if (++count % 2000 === 0) yield;
           const [x, y] = st.path[st.path.length >> 1];
-          if (!(uXY(x, y) > 0)) continue;
+          if (!nearArea(x, y) || !(uXY(x, y) > 0)) continue;
           cg.beginPath();
           inkRecorded(cg, st, 1, 1, (px, py) => Math.max(0, 1 + 5 * Math.min(1, uXY(px, py))));
           cg.fill();
@@ -670,6 +740,7 @@ export class Expression {
       else {
         cg.beginPath();
         for (const [x, y, rank, size] of this.dots) {
+          if (!nearArea(x, y)) continue;
           const v = uXY(x, y);
           if (!(v > 0) || rank > v) continue;
           const r = TS * 0.05 * size * (0.6 + Math.min(1, v));
@@ -679,12 +750,53 @@ export class Expression {
         cg.fill();
       }
     }
+    cg.restore();
     yield;
-    const see = yield* look("see"), mem = yield* look("mem");
+    yield* look("see", buf.see);
+    yield* look("mem", buf.mem);
+    this.area = null;
+    buf.stale = null;
+    buf.t = performance.now();
     this.grey = grey;
     this.prev = this.stat;
-    this.stat = { see, mem, cover, t: performance.now() };
-    this.scratch = null;
+    this.stat = buf;
+  }
+
+  // A colour at mask resolution, `alpha(j)` from 0 to 1 at each mask pixel
+  // (worked out only within `area`, [x0, y0, x1, y1]; none elsewhere).
+  picture(hex, alpha, area = [0, 0, this.mw, this.mh]) {
+    const { mw, mh } = this, [r, gr, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const img = new ImageData(mw, mh);
+    for (let y = area[1]; y < area[3]; y++)
+      for (let x = area[0]; x < area[2]; x++) {
+        const j = y * mw + x, a = alpha(j);
+        if (!(a > 0)) continue;
+        img.data[j * 4] = r;
+        img.data[j * 4 + 1] = gr;
+        img.data[j * 4 + 2] = b;
+        img.data[j * 4 + 3] = Math.round(255 * Math.min(1, a));
+      }
+    const c = blank(mw, mh);
+    c.getContext("2d").putImageData(img, 0, 0);
+    return c;
+  }
+
+  // A layer of the map recoloured (kept until the scale changes).
+  tinted(layer, colour) {
+    if (!this.tints) this.tints = new Map();
+    let byColour = this.tints.get(layer);
+    if (!byColour) this.tints.set(layer, (byColour = new Map()));
+    let c = byColour.get(colour);
+    if (!c) {
+      c = blank(layer.width, layer.height);
+      const g = c.getContext("2d");
+      g.drawImage(layer, 0, 0);
+      g.globalCompositeOperation = "source-in";
+      g.fillStyle = colour;
+      g.fillRect(0, 0, c.width, c.height);
+      byColour.set(colour, c);
+    }
+    return c;
   }
 
   // The depth map as a picture (black: the heaviest hatching), to look at.
@@ -716,7 +828,28 @@ export class Expression {
     }
     if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
     if (now < this.easeUntil) this.easeSight(dt);
+    if (this.darkDirty) this.castDark();
     this.castLight(px, py, now / 1000);
+  }
+
+  // The darkness outside the candlelight, over the whole map: the remembered
+  // amount everywhere, cut back to the in-sight amount where sight reaches.
+  // It changes only as sight does, not every frame.
+  castDark() {
+    const S = this.S, { eased } = this.sightCanvas;
+    if (!this.darkCanvas || this.darkCanvas.width !== eased.width || this.darkCanvas.height !== eased.height) this.darkCanvas = blank(eased.width, eased.height);
+    const g = this.darkCanvas.getContext("2d"), memDark = S.dark + (1 - S.dark) * S.memShade;
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, eased.width, eased.height);
+    g.globalAlpha = memDark;
+    g.fillStyle = S.darkColor;
+    g.fillRect(0, 0, eased.width, eased.height);
+    g.globalAlpha = memDark > 0 ? 1 - S.dark / memDark : 0;
+    g.globalCompositeOperation = "destination-out";
+    g.drawImage(eased, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.globalAlpha = 1;
+    this.darkDirty = false;
   }
 
   // What is in sight from (px, py): the floor the player can see and the
@@ -761,6 +894,7 @@ export class Expression {
     eg.drawImage(target, 0, 0);
     eg.globalCompositeOperation = "source-over";
     eg.globalAlpha = 1;
+    this.darkDirty = true;
   }
 
   // The candle: a flame of some size, so each wall casts a shadow that is
@@ -911,52 +1045,89 @@ export class Expression {
   }
 
 
-  // Darkness outside the candlelight (the remembered amount everywhere, cut
-  // back to the in-sight amount where sight reaches, and away where the light
-  // falls), and a warm tint within it; multiplied, so ink stays black.
+  // Darkness outside the candlelight (see castDark), taken away where the
+  // light falls, and a warm tint within it; multiplied, so ink stays black.
+  // Only the light's square is put together each frame; the rest is the
+  // darkness as it stands.
   drawLight(ctx, view) {
-    const S = this.S, T = ctx.getTransform(), w = this.work(ctx), wg = w.getContext("2d");
-    const { eased } = this.sightCanvas, ss = this.sightScale;
-    const pass = (paint) => {
-      wg.setTransform(1, 0, 0, 1, 0, 0);
-      wg.globalCompositeOperation = "source-over";
-      wg.clearRect(0, 0, w.width, w.height);
-      wg.setTransform(T);
-      wg.imageSmoothingEnabled = true;
-      paint();
-      wg.globalCompositeOperation = "source-over";
-      wg.globalAlpha = 1;
+    if (!this.darkCanvas) return;
+    const S = this.S, T = ctx.getTransform(), ss = this.sightScale, cw = ctx.canvas.width, ch = ctx.canvas.height;
+    const mw = this.W * this.TS, mh = this.H * this.TS, memDark = S.dark + (1 - S.dark) * S.memShade;
+    // The light's square, in whole screen pixels (so nothing shows at its
+    // edges), and that in map units.
+    const b = this.lightBox;
+    let box = null;
+    if (b) {
+      const x0 = Math.max(0, Math.floor(T.a * b.x + T.e)), y0 = Math.max(0, Math.floor(T.d * b.y + T.f));
+      const x1 = Math.min(cw, Math.ceil(T.a * (b.x + b.w) + T.e)), y1 = Math.min(ch, Math.ceil(T.d * (b.y + b.w) + T.f));
+      if (x1 > x0 && y1 > y0) box = { x0, y0, w: x1 - x0, h: y1 - y0, view: { x: (x0 - T.e) / T.a, y: (y0 - T.f) / T.d, w: (x1 - x0) / T.a, h: (y1 - y0) / T.d } };
+    }
+    // Outside the light: the darkness as it is, multiplied over the map, and
+    // the remembered amount over the desk round it.
+    const clipOut = (inner) => {
+      ctx.save();
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalCompositeOperation = "multiply";
-      ctx.drawImage(w, 0, 0);
-      ctx.globalCompositeOperation = "source-over";
+      ctx.beginPath();
+      ctx.rect(0, 0, cw, ch);
+      if (box) ctx.rect(box.x0, box.y0, box.w, box.h);
+      ctx.clip("evenodd");
       ctx.setTransform(T);
-    };
-    const memDark = S.dark + (1 - S.dark) * S.memShade;
-    pass(() => {
-      wg.globalAlpha = memDark;
-      wg.fillStyle = S.darkColor;
-      wg.fillRect(view.x, view.y, view.w, view.h);
-      wg.globalAlpha = memDark > 0 ? 1 - S.dark / memDark : 0;
-      wg.globalCompositeOperation = "destination-out";
-      this.region(wg, eased, ss, view);
-      wg.globalAlpha = 1;
-      this.drawLightBox(wg);
-      // The warm tint where the light falls, in the same pass.
-      if (S.warmth > 0 && this.lightBox) {
-        const warm = this.warmCanvas || (this.warmCanvas = blank(1, 1)), c = this.lightCanvas;
-        if (warm.width !== c.width || warm.height !== c.height) { warm.width = c.width; warm.height = c.height; }
-        const hg = warm.getContext("2d");
-        hg.globalCompositeOperation = "source-over";
-        hg.clearRect(0, 0, warm.width, warm.height);
-        hg.drawImage(c, 0, 0);
-        hg.globalCompositeOperation = "source-in";
-        hg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
-        hg.fillRect(0, 0, warm.width, warm.height);
-        const b = this.lightBox;
-        wg.globalCompositeOperation = "source-over";
-        wg.drawImage(warm, b.x, b.y, b.w, b.w);
+      if (inner) {
+        ctx.beginPath();
+        ctx.rect(view.x, view.y, view.w, view.h);
+        ctx.rect(0, 0, mw, mh);
+        ctx.clip("evenodd");
       }
-    });
+      ctx.globalCompositeOperation = "multiply";
+      ctx.imageSmoothingEnabled = true;
+    };
+    clipOut(false);
+    this.region(ctx, this.darkCanvas, ss, view);
+    ctx.restore();
+    clipOut(true);
+    ctx.globalAlpha = memDark;
+    ctx.fillStyle = S.darkColor;
+    ctx.fillRect(view.x, view.y, view.w, view.h);
+    ctx.restore();
+    if (!box) return;
+    // In the light's square: the darkness with the light taken out, and a
+    // warm tint where it falls.
+    if (!this.boxCanvas) this.boxCanvas = blank(1, 1);
+    const c = this.boxCanvas;
+    if (c.width < box.w || c.height < box.h) { c.width = Math.max(c.width, box.w); c.height = Math.max(c.height, box.h); }
+    const g = c.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, c.width, c.height);
+    g.setTransform(T.a, 0, 0, T.d, T.e - box.x0, T.f - box.y0);
+    g.imageSmoothingEnabled = true;
+    g.globalAlpha = memDark;
+    g.fillStyle = S.darkColor;
+    g.fillRect(box.view.x, box.view.y, box.view.w, box.view.h);
+    g.globalAlpha = 1;
+    g.clearRect(Math.max(0, box.view.x), Math.max(0, box.view.y), Math.min(mw, box.view.x + box.view.w) - Math.max(0, box.view.x), Math.min(mh, box.view.y + box.view.h) - Math.max(0, box.view.y));
+    this.region(g, this.darkCanvas, ss, box.view);
+    g.globalCompositeOperation = "destination-out";
+    this.drawLightBox(g);
+    if (S.warmth > 0) {
+      const warm = this.warmCanvas || (this.warmCanvas = blank(1, 1)), lc = this.lightCanvas;
+      if (warm.width !== lc.width || warm.height !== lc.height) { warm.width = lc.width; warm.height = lc.height; }
+      const hg = warm.getContext("2d");
+      hg.globalCompositeOperation = "source-over";
+      hg.clearRect(0, 0, warm.width, warm.height);
+      hg.drawImage(lc, 0, 0);
+      hg.globalCompositeOperation = "source-in";
+      hg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
+      hg.fillRect(0, 0, warm.width, warm.height);
+      g.globalCompositeOperation = "source-over";
+      g.drawImage(warm, b.x, b.y, b.w, b.w);
+    }
+    g.globalCompositeOperation = "source-over";
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(c, 0, 0, box.w, box.h, box.x0, box.y0, box.w, box.h);
+    ctx.restore();
   }
+
 }
