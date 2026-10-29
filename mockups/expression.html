@@ -115,7 +115,7 @@ const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { depth: "diffuse", full: 0.4, reach: 5.1, ragged: 0.35, opening: 1, taper: 2, keepGrey: 0.25, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.55, inkGrey: 1, show: "map", zoom: 0.3 };
+const DEFAULTS = { depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2, keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1, show: "map", zoom: 0.3 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
