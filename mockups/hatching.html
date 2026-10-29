@@ -36,6 +36,8 @@
   .group[open] summary { margin-bottom: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
   .row { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
   .controls label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); min-width: 140px; }
+  .controls label.check { flex-direction: row-reverse; align-items: center; justify-content: flex-end; gap: 8px; color: var(--ink); }
+  .controls input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
   .controls output { color: var(--ink); font-variant-numeric: tabular-nums; }
   .controls input[type="range"] { width: 150px; accent-color: var(--accent); }
   #profile { width: 260px; height: 96px; max-width: 100%; background: var(--desk); cursor: ns-resize; touch-action: none; }
@@ -114,6 +116,16 @@
     </div>
   </details>
   <details class="group" open>
+    <summary>Zones <span>(panel H2 only)</span></summary>
+    <div class="row">
+      <label for="zonew">Zone pull <output id="zonew-v"></output><input id="zonew" type="range" min="0" max="2" step="0.05" value="1"></label>
+      <label for="radtol">Outward lean, far zone <output id="radtol-v"></output><input id="radtol" type="range" min="0.1" max="1.2" step="0.05" value="0.5"></label>
+      <label for="nearz">Near-wall zone width <output id="nearz-v"></output><input id="nearz" type="range" min="0.2" max="2" step="0.05" value="0.8"></label>
+      <label for="encl">Enclosed if floor within <output id="encl-v"></output><input id="encl" type="range" min="1" max="4" step="0.1" value="2.2"></label>
+      <label for="showzones" class="check"><span>Show zones <output id="showzones-v"></output></span><input id="showzones" type="checkbox"></label>
+    </div>
+  </details>
+  <details class="group" open>
     <summary>Walls</summary>
     <div class="row">
       <label for="wallw">Wall weight <output id="wallw-v"></output><input id="wallw" type="range" min="2" max="12" step="0.25" value="6"></label>
@@ -134,6 +146,8 @@
 </div>
 
 <div class="grid">
+  <figure><canvas id="c-zoned" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-zoned"></span><b>H2. Cells with zones</b><span>H, but each cell takes its direction from the shape of the rock. Far from the walls strokes point outward, away from the rooms, leaning left or right so neighbours meet in outward-pointing chevrons. Near walls they cross the wall steeply. In enclosed rock they span from wall to wall. Neighbouring cells are never parallel. Cells are stretched along the outward direction too. Tick "Show zones" to see which cells fall in which zone: blue near, green far, orange enclosed.</span></figcaption></figure>
   <figure><canvas id="c-tris" width="576" height="384"></canvas>
     <figcaption><span class="ms" id="ms-tris"></span><b>H. Cells</b><span>The rock near the walls is cut into triangles lined up with the walls, stretched along a slowly turning direction (away from the walls close to them); some neighbouring triangles are merged into four-sided cells. Each cell is filled with strokes parallel to one of its edges, from that edge across, shortening to a dot toward a corner. No cell's strokes run along a wall, neighbours never share a direction, and a cell prefers the edge a neighbour's strokes already end against, which turns those ends into T-junctions. After 3&ndash;5 strokes the rest of a cell is cut off along the last stroke and filled as a new cell turned to another direction, so groups stay small and end against each other. At the edge of the hatching the strokes fray.</span></figcaption></figure>
   <figure><canvas id="c-hunt" width="576" height="384"></canvas>
@@ -747,14 +761,24 @@ function delaunay(pts) {
 // four-sided cells), stretched along a slowly turning direction. Each cell is
 // filled with strokes parallel to one of its edges, never along a wall and
 // never parallel to a neighbouring cell.
-function triangles(ctx, rng, mask, o) {
+function triangles(ctx, rng, mask, o, opts = {}) {
   const sp = o.spacing, r = o.tri * TS, pts = [], wallPt = new Set();
   const stretch = Math.sqrt(o.stretch), along = r * stretch, across = r / stretch;
 
   // The direction cells stretch along: a smooth noise field far out, swinging
   // round to point away from the wall close to one.
   const noise = valueNoise(rng, TS * 4);
+  // Straight away from the nearest wall (the slope of the distance field).
+  const outward = (x, y) => {
+    const e = 3, gx = distAt(x + e, y) - distAt(x - e, y), gy = distAt(x, y + e) - distAt(x, y - e);
+    return gx || gy ? Math.atan2(gy, gx) : null;
+  };
   const flow = (x, y) => {
+    if (opts.zoned) {
+      // Outward, leaning left or right by a slowly varying amount.
+      const a = outward(x, y);
+      if (a !== null) return a + (noise(x, y) * 2 - 1) * o.radtol * 1.5;
+    }
     let a = noise(x, y) * Math.PI * 2, best = Infinity, na = 0;
     for (const w of WALLS) {
       const dx = w.x1 - w.x0, dy = w.y1 - w.y0, L = dx * dx + dy * dy;
@@ -838,6 +862,31 @@ function triangles(ctx, rng, mask, o) {
   }
   const onWall = (a, b) => wallPt.has(a) && wallPt.has(b) && distAt((pts[a][0] + pts[b][0]) / 2, (pts[a][1] + pts[b][1]) / 2) < 1.5;
 
+  // Zones: enclosed (open floor on most sides within reach), near a wall,
+  // or far from the walls. Each zone prefers its own stroke direction.
+  const zoneOf = (x, y) => {
+    let hits = 0;
+    for (let k = 0; k < 8; k++) {
+      const dx = Math.cos((k * Math.PI) / 4), dy = Math.sin((k * Math.PI) / 4);
+      for (let t = 2; t < o.encl * TS; t += 3) if (distAt(x + dx * t, y + dy * t) <= 0) { hits++; break; }
+    }
+    if (hits >= 5) return "enclosed";
+    return distAt(x, y) < o.nearz * TS ? "near" : "far";
+  };
+  // Each zone likes strokes leaning off the outward direction by about
+  // `lean`: far out by the slider's amount, near walls and in enclosed rock
+  // by less (so they cross the wall steeply).
+  const zoneScore = (c, ang) => {
+    if (!opts.zoned || c.pref === null) return 0;
+    const lean = c.zone === "far" ? o.radtol : c.zone === "near" ? Math.min(o.radtol, 0.45) : Math.min(o.radtol, 0.35);
+    const tol = Math.max(0.3, lean);
+    return o.zonew * Math.max(-1, 1 - Math.abs(lineAngleDiff(ang, c.pref) - lean) / tol);
+  };
+  for (const c of cells) {
+    c.zone = zoneOf(c.g[0], c.g[1]);
+    c.pref = outward(c.g[0], c.g[1]);
+  }
+
   // Choose each cell's stroke edge, nearest the walls first.
   const order = rng.shuffle(cells).sort((p, q) => distAt(...p.g) - distAt(...q.g));
   for (const c of order) {
@@ -859,6 +908,9 @@ function triangles(ctx, rng, mask, o) {
       const ux = (pts[b][0] - pts[a][0]), uy = (pts[b][1] - pts[a][1]), L = Math.hypot(ux, uy);
       const h = Math.max(...c.v.map((v) => Math.abs(ux * (pts[v][1] - pts[a][1]) - uy * (pts[v][0] - pts[a][0])) / L));
       if (h / sp > o.maxLines + 0.5) score -= 0.35;
+      score += zoneScore(c, ang);
+      // Never parallel to a neighbour, whatever the zone would like.
+      if (opts.zoned && score < Math.PI / 2 && Math.min(...c.v.map((v, j) => Math.min(...cellByEdge.get(key(v, c.v[(j + 1) % m])).filter((nb) => nb !== c && nb.ang !== undefined).map((nb) => lineAngleDiff(ang, nb.ang)), Math.PI / 2))) < 0.4) score -= 1.5;
       score += rng.range(0, 0.15);
       if (!best || score > best.score) best = { score, a, b, ang, h, k };
     }
@@ -946,12 +998,24 @@ function triangles(ctx, rng, mask, o) {
       let score = lineAngleDiff(a2, ang);
       if (score < 0.5) continue;
       if (!wallAngleOK((px + qx) / 2, (py + qy) / 2, a2, o)) score -= 0.6;
+      score += zoneScore(c, a2);
       score += rng.range(0, 0.2);
       if (!best || score > best.score) best = { score, j };
     }
     if (best) fillPoly(rest, best.j, c);
   }
 
+  if (opts.zoned && o.showzones) {
+    const tint = { near: "rgba(60, 110, 200, 0.22)", far: "rgba(60, 160, 80, 0.22)", enclosed: "rgba(230, 140, 30, 0.28)" };
+    for (const c of order) {
+      ctx.beginPath();
+      c.v.forEach((v, i) => (i ? ctx.lineTo(...pts[v]) : ctx.moveTo(...pts[v])));
+      ctx.closePath();
+      ctx.fillStyle = tint[c.zone];
+      ctx.fill();
+    }
+    ctx.fillStyle = INK;
+  }
   for (const c of order) {
     c.n = 0;
     if (c.ang === undefined) continue;
@@ -1064,16 +1128,16 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "stretch", "quads", "seam", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "stretch", "quads", "seam", "zonew", "radtol", "nearz", "encl", "showzones", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, stretch: (v) => `${v}×`, quads: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, stretch: (v) => `${v}×`, zonew: (v) => `${v}×`, radtol: (v) => `±${Math.round((v * 180) / Math.PI)}°`, nearz: (v) => `${v} tiles`, encl: (v) => `${v} tiles`, showzones: () => "", quads: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
   const o = {};
   for (const id of ids) {
     const el = document.getElementById(id);
-    o[id === "maxlines" ? "maxLines" : id] = parseFloat(el.value);
+    o[id === "maxlines" ? "maxLines" : id] = el.type === "checkbox" ? (el.checked ? 1 : 0) : parseFloat(el.value);
     document.getElementById(id + "-v").textContent = fmt[id](el.value);
   }
   return o;
@@ -1101,6 +1165,7 @@ function render() {
   const o = params(), mine = ++job;
   const run = (id, fn) => () => paint(id, (ctx) => { const rng = RNG(seed); fn(ctx, rng, makeMask(RNG(seed ^ 0x9e3779b9), o.depth)); });
   const steps = [
+    run("zoned", (ctx, rng, mask) => triangles(ctx, rng, mask, o, { zoned: true })),
     run("tris", (ctx, rng, mask) => triangles(ctx, rng, mask, o)),
     run("hunt", (ctx, rng, mask) => grown(ctx, rng, mask, o, { wallRule: true, dots: true, wedges: true, hunt: true })),
     run("wedges", (ctx, rng, mask) => grown(ctx, rng, mask, o, { wallRule: true, dots: true, wedges: true })),
