@@ -43,13 +43,25 @@ export class Walls {
       const [x0, y0] = box[i], [x1, y1] = box[(i + 1) % 4];
       segs.push({ x0, y0, x1, y1 });
     }
+    // Rays go to every wall corner within reach and to every point where a
+    // wall crosses the edge of the reach (so long walls that run out of
+    // reach still let a ray down the corridor they line).
     const angles = [];
-    for (const s of segs)
-      for (const [x, y] of [[s.x0, s.y0], [s.x1, s.y1]]) {
-        if (Math.abs(x - px) > r || Math.abs(y - py) > r) continue;
-        const a = Math.atan2(y - py, x - px);
-        angles.push(a - 1e-4, a, a + 1e-4);
+    const aim = (x, y) => {
+      const a = Math.atan2(y - py, x - px);
+      angles.push(a - 1e-4, a, a + 1e-4);
+    };
+    const edges = segs.slice(-4);
+    for (const s of segs) {
+      for (const [x, y] of [[s.x0, s.y0], [s.x1, s.y1]]) if (Math.abs(x - px) <= r && Math.abs(y - py) <= r) aim(x, y);
+      for (const e of edges) {
+        const ax = s.x1 - s.x0, ay = s.y1 - s.y0, bx = e.x1 - e.x0, by = e.y1 - e.y0, den = ax * by - ay * bx;
+        if (Math.abs(den) < 1e-12) continue;
+        const qx = e.x0 - s.x0, qy = e.y0 - s.y0;
+        const t = (qx * by - qy * bx) / den, u = (qx * ay - qy * ax) / den;
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) aim(s.x0 + ax * t, s.y0 + ay * t);
       }
+    }
     angles.sort((a, b) => a - b);
     const pts = [];
     for (const a of angles) {
