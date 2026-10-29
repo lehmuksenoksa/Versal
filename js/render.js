@@ -408,16 +408,22 @@ export class Renderer {
         ctx.drawImage(this.layer, 0, 0);
         ctx.restore();
       };
-      // One pass: the warm tint where the light falls, darkness behind it.
-      shade(() => {
-        g.fillStyle = `rgba(255, 205, 140, ${v.warmth * 0.4})`;
-        g.fillRect(cx, cy, vw, vh);
-        g.globalCompositeOperation = "destination-in";
-        light();
-        g.globalCompositeOperation = "destination-over";
-        g.fillStyle = `rgba(40, 24, 10, ${v.dark})`;
-        g.fillRect(cx, cy, vw, vh);
-      });
+      // Darkness only where the light doesn't reach...
+      if (v.dark > 0)
+        shade(() => {
+          g.fillStyle = `rgba(40, 24, 10, ${v.dark})`;
+          g.fillRect(cx, cy, vw, vh);
+          g.globalCompositeOperation = "destination-out";
+          light();
+        });
+      // ...and a warm tint where it does.
+      if (v.warmth > 0)
+        shade(() => {
+          g.fillStyle = `rgba(255, 205, 140, ${v.warmth * 0.4})`;
+          g.fillRect(cx, cy, vw, vh);
+          g.globalCompositeOperation = "destination-in";
+          light();
+        });
     };
     if (v.light === "candle" && v.lightUnknown !== "yes") candle();
     // Ground never seen is hidden: blank paper, or darkness.
