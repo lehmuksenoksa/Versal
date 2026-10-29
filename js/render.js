@@ -4,7 +4,7 @@
 import { renderMap, INK, PAPER } from "./maprender.js";
 
 const DESK = "#2b221c";
-export const ZOOM = { start: 0.75, min: 0.25, max: 2, step: 1.25 };
+export const ZOOM = { start: 0.75, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
 // mockup (mockups/glyphs.html). Sizes are in tiles; bold and halo are
@@ -73,7 +73,6 @@ export class Renderer {
     this.glyphMetrics = new Map();
     this.vis = { ...VIS_DEFAULTS };
     this.zoom = ZOOM.start;
-    this.follow = true; // camera follows the player; when false the map stays put
     this.layer = document.createElement("canvas");
     this.resize();
   }
@@ -107,11 +106,6 @@ export class Renderer {
     this.zoom = z;
     clearTimeout(this.rebuild);
     if (this.world) this.rebuild = setTimeout(() => this.buildMap(), 300);
-  }
-
-  // The zoom at which a whole level fits the view.
-  fitZoom(level) {
-    return Math.max(ZOOM.min, Math.min(this.vw / (level.w * this.TS), this.vh / (level.h * this.TS)) * 0.97);
   }
 
   resize() {
@@ -258,8 +252,7 @@ export class Renderer {
     const px = (pv.fx + (pv.x - pv.fx) * pk + 0.5) * TS, py = (pv.fy + (pv.y - pv.fy) * pk + 0.5) * TS;
     const mw = L.w * TS, mh = L.h * TS;
     const fit = (target, view, size) => (size + 64 < view ? (size - view) / 2 : Math.max(-32, Math.min(size - view + 32, target)));
-    const tx = this.follow ? fit(px - vw / 2, vw, mw) : (mw - vw) / 2;
-    const ty = this.follow ? fit(py - vh / 2, vh, mh) : (mh - vh) / 2;
+    const tx = fit(px - vw / 2, vw, mw), ty = fit(py - vh / 2, vh, mh);
     if (this.cam.snap) { this.cam.x = tx; this.cam.y = ty; this.cam.snap = false; }
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;
