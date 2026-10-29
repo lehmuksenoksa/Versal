@@ -279,7 +279,7 @@ function drawBase() {
   const a = g.getImageData(0, 0, mw, mh).data, floor = new Uint8Array(mw * mh);
   for (let j = 0; j < mw * mh; j++) floor[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
   Object.assign(M, { mw, mh, floor });
-  if (!M.seen) M.seen = new Uint8Array(mw * mh);
+  if (!M.seen) M.seen = new Float32Array(mw * mh);
   M.sightWalls = new Walls(drawn.loops, TS * 2);
   M.rock = new Path2D();
   M.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
@@ -297,40 +297,41 @@ function drawBase() {
   rebuild();
 }
 
-// The floor the player sees from tile `p`, at mask resolution: unblocked by
-// walls, out to the end of the fade with distance. It is remembered from
-// then on. Returns whether anything new was seen.
+// The floor the player sees from tile `p`, at mask resolution, and how
+// well: unblocked by walls, fully out to `sight`, then less and less over
+// the fade with distance. Each bit of floor is remembered as well as it has
+// ever been seen. Returns whether anything is now better known.
 function learn(p) {
   const { mw, mh, floor, seen } = M, px = (p.x + 0.5) * TS, py = (p.y + 0.5) * TS, far = S.sight + S.sightFade;
   const path = M.sightWalls.visible(px, py, (far + 1) * TS);
   const c = blank(mw, mh), g = c.getContext("2d", { willReadFrequently: true });
   g.setTransform(R / TS, 0, 0, R / TS, 0, 0);
-  g.beginPath();
-  g.arc(px, py, far * TS, 0, Math.PI * 2);
-  g.clip();
   g.fill(path);
   const a = g.getImageData(0, 0, mw, mh).data;
   let grew = false;
-  const vis = new Uint8Array(mw * mh);
+  const vis = new Float32Array(mw * mh);
   for (let j = 0; j < mw * mh; j++) {
     if (!floor[j] || a[j * 4 + 3] < 128) continue;
-    vis[j] = 1;
-    if (!seen[j]) { seen[j] = 1; grew = true; }
+    const d = Math.hypot(((j % mw) + 0.5) / R - px / TS, (((j / mw) | 0) + 0.5) / R - py / TS);
+    const v = S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
+    if (!(v > 0.01)) continue;
+    vis[j] = v;
+    if (v > seen[j] + 0.02) { seen[j] = v; grew = true; }
   }
   sightRock(vis);
   return grew;
 }
 
-// The rock that goes with the floor in sight: rock whose nearest known floor
-// is in sight (`vis`), out to the hatching's reach, its edge softened. Its
-// walls and hatching are drawn in the in-sight look.
+// The rock that goes with the floor in sight: rock takes how well its
+// nearest seen floor is in sight now (`vis`), out to the hatching's reach,
+// softened. Its walls and hatching are drawn in the in-sight look.
 function sightRock(vis) {
-  const { mw, mh, floor, seen } = M, n = mw * mh, known = new Uint8Array(n);
-  for (let j = 0; j < n; j++) known[j] = floor[j] && seen[j] ? 1 : 0;
-  const { d2, sx, sy } = nearestSeeds(known, mw, mh), far = (S.reach * R) ** 2;
+  const { mw, mh, floor, seen } = M, n = mw * mh, any = new Uint8Array(n);
+  for (let j = 0; j < n; j++) any[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
+  const { d2, sx, sy } = nearestSeeds(any, mw, mh), far = (S.reach * R) ** 2;
   const v = new Float32Array(n);
-  for (let j = 0; j < n; j++) if (!floor[j] && sx[j] >= 0 && d2[j] <= far && vis[sy[j] * mw + sx[j]]) v[j] = 1;
-  blur(v, mw, mh, Math.round(R * 0.25));
+  for (let j = 0; j < n; j++) if (!floor[j] && sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
+  blur(v, mw, mh, Math.round(R * 0.5));
   const img = new ImageData(mw, mh);
   for (let j = 0; j < n; j++) if (!floor[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
   if (!M.rockSight) M.rockSight = blank(mw, mh);
@@ -531,8 +532,14 @@ function lay(g, src, mask, colour, strength) {
 function rebuild() {
   const t0 = performance.now();
   const { mw, mh, floor, seen, solid, scale } = M, n = mw * mh, cw = canvas.width, ch = canvas.height;
-  const known = new Uint8Array(n);
-  for (let j = 0; j < n; j++) known[j] = floor[j] && seen[j] ? 1 : 0;
+  // Known: floor seen at least half well (for the shape of the hatching and
+  // the cover); the drawing of the floor and its walls fades with how well
+  // it was seen.
+  const known = new Uint8Array(n), glimpsed = new Uint8Array(n);
+  for (let j = 0; j < n; j++) {
+    known[j] = floor[j] && seen[j] >= 0.5 ? 1 : 0;
+    glimpsed[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
+  }
   const { d2 } = nearestSeeds(known, mw, mh);
   const grey = depthMap(known, d2);
   const cell = (x, y) => {
@@ -568,8 +575,13 @@ function rebuild() {
   ig.globalAlpha = 1;
 
   // Known floor and the band of rock where its walls are inked.
+  // (Rock in the band goes with its nearest glimpsed floor.)
   const band = (WALL_BAND * R) ** 2, mask = blank(mw, mh), img = new ImageData(mw, mh);
-  for (let j = 0; j < n; j++) if (known[j] || (!floor[j] && d2[j] < band)) img.data[j * 4 + 3] = 255;
+  const near = nearestSeeds(glimpsed, mw, mh);
+  for (let j = 0; j < n; j++) {
+    const a = floor[j] ? seen[j] : near.d2[j] < band ? seen[near.sy[j] * mw + near.sx[j]] : 0;
+    img.data[j * 4 + 3] = Math.round(255 * Math.min(1, a));
+  }
   mask.getContext("2d").putImageData(img, 0, 0);
 
   // A look: paper, the rock toned, the hatching, then the floor (painted over
@@ -577,10 +589,10 @@ function rebuild() {
   const look = (pre) => {
     const c = blank(cw, ch), g = c.getContext("2d");
     g.drawImage(M.paper, 0, 0);
-    if (S.rockTone > 0) overlay(g, S.rockColor, (j) => (known[j] ? 0 : S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1)), "multiply");
+    if (S.rockTone > 0) overlay(g, S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1) * (floor[j] ? 1 - seen[j] : 1), "multiply");
     lay(g, ink, null, S[pre + "HatchC"], S[pre + "Hatch"]);
     lay(g, M.floorLayer, mask, null, 1);
-    overlay(g, S.rockColor, (j) => (known[j] ? S.rockTone * S[pre + "FloorMix"] : 0), "multiply");
+    overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * seen[j] : 0), "multiply");
     lay(g, M.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"]);
     lay(g, M.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"]);
     return c;
