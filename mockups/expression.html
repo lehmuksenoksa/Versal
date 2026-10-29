@@ -77,10 +77,15 @@
 
   <fieldset>
     <legend>Depth map, from the known walls</legend>
+    <label for="depth">Made by <select id="depth">
+      <option value="diffuse">Diffusion: walls held black, openings white</option>
+      <option value="blend">Blend: black from the walls, fading toward openings</option>
+      <option value="distance">Distance from known floor, white past openings</option></select></label>
     <label for="full">Black up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
     <label for="reach">White from <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
     <label for="ragged">Ragged edge <output id="ragged-v"></output><input id="ragged" type="range" min="0" max="0.8" step="0.05"></label>
-    <label for="opening">White past openings, softened over <output id="opening-v"></output><input id="opening" type="range" min="0" max="3" step="0.25"></label>
+    <label for="opening" data-for="distance">White past openings, softened over <output id="opening-v"></output><input id="opening" type="range" min="0" max="3" step="0.25"></label>
+    <label for="taper" data-for="blend">Fading to white over the last <output id="taper-v"></output><input id="taper" type="range" min="0.25" max="5" step="0.25"></label>
   </fieldset>
 
   <fieldset>
@@ -110,10 +115,10 @@ const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { full: 0.4, reach: 5.1, ragged: 0.35, opening: 1, keepGrey: 0.25, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.55, inkGrey: 1, show: "map", zoom: 0.3 };
+const DEFAULTS = { depth: "diffuse", full: 0.4, reach: 5.1, ragged: 0.35, opening: 1, taper: 2, keepGrey: 0.25, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.55, inkGrey: 1, show: "map", zoom: 0.3 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
-  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`,
+  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
@@ -228,6 +233,129 @@ function blur(a, w, h, r) {
   }
 }
 
+const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
+
+// The depth map: for each mask pixel, 0 (black: the heaviest hatching) to 1
+// (white: none). Three ways to make it from the known floor, its walls and
+// its openings.
+function depthMap(isKnown, d2) {
+  const { mw, mh, pixUnit, noise } = M, n = mw * mh;
+  const grey = new Float32Array(n);
+  // The ragged edge: a slowly varying factor about 1.
+  const rag = (j) => Math.max(0.1, 1 + S.ragged * (2 * noise(((j % mw) + 0.5) * (TS / R), (((j / mw) | 0) + 0.5) * (TS / R)) - 1));
+  const full = () => Math.min(S.full, S.reach - 0.05);
+  // Walls: rock next to known floor. Openings: floor not known, next to known floor.
+  const nextToKnown = (x, y) => {
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && isKnown[ny * mw + nx]) return true;
+      }
+    return false;
+  };
+  const walls = new Uint8Array(n), openings = new Uint8Array(n);
+  for (let y = 0; y < mh; y++)
+    for (let x = 0; x < mw; x++) {
+      const j = y * mw + x;
+      if (isKnown[j] || !nextToKnown(x, y)) continue;
+      if (pixUnit[j] >= 0) openings[j] = 1;
+      else walls[j] = 1;
+    }
+
+  if (S.depth === "distance") {
+    // Distance from the known floor; white past openings. Each point looks
+    // one step from its nearest known floor toward itself: rock there is a
+    // wall, floor an opening. Softened (lighter only), so the hatching fades
+    // out quicker round the end of a wall beside an opening.
+    const { sx, sy } = nearestSeeds(isKnown, mw, mh);
+    const behind = new Float32Array(n).fill(1);
+    for (let j = 0; j < n; j++) {
+      if (isKnown[j] || sx[j] < 0) continue;
+      const dx = (j % mw) - sx[j], dy = ((j / mw) | 0) - sy[j], l = Math.hypot(dx, dy) || 1;
+      const nx = sx[j] + Math.round(dx / l), ny = sy[j] + Math.round(dy / l);
+      if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && pixUnit[ny * mw + nx] >= 0) behind[j] = 0;
+    }
+    const soft = behind.slice();
+    blur(soft, mw, mh, Math.round(S.opening * R * 0.6));
+    for (let j = 0; j < n; j++) {
+      if (isKnown[j]) continue;
+      const k = rag(j), f = full() * k, r = S.reach * k;
+      const g = smooth((Math.sqrt(d2[j]) / R - f) / (r - f));
+      grey[j] = 1 - (1 - g) * Math.min(behind[j], soft[j]);
+    }
+  } else if (S.depth === "blend") {
+    // Black from the walls, by distance from them, times a fade to white
+    // toward the openings.
+    const dW = nearestSeeds(walls, mw, mh).d2, dO = nearestSeeds(openings, mw, mh).d2;
+    for (let j = 0; j < n; j++) {
+      if (isKnown[j]) continue;
+      const k = rag(j), f = full() * k, r = S.reach * k;
+      const dark = (1 - smooth((Math.sqrt(dW[j]) / R - f) / (r - f))) * smooth(Math.sqrt(dO[j]) / R / (S.taper * k));
+      grey[j] = 1 - dark;
+    }
+  } else {
+    // Diffused: walls held black and openings white, the darkness spreading
+    // out between them and fading (a screened diffusion, solved at half the
+    // mask resolution). Its ratio to the same spread with the openings not
+    // held white says how much the openings eat into the darkness; that
+    // tapers the darkness by distance from the walls, so it keeps its width.
+    const h = 2, hw = Math.ceil(mw / h), hh = Math.ceil(mh / h), hn = hw * hh, Rh = R / h;
+    const KNOWN = 3, WALL = 1, OPEN = 2;
+    const type = new Uint8Array(hn);
+    const at = (x, y) => Math.min(mh - 1, y * h + 1) * mw + Math.min(mw - 1, x * h + 1);
+    for (let y = 0; y < hh; y++) for (let x = 0; x < hw; x++) type[y * hw + x] = isKnown[at(x, y)] ? KNOWN : 0;
+    for (let y = 0; y < hh; y++)
+      for (let x = 0; x < hw; x++) {
+        const i = y * hw + x;
+        if (type[i]) continue;
+        let near = false;
+        for (let dy = -1; dy <= 1 && !near; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && ny >= 0 && nx < hw && ny < hh && type[ny * hw + nx] === KNOWN) { near = true; break; }
+          }
+        if (near) type[i] = pixUnit[at(x, y)] >= 0 ? OPEN : WALL;
+      }
+    const L = Math.max(0.3, S.reach / 2) * Rh, ks = 1 / (L * L);
+    const wallSeed = new Uint8Array(hn);
+    for (let i = 0; i < hn; i++) wallSeed[i] = type[i] === WALL ? 1 : 0;
+    const dW = nearestSeeds(wallSeed, hw, hh).d2;
+    const spread = (openWhite) => {
+      const u = new Float32Array(hn);
+      const fixed = (i) => type[i] === WALL || type[i] === KNOWN || (openWhite && type[i] === OPEN);
+      for (let i = 0; i < hn; i++) u[i] = type[i] === WALL ? 1 : type[i] === KNOWN || (openWhite && type[i] === OPEN) ? 0 : Math.exp(-Math.sqrt(dW[i]) / L);
+      const step = (x, y) => {
+        const i = y * hw + x;
+        if (fixed(i)) return;
+        let sum = 0, cnt = 0;
+        if (x > 0 && type[i - 1] !== KNOWN) { sum += u[i - 1]; cnt++; }
+        if (x < hw - 1 && type[i + 1] !== KNOWN) { sum += u[i + 1]; cnt++; }
+        if (y > 0 && type[i - hw] !== KNOWN) { sum += u[i - hw]; cnt++; }
+        if (y < hh - 1 && type[i + hw] !== KNOWN) { sum += u[i + hw]; cnt++; }
+        if (cnt) u[i] += 1.7 * (sum / (cnt + ks) - u[i]);
+      };
+      for (let it = 0; it < 60; it++) {
+        if (it % 2) { for (let y = hh - 1; y >= 0; y--) for (let x = hw - 1; x >= 0; x--) step(x, y); }
+        else for (let y = 0; y < hh; y++) for (let x = 0; x < hw; x++) step(x, y);
+      }
+      return u;
+    };
+    const withOpen = spread(true), without = spread(false), keep = new Float32Array(hn);
+    for (let i = 0; i < hn; i++) keep[i] = without[i] > 1e-6 ? Math.max(0, Math.min(1, withOpen[i] / without[i])) : 0;
+    const dWall = nearestSeeds(walls, mw, mh).d2;
+    for (let j = 0; j < n; j++) {
+      if (isKnown[j]) continue;
+      // Bilinear, from the half-resolution grid.
+      const fx = Math.max(0, Math.min(hw - 1.001, ((j % mw) + 0.5) / h - 0.5)), fy = Math.max(0, Math.min(hh - 1.001, (((j / mw) | 0) + 0.5) / h - 0.5));
+      const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, i = y0 * hw + x0;
+      const t = (keep[i] * (1 - tx) + keep[i + 1] * tx) * (1 - ty) + (keep[i + hw] * (1 - tx) + keep[i + hw + 1] * tx) * ty;
+      const k = rag(j), f = Math.min(S.full, S.reach - 0.05) * k, r = S.reach * k;
+      grey[j] = 1 - (1 - smooth((Math.sqrt(dWall[j]) / R - f) / (r - f))) * smooth(t);
+    }
+  }
+  return grey;
+}
+
 // Lay the hatching, expressed by distance from the known floor, then the
 // known rooms and corridors over it.
 function compose() {
@@ -235,34 +363,8 @@ function compose() {
   const t0 = performance.now();
   const isKnown = new Uint8Array(n);
   for (let j = 0; j < n; j++) isKnown[j] = pixUnit[j] >= 0 && known[pixUnit[j]] ? 1 : 0;
-  const { d2, sx, sy } = nearestSeeds(isKnown, mw, mh);
-  // Behind a known wall, or out past an opening? Look one step from the
-  // nearest known floor toward the point: rock there is the wall; floor is
-  // an opening (seen, though what lies beyond it isn't). Softened, so the
-  // hatching fades out quicker round the end of a wall beside an opening.
-  const behind = new Float32Array(n).fill(1);
-  for (let j = 0; j < n; j++) {
-    if (isKnown[j] || sx[j] < 0) continue;
-    const dx = (j % mw) - sx[j], dy = ((j / mw) | 0) - sy[j], l = Math.hypot(dx, dy) || 1;
-    const nx = sx[j] + Math.round(dx / l), ny = sy[j] + Math.round(dy / l);
-    if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && pixUnit[ny * mw + nx] >= 0) behind[j] = 0;
-  }
-  // Lighter only: the light past an opening spreads onto the walls beside
-  // it, but stays white itself.
-  const soft = behind.slice();
-  blur(soft, mw, mh, Math.round(S.opening * R * 0.6));
-  for (let j = 0; j < n; j++) behind[j] = Math.min(behind[j], soft[j]);
-  // The depth map: 0 (black) up to `full` tiles from known floor, 1 (white)
-  // from `reach`, smooth between; the noise stretches and shrinks it all.
-  // White out past openings.
-  const grey = new Float32Array(n), smooth = (t) => t * t * (3 - 2 * t);
-  for (let j = 0; j < n; j++) {
-    if (isKnown[j]) continue;
-    const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
-    const k = Math.max(0.1, 1 + S.ragged * (2 * noise(x, y) - 1)), full = Math.min(S.full, S.reach - 0.05) * k, reach = S.reach * k;
-    const g = smooth(Math.max(0, Math.min(1, (Math.sqrt(d2[j]) / R - full) / (reach - full))));
-    grey[j] = 1 - (1 - g) * behind[j];
-  }
+  const { d2 } = nearestSeeds(isKnown, mw, mh);
+  const grey = depthMap(isKnown, d2);
   const greyAt = (x, y) => {
     const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
     return i < 0 || k < 0 || i >= mw || k >= mh ? 1 : grey[k * mw + i];
@@ -334,6 +436,10 @@ function compose() {
   $("status").textContent = `${k} of ${known.length} rooms and corridors known; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
 }
 
+// Only the settings the chosen depth map uses.
+function showFor() {
+  for (const el of document.querySelectorAll("[data-for]")) el.hidden = el.dataset.for !== S.depth;
+}
 function show(s) {
   for (const k of keys) {
     $(k).value = s[k];
@@ -344,6 +450,7 @@ for (const k of keys)
   $(k).addEventListener("input", () => {
     S[k] = $(k).tagName === "SELECT" ? $(k).value : parseFloat($(k).value);
     if (fmt[k]) $(k + "-v").textContent = fmt[k](S[k]);
+    showFor();
     if (!M) return;
     if (k === "zoom") { clearTimeout(M.zoomWait); M.zoomWait = setTimeout(drawBase, 250); }
     else compose();
@@ -390,6 +497,7 @@ $("reset").addEventListener("click", () => {
   const zoomChanged = S.zoom !== DEFAULTS.zoom;
   S = { ...DEFAULTS };
   show(S);
+  showFor();
   if (zoomChanged) drawBase(); else compose();
 });
 $("copy").addEventListener("click", () => {
@@ -404,6 +512,7 @@ $("copy").addEventListener("click", () => {
 window.expression = { get map() { return M; }, get settings() { return S; }, compose };
 
 show(S);
+showFor();
 await document.fonts.load('italic 16px "IM Fell English"').catch(() => {});
 setTimeout(() => newMap(), 20);
 </script>
