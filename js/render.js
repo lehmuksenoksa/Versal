@@ -42,7 +42,8 @@ export const VIS_DEFAULTS = {
   sight: 7, // how far the player sees, in tiles
   unknown: "dark", // what hides unexplored ground: "paper" (the blank page) or "dark"
   softness: 2, // width of the soft edge of what's in sight, in tiles
-  memory: "sepia", // remembered but out of sight: "faded", "pencil", "sepia" or "unchanged"
+  memory: "sepia", // remembered but out of sight: see MEMORY_STYLES
+  memDark: "yes", // does the darkness beyond the light also fall on remembered ground?
   fade: 0.85, // how far remembered areas wash out toward the paper
   reveal: 0.3, // seconds for newly seen ground to ink in
   light: "candle", // "none" or "candle" (a warm light carried by the player)
@@ -57,11 +58,18 @@ export const VIS_DEFAULTS = {
 // Sight and light reach this far past a wall into the rock, so the walls and
 // the hatching just behind them show.
 const BAND = { sight: 2.4, light: 0.6 };
-const MEMORY_FILTERS = {
-  faded: "none",
-  pencil: "grayscale(1) contrast(0.6) brightness(1.12)",
-  sepia: "sepia(0.9) contrast(0.72) brightness(1.06)",
-  unchanged: "none",
+// How remembered ground is drawn: a filter over the map (or over the plan,
+// the map with only floors and walls), then a wash toward the paper, or
+// toward the desk for the dark styles. `hatch` lays pencil shading over it.
+const MEMORY_STYLES = {
+  faded: { filter: "none" },
+  pencil: { filter: "grayscale(1) contrast(0.6) brightness(1.12)" },
+  sepia: { filter: "sepia(0.9) contrast(0.72) brightness(1.06)" },
+  plan: { filter: "sepia(0.9) contrast(0.8)", plan: true },
+  blurred: { filter: "sepia(0.9) contrast(0.72) brightness(1.06)", blur: 1.6 },
+  hatched: { filter: "sepia(0.9) contrast(0.72) brightness(1.06)", hatch: true },
+  chalk: { filter: "invert(1) grayscale(1) brightness(0.85)", dark: true },
+  blueprint: { filter: "invert(1) sepia(1) hue-rotate(180deg) saturate(2.5) brightness(0.85)", dark: true },
 };
 const MASK_RES = 8; // mask pixels per tile
 
@@ -89,6 +97,7 @@ export class Renderer {
     if (!this.world) return;
     if (this.vis.rock !== old.rock) this.toneMap();
     if (this.vis.memory !== old.memory || this.vis.fade !== old.fade || this.vis.rock !== old.rock) this.buildMemory();
+    if (this.vis.memDark !== old.memDark) this.sightFrom = null;
     this.sightFrom = null; // recompute sight and light
     if (this.vis.sight !== old.sight) {
       this.world.sight = this.vis.sight;
@@ -135,6 +144,7 @@ export class Renderer {
     this.mapScale = this.dpr * this.zoom;
     const drawn = renderMap(L, this.TS, this.mapScale, this.world.seed);
     this.rawMap = drawn.canvas;
+    this.planMap = null; // drawn when a memory style needs it
     // Everything but the floor: the rock outside the rooms.
     this.rock = new Path2D();
     this.rock.rect(-L.w * this.TS, -L.h * this.TS, L.w * this.TS * 3, L.h * this.TS * 3);
@@ -175,19 +185,35 @@ export class Renderer {
     this.map = c;
   }
 
-  // The map as remembered: washed out, greyed or browned.
+  // The map as remembered (see MEMORY_STYLES).
   buildMemory() {
     const v = this.vis;
     if (v.memory === "unchanged") { this.memory = this.map; return; }
+    const style = MEMORY_STYLES[v.memory] || MEMORY_STYLES.sepia;
+    if (style.plan && !this.planMap)
+      this.planMap = renderMap(this.world.level, this.TS, this.mapScale, this.world.seed, { plan: true }).canvas;
+    const src = style.plan ? this.planMap : this.map;
     const c = document.createElement("canvas");
-    c.width = this.map.width;
-    c.height = this.map.height;
+    c.width = src.width;
+    c.height = src.height;
     const g = c.getContext("2d");
-    g.filter = MEMORY_FILTERS[v.memory];
-    g.drawImage(this.map, 0, 0);
+    g.filter = style.filter + (style.blur ? ` blur(${style.blur * this.mapScale}px)` : "");
+    g.drawImage(src, 0, 0);
     g.filter = "none";
-    g.fillStyle = `rgba(247, 242, 230, ${v.fade})`;
+    g.fillStyle = style.dark ? `rgba(43, 34, 28, ${v.fade * 0.6})` : `rgba(247, 242, 230, ${v.fade})`;
     g.fillRect(0, 0, c.width, c.height);
+    if (style.hatch) {
+      // Diagonal pencil shading over everything remembered.
+      const step = this.TS * 0.22 * this.mapScale;
+      g.strokeStyle = "rgba(90, 70, 50, 0.35)";
+      g.lineWidth = Math.max(1, this.mapScale * 0.9);
+      g.beginPath();
+      for (let d = -c.height; d < c.width; d += step) {
+        g.moveTo(d, c.height);
+        g.lineTo(d + c.height, 0);
+      }
+      g.stroke();
+    }
     this.memory = c;
   }
 
@@ -444,6 +470,12 @@ export class Renderer {
           g.fillRect(cx, cy, vw, vh);
           g.globalCompositeOperation = "destination-out";
           light();
+          if (v.memDark === "no") {
+            // Leave remembered ground out of the darkness: only what is in
+            // sight darkens beyond the light.
+            g.globalCompositeOperation = "destination-in";
+            g.drawImage(this.maskVis, 0, 0, mw, mh);
+          }
         });
       // ...and a warm tint where it does.
       if (v.warmth > 0)

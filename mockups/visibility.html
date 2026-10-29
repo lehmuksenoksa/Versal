@@ -80,7 +80,12 @@
 
   <fieldset>
     <legend>Remembered, out of sight</legend>
-    <label for="memory">Drawn as <select id="memory"><option value="pencil">Pencil grey</option><option value="faded">Faded ink</option><option value="sepia">Sepia</option><option value="unchanged">Unchanged</option></select></label>
+    <label for="memory">Drawn as <select id="memory">
+      <option value="sepia">Sepia</option><option value="pencil">Pencil grey</option><option value="faded">Faded ink</option>
+      <option value="plan">Plan only: walls, no hatching or grid</option><option value="blurred">Out of focus</option>
+      <option value="hatched">Pencil-shaded</option><option value="chalk">Chalk on dark</option>
+      <option value="blueprint">Blueprint</option><option value="unchanged">Unchanged</option></select></label>
+    <label for="memDark">Darkness beyond the light falls on it <select id="memDark"><option value="yes">Yes</option><option value="no">No</option></select></label>
     <label for="fade">Washed out by <output id="fade-v"></output><input id="fade" type="range" min="0" max="0.85" step="0.05"></label>
   </fieldset>
 

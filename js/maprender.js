@@ -16,7 +16,8 @@ const SHADOW = "rgba(70, 62, 55, 0.3)";
 const WALL = { weight: 8, inside: 0.1, seg: 0.3, kink: 1.2, bow: 0.3, vary: 0 };
 const GRID = { wobble: 0.8, breaks: 0.35 };
 
-export function renderMap(level, TS, scale, seed) {
+// With `plan` set, only the floor and the walls are drawn: no hatching or grid.
+export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(W * TS * scale);
@@ -36,7 +37,8 @@ export function renderMap(level, TS, scale, seed) {
   for (const loop of loops) addLoop(floor, loop);
 
   drawPaper(ctx, W * TS, H * TS, rng);
-  hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatchSettings(TS), rng.fork());
+  const hatchRng = rng.fork(); // taken either way, so the walls come out the same
+  if (!plan) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatchSettings(TS), hatchRng);
   // Floors are painted over the hatching, which leaves it cut cleanly at the walls.
   ctx.fillStyle = PAPER;
   ctx.fill(floor, "evenodd");
@@ -44,7 +46,8 @@ export function renderMap(level, TS, scale, seed) {
   ctx.save();
   ctx.clip(floor, "evenodd");
   drawShadow(ctx, level, TS, floor);
-  drawGrid(ctx, W, H, TS, rng.fork(), open);
+  const gridRng = rng.fork();
+  if (!plan) drawGrid(ctx, W, H, TS, gridRng, open);
   ctx.restore();
 
   drawWalls(ctx, loops, TS, rng);
