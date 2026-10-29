@@ -61,27 +61,28 @@
 <body>
 <header>
   <h1>Hatching mockups</h1>
-  <p>Ways to fill the rock around the same sample map. The controls change alternatives A to C. Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
+  <p>Ways to fill the rock around the same sample map. The default settings imitate the hatching in Dyson Logos' map. The controls change alternatives A to C. Strokes in a group bend the same way and start from the same end: the end that grows out of the line or wall the group begins from. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
 </header>
 
 <div class="controls">
-  <label for="weight">Stroke weight <output id="weight-v"></output><input id="weight" type="range" min="0.8" max="4" step="0.1" value="2.2"></label>
-  <label for="vary">Random thickness <output id="vary-v"></output><input id="vary" type="range" min="0" max="1" step="0.05" value="0.3"></label>
-  <label for="curve">Curvature <output id="curve-v"></output><input id="curve" type="range" min="0" max="0.25" step="0.01" value="0.03"></label>
-  <label for="wobble">Hand wobble <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="3" step="0.1" value="0.6"></label>
+  <label for="weight">Stroke weight <output id="weight-v"></output><input id="weight" type="range" min="0.8" max="6" step="0.1" value="3.6"></label>
+  <label for="vary">Random thickness <output id="vary-v"></output><input id="vary" type="range" min="0" max="1" step="0.05" value="0.15"></label>
+  <label for="curve">Curvature <output id="curve-v"></output><input id="curve" type="range" min="0" max="0.25" step="0.005" value="0.015"></label>
+  <label for="wobble">Hand wobble <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="3" step="0.1" value="0.4"></label>
   <label for="maxlines">Max lines per group <output id="maxlines-v"></output><input id="maxlines" type="range" min="1" max="5" step="1" value="5"></label>
-  <label for="spacing">Line spacing <output id="spacing-v"></output><input id="spacing" type="range" min="3" max="10" step="0.5" value="6"></label>
-  <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.5"></label>
-  <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="6" step="0.5" value="3"></label>
-  <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="1.8"></label>
+  <label for="spacing">Line spacing <output id="spacing-v"></output><input id="spacing" type="range" min="3" max="12" step="0.25" value="7.5"></label>
+  <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
+  <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
+  <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
+  <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
   <button id="reseed" type="button">New layout</button>
   <fieldset class="profile">
     <legend>Thickness along the stroke <span>(drag the dots; × stroke weight)</span></legend>
     <canvas id="profile" width="260" height="96" aria-label="Thickness profile editor"></canvas>
     <div class="profile-sliders">
-      <label for="pstart">Start <output id="pstart-v"></output><input id="pstart" type="range" min="0" max="3" step="0.05" value="1.5"></label>
-      <label for="pmid">Middle <output id="pmid-v"></output><input id="pmid" type="range" min="0" max="3" step="0.05" value="1"></label>
-      <label for="pend">End <output id="pend-v"></output><input id="pend" type="range" min="0" max="3" step="0.05" value="0.35"></label>
+      <label for="pstart">Start <output id="pstart-v"></output><input id="pstart" type="range" min="0" max="3" step="0.05" value="1"></label>
+      <label for="pmid">Middle <output id="pmid-v"></output><input id="pmid" type="range" min="0" max="3" step="0.05" value="1.1"></label>
+      <label for="pend">End <output id="pend-v"></output><input id="pend" type="range" min="0" max="3" step="0.05" value="0.65"></label>
     </div>
   </fieldset>
 </div>
@@ -303,16 +304,19 @@ function addStroke(store, s) {
 function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
   if (!store.all.length) for (const w of WALLS) store.add({ ...w, w: TS * 0.13 });
   const sp = o.spacing, maxT = o.length * TS;
-  // Candidate group origins, roughly ordered from the walls outward.
+  // Two passes: full groups laid from the walls outward, then smaller groups
+  // tucked into the gaps that are left.
+  for (const pass of [0, 1]) {
+  const fill = pass === 1;
   const cand = [];
-  for (let n = Math.round((W * H) / (sp * sp)); n > 0; n--) {
+  for (let n = Math.round(((W * H) / (sp * sp)) * (fill ? 3 : 1)); n > 0; n--) {
     const x = rng.range(0, W), y = rng.range(0, H);
     if (mask.inside(x, y)) cand.push([x, y, mask.dist(x, y) + rng.range(0, TS * 0.9)]);
   }
   cand.sort((a, b) => a[2] - b[2]);
   for (const [px, py] of cand) {
     const near = store.nearest(px, py, TS);
-    if (near.d < sp * 0.9) continue;
+    if (near.d < sp * (fill ? 0.75 : 0.9)) continue;
     let ang, startAhead;
     if (near.seg && near.d < TS * 0.8) {
       // Start off the side of the nearest line, turned well away from it.
@@ -327,7 +331,7 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
       startAhead = rng.chance(0.5);
     }
     const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
-    const n = Math.max(1, Math.min(o.maxLines, rng.int(2, 5)));
+    const n = Math.max(1, Math.min(o.maxLines, fill ? rng.int(2, 3) : rng.int(3, 5)));
     const side = rng.chance(0.5) ? 1 : -1;
     const vx = -Math.sin(ang) * side, vy = Math.cos(ang) * side;
     for (let k = 0; k < n; k++) {
@@ -337,7 +341,7 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
       const dx = Math.cos(a), dy = Math.sin(a);
       const tf = cast(store, mask, qx, qy, dx, dy, maxT * rng.range(0.45, 0.6));
       const tb = cast(store, mask, qx, qy, -dx, -dy, maxT * rng.range(0.45, 0.6));
-      if (tf + tb < sp * o.minlen) continue;
+      if (tf + tb < sp * o.minlen * (fill ? 0.6 : 1)) continue;
       const s = startAhead
         ? { x0: qx + dx * tf, y0: qy + dy * tf, x1: qx - dx * tb, y1: qy - dy * tb }
         : { x0: qx - dx * tb, y0: qy - dy * tb, x1: qx + dx * tf, y1: qy + dy * tf };
@@ -348,6 +352,30 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
       inkStroke(ctx, s, o, rng, g);
       addStroke(store, s);
     }
+  }
+  }
+  edgeDashes(ctx, rng, mask, store, o);
+}
+
+// Where the hatching gives out, it breaks into short dashes that carry on
+// the direction of the nearest stroke.
+function edgeDashes(ctx, rng, mask, store, o) {
+  if (o.flecks <= 0) return;
+  const sp = o.spacing, reach = TS * 0.45;
+  for (let n = Math.round(((W * H) / (sp * sp)) * 0.35 * o.flecks); n > 0; n--) {
+    const x = rng.range(0, W), y = rng.range(0, H);
+    if (mask.inside(x, y) || mask.dist(x, y) <= 0) continue;
+    let edge = false;
+    for (let k = 0; k < 8 && !edge; k++) edge = mask.inside(x + Math.cos(k * 0.785) * reach, y + Math.sin(k * 0.785) * reach);
+    if (!edge) continue;
+    const near = store.nearest(x, y, TS * 0.8);
+    if (!near.seg || near.d < sp * 0.8) continue;
+    const a = Math.atan2(near.seg.y1 - near.seg.y0, near.seg.x1 - near.seg.x0) + rng.range(-0.1, 0.1);
+    const len = sp * rng.range(0.5, 1.6), dx = Math.cos(a) * len / 2, dy = Math.sin(a) * len / 2;
+    const s = { x0: x - dx, y0: y - dy, x1: x + dx, y1: y + dy };
+    if (store.hit(s.x0, s.y0, dx * 2 / len, dy * 2 / len, len).seg) continue;
+    inkStroke(ctx, s, { ...o, weight: o.weight * 0.85 }, rng, { bend: 0 });
+    addStroke(store, s);
   }
 }
 
@@ -470,9 +498,9 @@ function drawRooms(ctx) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "pstart", "pmid", "pend"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "flecks", "pstart", "pmid", "pend"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${Math.round(v * 100)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
