@@ -327,20 +327,18 @@ function learn(p) {
   return grew;
 }
 
-// The ground that goes with the floor in sight: everything not seen (rock,
-// and floor alike, so unseen floor never reads differently from rock) takes
-// how well its nearest seen floor is in sight now (`vis`), out to the
-// hatching's reach, softened. Its walls and hatching are drawn in the
-// in-sight look.
+// The rock that goes with the floor in sight: rock takes how well its
+// nearest seen floor is in sight now (`vis`), out to the hatching's reach,
+// softened. Its walls and hatching are drawn in the in-sight look.
 function sightRock(vis) {
   const { mw, mh, floor, seen } = M, n = mw * mh, any = new Uint8Array(n);
   for (let j = 0; j < n; j++) any[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
   const { d2, sx, sy } = nearestSeeds(any, mw, mh), far = (S.reach * R) ** 2;
   const v = new Float32Array(n);
-  for (let j = 0; j < n; j++) if (!any[j] && sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
+  for (let j = 0; j < n; j++) if (!floor[j] && sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
   blur(v, mw, mh, Math.round(R * 0.5));
   const img = new ImageData(mw, mh);
-  for (let j = 0; j < n; j++) if (!any[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
+  for (let j = 0; j < n; j++) if (!floor[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
   if (!M.rockSight) M.rockSight = blank(mw, mh);
   M.rockSight.getContext("2d").putImageData(img, 0, 0);
 }
@@ -620,26 +618,16 @@ function rebuild() {
   };
 
   // Ground not yet seen. `u` runs from 0 where the cover starts to 1 where it
-  // is solid: by distance from the known floor (with the ragged edge, and
-  // never further out than the hatching reaches), or from where the
-  // hatching gives out.
+  // is solid: by distance from the known floor (with the ragged edge), or
+  // from where the hatching gives out.
   const u = new Float32Array(n);
   for (let j = 0; j < n; j++) {
     if (known[j]) { u[j] = -1; continue; }
-    const byHatching = (grey[j] - 0.4) / 0.6;
-    if (S.fadeBy === "hatching") { u[j] = byHatching; continue; }
+    if (S.fadeBy === "hatching") { u[j] = (grey[j] - 0.4) / 0.6; continue; }
     const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
     const k = Math.max(0.1, 1 + S.ragged * (2 * M.noise(x, y) - 1));
-    // Ground the hatching doesn't reach (out past an opening) is covered too,
-    // or its bare paper would show which way the opening leads.
-    u[j] = Math.max((Math.sqrt(d2[j]) / R - S.fadeStart * k) / Math.max(0.01, S.fadeWidth * k), (grey[j] - 0.75) / 0.25);
+    u[j] = (Math.sqrt(d2[j]) / R - S.fadeStart * k) / Math.max(0.01, S.fadeWidth * k);
   }
-  // Floor seen, if only partly, is covered only as little as it is drawn.
-  for (let j = 0; j < n; j++)
-    if (floor[j] && !known[j] && seen[j] > 0) {
-      const a = drawnAs(seen[j]);
-      u[j] = u[j] * (1 - a) - a;
-    }
   const cover = blank(cw, ch), cg = cover.getContext("2d");
   if (S.fadeStyle === "gradient") overlay(cg, S.outColor, (j) => smooth(u[j]), "source-over");
   else if (S.fadeStyle === "edge")
