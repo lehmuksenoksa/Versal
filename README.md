@@ -3,7 +3,8 @@
 A sketchpad for the look and feel of a browser roguelike: one hand-inked dungeon map, the player,
 and some goblins.
 
-- The map is drawn once, offscreen, in the manner of Dyson Logos' dungeon maps.
+- The map is drawn once, offscreen, in the manner of Dyson Logos' dungeon maps: heavy walls,
+  jagged in cave rooms, a grey shadow cast down-right, bold hatching in the rock, a black floor grid.
 - The player (`@`) and goblins (`g`) are blackletter glyphs, set in UnifrakturMaguntia.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
 
@@ -25,8 +26,8 @@ in the browser console.
 
 | File | What it does |
 | --- | --- |
-| `js/dungeon.js` | Rooms, corridors, doors and furniture. |
-| `js/maprender.js` | The hand-inked map: paper, hatching, floor grid, walls, furniture, room numbers. |
+| `js/dungeon.js` | Rooms and caves, corridors, doors and furniture. |
+| `js/maprender.js` | The hand-inked map: wall outlines, hatching, shadow, floor grid, furniture, room numbers. |
 | `js/world.js` | The player, goblin packs and their milling about. |
 | `js/render.js` | Per-frame drawing: camera, doors, glyph poses and movement tweens. |
 | `js/main.js` | Input and the main loop. |
