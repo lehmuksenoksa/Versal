@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hatching Expression</title>
+<style>
+  /* Layout: the map on the left (scrolling if it is bigger than the window),
+     the options on the right (below the map on narrow screens). */
+  @font-face { font-family: "IM Fell English"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
+  :root {
+    --desk: #2b221c;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--desk); color: var(--ink); font: 14px/1.4 var(--body); display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+  [hidden] { display: none !important; }
+  #stage { height: 100vh; height: 100dvh; overflow: auto; position: sticky; top: 0; padding: 16px; }
+  #view { display: block; cursor: pointer; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); }
+  aside {
+    min-height: 100vh; background: var(--paper); border-left: 1px solid var(--rule);
+    padding-block: 14px 24px; padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: normal; }
+  aside > p { margin: 0; color: var(--muted); font-size: 13px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: 14px var(--body); padding: 5px 12px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
+  button.plain { color: var(--ink); background: #fffdf7; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  fieldset { border: 1px solid var(--rule); padding: 8px 10px 10px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  legend { font-size: 15px; padding: 0 4px; }
+  label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); }
+  output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--rule); background: #fffdf7; padding: 6px; }
+  #status { min-height: 1.4em; }
+  @media (max-width: 760px) {
+    body { grid-template-columns: minmax(0, 1fr); }
+    #stage { height: 60vh; height: 60dvh; z-index: 1; padding: 8px; }
+    aside { border-left: 0; border-top: 1px solid var(--rule); min-height: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="view" aria-label="Dungeon map"></canvas></div>
+<aside>
+  <h1>Hatching expression</h1>
+  <p>One hatching for all the rock, drawn as if the whole map were solid stone. How much of it shows, and how, depends only on the walls that are known. Click a room or corridor to make it known or unknown.</p>
+  <p id="status"></p>
+  <div class="buttons">
+    <button id="copy" type="button">Copy settings</button>
+    <button id="newmap" class="plain" type="button">New map</button>
+    <button id="reset" class="plain" type="button">Defaults</button>
+  </div>
+  <div id="export-box" hidden>
+    <label for="export">Settings, ready to paste <span id="copy-status"></span></label>
+    <textarea id="export" readonly rows="3"></textarea>
+  </div>
+
+  <fieldset>
+    <legend>Known ground</legend>
+    <div class="buttons">
+      <button id="all" class="plain" type="button">All known</button>
+      <button id="none" class="plain" type="button">None known</button>
+      <button id="some" class="plain" type="button">A few rooms</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Hatching, by distance from known walls</legend>
+    <label for="full">Full hatching up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
+    <label for="reach">Gone by <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
+    <label for="ragged">Ragged edge <output id="ragged-v"></output><input id="ragged" type="range" min="0" max="0.8" step="0.05"></label>
+    <label for="shrink">Strokes shrink, at the far end, to <output id="shrink-v"></output><input id="shrink" type="range" min="0.05" max="1" step="0.05"></label>
+    <label for="heavy">Heavier near the walls by <output id="heavy-v"></output><input id="heavy" type="range" min="0" max="1.5" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>View</legend>
+    <label for="zoom">Zoom <output id="zoom-v"></output><input id="zoom" type="range" min="0.3" max="1.5" step="0.05"></label>
+  </fieldset>
+</aside>
+
+<script type="module">
+import { generateLevel, isOpen } from "../js/dungeon.js";
+import { RNG } from "../js/rng.js";
+import { renderMap, drawPaper, INK } from "../js/maprender.js";
+import { hatchSolid, inkRecorded, nearestSeeds } from "../js/hatching.js";
+
+const TS = 32; // map units per tile (the hatching's own scale)
+const R = 8; // mask pixels per tile
+// The rock this close to known floor (in tiles) shows the walls' ink.
+const WALL_BAND = 0.5;
+const DEFAULTS = { full: 0.8, reach: 2.4, ragged: 0.4, shrink: 0.3, heavy: 0.7, zoom: 0.6 };
+const fmt = {
+  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: (v) => `${Math.round(v * 100)}%`,
+  shrink: (v) => `${Math.round(v * 100)}% of their length`, heavy: (v) => `${Math.round(v * 100)}%`, zoom: (v) => `${Math.round(v * 100)}%`,
+};
+const keys = Object.keys(DEFAULTS);
+const $ = (id) => document.getElementById(id);
+const canvas = $("view"), ctx = canvas.getContext("2d");
+let S = { ...DEFAULTS };
+let M = null; // everything about the current map
+
+// Smooth value noise over the map, 0 to 1, varying over `cell` map units.
+function valueNoise(rng, w, h, cell) {
+  const gw = Math.ceil(w / cell) + 2, gh = Math.ceil(h / cell) + 2, g = Float32Array.from({ length: gw * gh }, () => rng.next());
+  const s = (t) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const fx = x / cell, fy = y / cell, i = Math.max(0, Math.min(gw - 2, Math.floor(fx))), j = Math.max(0, Math.min(gh - 2, Math.floor(fy)));
+    const u = s(fx - i), v = s(fy - j), a = g[j * gw + i], b = g[j * gw + i + 1], c = g[(j + 1) * gw + i], d = g[(j + 1) * gw + i + 1];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+}
+
+// A new map: the level, its solid-rock hatching, and which room or corridor
+// each bit of floor belongs to.
+function newMap(seed = (Math.random() * 2 ** 32) >>> 0) {
+  $("status").textContent = "Drawing the map…";
+  const level = generateLevel(new RNG(seed));
+  const { w: W, h: H } = level, open = (x, y) => x >= 0 && y >= 0 && x < W && y < H && isOpen(level.tiles[y * W + x]);
+  const solid = hatchSolid(W * TS, H * TS, TS, new RNG(seed ^ 0x5011d));
+  // Rooms are a unit each; the corridors between them split into the
+  // separate runs of floor outside the rooms.
+  const unitOf = new Int32Array(W * H).fill(-1);
+  level.rooms.forEach((r, i) => {
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (open(x, y)) unitOf[y * W + x] = i;
+  });
+  let units = level.rooms.length;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (!open(x, y) || unitOf[y * W + x] >= 0) continue;
+      const stack = [[x, y]];
+      unitOf[y * W + x] = units;
+      while (stack.length) {
+        const [cx, cy] = stack.pop();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (open(nx, ny) && unitOf[ny * W + nx] < 0) { unitOf[ny * W + nx] = units; stack.push([nx, ny]); }
+        }
+      }
+      units++;
+    }
+  M = { seed, level, W, H, solid, unitOf, units, known: new Uint8Array(units).fill(1), noise: valueNoise(new RNG(seed ^ 0x7a9), W * TS, H * TS, TS * 3.5) };
+  drawBase();
+}
+
+// The parts that depend only on the map and the zoom: the paper, and the
+// map without its hatching (floor, shadow, grid and walls over clear rock).
+function drawBase() {
+  const { level, W, H, seed } = M, scale = (window.devicePixelRatio || 1) * S.zoom;
+  M.scale = scale;
+  const drawn = renderMap(level, TS, scale, seed, { hatch: false, paper: false });
+  M.walls = drawn.canvas;
+  M.paper = document.createElement("canvas");
+  M.paper.width = drawn.canvas.width;
+  M.paper.height = drawn.canvas.height;
+  const pg = M.paper.getContext("2d");
+  pg.scale(scale, scale);
+  drawPaper(pg, W * TS, H * TS, new RNG(seed));
+  // The floor, at mask resolution, and the room or corridor of each pixel.
+  const mw = W * R, mh = H * R, c = document.createElement("canvas");
+  c.width = mw;
+  c.height = mh;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.scale(R / TS, R / TS);
+  g.fill(drawn.floor, "evenodd");
+  const a = g.getImageData(0, 0, mw, mh).data, pixUnit = new Int32Array(mw * mh).fill(-1);
+  for (let y = 0; y < mh; y++)
+    for (let x = 0; x < mw; x++) {
+      if (a[(y * mw + x) * 4 + 3] < 128) continue;
+      // The tile under the pixel, or (where a wobbly wall bulges into the
+      // rock) the floor tile next to it.
+      const tx = Math.floor(x / R), ty = Math.floor(y / R);
+      let u = M.unitOf[ty * W + tx];
+      for (let k = 0; u < 0 && k < 9; k++) {
+        const nx = tx + (k % 3) - 1, ny = ty + Math.floor(k / 3) - 1;
+        if (nx >= 0 && ny >= 0 && nx < W && ny < H) u = M.unitOf[ny * W + nx];
+      }
+      pixUnit[y * mw + x] = u;
+    }
+  Object.assign(M, { mw, mh, pixUnit });
+  canvas.width = drawn.canvas.width;
+  canvas.height = drawn.canvas.height;
+  canvas.style.width = `${(W * TS * S.zoom).toFixed(0)}px`;
+  canvas.style.height = `${(H * TS * S.zoom).toFixed(0)}px`;
+  compose();
+}
+
+// Lay the hatching, expressed by distance from the known floor, then the
+// known rooms and corridors over it.
+function compose() {
+  const { mw, mh, pixUnit, known, solid, scale, noise } = M, n = mw * mh;
+  const t0 = performance.now();
+  const isKnown = new Uint8Array(n);
+  for (let j = 0; j < n; j++) isKnown[j] = pixUnit[j] >= 0 && known[pixUnit[j]] ? 1 : 0;
+  const d2 = nearestSeeds(isKnown, mw, mh).d2;
+  const dist = (x, y) => {
+    const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
+    return i < 0 || k < 0 || i >= mw || k >= mh ? Infinity : Math.sqrt(d2[k * mw + i]) / R;
+  };
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(M.paper, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.fillStyle = INK;
+  let drawnStrokes = 0;
+  for (const st of solid) {
+    const [x, y] = st.path[st.path.length >> 1], d = dist(x, y);
+    if (d === 0 || d === Infinity) continue;
+    // The ragged edge: the whole profile stretches and shrinks with the noise.
+    const m = Math.max(0.1, 1 + S.ragged * (2 * noise(x, y) - 1));
+    const full = Math.min(S.full, S.reach - 0.05) * m, reach = S.reach * m;
+    const u = Math.max(0, Math.min(1, (d - full) / (reach - full)));
+    // Fewer strokes (a group's last ones go first), and shorter.
+    if (u >= 1 || st.rank >= 1 - u) continue;
+    // Each stroke on its own: overlapping strokes can wind opposite ways.
+    ctx.beginPath();
+    inkRecorded(ctx, st, 1 - (1 - S.shrink) * u, 1 + S.heavy * Math.max(0, 1 - d / reach));
+    ctx.fill();
+    drawnStrokes++;
+  }
+
+  // The known rooms and corridors, with their walls' ink reaching a little
+  // into the rock.
+  const mask = document.createElement("canvas");
+  mask.width = mw;
+  mask.height = mh;
+  const img = new ImageData(mw, mh);
+  for (let j = 0; j < n; j++) if (isKnown[j] || (pixUnit[j] < 0 && Math.sqrt(d2[j]) / R < WALL_BAND)) img.data[j * 4 + 3] = 255;
+  mask.getContext("2d").putImageData(img, 0, 0);
+  const layer = document.createElement("canvas");
+  layer.width = canvas.width;
+  layer.height = canvas.height;
+  const lg = layer.getContext("2d");
+  lg.drawImage(M.walls, 0, 0);
+  lg.globalCompositeOperation = "destination-in";
+  lg.imageSmoothingEnabled = true;
+  lg.drawImage(mask, 0, 0, layer.width, layer.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(layer, 0, 0);
+  const k = known.reduce((a, b) => a + b, 0);
+  $("status").textContent = `${k} of ${known.length} rooms and corridors known; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
+}
+
+function show(s) {
+  for (const k of keys) {
+    $(k).value = s[k];
+    $(k + "-v").textContent = fmt[k](s[k]);
+  }
+}
+for (const k of keys)
+  $(k).addEventListener("input", () => {
+    S[k] = parseFloat($(k).value);
+    $(k + "-v").textContent = fmt[k](S[k]);
+    if (!M) return;
+    if (k === "zoom") { clearTimeout(M.zoomWait); M.zoomWait = setTimeout(drawBase, 250); }
+    else compose();
+  });
+
+canvas.addEventListener("click", (e) => {
+  if (!M) return;
+  const r = canvas.getBoundingClientRect();
+  const tx = Math.floor(((e.clientX - r.left) / r.width) * M.W), ty = Math.floor(((e.clientY - r.top) / r.height) * M.H);
+  const u = M.unitOf[ty * M.W + tx];
+  if (u < 0) return;
+  M.known[u] ^= 1;
+  compose();
+});
+$("all").addEventListener("click", () => { M.known.fill(1); compose(); });
+$("none").addEventListener("click", () => { M.known.fill(0); compose(); });
+$("some").addEventListener("click", () => {
+  // A room, and what lies a step or two from it: as if partly explored.
+  M.known.fill(0);
+  const rng = new RNG(), { level, unitOf, W, H } = M;
+  const start = rng.int(0, level.rooms.length - 1);
+  const adj = new Map();
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const a = unitOf[y * W + x];
+      if (a < 0) continue;
+      for (const [nx, ny] of [[x + 1, y], [x, y + 1]]) {
+        const b = nx < W && ny < H ? unitOf[ny * W + nx] : -1;
+        if (b < 0 || b === a) continue;
+        if (!adj.has(a)) adj.set(a, new Set());
+        if (!adj.has(b)) adj.set(b, new Set());
+        adj.get(a).add(b);
+        adj.get(b).add(a);
+      }
+    }
+  let front = [start];
+  M.known[start] = 1;
+  for (let step = 0; step < 3; step++)
+    front = front.flatMap((u) => [...(adj.get(u) || [])].filter((v) => !M.known[v] && (M.known[v] = 1)));
+  compose();
+});
+$("newmap").addEventListener("click", () => setTimeout(() => newMap(), 20));
+$("reset").addEventListener("click", () => {
+  const zoomChanged = S.zoom !== DEFAULTS.zoom;
+  S = { ...DEFAULTS };
+  show(S);
+  if (zoomChanged) drawBase(); else compose();
+});
+$("copy").addEventListener("click", () => {
+  const text = JSON.stringify(S);
+  const box = $("export"), status = $("copy-status");
+  $("export-box").hidden = false;
+  box.value = text;
+  const fallback = () => { box.focus(); box.select(); status.textContent = "(selected: press Ctrl+C or Cmd+C to copy)"; };
+  try { navigator.clipboard.writeText(text).then(() => (status.textContent = "(copied to the clipboard)"), fallback); } catch { fallback(); }
+});
+// A handle for poking at things from the browser console.
+window.expression = { get map() { return M; }, get settings() { return S; }, compose };
+
+show(S);
+await document.fonts.load('italic 16px "IM Fell English"').catch(() => {});
+setTimeout(() => newMap(), 20);
+</script>
+</body>
+</html>

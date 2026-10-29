@@ -338,9 +338,9 @@ export function hatchSolid(W, H, TS, rng) {
 }
 
 // Add one recorded stroke to the current path of `ctx` (the caller fills
-// it), keeping only the middle `keep` of its length; the ends taper as a
-// whole stroke's would.
-export function inkRecorded(ctx, st, keep) {
+// it), keeping only the middle `keep` of its length and its width times
+// `weight`; the ends taper as a whole stroke's would.
+export function inkRecorded(ctx, st, keep, weight = 1) {
   const P = st.path, n = P.length - 1;
   if (n < 1) return;
   const a = ((1 - keep) / 2) * n, b = ((1 + keep) / 2) * n;
@@ -348,21 +348,29 @@ export function inkRecorded(ctx, st, keep) {
     const i = Math.min(n - 1, Math.floor(t)), f = t - i;
     return [P[i][0] + (P[i + 1][0] - P[i][0]) * f, P[i][1] + (P[i + 1][1] - P[i][1]) * f];
   };
-  const m = Math.max(3, Math.round((b - a) * 1.5)), C = [], R = [];
+  const m = Math.max(3, Math.round((b - a) * 1.5)), C = [], L = [], R = [];
   for (let k = 0; k <= m; k++) C.push(at(a + ((b - a) * k) / m));
   for (let k = 0; k <= m; k++) {
     const [x0, y0] = C[Math.max(0, k - 1)], [x1, y1] = C[Math.min(m, k + 1)];
     const dl = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / dl, ny = (x1 - x0) / dl;
-    const w = (profile(HATCH, k / m) * st.scale) / 2;
-    k ? ctx.lineTo(C[k][0] + nx * w, C[k][1] + ny * w) : ctx.moveTo(C[k][0] + nx * w, C[k][1] + ny * w);
+    const w = (profile(HATCH, k / m) * st.scale * weight) / 2;
+    L.push([C[k][0] + nx * w, C[k][1] + ny * w]);
     R.push([C[k][0] - nx * w, C[k][1] - ny * w]);
   }
-  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+  const outline = L.concat(R.reverse());
+  let area = 0;
+  outline.forEach(([x, y], i) => {
+    const [x1, y1] = outline[(i + 1) % outline.length];
+    area += x * y1 - x1 * y;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
   ctx.closePath();
+  // The round ends wind the same way as the outline (a clockwise arc has a
+  // positive area here), so where they overlap the fill doesn't cancel out.
   for (const [[x, y], t] of [[C[0], 0], [C[m], 1]]) {
-    const r = (profile(HATCH, t) * st.scale) / 2;
+    const r = (profile(HATCH, t) * st.scale * weight) / 2;
     ctx.moveTo(x + r, y);
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(x, y, r, 0, Math.PI * 2, area < 0);
   }
 }
 
@@ -545,6 +553,31 @@ function valueNoise(rng, W, H, cell) {
 
 // Exact Euclidean distance transform (Felzenszwalb & Huttenlocher) of a
 // binary grid: for each cell, the distance in cells to the nearest set cell.
+// For each pixel of a w×h grid, the nearest pixel marked in `seed`: its
+// coordinates (sx, sy, -1 when there is none) and squared distance (d2), by
+// two sweeps passing each pixel's nearest seed on to its neighbours (a vector
+// distance transform).
+export function nearestSeeds(seed, w, h) {
+  const n = w * h, sx = new Int32Array(n).fill(-1), sy = new Int32Array(n), d2 = new Float64Array(n).fill(Infinity);
+  for (let i = 0; i < n; i++) if (seed[i]) { sx[i] = i % w; sy[i] = (i / w) | 0; d2[i] = 0; }
+  const take = (x, y, nx, ny) => {
+    if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
+    const j = ny * w + nx;
+    if (sx[j] < 0) return;
+    const i = y * w + x, dx = x - sx[j], dy = y - sy[j], dd = dx * dx + dy * dy;
+    if (dd < d2[i]) { d2[i] = dd; sx[i] = sx[j]; sy[i] = sy[j]; }
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) { take(x, y, x - 1, y); take(x, y, x - 1, y - 1); take(x, y, x, y - 1); take(x, y, x + 1, y - 1); }
+    for (let x = w - 1; x >= 0; x--) take(x, y, x + 1, y);
+  }
+  for (let y = h - 1; y >= 0; y--) {
+    for (let x = w - 1; x >= 0; x--) { take(x, y, x + 1, y); take(x, y, x + 1, y + 1); take(x, y, x, y + 1); take(x, y, x - 1, y + 1); }
+    for (let x = 0; x < w; x++) take(x, y, x - 1, y);
+  }
+  return { d2, sx, sy };
+}
+
 export function distanceTransform(grid, w, h) {
   const INF = 1e20, f = new Float64Array(Math.max(w, h));
   const d = new Float64Array(Math.max(w, h)), v = new Int32Array(Math.max(w, h)), z = new Float64Array(Math.max(w, h) + 1);

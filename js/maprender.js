@@ -17,9 +17,11 @@ const WALL = { weight: 8, inside: 0.1, seg: 0.3, kink: 1.2, bow: 0.3, vary: 0 };
 const GRID = { wobble: 0.8, breaks: 0.35 };
 
 // With `plan` set, only the floor and the walls are drawn: no hatching or grid.
+// `hatch: false` leaves out just the hatching, and `paper: false` leaves the
+// rock transparent (for laying over hatching drawn some other way).
 // Returns the canvas, the floor outline (a path and its loops) and the
 // hatching strokes.
-export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
+export function renderMap(level, TS, scale, seed, { plan = false, hatch: withHatch = !plan, paper = true } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(W * TS * scale);
@@ -39,10 +41,11 @@ export function renderMap(level, TS, scale, seed, { plan = false } = {}) {
   for (const loop of loops) addLoop(floor, loop);
 
   drawPaper(ctx, W * TS, H * TS, rng);
-  const hatchRng = rng.fork(); // taken either way, so the walls come out the same
+  if (!paper) ctx.clearRect(0, 0, W * TS, H * TS); // drawn anyway, so the walls come out the same
+  const hatchRng = rng.fork(); // taken either way, for the same reason
   // The strokes are kept too, so the renderer knows where the rock is inked.
   const hatch = { ...hatchSettings(TS), record: [] };
-  if (!plan) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatch, hatchRng);
+  if (withHatch) hatchRock(ctx, rockGeometry(W * TS, H * TS, TS, floor, loops), hatch, hatchRng);
   // Floors are painted over the hatching, which leaves it cut cleanly at the walls.
   ctx.fillStyle = PAPER;
   ctx.fill(floor, "evenodd");
@@ -232,7 +235,7 @@ function rockGeometry(W, H, TS, floor, loops) {
 
 // ---------- paper, shadow, grid ------------------------------------------------
 
-function drawPaper(ctx, w, h, rng) {
+export function drawPaper(ctx, w, h, rng) {
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, w, h);
   // Faint foxing and fibres so the page doesn't read as flat digital white.

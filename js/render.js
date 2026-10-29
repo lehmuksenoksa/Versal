@@ -2,7 +2,7 @@
 // lighting, and the animated letters for the player and the goblins.
 
 import { renderMap, INK, PAPER } from "./maprender.js";
-import { hatchSolid, inkRecorded } from "./hatching.js";
+import { hatchSolid, inkRecorded, nearestSeeds } from "./hatching.js";
 import { RNG } from "./rng.js";
 import { Walls } from "./sightline.js";
 
@@ -91,31 +91,6 @@ const MASK_RES = 8; // mask pixels per tile
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
-
-// For each pixel of a w×h grid, the nearest pixel marked in `seed`: its
-// coordinates (sx, sy, -1 when there is none) and squared distance (d2), by
-// two sweeps passing each pixel's nearest seed on to its neighbours (a vector
-// distance transform).
-function nearestSeeds(seed, w, h) {
-  const n = w * h, sx = new Int32Array(n).fill(-1), sy = new Int32Array(n), d2 = new Float64Array(n).fill(Infinity);
-  for (let i = 0; i < n; i++) if (seed[i]) { sx[i] = i % w; sy[i] = (i / w) | 0; d2[i] = 0; }
-  const take = (x, y, nx, ny) => {
-    if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
-    const j = ny * w + nx;
-    if (sx[j] < 0) return;
-    const i = y * w + x, dx = x - sx[j], dy = y - sy[j], dd = dx * dx + dy * dy;
-    if (dd < d2[i]) { d2[i] = dd; sx[i] = sx[j]; sy[i] = sy[j]; }
-  };
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) { take(x, y, x - 1, y); take(x, y, x - 1, y - 1); take(x, y, x, y - 1); take(x, y, x + 1, y - 1); }
-    for (let x = w - 1; x >= 0; x--) take(x, y, x + 1, y);
-  }
-  for (let y = h - 1; y >= 0; y--) {
-    for (let x = w - 1; x >= 0; x--) { take(x, y, x + 1, y); take(x, y, x + 1, y + 1); take(x, y, x, y + 1); take(x, y, x - 1, y + 1); }
-    for (let x = 0; x < w; x++) take(x, y, x - 1, y);
-  }
-  return { d2, sx, sy };
-}
 
 export class Renderer {
   constructor(canvas) {
