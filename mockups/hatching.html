@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hatching Mockups</title>
+<style>
+  /* Layout: a control strip over a grid of sample maps, each a sheet of paper. */
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; letter-spacing: 0.01em; }
+  header p { margin: 0 0 16px; max-width: 70ch; color: var(--muted); }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: end;
+    padding: 12px 14px; margin-bottom: 18px;
+    background: var(--paper); border: 1px solid var(--rule);
+  }
+  .controls label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); min-width: 140px; }
+  .controls output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .controls input[type="range"] { width: 150px; accent-color: var(--accent); }
+  button {
+    font: 15px var(--body); padding: 6px 14px; cursor: pointer;
+    color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px;
+  }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 10px; min-width: 0; }
+  canvas { display: block; width: 100%; height: auto; }
+  figcaption { padding: 8px 2px 0; }
+  figcaption b { font-weight: normal; font-size: 18px; }
+  figcaption span { display: block; color: var(--muted); font-size: 14px; }
+  .ms { float: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hatching mockups</h1>
+  <p>Ways to fill the rock around the same sample map. The sliders change alternatives A to C. D is the game's current hatching, for comparison. New layout redraws everything with a fresh random seed.</p>
+</header>
+
+<div class="controls">
+  <label for="weight">Stroke weight <output id="weight-v"></output><input id="weight" type="range" min="0.8" max="4" step="0.1" value="2.2"></label>
+  <label for="taper">Thickness variation <output id="taper-v"></output><input id="taper" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+  <label for="wobble">Hand wobble <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="3" step="0.1" value="0.8"></label>
+  <label for="maxlines">Max lines per group <output id="maxlines-v"></output><input id="maxlines" type="range" min="1" max="5" step="1" value="5"></label>
+  <label for="spacing">Line spacing <output id="spacing-v"></output><input id="spacing" type="range" min="3" max="10" step="0.5" value="6"></label>
+  <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.5"></label>
+  <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="6" step="0.5" value="3"></label>
+  <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="1.8"></label>
+  <button id="reseed" type="button">New layout</button>
+</div>
+
+<div class="grid">
+  <figure><canvas id="c-bundles" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-bundles"></span><b>A. Abutting bundles</b><span>Groups of up to five parallel strokes, laid down outward from the walls. Each stroke runs until it meets the side of an earlier stroke, a wall, or the edge of the hatched area, so ends land on lines, never on other ends.</span></figcaption></figure>
+  <figure><canvas id="c-fans" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-fans"></span><b>B. Fanned bundles</b><span>As A, but the strokes in a group splay slightly apart like a fan, and each group turns sharply against the line it starts from.</span></figcaption></figure>
+  <figure><canvas id="c-radiate" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-radiate"></span><b>C. Radiating from walls</b><span>First, groups stand out from the walls at near right angles, like the notebook sketch. Then A-style bundles fill the gaps between them.</span></figcaption></figure>
+  <figure><canvas id="c-current" width="576" height="384"></canvas>
+    <figcaption><span class="ms" id="ms-current"></span><b>D. Current game</b><span>Voronoi cells of straight, uniform strokes that stop just short of the neighbouring cell. Not affected by the sliders.</span></figcaption></figure>
+</div>
+
+<script>
+"use strict";
+// ---------- small utilities ----------------------------------------------------
+function RNG(seed) {
+  let s = seed >>> 0;
+  const next = () => {
+    let t = (s = (s + 0x6d2b79f5) >>> 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return {
+    next, range: (a, b) => a + next() * (b - a), int: (a, b) => a + Math.floor(next() * (b - a + 1)),
+    chance: (p) => next() < p,
+    shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(next() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; },
+  };
+}
+const INK = "#1b1815", PAPER = "#f7f2e6";
+const TS = 32, TW = 18, TH = 12, W = TW * TS, H = TH * TS;
+
+// ---------- the sample map ---------------------------------------------------------
+// Two rooms with a one-tile wall between them, a corridor, and some big rock masses.
+const OPEN = new Uint8Array(TW * TH);
+const carve = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) OPEN[y * TW + x] = 1; };
+carve(2, 2, 6, 6);    // room A
+carve(7, 4, 10, 4);   // corridor A-B
+carve(11, 2, 15, 5);  // room B
+carve(9, 7, 15, 9);   // room C, one tile below B
+carve(4, 7, 4, 9);    // corridor down from A
+carve(5, 9, 8, 9);    // ...and across to C
+const open = (x, y) => x >= 0 && y >= 0 && x < TW && y < TH && OPEN[y * TW + x] === 1;
+
+// Wall edges as segments, each with the unit normal pointing into the rock.
+const WALLS = [];
+for (let y = 0; y <= TH; y++) {
+  let run = -1, nrm = 0;
+  for (let x = 0; x <= TW; x++) {
+    const a = open(x, y - 1), b = open(x, y);
+    const on = x < TW && a !== b, n = on ? (a ? 1 : -1) : 0;
+    if (run >= 0 && (!on || n !== nrm)) { WALLS.push({ x0: run * TS, y0: y * TS, x1: x * TS, y1: y * TS, nx: 0, ny: nrm }); run = -1; }
+    if (on && run < 0) { run = x; nrm = n; }
+  }
+}
+for (let x = 0; x <= TW; x++) {
+  let run = -1, nrm = 0;
+  for (let y = 0; y <= TH; y++) {
+    const a = open(x - 1, y), b = open(x, y);
+    const on = y < TH && a !== b, n = on ? (a ? 1 : -1) : 0;
+    if (run >= 0 && (!on || n !== nrm)) { WALLS.push({ x0: x * TS, y0: run * TS, x1: x * TS, y1: y * TS, nx: nrm, ny: 0 }); run = -1; }
+    if (on && run < 0) { run = y; nrm = n; }
+  }
+}
+
+// Distance from each 2px cell to the nearest open tile, in pixels.
+const FR = 2, FW = W / FR, FH = H / FR;
+const DIST = new Float32Array(FW * FH);
+for (let j = 0; j < FH; j++)
+  for (let i = 0; i < FW; i++) {
+    const px = (i + 0.5) * FR, py = (j + 0.5) * FR, tx = Math.floor(px / TS), ty = Math.floor(py / TS);
+    let best = 1e9;
+    for (let y = ty - 5; y <= ty + 5; y++)
+      for (let x = tx - 5; x <= tx + 5; x++) {
+        if (!open(x, y)) continue;
+        const cx = Math.max(x * TS, Math.min(px, (x + 1) * TS)), cy = Math.max(y * TS, Math.min(py, (y + 1) * TS));
+        best = Math.min(best, Math.hypot(px - cx, py - cy));
+      }
+    DIST[j * FW + i] = best;
+  }
+
+function valueNoise(rng, cell) {
+  const gw = Math.ceil(W / cell) + 2, gh = Math.ceil(H / cell) + 2;
+  const lat = Array.from({ length: gw * gh }, () => rng.next());
+  const at = (i, j) => lat[Math.min(gh - 1, j) * gw + Math.min(gw - 1, i)];
+  return (x, y) => {
+    const fx = x / cell, fy = y / cell, i = Math.floor(fx), j = Math.floor(fy);
+    let u = fx - i, v = fy - j; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+    const a = at(i, j) + (at(i + 1, j) - at(i, j)) * u, b = at(i, j + 1) + (at(i + 1, j + 1) - at(i, j + 1)) * u;
+    return a + (b - a) * v;
+  };
+}
+
+// Which pixels may be hatched: rock, within a noisy depth of the nearest floor.
+function makeMask(rng, depthTiles) {
+  const noise = valueNoise(rng, TS * 3.5);
+  const m = new Uint8Array(FW * FH);
+  for (let j = 0; j < FH; j++)
+    for (let i = 0; i < FW; i++) {
+      const px = (i + 0.5) * FR, py = (j + 0.5) * FR, d = DIST[j * FW + i];
+      m[j * FW + i] = d > 0 && d < depthTiles * TS * (0.55 + 0.9 * noise(px, py)) ? 1 : 0;
+    }
+  const inside = (x, y) => {
+    const i = Math.floor(x / FR), j = Math.floor(y / FR);
+    return i >= 0 && j >= 0 && i < FW && j < FH && m[j * FW + i] === 1;
+  };
+  const dist = (x, y) => DIST[Math.min(FH - 1, Math.max(0, Math.floor(y / FR))) * FW + Math.min(FW - 1, Math.max(0, Math.floor(x / FR)))];
+  return { inside, dist };
+}
+
+// ---------- strokes ---------------------------------------------------------------
+// Collision store: straight segments in a bucket grid.
+function SegStore() {
+  const B = 24, cols = Math.ceil(W / B) + 1, buckets = new Map(), all = [];
+  const add = (s) => {
+    all.push(s);
+    const i0 = Math.floor(Math.min(s.x0, s.x1) / B), i1 = Math.floor(Math.max(s.x0, s.x1) / B);
+    const j0 = Math.floor(Math.min(s.y0, s.y1) / B), j1 = Math.floor(Math.max(s.y0, s.y1) / B);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = j * cols + i; if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(s);
+    }
+  };
+  const near = (x0, y0, x1, y1) => {
+    const out = new Set();
+    for (let j = Math.floor(Math.min(y0, y1) / B); j <= Math.floor(Math.max(y0, y1) / B); j++)
+      for (let i = Math.floor(Math.min(x0, x1) / B); i <= Math.floor(Math.max(x0, x1) / B); i++)
+        for (const s of buckets.get(j * cols + i) || []) out.add(s);
+    return out;
+  };
+  // Distance from a point to the nearest stored segment.
+  const nearest = (x, y, r) => {
+    let best = Infinity, which = null;
+    for (const s of near(x - r, y - r, x + r, y + r)) {
+      const dx = s.x1 - s.x0, dy = s.y1 - s.y0, L = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (y - s.y0) * dy) / L));
+      const d = Math.hypot(x - s.x0 - dx * t, y - s.y0 - dy * t);
+      if (d < best) { best = d; which = s; }
+    }
+    return { d: best, seg: which };
+  };
+  // Distance along a ray to the first stored segment it hits.
+  const hit = (px, py, dx, dy, maxT) => {
+    let best = maxT, which = null;
+    for (const s of near(px, py, px + dx * maxT, py + dy * maxT)) {
+      const ex = s.x1 - s.x0, ey = s.y1 - s.y0, den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-9) continue;
+      const qx = s.x0 - px, qy = s.y0 - py;
+      const t = (qx * ey - qy * ex) / den, u = (qx * dy - qy * dx) / den;
+      if (t > 0.01 && t < best && u >= 0 && u <= 1) { best = t; which = s; }
+    }
+    return { t: best, seg: which };
+  };
+  return { add, nearest, hit, all };
+}
+
+// How far a ray can go: stops at the edge of the hatchable area or at a stroke's side.
+function cast(store, mask, px, py, dx, dy, maxT) {
+  let t = 0;
+  while (t < maxT && mask.inside(px + dx * (t + 1), py + dy * (t + 1))) t += 1;
+  const h = store.hit(px, py, dx, dy, Math.max(t, 0.02));
+  // Stop at the side of the line we hit, not its centre.
+  return h.seg ? Math.max(0, h.t - (h.seg.w || 2) * 0.45) : t;
+}
+
+// A hand-inked stroke: slightly bowed, with a little tremor, thicker at one end.
+function inkStroke(ctx, s, o, rng) {
+  const dx = s.x1 - s.x0, dy = s.y1 - s.y0, len = Math.hypot(dx, dy);
+  if (len < 0.5) return;
+  const nx = -dy / len, ny = dx / len, n = Math.max(4, Math.round(len / 3));
+  const bow = rng.range(-1, 1) * o.wobble, ph = rng.range(0, 6.28);
+  let w0 = o.weight * (1 - o.taper * rng.range(0.35, 0.75)), w1 = o.weight * (1 + o.taper * rng.range(0, 0.35));
+  if (rng.chance(0.5)) [w0, w1] = [w1, w0];
+  const L = [], R = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const off = bow * Math.sin(Math.PI * t) + o.wobble * 0.15 * Math.sin(t * 5 + ph) * Math.sin(Math.PI * t);
+    const cx = s.x0 + dx * t + nx * off, cy = s.y0 + dy * t + ny * off, w = (w0 + (w1 - w0) * t) / 2;
+    L.push([cx + nx * w, cy + ny * w]); R.push([cx - nx * w, cy - ny * w]);
+  }
+  ctx.beginPath();
+  L.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+  ctx.closePath();
+  ctx.fill();
+  // Round the ends.
+  ctx.beginPath();
+  ctx.arc(s.x0, s.y0, w0 / 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(s.x1, s.y1, w1 / 2, 0, Math.PI * 2);
+  ctx.fill();
+  s.w = Math.max(w0, w1);
+}
+
+// ---------- A and B: abutting bundles --------------------------------------------
+function bundles(ctx, rng, mask, o, { fan = false, store = SegStore() } = {}) {
+  if (!store.all.length) for (const w of WALLS) store.add({ ...w, w: TS * 0.13 });
+  const sp = o.spacing, maxT = o.length * TS;
+  // Candidate group origins, roughly ordered from the walls outward.
+  const cand = [];
+  for (let n = Math.round((W * H) / (sp * sp)); n > 0; n--) {
+    const x = rng.range(0, W), y = rng.range(0, H);
+    if (mask.inside(x, y)) cand.push([x, y, mask.dist(x, y) + rng.range(0, TS * 0.9)]);
+  }
+  cand.sort((a, b) => a[2] - b[2]);
+  for (const [px, py] of cand) {
+    const near = store.nearest(px, py, TS);
+    if (near.d < sp * 0.9) continue;
+    let ang;
+    if (near.seg && near.d < TS * 0.8) {
+      // Start off the side of the nearest line, turned well away from it.
+      const base = Math.atan2(near.seg.y1 - near.seg.y0, near.seg.x1 - near.seg.x0);
+      ang = base + (rng.chance(0.5) ? 1 : -1) * rng.range(fan ? 1.0 : 0.75, Math.PI / 2);
+    } else ang = rng.range(0, Math.PI);
+    const n = Math.max(1, Math.min(o.maxLines, rng.int(2, 5)));
+    const side = rng.chance(0.5) ? 1 : -1;
+    const vx = -Math.sin(ang) * side, vy = Math.cos(ang) * side;
+    for (let k = 0; k < n; k++) {
+      const a = ang + (fan ? (k - (n - 1) / 2) * rng.range(0.05, 0.11) : rng.range(-0.025, 0.025));
+      const qx = px + vx * sp * k, qy = py + vy * sp * k;
+      if (!mask.inside(qx, qy) || store.nearest(qx, qy, sp).d < sp * 0.6) break;
+      const dx = Math.cos(a), dy = Math.sin(a);
+      const tf = cast(store, mask, qx, qy, dx, dy, maxT * rng.range(0.45, 0.6));
+      const tb = cast(store, mask, qx, qy, -dx, -dy, maxT * rng.range(0.45, 0.6));
+      if (tf + tb < sp * o.minlen) continue;
+      const s = { x0: qx - dx * tb, y0: qy - dy * tb, x1: qx + dx * tf, y1: qy + dy * tf };
+      // Reject strokes that would run alongside another one too closely.
+      let crowded = false;
+      for (const f of [0.2, 0.5, 0.8]) if (store.nearest(s.x0 + (s.x1 - s.x0) * f, s.y0 + (s.y1 - s.y0) * f, sp).d < sp * 0.5) crowded = true;
+      if (crowded) continue;
+      inkStroke(ctx, s, o, rng);
+      store.add(s);
+    }
+  }
+}
+
+// ---------- C: radiating from the walls, then bundles ------------------------------
+function radiating(ctx, rng, mask, o) {
+  const store = SegStore();
+  for (const w of WALLS) store.add({ ...w, w: TS * 0.13 });
+  const sp = o.spacing;
+  for (const w of WALLS) {
+    const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0), ux = (w.x1 - w.x0) / len, uy = (w.y1 - w.y0) / len;
+    let at = rng.range(0, sp * 2);
+    while (at < len) {
+      const n = Math.max(1, Math.min(o.maxLines, rng.int(3, 5)));
+      const tilt = rng.range(-0.55, 0.55);
+      const base = Math.atan2(w.ny, w.nx) + tilt;
+      for (let k = 0; k < n && at < len; k++, at += sp) {
+        const a = base + rng.range(-0.04, 0.04);
+        const dx = Math.cos(a), dy = Math.sin(a);
+        const qx = w.x0 + ux * at + w.nx * TS * 0.07, qy = w.y0 + uy * at + w.ny * TS * 0.07;
+        if (!mask.inside(qx, qy) || store.nearest(qx, qy, sp).d < sp * 0.55) continue;
+        const t = cast(store, mask, qx, qy, dx, dy, o.length * TS * rng.range(0.7, 1.15));
+        if (t < sp * o.minlen * 0.7) continue;
+        const s = { x0: qx - w.nx * TS * 0.07, y0: qy - w.ny * TS * 0.07, x1: qx + dx * t, y1: qy + dy * t };
+        inkStroke(ctx, s, o, rng);
+        store.add(s);
+      }
+      at += sp * rng.range(0.6, 1.4);
+    }
+  }
+  bundles(ctx, rng, mask, o, { store });
+}
+
+// ---------- D: the game's current Voronoi hatching -------------------------------------
+function current(ctx, rng) {
+  const spacing = TS * 0.8, reach = 1.8 * spacing, gap = TS * 0.05;
+  const noise = valueNoise(rng, TS * 3.5);
+  const dist = (x, y) => DIST[Math.min(FH - 1, Math.floor(y / FR)) * FW + Math.min(FW - 1, Math.floor(x / FR))];
+  const cand = [];
+  for (let n = 0; n < (W * H) / (TS * TS) * 8; n++) {
+    const x = rng.range(0, W), y = rng.range(0, H), d = dist(x, y);
+    if (d > 0 && d < 4 * TS) cand.push([x, y]);
+  }
+  const seeds = [];
+  for (const [x, y] of cand) if (!seeds.some((s) => Math.hypot(s.x - x, s.y - y) < spacing)) seeds.push({ x, y });
+  for (const s of seeds) s.inked = dist(s.x, s.y) < (1.1 + 1.7 * noise(s.x, s.y)) * TS;
+  ctx.beginPath();
+  for (const s of seeds) {
+    if (!s.inked) continue;
+    const nb = seeds.filter((n) => n !== s && Math.hypot(n.x - s.x, n.y - s.y) < reach * 1.5);
+    let best = 0, bestScore = -1;
+    for (let k = 0; k < 6; k++) {
+      const a = rng.range(0, Math.PI);
+      let score = Math.PI;
+      for (const n of nb) if (n.angle !== undefined) { const d = Math.abs(a - n.angle) % Math.PI; score = Math.min(score, d, Math.PI - d); }
+      if (score > bestScore) { bestScore = score; best = a; }
+    }
+    s.angle = best;
+    const planes = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([nx, ny]) => ({ nx, ny, c: nx * s.x + ny * s.y + reach, outer: true }));
+    for (const n of nb) {
+      const dx = n.x - s.x, dy = n.y - s.y, d = Math.hypot(dx, dy);
+      planes.push({ nx: dx / d, ny: dy / d, c: (dx / d) * (s.x + dx / 2) + (dy / d) * (s.y + dy / 2) - gap / 2, outer: !n.inked });
+    }
+    const ux = Math.cos(best), uy = Math.sin(best), vx = -uy, vy = ux, step = TS * rng.range(0.15, 0.19);
+    for (let o = -reach + rng.range(0, step); o < reach; o += step) {
+      const ax = s.x + vx * o, ay = s.y + vy * o;
+      let t0 = -reach * 2, t1 = reach * 2, p0 = null, p1 = null;
+      for (const p of planes) {
+        const den = p.nx * ux + p.ny * uy, num = p.c - (p.nx * ax + p.ny * ay);
+        if (Math.abs(den) < 1e-9) { if (num < 0) { t1 = -Infinity; break; } continue; }
+        const t = num / den;
+        if (den > 0) { if (t < t1) { t1 = t; p1 = p; } } else if (t > t0) { t0 = t; p0 = p; }
+      }
+      let len = t1 - t0;
+      if (len < TS * 0.1) continue;
+      if (p0?.outer) t0 += len * rng.range(0, 0.4);
+      if (p1?.outer) t1 -= len * rng.range(0, 0.4);
+      if (t1 - t0 < TS * 0.08) continue;
+      ctx.moveTo(ax + ux * t0, ay + uy * t0);
+      ctx.lineTo(ax + ux * t1, ay + uy * t1);
+    }
+  }
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = TS * 0.048;
+  ctx.lineCap = "round";
+  ctx.stroke();
+}
+
+// ---------- the room on top of the hatching ------------------------------------------
+function drawRooms(ctx) {
+  const floor = new Path2D();
+  for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) if (open(x, y)) floor.rect(x * TS, y * TS, TS, TS);
+  ctx.fillStyle = PAPER;
+  ctx.fill(floor);
+  ctx.save();
+  ctx.clip(floor);
+  // Shadow cast down and to the right by the rock.
+  const off = TS * 0.22, rock = new Path2D();
+  rock.rect(-TS, -TS, W + 2 * TS, H + 2 * TS);
+  rock.addPath(floor);
+  ctx.translate(off, off);
+  ctx.fillStyle = "rgba(70, 62, 55, 0.3)";
+  ctx.fill(rock, "evenodd");
+  ctx.restore();
+  ctx.strokeStyle = "rgba(27, 24, 21, 0.55)";
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
+    if (!open(x, y)) continue;
+    if (open(x + 1, y)) { ctx.moveTo((x + 1) * TS, y * TS); ctx.lineTo((x + 1) * TS, (y + 1) * TS); }
+    if (open(x, y + 1)) { ctx.moveTo(x * TS, (y + 1) * TS); ctx.lineTo((x + 1) * TS, (y + 1) * TS); }
+  }
+  ctx.stroke();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = TS * 0.13;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  for (const w of WALLS) { ctx.moveTo(w.x0, w.y0); ctx.lineTo(w.x1, w.y1); }
+  ctx.stroke();
+}
+
+// ---------- wiring --------------------------------------------------------------------
+const ids = ["weight", "taper", "wobble", "maxlines", "spacing", "length", "minlen", "depth"];
+const fmt = { weight: (v) => `${v}px`, taper: (v) => v, wobble: (v) => `${v}px`, maxlines: (v) => v, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, depth: (v) => `${v} tiles` };
+let seed = (Math.random() * 2 ** 32) >>> 0;
+
+function params() {
+  const o = {};
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    o[id === "maxlines" ? "maxLines" : id] = parseFloat(el.value);
+    document.getElementById(id + "-v").textContent = fmt[id](el.value);
+  }
+  return o;
+}
+
+function paint(id, fn) {
+  const canvas = document.getElementById("c-" + id);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = INK;
+  const t0 = performance.now();
+  fn(ctx);
+  drawRooms(ctx);
+  document.getElementById("ms-" + id).textContent = `${Math.round(performance.now() - t0)} ms`;
+}
+
+function render(includeCurrent) {
+  const o = params();
+  const run = (id, fn) => paint(id, (ctx) => { const rng = RNG(seed); fn(ctx, rng, makeMask(RNG(seed ^ 0x9e3779b9), o.depth)); });
+  run("bundles", (ctx, rng, mask) => bundles(ctx, rng, mask, o));
+  run("fans", (ctx, rng, mask) => bundles(ctx, rng, mask, o, { fan: true }));
+  run("radiate", (ctx, rng, mask) => radiating(ctx, rng, mask, o));
+  if (includeCurrent) paint("current", (ctx) => current(ctx, RNG(seed)));
+}
+
+let pending = false;
+for (const id of ids)
+  document.getElementById(id).addEventListener("input", () => {
+    params();
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; render(false); });
+  });
+document.getElementById("reseed").addEventListener("click", () => { seed = (Math.random() * 2 ** 32) >>> 0; render(true); });
+render(true);
+</script>
+</body>
+</html>
