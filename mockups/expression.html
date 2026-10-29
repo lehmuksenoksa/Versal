@@ -79,7 +79,7 @@
     <label for="shadowSoft" data-mode="player">Its shadows' edges <output id="shadowSoft-v"></output><input id="shadowSoft" type="range" min="0" max="2" step="0.05"></label>
     <label for="warmth" data-mode="player">Its warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
     <label for="dark" data-mode="player">Outside the candlelight, ground in sight darkens by <output id="dark-v"></output><input id="dark" type="range" min="0" max="0.95" step="0.05"></label>
-    <label for="memShade" data-mode="player">and remembered ground by <output id="memShade-v"></output><input id="memShade" type="range" min="0" max="0.95" step="0.05"></label>
+    <label for="memShade" data-mode="player">Remembered ground darker still, by <output id="memShade-v"></output><input id="memShade" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset data-mode="rooms">
@@ -198,7 +198,7 @@ const DEFAULTS = {
   memDepth: 0.35, memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
   outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
   rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat",
-  mode: "player", sight: 8, sightSoft: 1, radius: 5, lightFull: 0.3, shadowSoft: 0.15, warmth: 1, dark: 0.6, memShade: 0.25,
+  mode: "player", sight: 8, sightSoft: 1, radius: 5, lightFull: 0.3, shadowSoft: 0.15, warmth: 1, dark: 0.6, memShade: 0.3,
   show: "map", zoom: 0.3,
 };
 const pct = (v) => `${Math.round(v * 100)}%`;
@@ -727,7 +727,10 @@ function compose() {
     }
   }
   if (playerMode && S.show === "map") {
-    drawLight(px, py, sightPath, (j) => soft[j] * S.dark + (1 - soft[j]) * (memOf(j) ? S.memShade : S.dark));
+    // Remembered ground darkens more than ground in sight: the extra is a
+  // share of what light is left.
+  const memDarkness = S.dark + (1 - S.dark) * S.memShade;
+  drawLight(px, py, sightPath, (j) => soft[j] * S.dark + (1 - soft[j]) * (memOf(j) ? memDarkness : S.dark));
     // The player.
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.font = `bold ${TS * 0.85}px Georgia, serif`;
@@ -746,9 +749,8 @@ function compose() {
 // The candle carried by the player: full brightness out to `lightFull` of
 // its radius, then fading out; it reaches only what can be seen from the
 // player (and the face of the walls it falls on), so walls cast shadows.
-// Outside it everything darkens, by `darkAt(j)` at each mask pixel (ground
-// in sight and remembered ground darken by their own amounts); within it a
-// warm tint. Both are multiplied over the map.
+// Outside it everything darkens, by `darkAt(j)` at each mask pixel
+// (remembered ground more than ground in sight); within it a warm tint. Both are multiplied over the map.
 function drawLight(px, py, sightPath, darkAt) {
   const { scale, mw, mh } = M, rad = S.radius * TS;
   const light = document.createElement("canvas");
