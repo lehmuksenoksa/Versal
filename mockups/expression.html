@@ -84,11 +84,12 @@
 
   <fieldset>
     <legend>Hatching, from black to white</legend>
+    <label for="keepGrey">Strokes kept in mid grey <output id="keepGrey-v"></output><input id="keepGrey" type="range" min="0" max="1" step="0.05"></label>
     <label for="wBlack">Stroke width in black <output id="wBlack-v"></output><input id="wBlack" type="range" min="0.2" max="2.5" step="0.05"></label>
     <label for="wGrey">Stroke width in mid grey <output id="wGrey-v"></output><input id="wGrey" type="range" min="0" max="2.5" step="0.05"></label>
     <label for="lenGrey">Stroke length in mid grey <output id="lenGrey-v"></output><input id="lenGrey" type="range" min="0" max="1" step="0.05"></label>
     <label for="inkGrey">Ink in mid grey <output id="inkGrey-v"></output><input id="inkGrey" type="range" min="0" max="1" step="0.05"></label>
-    <p style="margin:0;color:var(--muted);font-size:13px">Each goes on to nothing at white. Width follows the grey along each stroke; length and ink go by the grey at its middle.</p>
+    <p style="margin:0;color:var(--muted);font-size:13px">Each goes on to nothing at white. Width follows the grey along each stroke; the rest go by the grey at its middle. Strokes drop out a whole group's last strokes first.</p>
   </fieldset>
 
   <fieldset>
@@ -108,11 +109,11 @@ const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { full: 0.6, reach: 2.6, ragged: 0.4, wBlack: 1.5, wGrey: 0.9, lenGrey: 0.7, inkGrey: 1, show: "map", zoom: 0.6 };
+const DEFAULTS = { full: 0.6, reach: 2.6, ragged: 0.4, keepGrey: 0.5, wBlack: 1.5, wGrey: 1.2, lenGrey: 0.7, inkGrey: 1, show: "map", zoom: 0.6 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct,
-  wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
+  keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
 const $ = (id) => document.getElementById(id);
@@ -256,6 +257,9 @@ function compose() {
   for (const st of solid) {
     const [x, y] = st.path[st.path.length >> 1], g = greyAt(x, y);
     if (g >= 0.999) continue;
+    // Drop strokes by rank: a group's own rank, plus more for each later
+    // stroke in it, so groups lose their last strokes first.
+    if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
     const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, 0);
     if (keep < 0.03 || ink < 0.02) continue;
     // Each stroke on its own: overlapping strokes can wind opposite ways.
