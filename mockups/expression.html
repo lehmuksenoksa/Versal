@@ -34,12 +34,13 @@
   .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
   button { font: 14px var(--body); padding: 5px 12px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
   button.plain { color: var(--ink); background: #fffdf7; }
-  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   fieldset { border: 1px solid var(--rule); padding: 8px 10px 10px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
   legend { font-size: 15px; padding: 0 4px; }
   label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); }
   output { color: var(--ink); font-variant-numeric: tabular-nums; }
   input[type="range"] { width: 100%; accent-color: var(--accent); }
+  select { font: 14px var(--body); padding: 3px 4px; border: 1px solid var(--rule); background: #fffdf7; color: var(--ink); }
   textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--rule); background: #fffdf7; padding: 6px; }
   #status { min-height: 1.4em; }
   @media (max-width: 760px) {
@@ -53,7 +54,7 @@
 <div id="stage"><canvas id="view" aria-label="Dungeon map"></canvas></div>
 <aside>
   <h1>Hatching expression</h1>
-  <p>One hatching for all the rock, drawn as if the whole map were solid stone. How much of it shows, and how, depends only on the walls that are known. Click a room or corridor to make it known or unknown.</p>
+  <p>One hatching for all the rock: our cells with zones, drawn as if the whole map were solid stone. The pattern never changes. A depth map from the known walls, black near them and white away from them, sets how heavily it is inked. Click a room or corridor to make it known or unknown.</p>
   <p id="status"></p>
   <div class="buttons">
     <button id="copy" type="button">Copy settings</button>
@@ -75,16 +76,24 @@
   </fieldset>
 
   <fieldset>
-    <legend>Hatching, by distance from known walls</legend>
-    <label for="full">Full hatching up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
-    <label for="reach">Gone by <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
+    <legend>Depth map, from the known walls</legend>
+    <label for="full">Black up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
+    <label for="reach">White from <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
     <label for="ragged">Ragged edge <output id="ragged-v"></output><input id="ragged" type="range" min="0" max="0.8" step="0.05"></label>
-    <label for="shrink">Strokes shrink, at the far end, to <output id="shrink-v"></output><input id="shrink" type="range" min="0.05" max="1" step="0.05"></label>
-    <label for="heavy">Heavier near the walls by <output id="heavy-v"></output><input id="heavy" type="range" min="0" max="1.5" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Hatching, from black to white</legend>
+    <label for="wBlack">Stroke width in black <output id="wBlack-v"></output><input id="wBlack" type="range" min="0.2" max="2.5" step="0.05"></label>
+    <label for="wGrey">Stroke width in mid grey <output id="wGrey-v"></output><input id="wGrey" type="range" min="0" max="2.5" step="0.05"></label>
+    <label for="lenGrey">Stroke length in mid grey <output id="lenGrey-v"></output><input id="lenGrey" type="range" min="0" max="1" step="0.05"></label>
+    <label for="inkGrey">Ink in mid grey <output id="inkGrey-v"></output><input id="inkGrey" type="range" min="0" max="1" step="0.05"></label>
+    <p style="margin:0;color:var(--muted);font-size:13px">Each goes on to nothing at white. Width follows the grey along each stroke; length and ink go by the grey at its middle.</p>
   </fieldset>
 
   <fieldset>
     <legend>View</legend>
+    <label for="show">Show <select id="show"><option value="map">The map</option><option value="depth">The depth map</option><option value="both">The map over the depth map</option></select></label>
     <label for="zoom">Zoom <output id="zoom-v"></output><input id="zoom" type="range" min="0.3" max="1.5" step="0.05"></label>
   </fieldset>
 </aside>
@@ -99,10 +108,11 @@ const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { full: 0.8, reach: 2.4, ragged: 0.4, shrink: 0.3, heavy: 0.7, zoom: 0.6 };
+const DEFAULTS = { full: 0.6, reach: 2.6, ragged: 0.4, wBlack: 1.5, wGrey: 0.9, lenGrey: 0.7, inkGrey: 1, show: "map", zoom: 0.6 };
+const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
-  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: (v) => `${Math.round(v * 100)}%`,
-  shrink: (v) => `${Math.round(v * 100)}% of their length`, heavy: (v) => `${Math.round(v * 100)}%`, zoom: (v) => `${Math.round(v * 100)}%`,
+  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct,
+  wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
 const $ = (id) => document.getElementById(id);
@@ -203,31 +213,59 @@ function compose() {
   const isKnown = new Uint8Array(n);
   for (let j = 0; j < n; j++) isKnown[j] = pixUnit[j] >= 0 && known[pixUnit[j]] ? 1 : 0;
   const d2 = nearestSeeds(isKnown, mw, mh).d2;
-  const dist = (x, y) => {
+  // The depth map: 0 (black) up to `full` tiles from known floor, 1 (white)
+  // from `reach`, smooth between; the noise stretches and shrinks it all.
+  const grey = new Float32Array(n), smooth = (t) => t * t * (3 - 2 * t);
+  for (let j = 0; j < n; j++) {
+    const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
+    const k = Math.max(0.1, 1 + S.ragged * (2 * noise(x, y) - 1)), full = Math.min(S.full, S.reach - 0.05) * k, reach = S.reach * k;
+    grey[j] = isKnown[j] ? 0 : smooth(Math.max(0, Math.min(1, (Math.sqrt(d2[j]) / R - full) / (reach - full))));
+  }
+  const greyAt = (x, y) => {
     const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
-    return i < 0 || k < 0 || i >= mw || k >= mh ? Infinity : Math.sqrt(d2[k * mw + i]) / R;
+    return i < 0 || k < 0 || i >= mw || k >= mh ? 1 : grey[k * mw + i];
   };
+  // Black to mid grey to white: from the black value through the grey one
+  // to `white`.
+  const ramp = (g, black, mid, white) => (g < 0.5 ? black + (mid - black) * g * 2 : mid + (white - mid) * (g - 0.5) * 2);
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.drawImage(M.paper, 0, 0);
+  if (S.show === "map") ctx.drawImage(M.paper, 0, 0);
+  else {
+    const img = new ImageData(mw, mh);
+    for (let j = 0; j < n; j++) {
+      const v = Math.round(255 * grey[j]);
+      img.data[j * 4] = img.data[j * 4 + 1] = img.data[j * 4 + 2] = v;
+      img.data[j * 4 + 3] = 255;
+    }
+    const c = document.createElement("canvas");
+    c.width = mw;
+    c.height = mh;
+    c.getContext("2d").putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(c, 0, 0, canvas.width, canvas.height);
+    if (S.show === "depth") {
+      $("status").textContent = "The depth map: black is the heaviest hatching, white none.";
+      return;
+    }
+  }
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = S.show === "both" ? "#a3261b" : INK;
   let drawnStrokes = 0;
+  const widthAt = (x, y) => ramp(greyAt(x, y), S.wBlack, S.wGrey, 0);
   for (const st of solid) {
-    const [x, y] = st.path[st.path.length >> 1], d = dist(x, y);
-    if (d === 0 || d === Infinity) continue;
-    // The ragged edge: the whole profile stretches and shrinks with the noise.
-    const m = Math.max(0.1, 1 + S.ragged * (2 * noise(x, y) - 1));
-    const full = Math.min(S.full, S.reach - 0.05) * m, reach = S.reach * m;
-    const u = Math.max(0, Math.min(1, (d - full) / (reach - full)));
-    // Fewer strokes (a group's last ones go first), and shorter.
-    if (u >= 1 || st.rank >= 1 - u) continue;
+    const [x, y] = st.path[st.path.length >> 1], g = greyAt(x, y);
+    if (g >= 0.999) continue;
+    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, 0);
+    if (keep < 0.03 || ink < 0.02) continue;
     // Each stroke on its own: overlapping strokes can wind opposite ways.
+    ctx.globalAlpha = ink;
     ctx.beginPath();
-    inkRecorded(ctx, st, 1 - (1 - S.shrink) * u, 1 + S.heavy * Math.max(0, 1 - d / reach));
+    inkRecorded(ctx, st, keep, 1, widthAt);
     ctx.fill();
     drawnStrokes++;
   }
+  ctx.globalAlpha = 1;
 
   // The known rooms and corridors, with their walls' ink reaching a little
   // into the rock.
@@ -254,13 +292,13 @@ function compose() {
 function show(s) {
   for (const k of keys) {
     $(k).value = s[k];
-    $(k + "-v").textContent = fmt[k](s[k]);
+    if (fmt[k]) $(k + "-v").textContent = fmt[k](s[k]);
   }
 }
 for (const k of keys)
   $(k).addEventListener("input", () => {
-    S[k] = parseFloat($(k).value);
-    $(k + "-v").textContent = fmt[k](S[k]);
+    S[k] = $(k).tagName === "SELECT" ? $(k).value : parseFloat($(k).value);
+    if (fmt[k]) $(k + "-v").textContent = fmt[k](S[k]);
     if (!M) return;
     if (k === "zoom") { clearTimeout(M.zoomWait); M.zoomWait = setTimeout(drawBase, 250); }
     else compose();

@@ -339,8 +339,9 @@ export function hatchSolid(W, H, TS, rng) {
 
 // Add one recorded stroke to the current path of `ctx` (the caller fills
 // it), keeping only the middle `keep` of its length and its width times
-// `weight`; the ends taper as a whole stroke's would.
-export function inkRecorded(ctx, st, keep, weight = 1) {
+// `weight` (and times `widthAt(x, y)` along it, if given); the ends taper as
+// a whole stroke's would.
+export function inkRecorded(ctx, st, keep, weight = 1, widthAt = null) {
   const P = st.path, n = P.length - 1;
   if (n < 1) return;
   const a = ((1 - keep) / 2) * n, b = ((1 + keep) / 2) * n;
@@ -353,7 +354,7 @@ export function inkRecorded(ctx, st, keep, weight = 1) {
   for (let k = 0; k <= m; k++) {
     const [x0, y0] = C[Math.max(0, k - 1)], [x1, y1] = C[Math.min(m, k + 1)];
     const dl = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / dl, ny = (x1 - x0) / dl;
-    const w = (profile(HATCH, k / m) * st.scale * weight) / 2;
+    const w = (profile(HATCH, k / m) * st.scale * weight * (widthAt ? widthAt(C[k][0], C[k][1]) : 1)) / 2;
     L.push([C[k][0] + nx * w, C[k][1] + ny * w]);
     R.push([C[k][0] - nx * w, C[k][1] - ny * w]);
   }
@@ -368,7 +369,8 @@ export function inkRecorded(ctx, st, keep, weight = 1) {
   // The round ends wind the same way as the outline (a clockwise arc has a
   // positive area here), so where they overlap the fill doesn't cancel out.
   for (const [[x, y], t] of [[C[0], 0], [C[m], 1]]) {
-    const r = (profile(HATCH, t) * st.scale * weight) / 2;
+    const r = (profile(HATCH, t) * st.scale * weight * (widthAt ? widthAt(x, y) : 1)) / 2;
+    if (r <= 0) continue;
     ctx.moveTo(x + r, y);
     ctx.arc(x, y, r, 0, Math.PI * 2, area < 0);
   }
