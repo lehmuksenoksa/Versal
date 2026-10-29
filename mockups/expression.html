@@ -226,15 +226,12 @@ function drawBase() {
   $("status").textContent = `Drawn in ${Math.round(performance.now() - t0)} ms.`;
 }
 
-// Redo the drawing after `delay` ms (newly seen ground inks in then).
+// Redo the drawing after `delay` ms, a slice each frame (newly seen ground
+// inks in once it is done).
 let pending = 0;
 function redraw(delay) {
   clearTimeout(pending);
-  pending = setTimeout(() => {
-    const t0 = performance.now();
-    M.exp.rebuild();
-    $("status").textContent = `Redrawn in ${Math.round(performance.now() - t0)} ms.`;
-  }, delay);
+  pending = setTimeout(() => M.exp.rebuildSoon(), delay);
 }
 
 // Where the drawn player is: sliding from the last tile to the current one.

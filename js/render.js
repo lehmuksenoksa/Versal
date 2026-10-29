@@ -112,10 +112,11 @@ export class Renderer {
     this.exp.setScale(this.dpr * this.zoom); // learns what is seen and draws
   }
 
-  // Redo the drawing after `delay` ms (newly seen ground inks in then).
+  // Redo the drawing after `delay` ms, a slice each frame (newly seen ground
+  // inks in once it is done).
   redraw(delay) {
     clearTimeout(this.pending);
-    this.pending = setTimeout(() => this.exp?.rebuild(), delay);
+    this.pending = setTimeout(() => this.exp?.rebuildSoon(), delay);
   }
 
   // Is the map point (x, y) in sight?

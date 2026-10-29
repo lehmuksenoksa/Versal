@@ -63,6 +63,12 @@ const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 // floor itself, its markings and walls come in.
 const clearOf = (v) => smooth((v - 0.1) / 0.35);
 const drawnAs = (v) => smooth((v - 0.4) / 0.6);
+// Run a generator to the end; its result.
+const run = (gen) => {
+  let r;
+  while (!(r = gen.next()).done);
+  return r.value;
+};
 const blank = (w, h) => {
   const c = document.createElement("canvas");
   c.width = w;
@@ -160,6 +166,7 @@ export class Expression {
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
+    this.job = null;
     if (this.player) {
       this.learn(this.player.x, this.player.y);
       this.rebuild();
@@ -206,7 +213,12 @@ export class Expression {
       const v = S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
       if (!(v > 0.01)) continue;
       vis[j] = v;
-      if (v > seen[j] + 0.02) { seen[j] = v; grew = true; }
+      // Only a real change is worth redrawing for (seeing ground a little
+      // better as the player comes closer is not).
+      if (v > seen[j]) {
+        if (v - seen[j] > 0.15 || (seen[j] < 0.5 && v >= 0.5)) grew = true;
+        seen[j] = v;
+      }
     }
     this.visNow = vis;
     this.sightRock(vis);
@@ -243,8 +255,8 @@ export class Expression {
 
   // The depth map: for each mask pixel, 0 (black: the heaviest hatching) to 1
   // (white: none). Three ways to make it from the known floor, its walls and
-  // its openings.
-  depthMap(isKnown, d2) {
+  // its openings. (A generator, so the work can be spread over frames.)
+  *depthSteps(isKnown, d2) {
     const { mw, mh, floor, noise, S, TS } = this, n = mw * mh;
     const grey = new Float32Array(n);
     // The ragged edge: a slowly varying factor about 1.
@@ -267,6 +279,7 @@ export class Expression {
         if (floor[j]) openings[j] = 1;
         else walls[j] = 1;
       }
+    yield;
 
     if (S.depth === "distance") {
       // Distance from the known floor; white past openings. Each point looks
@@ -326,7 +339,7 @@ export class Expression {
       const wallSeed = new Uint8Array(hn);
       for (let i = 0; i < hn; i++) wallSeed[i] = type[i] === WALL ? 1 : 0;
       const dW = nearestSeeds(wallSeed, hw, hh).d2;
-      const spread = (openWhite) => {
+      const spread = function* (openWhite) {
         const u = new Float32Array(hn);
         const fixed = (i) => type[i] === WALL || type[i] === KNOWN || (openWhite && type[i] === OPEN);
         for (let i = 0; i < hn; i++) u[i] = type[i] === WALL ? 1 : type[i] === KNOWN || (openWhite && type[i] === OPEN) ? 0 : Math.exp(-Math.sqrt(dW[i]) / L);
@@ -343,10 +356,11 @@ export class Expression {
         for (let it = 0; it < 60; it++) {
           if (it % 2) { for (let y = hh - 1; y >= 0; y--) for (let x = hw - 1; x >= 0; x--) step(x, y); }
           else for (let y = 0; y < hh; y++) for (let x = 0; x < hw; x++) step(x, y);
+          if (it % 10 === 9) yield;
         }
         return u;
       };
-      const withOpen = spread(true), without = spread(false), keep = new Float32Array(hn);
+      const withOpen = yield* spread(true), without = yield* spread(false), keep = new Float32Array(hn);
       for (let i = 0; i < hn; i++) keep[i] = without[i] > 1e-6 ? clamp01(withOpen[i] / without[i]) : 0;
       const dWall = nearestSeeds(walls, mw, mh).d2;
       for (let j = 0; j < n; j++) {
@@ -413,6 +427,20 @@ export class Expression {
   // in-sight look and in its remembered look, and the cover over ground not
   // yet seen. The new drawing cross-fades in.
   rebuild() {
+    this.job = this.again = null;
+    run(this.rebuildSteps());
+  }
+
+  // Redo the drawing a slice at a time over the coming frames (see update),
+  // so nothing stops while it is done. Asked again meanwhile, it is done once
+  // more after.
+  rebuildSoon() {
+    if (this.job) this.again = true;
+    else this.job = this.rebuildSteps();
+  }
+
+  // The work of redrawing, in slices.
+  *rebuildSteps() {
     const { mw, mh, floor, seen, solid, scale, S, TS } = this, n = mw * mh;
     const cw = this.paper.width, ch = this.paper.height;
     this.scratch = blank(cw, ch);
@@ -425,7 +453,8 @@ export class Expression {
       glimpsed[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
     }
     const { d2 } = nearestSeeds(known, mw, mh);
-    const grey = (this.grey = this.depthMap(known, d2));
+    yield;
+    const grey = yield* this.depthSteps(known, d2);
     const cell = (x, y) => {
       const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
       return i < 0 || k < 0 || i >= mw || k >= mh ? -1 : k * mw + i;
@@ -441,13 +470,15 @@ export class Expression {
     // The hatching as ink on clear, which the looks colour: at full weight,
     // and (for the remembered look) with the depth map's darkness scaled by
     // `weight`, so fewer, thinner, shorter strokes keep closer to the walls.
-    const inkAt = (weight) => {
+    const inkAt = function* (weight) {
       const ink = blank(cw, ch), ig = ink.getContext("2d");
       ig.setTransform(scale, 0, 0, scale, 0, 0);
       ig.fillStyle = "#000";
       const gAt = (x, y) => 1 - (1 - greyAt(x, y)) * weight;
       const widthAt = (x, y) => ramp(gAt(x, y), S.wBlack, S.wGrey, 0);
+      let count = 0;
       for (const st of solid) {
+        if (++count % 2000 === 0) yield;
         const [x, y] = st.path[st.path.length >> 1], g = gAt(x, y);
         if (g >= 0.999) continue;
         // Drop strokes by rank: a group's own rank, plus more for each later
@@ -462,7 +493,7 @@ export class Expression {
       }
       return ink;
     };
-    const inks = { see: inkAt(1), mem: inkAt(S.memWeight) };
+    const inks = { see: yield* inkAt(1), mem: yield* inkAt(S.memWeight) };
 
     // Known floor and the band of rock where its walls are inked.
     // (Rock in the band goes with its nearest glimpsed floor.)
@@ -485,22 +516,30 @@ export class Expression {
 
     // A look: paper, the rock toned, the hatching, then the floor (painted over
     // it), tinted toward the rock's colour, its markings and its walls.
-    const look = (pre) => {
+    const look = function* (pre) {
       const c = blank(cw, ch), g = c.getContext("2d");
       g.drawImage(this.paper, 0, 0);
       if (S.rockTone > 0) this.overlay(g, S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1), "multiply");
+      yield;
       this.lay(g, inks[pre], null, S[pre + "HatchC"], S[pre + "Hatch"]);
+      yield;
       this.lay(g, this.floorLayer, glimpsedMask, stone, 1);
+      yield;
       this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, mask, null, 1);
+      yield;
       this.overlay(g, S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), "multiply");
+      yield;
       this.lay(g, this.markLayer, mask, S[pre + "MarkC"], S[pre + "Mark"]);
+      yield;
       this.lay(g, this.wallLayer, mask, S[pre + "WallC"], S[pre + "Wall"]);
+      yield;
       return c;
-    };
+    }.bind(this);
 
     // Ground not yet seen. `u` runs from 0 where the cover starts to 1 where it
     // is solid: by distance from the known floor (with the ragged edge), or
     // from where the hatching gives out.
+    yield;
     const u = new Float32Array(n);
     for (let j = 0; j < n; j++) {
       if (known[j]) { u[j] = -1; continue; }
@@ -524,8 +563,10 @@ export class Expression {
       cg.setTransform(scale, 0, 0, scale, 0, 0);
       cg.fillStyle = S.outColor;
       const uXY = (x, y) => u[cell(x, y)] ?? 1;
+      let count = 0;
       if (S.fadeStyle === "strokes")
         for (const st of solid) {
+          if (++count % 2000 === 0) yield;
           const [x, y] = st.path[st.path.length >> 1];
           if (!(uXY(x, y) > 0)) continue;
           cg.beginPath();
@@ -544,8 +585,11 @@ export class Expression {
         cg.fill();
       }
     }
+    yield;
+    const see = yield* look("see"), mem = yield* look("mem");
+    this.grey = grey;
     this.prev = this.stat;
-    this.stat = { see: look("see"), mem: look("mem"), cover, t: performance.now() };
+    this.stat = { see, mem, cover, t: performance.now() };
     this.scratch = null;
   }
 
@@ -564,6 +608,18 @@ export class Expression {
   // Each frame, with the player drawn at map point (px, py): sight cast from
   // there when it moves, eased toward, and the candle.
   update(now, dt, px, py) {
+    // Some of the redrawing, if there is any to do: slices until about 8 ms
+    // are spent (at least one).
+    if (this.job) {
+      const t0 = performance.now();
+      do {
+        if (this.job.next().done) {
+          this.job = this.again ? this.rebuildSteps() : null;
+          this.again = false;
+          break;
+        }
+      } while (performance.now() - t0 < 8);
+    }
     if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
     if (now < this.easeUntil) this.easeSight(dt);
     this.castLight(px, py, now / 1000);
@@ -708,33 +764,54 @@ export class Expression {
     if (x1 > x0 && y1 > y0) g.drawImage(img, x0 * s, y0 * s, (x1 - x0) * s, (y1 - y0) * s, x0, y0, x1 - x0, y1 - y0);
   }
 
-  // The map, onto `ctx` (its transform the world's): the remembered look,
-  // the in-sight look through the eased sight, and the cover over unseen
-  // ground; a new drawing cross-fades in.
+  // The map, onto `ctx` (its transform the world's), as drawn (see compose);
+  // a new drawing cross-fades in.
   drawMap(ctx, view, now) {
     if (!this.stat) return;
-    const T = ctx.getTransform(), w = this.work(ctx), wg = w.getContext("2d");
     const k = clamp01((now - this.stat.t) / Math.max(1, this.S.reveal * 1000));
-    const layers = this.prev && k < 1 ? [[this.prev, 1 - k], [this.stat, k]] : [[this.stat, 1]];
-    ctx.imageSmoothingEnabled = wg.imageSmoothingEnabled = true;
-    for (const [st, a] of layers) {
-      ctx.globalAlpha = a;
-      this.region(ctx, st.mem, this.scale, view);
-      wg.setTransform(1, 0, 0, 1, 0, 0);
-      wg.globalCompositeOperation = "source-over";
-      wg.clearRect(0, 0, w.width, w.height);
-      wg.setTransform(T);
-      this.region(wg, st.see, this.scale, view);
-      wg.globalCompositeOperation = "destination-in";
-      this.region(wg, this.sightCanvas.eased, this.sightScale, view);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(w, 0, 0);
-      ctx.setTransform(T);
-      this.region(ctx, st.cover, this.scale, view);
+    if (k >= 1) this.prev = null; // done with: let it go
+    if (!this.prev) {
+      this.compose(ctx, this.stat, view);
+      return;
     }
+    // Fading in: the old drawing in full, then the new one, put together
+    // whole first and laid over it (fading it in layer by layer would let
+    // the looks show through the cover halfway).
+    this.compose(ctx, this.prev, view);
+    const c = ctx.canvas;
+    if (!this.fadeCanvas || this.fadeCanvas.width !== c.width || this.fadeCanvas.height !== c.height) this.fadeCanvas = blank(c.width, c.height);
+    const fg = this.fadeCanvas.getContext("2d"), T = ctx.getTransform();
+    fg.setTransform(1, 0, 0, 1, 0, 0);
+    fg.clearRect(0, 0, c.width, c.height);
+    fg.setTransform(T);
+    this.compose(fg, this.stat, view);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = k;
+    ctx.drawImage(this.fadeCanvas, 0, 0);
     ctx.globalAlpha = 1;
-    wg.globalCompositeOperation = "source-over";
+    ctx.setTransform(T);
   }
+
+  // One drawing, onto `g` (its transform the world's): the remembered look,
+  // the in-sight look through the eased sight, and the cover.
+  compose(g, st, view) {
+    const T = g.getTransform(), w = this.work(g), wg = w.getContext("2d");
+    g.imageSmoothingEnabled = wg.imageSmoothingEnabled = true;
+    this.region(g, st.mem, this.scale, view);
+    wg.setTransform(1, 0, 0, 1, 0, 0);
+    wg.globalCompositeOperation = "source-over";
+    wg.clearRect(0, 0, w.width, w.height);
+    wg.setTransform(T);
+    this.region(wg, st.see, this.scale, view);
+    wg.globalCompositeOperation = "destination-in";
+    this.region(wg, this.sightCanvas.eased, this.sightScale, view);
+    wg.globalCompositeOperation = "source-over";
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.drawImage(w, 0, 0);
+    g.setTransform(T);
+    this.region(g, st.cover, this.scale, view);
+  }
+
 
   // Darkness outside the candlelight (the remembered amount everywhere, cut
   // back to the in-sight amount where sight reaches, and away where the light
