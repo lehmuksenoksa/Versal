@@ -37,6 +37,7 @@ in the browser console.
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
 | `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
 | `mockups/visibility.html` | The game with a panel for tuning sight, memory, unknown ground and light. |
+| `mockups/expression.html` | Rooms, walls and one hatching (the map hatched as solid rock, inked by a depth map from the known walls), with a player whose sight and candle can be walked around: the in-sight and remembered looks, unexplored ground, darkness and light. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
 | `js/world.js` | The player, goblin packs and their milling about; field of view and memory. |
 | `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
