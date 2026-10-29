@@ -335,7 +335,12 @@ function sightRock(vis) {
   for (let j = 0; j < n; j++) any[j] = floor[j] && drawnAs(seen[j]) > 0 ? 1 : 0;
   const { d2, sx, sy } = nearestSeeds(any, mw, mh), far = (S.reach * R) ** 2;
   const v = new Float32Array(n);
-  for (let j = 0; j < n; j++) if (!any[j] && sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
+  for (let j = 0; j < n; j++) {
+    if (any[j]) v[j] = vis[j];
+    else if (sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
+  }
+  // (Softened with the floor in it, so it doesn't dip along the walls, where
+  // the remembered look would show through the ink.)
   blur(v, mw, mh, Math.round(R * 0.5));
   const img = new ImageData(mw, mh);
   for (let j = 0; j < n; j++) if (!any[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
