@@ -74,6 +74,7 @@
   <label for="length">Max stroke length <output id="length-v"></output><input id="length" type="range" min="0.4" max="2.5" step="0.05" value="1.15"></label>
   <label for="minlen">Shortest stroke <output id="minlen-v"></output><input id="minlen" type="range" min="1" max="8" step="0.5" value="2.5"></label>
   <label for="depth">Hatch depth <output id="depth-v"></output><input id="depth" type="range" min="0.6" max="3.5" step="0.1" value="2.3">
+  <label for="shrink">Shorter with each stroke (E) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
   <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
   <label for="flecks">Edge dashes <output id="flecks-v"></output><input id="flecks" type="range" min="0" max="1" step="0.05" value="0.5"></label></label>
   <button id="reseed" type="button">New layout</button>
@@ -99,7 +100,7 @@
 
 <div class="grid">
   <figure><canvas id="c-grown" width="576" height="384"></canvas>
-    <figcaption><span class="ms" id="ms-grown"></span><b>E. Grown from the walls</b><span>A few groups stand out from the walls first. Each later generation of groups grows from the sides of the strokes before it, until the rock is full; a last pass fills the remaining gaps with small groups.</span></figcaption></figure>
+    <figcaption><span class="ms" id="ms-grown"></span><b>E. Grown from the walls</b><span>A few groups stand out from the walls first. Each later generation of groups grows from the sides of the strokes before it, until the rock is full; a last pass fills the remaining gaps with small groups. Each new group turns away from the strokes around it, and its strokes get shorter one by one.</span></figcaption></figure>
   <figure><canvas id="c-bundles" width="576" height="384"></canvas>
     <figcaption><span class="ms" id="ms-bundles"></span><b>A. Abutting bundles</b><span>Groups of up to five parallel strokes, laid down outward from the walls. Each stroke runs until it meets the side of an earlier stroke, a wall, or the edge of the hatched area, so ends land on lines, never on other ends.</span></figcaption></figure>
   <figure><canvas id="c-fans" width="576" height="384"></canvas>
@@ -252,7 +253,17 @@ function SegStore() {
     }
     return { t: best, seg: which };
   };
-  return { add, nearest, hit, all };
+  // Stored segments within r of a point.
+  const around = (x, y, r) => {
+    const res = [];
+    for (const s of near(x - r, y - r, x + r, y + r)) {
+      const dx = s.x1 - s.x0, dy = s.y1 - s.y0, L = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (y - s.y0) * dy) / L));
+      if (Math.hypot(x - s.x0 - dx * t, y - s.y0 - dy * t) < r) res.push(s);
+    }
+    return res;
+  };
+  return { add, nearest, hit, around, all };
 }
 
 // How far a ray can go: stops at the edge of the hatchable area or at a stroke's side.
@@ -307,17 +318,24 @@ function inkStroke(ctx, s, o, rng, g) {
 }
 
 // Store a drawn stroke for collisions along its real, curved centreline.
-function addStroke(store, s) {
+function addStroke(store, s, group) {
   const P = s.path;
-  if (!P) return store.add(s);
+  if (!P) return store.add({ ...s, group });
   for (let i = 0; i < P.length - 1; i += 2) {
     const j = Math.min(i + 2, P.length - 1);
-    store.add({ x0: P[i][0], y0: P[i][1], x1: P[j][0], y1: P[j][1], w: s.w });
+    store.add({ x0: P[i][0], y0: P[i][1], x1: P[j][0], y1: P[j][1], w: s.w, group });
   }
 }
 
+// Smallest angle between two undirected line directions, in [0, pi/2].
+function lineAngleDiff(a, b) {
+  const d = Math.abs(a - b) % Math.PI;
+  return Math.min(d, Math.PI - d);
+}
+const segAngle = (q) => Math.atan2(q.y1 - q.y0, q.x1 - q.x0);
+
 // ---------- A and B: abutting bundles --------------------------------------------
-function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = [0, 1] } = {}) {
+function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = [0, 1], antiParallel = false } = {}) {
   if (!store.all.length) for (const w of WALLS) store.add({ ...w, w: o.wallw });
   const sp = o.spacing, maxT = o.length * TS;
   // Two passes: full groups laid from the walls outward, then smaller groups
@@ -346,6 +364,9 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = 
       ang = rng.range(0, Math.PI);
       startAhead = rng.chance(0.5);
     }
+    // Optionally refuse to lie parallel to the strokes right beside us.
+    if (antiParallel && store.around(px, py, sp * 2.2).some((q) => q.nx === undefined && lineAngleDiff(segAngle(q), ang) < 0.4)) continue;
+    const group = {};
     const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
     // One target length per group, so free ends line up.
     const reachF = maxT * rng.range(0.45, 0.6), reachB = maxT * rng.range(0.45, 0.6);
@@ -368,9 +389,10 @@ function bundles(ctx, rng, mask, o, { fan = false, store = SegStore(), passes = 
       // Reject strokes that would run alongside another one too closely.
       let crowded = false;
       for (const f of [0.2, 0.5, 0.8]) if (store.nearest(s.x0 + (s.x1 - s.x0) * f, s.y0 + (s.y1 - s.y0) * f, sp).d < sp * 0.5) crowded = true;
+      if (antiParallel && store.around((s.x0 + s.x1) / 2, (s.y0 + s.y1) / 2, sp * 1.6).some((q) => q.group !== group && q.nx === undefined && lineAngleDiff(segAngle(q), a) < 0.3)) crowded = true;
       if (crowded) break;
       inkStroke(ctx, s, o, rng, g);
-      addStroke(store, s);
+      addStroke(store, s, group);
     }
   }
   }
@@ -405,8 +427,15 @@ function grown(ctx, rng, mask, o) {
   for (const w of WALLS) store.add({ ...w, w: o.wallw });
   const sp = o.spacing, minLen = sp * o.minlen;
   const walls = WALLS.map((w) => ({ ...w, wall: true, w: o.wallw }));
-  let parents = walls;
-  for (let gen = 0; gen < 40 && parents.length; gen++) {
+  let parents = walls, round = 0;
+  const all = [];
+  for (let gen = 0; gen < 60; gen++) {
+    // When a generation dies out, start another round from every stroke so
+    // far (and the walls), to fill the gaps the earlier rounds left.
+    if (!parents.length) {
+      if (++round > 3) break;
+      parents = all.concat(walls);
+    }
     const next = [];
     // Walls get another turn every few generations, to fill in along them.
     if (gen > 0 && gen % 3 === 0) parents = parents.concat(walls);
@@ -419,34 +448,60 @@ function grown(ctx, rng, mask, o) {
       const firstWalls = P.wall && gen === 0;
       let at = rng.range(0, firstWalls ? TS * 1.2 : sp);
       while (at < len - sp * 0.5) {
-        const [sx, sy] = sides[rng.int(0, sides.length - 1)];
-        // Turn well away from the parent line, toward the chosen side.
+        // Grow from whichever side of the parent has more room here.
+        let [sx, sy] = sides[0];
+        if (sides.length > 1) {
+          const px = P.x0 + ux * at, py = P.y0 + uy * at, room = sides.map(([nx, ny]) =>
+            cast(store, mask, px + nx * offset, py + ny * offset, nx, ny, minLen));
+          if (Math.max(...room) < minLen * 0.6) { at += sp; continue; }
+          [sx, sy] = sides[room[0] >= room[1] ? 0 : 1];
+        }
+        // Turn well away from the parent line, toward the chosen side, and
+        // away from the strokes already nearby, so that two groups never lie
+        // side by side running the same way.
         const lim = P.wall ? 1.05 : 0.95;
-        const phi = rng.range(lim, Math.PI - lim);
-        const dx = Math.cos(phi) * ux + Math.sin(phi) * sx, dy = Math.cos(phi) * uy + Math.sin(phi) * sy;
+        const bx0 = P.x0 + ux * at + sx * offset, by0 = P.y0 + uy * at + sy * offset;
+        const nearby = store.around(bx0, by0, sp * 2.2).filter((q) => q.nx === undefined).map(segAngle);
+        let phi = 0, dx = 0, dy = 0, best = -1;
+        for (let k = 0; k < 8; k++) {
+          const f = rng.range(lim, Math.PI - lim);
+          const ex = Math.cos(f) * ux + Math.sin(f) * sx, ey = Math.cos(f) * uy + Math.sin(f) * sy;
+          const a = Math.atan2(ey, ex);
+          const score = nearby.reduce((m, b) => Math.min(m, lineAngleDiff(a, b)), Math.PI / 2);
+          if (score > best) { best = score; phi = f; dx = ex; dy = ey; }
+        }
+        if (best < 0.4) { at += sp; continue; }
         const along = sp / Math.sin(phi); // keeps the strokes sp apart
         const n = Math.max(1, Math.min(o.maxLines, rng.int(3, 5)));
-        const reach = o.length * TS * rng.range(0.75, 1);
+        const reach = o.length * TS * rng.range(0.85, 1.05);
         const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve };
+        const group = {};
+        const dir = Math.atan2(dy, dx);
         for (let k = 0; k < n && at < len; k++, at += along) {
           const bx = P.x0 + ux * at + sx * offset, by = P.y0 + uy * at + sy * offset;
           if (!mask.inside(bx + dx * 2, by + dy * 2)) break;
-          const t = cast(store, mask, bx, by, dx, dy, reach + rng.range(-0.3, 0.3) * sp);
+          // Each stroke in the group is a little shorter than the one before.
+          const want = reach * Math.max(0.1, 1 - o.shrink * k) + rng.range(-0.15, 0.15) * sp;
+          const t = cast(store, mask, bx, by, dx, dy, want);
           if (t < minLen) break;
           const s = { x0: bx, y0: by, x1: bx + dx * t, y1: by + dy * t };
           let crowded = false;
           for (const f of [0.35, 0.65, 0.95]) if (store.nearest(bx + dx * t * f, by + dy * t * f, sp).d < sp * 0.45) crowded = true;
+          // Stop rather than run alongside another group going the same way.
+          const mx = bx + dx * t * 0.5, my = by + dy * t * 0.5;
+          if (store.around(mx, my, sp * 1.6).some((q) => q.group !== group && q.nx === undefined && lineAngleDiff(segAngle(q), dir) < 0.3)) crowded = true;
           if (crowded) break;
           inkStroke(ctx, s, o, rng, g);
-          addStroke(store, s);
+          addStroke(store, s, group);
           next.push({ x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1, w: s.w });
+          all.push(next[next.length - 1]);
         }
         at += firstWalls ? TS * rng.range(0.8, 2) : sp * rng.range(1, 2.5);
       }
     }
     parents = next;
   }
-  bundles(ctx, rng, mask, o, { store, passes: [1] });
+  bundles(ctx, rng, mask, o, { store, passes: [1], antiParallel: true });
 }
 
 // ---------- C: radiating from the walls, then bundles ------------------------------
@@ -616,9 +671,9 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
