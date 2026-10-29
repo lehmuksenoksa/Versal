@@ -80,6 +80,7 @@
     <label for="full">Black up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
     <label for="reach">White from <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
     <label for="ragged">Ragged edge <output id="ragged-v"></output><input id="ragged" type="range" min="0" max="0.8" step="0.05"></label>
+    <label for="opening">White past openings, softened over <output id="opening-v"></output><input id="opening" type="range" min="0" max="3" step="0.25"></label>
   </fieldset>
 
   <fieldset>
@@ -88,8 +89,8 @@
     <label for="wBlack">Stroke width in black <output id="wBlack-v"></output><input id="wBlack" type="range" min="0.2" max="2.5" step="0.05"></label>
     <label for="wGrey">Stroke width in mid grey <output id="wGrey-v"></output><input id="wGrey" type="range" min="0" max="2.5" step="0.05"></label>
     <label for="lenGrey">Stroke length in mid grey <output id="lenGrey-v"></output><input id="lenGrey" type="range" min="0" max="1" step="0.05"></label>
-    <label for="inkGrey">Ink in mid grey <output id="inkGrey-v"></output><input id="inkGrey" type="range" min="0" max="1" step="0.05"></label>
-    <p style="margin:0;color:var(--muted);font-size:13px">Each goes on to nothing at white. Width follows the grey along each stroke; the rest go by the grey at its middle. Strokes drop out a whole group's last strokes first.</p>
+    <label for="inkGrey">Ink in mid grey and white <output id="inkGrey-v"></output><input id="inkGrey" type="range" min="0" max="1" step="0.05"></label>
+    <p style="margin:0;color:var(--muted);font-size:13px">Each but ink goes on to nothing at white. Width follows the grey along each stroke; the rest go by the grey at its middle. Strokes drop out a whole group's last strokes first.</p>
   </fieldset>
 
   <fieldset>
@@ -109,10 +110,10 @@ const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { full: 0.6, reach: 2.6, ragged: 0.4, keepGrey: 0.5, wBlack: 1.5, wGrey: 1.2, lenGrey: 0.7, inkGrey: 1, show: "map", zoom: 0.6 };
+const DEFAULTS = { full: 0.4, reach: 5.1, ragged: 0.35, opening: 1, keepGrey: 0.25, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.55, inkGrey: 1, show: "map", zoom: 0.3 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
-  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct,
+  full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
@@ -206,6 +207,27 @@ function drawBase() {
   compose();
 }
 
+// Blur `a` (w by h) in place: a box blur of radius r, twice each way.
+function blur(a, w, h, r) {
+  if (r < 1) return;
+  const tmp = new Float32Array(Math.max(w, h));
+  const pass = (len, count, at) => {
+    for (let c = 0; c < count; c++) {
+      let sum = 0;
+      for (let i = -r; i <= r; i++) sum += a[at(c, Math.max(0, Math.min(len - 1, i)))];
+      for (let i = 0; i < len; i++) {
+        tmp[i] = sum / (2 * r + 1);
+        sum += a[at(c, Math.min(len - 1, i + r + 1))] - a[at(c, Math.max(0, i - r))];
+      }
+      for (let i = 0; i < len; i++) a[at(c, i)] = tmp[i];
+    }
+  };
+  for (let k = 0; k < 2; k++) {
+    pass(w, h, (y, x) => y * w + x);
+    pass(h, w, (x, y) => y * w + x);
+  }
+}
+
 // Lay the hatching, expressed by distance from the known floor, then the
 // known rooms and corridors over it.
 function compose() {
@@ -213,14 +235,33 @@ function compose() {
   const t0 = performance.now();
   const isKnown = new Uint8Array(n);
   for (let j = 0; j < n; j++) isKnown[j] = pixUnit[j] >= 0 && known[pixUnit[j]] ? 1 : 0;
-  const d2 = nearestSeeds(isKnown, mw, mh).d2;
+  const { d2, sx, sy } = nearestSeeds(isKnown, mw, mh);
+  // Behind a known wall, or out past an opening? Look one step from the
+  // nearest known floor toward the point: rock there is the wall; floor is
+  // an opening (seen, though what lies beyond it isn't). Softened, so the
+  // hatching fades out quicker round the end of a wall beside an opening.
+  const behind = new Float32Array(n).fill(1);
+  for (let j = 0; j < n; j++) {
+    if (isKnown[j] || sx[j] < 0) continue;
+    const dx = (j % mw) - sx[j], dy = ((j / mw) | 0) - sy[j], l = Math.hypot(dx, dy) || 1;
+    const nx = sx[j] + Math.round(dx / l), ny = sy[j] + Math.round(dy / l);
+    if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && pixUnit[ny * mw + nx] >= 0) behind[j] = 0;
+  }
+  // Lighter only: the light past an opening spreads onto the walls beside
+  // it, but stays white itself.
+  const soft = behind.slice();
+  blur(soft, mw, mh, Math.round(S.opening * R * 0.6));
+  for (let j = 0; j < n; j++) behind[j] = Math.min(behind[j], soft[j]);
   // The depth map: 0 (black) up to `full` tiles from known floor, 1 (white)
   // from `reach`, smooth between; the noise stretches and shrinks it all.
+  // White out past openings.
   const grey = new Float32Array(n), smooth = (t) => t * t * (3 - 2 * t);
   for (let j = 0; j < n; j++) {
+    if (isKnown[j]) continue;
     const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
     const k = Math.max(0.1, 1 + S.ragged * (2 * noise(x, y) - 1)), full = Math.min(S.full, S.reach - 0.05) * k, reach = S.reach * k;
-    grey[j] = isKnown[j] ? 0 : smooth(Math.max(0, Math.min(1, (Math.sqrt(d2[j]) / R - full) / (reach - full))));
+    const g = smooth(Math.max(0, Math.min(1, (Math.sqrt(d2[j]) / R - full) / (reach - full))));
+    grey[j] = 1 - (1 - g) * behind[j];
   }
   const greyAt = (x, y) => {
     const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
@@ -260,7 +301,7 @@ function compose() {
     // Drop strokes by rank: a group's own rank, plus more for each later
     // stroke in it, so groups lose their last strokes first.
     if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
-    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, 0);
+    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, S.inkGrey);
     if (keep < 0.03 || ink < 0.02) continue;
     // Each stroke on its own: overlapping strokes can wind opposite ways.
     ctx.globalAlpha = ink;
