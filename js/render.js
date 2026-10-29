@@ -110,6 +110,7 @@ export class Renderer {
     z = Math.max(ZOOM.min, Math.min(ZOOM.max, z));
     if (z === this.zoom) return;
     this.zoom = z;
+    this.sightFrom = null; // redraw the light at the new resolution
     clearTimeout(this.rebuild);
     if (this.world) this.rebuild = setTimeout(() => this.buildMap(), 300);
   }
@@ -145,7 +146,8 @@ export class Renderer {
     // "hard" is exact, "soft" eases toward it (so new ground inks in) with
     // a blurred edge.
     if (!this.seenHard) {
-      [this.visHard, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp, this.maskLight] = [0, 0, 0, 0, 0, 0].map(() => this.makeMask(L));
+      [this.visHard, this.seenHard, this.maskVis, this.maskSeen, this.maskTmp] = [0, 0, 0, 0, 0].map(() => this.makeMask(L));
+      this.maskLight = document.createElement("canvas");
       this.hit = document.createElement("canvas").getContext("2d");
     }
   }
@@ -233,18 +235,25 @@ export class Renderer {
     this.seenHard.getContext("2d").drawImage(this.visHard, 0, 0);
 
     // The light: bright at the player, fading out at its radius, reaching only
-    // what can be seen from here (and the face of the walls).
+    // what can be seen from here (and the face of the walls). It is drawn at
+    // screen resolution, so hard shadows stay crisp, on a square canvas just
+    // big enough for the light around the player.
+    if (!light) { this.lightBox = null; return; }
+    const R = v.radius * TS;
+    const half = (R + BAND.light * TS) * 1.15 + v.shadowSoft * TS * 2;
+    const res = Math.min(this.dpr * this.zoom, 2048 / (2 * half));
+    const size = Math.ceil(2 * half * res);
+    if (this.maskLight.width !== size) this.maskLight.width = this.maskLight.height = size;
+    this.lightBox = { x: px - half, y: py - half, w: 2 * half };
     const lg = this.maskLight.getContext("2d");
     lg.setTransform(1, 0, 0, 1, 0, 0);
-    lg.clearRect(0, 0, this.maskLight.width, this.maskLight.height);
-    if (!light) return;
-    lg.setTransform(k, 0, 0, k, 0, 0);
-    const R = v.radius * TS;
+    lg.clearRect(0, 0, size, size);
+    lg.setTransform(res, 0, 0, res, -(px - half) * res, -(py - half) * res);
     const grad = lg.createRadialGradient(px, py, 0, px, py, R);
     grad.addColorStop(0, "rgba(0, 0, 0, 1)");
     grad.addColorStop(0.55, "rgba(0, 0, 0, 0.8)");
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-    lg.filter = v.shadowSoft > 0 ? `blur(${v.shadowSoft * MASK_RES}px)` : "none";
+    lg.filter = v.shadowSoft > 0 ? `blur(${v.shadowSoft * TS * res}px)` : "none";
     lg.fillStyle = lg.strokeStyle = grad;
     lg.fill(this.sightPath);
     lg.save();
@@ -395,7 +404,8 @@ export class Renderer {
       const fl = 1 + v.flicker * 0.05 * (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2));
       const g = this.layer.getContext("2d");
       // The light mask, flickering in size about the player.
-      const light = () => g.drawImage(this.maskLight, px - px * fl, py - py * fl, mw * fl, mh * fl);
+      const b = this.lightBox;
+      const light = () => b && g.drawImage(this.maskLight, px + (b.x - px) * fl, py + (b.y - py) * fl, b.w * fl, b.w * fl);
       const shade = (paint) => {
         g.setTransform(1, 0, 0, 1, 0, 0);
         g.clearRect(0, 0, this.layer.width, this.layer.height);
