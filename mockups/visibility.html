@@ -95,6 +95,7 @@
     <label for="radius">Light radius <output id="radius-v"></output><input id="radius" type="range" min="2" max="16" step="0.5"></label>
     <label for="dark">Darkness beyond the light <output id="dark-v"></output><input id="dark" type="range" min="0" max="0.9" step="0.05"></label>
     <label for="warmth">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
+    <label for="shadowSoft">Shadow edges <output id="shadowSoft-v"></output><input id="shadowSoft" type="range" min="0" max="2" step="0.05"></label>
     <label for="flicker">Flicker <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightUnknown">Light falls on unexplored ground too <select id="lightUnknown"><option value="no">No</option><option value="yes">Yes</option></select></label>
   </fieldset>
@@ -119,7 +120,7 @@ let world = null, lastMove = 0;
 const fmt = {
   sight: (v) => `${v} tiles`, reveal: (v) => (+v ? `${v} s` : "instant"), softness: (v) => `${v} tiles`,
   fade: (v) => `${Math.round(v * 100)}%`, radius: (v) => `${v} tiles`, dark: (v) => `${Math.round(v * 100)}%`,
-  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, flicker: (v) => `${Math.round(v * 100)}%`,
+  warmth: (v) => `${Math.round(v * 100)}%`, rock: (v) => `${Math.round(v * 100)}%`, flicker: (v) => `${Math.round(v * 100)}%`, shadowSoft: (v) => (+v ? `soft, ${v} tiles` : "hard"),
 };
 const keys = Object.keys(VIS_DEFAULTS);
 function show(vis) {

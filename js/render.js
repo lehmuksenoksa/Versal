@@ -50,6 +50,7 @@ export const VIS_DEFAULTS = {
   dark: 0.7, // darkness beyond the light
   warmth: 1, // warm tint near the light
   flicker: 0.3,
+  shadowSoft: 0.3, // how soft the edges of the light's shadows are, in tiles (0 is hard)
   lightUnknown: "yes", // does the light also fall on unexplored ground? "no" or "yes"
   rock: 0.5, // how much darker the rock outside the rooms is than the floor
 };
@@ -243,7 +244,7 @@ export class Renderer {
     grad.addColorStop(0, "rgba(0, 0, 0, 1)");
     grad.addColorStop(0.55, "rgba(0, 0, 0, 0.8)");
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-    lg.filter = `blur(${0.3 * MASK_RES}px)`;
+    lg.filter = v.shadowSoft > 0 ? `blur(${v.shadowSoft * MASK_RES}px)` : "none";
     lg.fillStyle = lg.strokeStyle = grad;
     lg.fill(this.sightPath);
     lg.save();
