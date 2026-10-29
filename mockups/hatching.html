@@ -79,6 +79,8 @@
   <label for="dots">Groups ending in a dot (E2, F, G) <output id="dots-v"></output><input id="dots" type="range" min="0" max="1" step="0.05" value="0.6"></label>
   <label for="holes">Fill holes wider than (G) <output id="holes-v"></output><input id="holes" type="range" min="0.6" max="2" step="0.05" value="1"></label>
   <label for="tri">Triangle size (H) <output id="tri-v"></output><input id="tri" type="range" min="0.5" max="2" step="0.05" value="1.2"></label>
+  <label for="stretch">Cell stretch (H) <output id="stretch-v"></output><input id="stretch" type="range" min="1" max="4" step="0.1" value="2"></label>
+  <label for="quads">Four-sided cells (H) <output id="quads-v"></output><input id="quads" type="range" min="0" max="1" step="0.05" value="0.5"></label>
   <label for="seam">Ragged seams (H) <output id="seam-v"></output><input id="seam" type="range" min="0" max="1" step="0.05" value="0.3"></label>
   <label for="shrink">Shorter with each stroke (E, E2) <output id="shrink-v"></output><input id="shrink" type="range" min="0" max="0.35" step="0.01" value="0.15"></label>
   <label for="nearw">Extra weight at walls <output id="nearw-v"></output><input id="nearw" type="range" min="0" max="1.5" step="0.05" value="0.5"></label>
@@ -108,7 +110,7 @@
 
 <div class="grid">
   <figure><canvas id="c-tris" width="576" height="384"></canvas>
-    <figcaption><span class="ms" id="ms-tris"></span><b>H. Triangles</b><span>The rock near the walls is cut into triangles (lined up with the walls). Each triangle is filled with strokes parallel to one of its edges, starting right along that edge and shortening to a dot at the opposite corner. No triangle's strokes run along a wall, and neighbouring triangles never share a direction.</span></figcaption></figure>
+    <figcaption><span class="ms" id="ms-tris"></span><b>H. Cells</b><span>The rock near the walls is cut into triangles lined up with the walls, stretched along a slowly turning direction (away from the walls close to them); some neighbouring triangles are merged into four-sided cells. Each cell is filled with strokes parallel to one of its edges, from that edge across, shortening to a dot toward a corner. No cell's strokes run along a wall, neighbours never share a direction, and a cell prefers the edge a neighbour's strokes already end against, which turns those ends into T-junctions. After 3&ndash;5 strokes the rest of a cell is cut off along the last stroke and filled as a new cell turned to another direction, so groups stay small and end against each other. At the edge of the hatching the strokes fray.</span></figcaption></figure>
   <figure><canvas id="c-hunt" width="576" height="384"></canvas>
     <figcaption><span class="ms" id="ms-hunt"></span><b>G. Wedge cascade with hole hunting</b><span>F, then the remaining holes are hunted down, biggest first: one stroke laid across a small hole, two or three across bigger ones, each running from line to line at an angle unlike its neighbours. Defaults match Dyson's measured ink (about 50%) and share of holes (2&ndash;3%).</span></figcaption></figure>
   <figure><canvas id="c-grown" width="576" height="384"></canvas>
@@ -716,91 +718,223 @@ function delaunay(pts) {
   return tris.filter((t) => t.a < n && t.b < n && t.c < n);
 }
 
-// Triangulate the rock near the walls; fill each triangle with strokes parallel
-// to one of its edges, never along a wall and never parallel to a neighbour.
+// The rock near the walls is cut into cells (triangles, some merged into
+// four-sided cells), stretched along a slowly turning direction. Each cell is
+// filled with strokes parallel to one of its edges, never along a wall and
+// never parallel to a neighbouring cell.
 function triangles(ctx, rng, mask, o) {
   const sp = o.spacing, r = o.tri * TS, pts = [], wallPt = new Set();
-  // Points along the walls first, so triangle edges line up with them.
+  const stretch = Math.sqrt(o.stretch), along = r * stretch, across = r / stretch;
+
+  // The direction cells stretch along: a smooth noise field far out, swinging
+  // round to point away from the wall close to one.
+  const noise = valueNoise(rng, TS * 4);
+  const flow = (x, y) => {
+    let a = noise(x, y) * Math.PI * 2, best = Infinity, na = 0;
+    for (const w of WALLS) {
+      const dx = w.x1 - w.x0, dy = w.y1 - w.y0, L = dx * dx + dy * dy;
+      const t = Math.max(0, Math.min(1, ((x - w.x0) * dx + (y - w.y0) * dy) / L));
+      const d = Math.hypot(x - w.x0 - dx * t, y - w.y0 - dy * t);
+      if (d < best) { best = d; na = Math.atan2(w.ny, w.nx); }
+    }
+    const k = Math.max(0, 1 - best / (TS * 1.3));
+    // Blend the two axial directions as doubled angles.
+    const cx = (1 - k) * Math.cos(2 * a) + k * Math.cos(2 * na), cy = (1 - k) * Math.sin(2 * a) + k * Math.sin(2 * na);
+    return Math.atan2(cy, cx) / 2;
+  };
+  const tooClose = (x, y, scale) => {
+    const f = flow(x, y), ux = Math.cos(f), uy = Math.sin(f);
+    return pts.some(([px, py]) => {
+      const dx = px - x, dy = py - y, a = dx * ux + dy * uy, c = -dx * uy + dy * ux;
+      return (a / (along * scale)) ** 2 + (c / (across * scale)) ** 2 < 1;
+    });
+  };
+  // Points along the walls first, so cell edges line up with them.
   for (const w of WALLS) {
-    const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0), n = Math.max(1, Math.round(len / (r * 0.85)));
+    const len = Math.hypot(w.x1 - w.x0, w.y1 - w.y0), n = Math.max(1, Math.round(len / (across * 1.1)));
     for (let k = 0; k <= n; k++) {
       const x = w.x0 + ((w.x1 - w.x0) * k) / n, y = w.y0 + ((w.y1 - w.y0) * k) / n;
-      if (pts.some(([px, py]) => Math.hypot(px - x, py - y) < r * 0.4)) continue;
+      if (pts.some(([px, py]) => Math.hypot(px - x, py - y) < across * 0.5)) continue;
       wallPt.add(pts.length);
       pts.push([x, y]);
     }
   }
-  // Then scattered through the rock, no two closer than r.
-  for (let k = 0; k < 4000; k++) {
-    const x = rng.range(-r, W + r), y = rng.range(-r, H + r);
-    const d = distAt(x, y);
-    if (d <= 0 || d > (o.depth + 0.6) * TS) continue;
-    if (pts.some(([px, py]) => Math.hypot(px - x, py - y) < r * rng.range(0.7, 1.35))) continue;
+  // Then scattered through the rock, spaced further apart along the flow.
+  for (let k = 0; k < 5000; k++) {
+    const x = rng.range(-r, W + r), y = rng.range(-r, H + r), d = distAt(x, y);
+    if (d <= 0 || d > (o.depth + 1) * TS || tooClose(x, y, rng.range(0.75, 1.3))) continue;
     pts.push([x, y]);
   }
+
+  // Keep the triangles in the rock that reach into the hatched area.
+  const inside = (i) => mask.inside(pts[i][0], pts[i][1]);
   const tris = delaunay(pts).filter((t) => {
     const gx = (pts[t.a][0] + pts[t.b][0] + pts[t.c][0]) / 3, gy = (pts[t.a][1] + pts[t.b][1] + pts[t.c][1]) / 3;
-    return distAt(gx, gy) > 0 && mask.inside(gx, gy);
+    return distAt(gx, gy) > 0 && (mask.inside(gx, gy) || inside(t.a) + inside(t.b) + inside(t.c) >= 2);
   });
   const key = (a, b) => (a < b ? a + "," + b : b + "," + a);
-  const byEdge = new Map();
+  const triByEdge = new Map();
   for (const t of tris) for (const [a, b] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]]) {
     const k = key(a, b);
-    if (!byEdge.has(k)) byEdge.set(k, []);
-    byEdge.get(k).push(t);
+    if (!triByEdge.has(k)) triByEdge.set(k, []);
+    triByEdge.get(k).push(t);
+  }
+
+  // Merge some neighbouring triangles into convex four-sided cells, across
+  // the longer shared edge.
+  const cells = [], merged = new Set();
+  const cross = (o_, a, b) => (pts[a][0] - pts[o_][0]) * (pts[b][1] - pts[o_][1]) - (pts[a][1] - pts[o_][1]) * (pts[b][0] - pts[o_][0]);
+  for (const t of rng.shuffle([...tris])) {
+    if (merged.has(t)) continue;
+    merged.add(t);
+    let cell = [t.a, t.b, t.c];
+    if (rng.chance(o.quads)) {
+      const sides = [[t.a, t.b, t.c], [t.b, t.c, t.a], [t.c, t.a, t.b]].sort(
+        ([a, b], [c, d]) => Math.hypot(pts[d][0] - pts[c][0], pts[d][1] - pts[c][1]) - Math.hypot(pts[b][0] - pts[a][0], pts[b][1] - pts[a][1]));
+      for (const [a, b, c] of sides) {
+        const nb = (triByEdge.get(key(a, b)) || []).find((q) => q !== t && !merged.has(q));
+        if (!nb) continue;
+        const d = [nb.a, nb.b, nb.c].find((v) => v !== a && v !== b);
+        const quad = [a, d, b, c];
+        const signs = quad.map((v, i) => Math.sign(cross(v, quad[(i + 1) % 4], quad[(i + 2) % 4])));
+        if (signs.every((x) => x === signs[0])) { merged.add(nb); cell = quad; break; }
+      }
+    }
+    cells.push({ v: cell });
+  }
+  const cellByEdge = new Map();
+  for (const c of cells) {
+    c.g = [0, 1].map((k) => c.v.reduce((s_, i) => s_ + pts[i][k], 0) / c.v.length);
+    for (let i = 0; i < c.v.length; i++) {
+      const k = key(c.v[i], c.v[(i + 1) % c.v.length]);
+      if (!cellByEdge.has(k)) cellByEdge.set(k, []);
+      cellByEdge.get(k).push(c);
+    }
   }
   const onWall = (a, b) => wallPt.has(a) && wallPt.has(b) && distAt((pts[a][0] + pts[b][0]) / 2, (pts[a][1] + pts[b][1]) / 2) < 1.5;
 
-  // Choose each triangle's stroke direction, nearest the walls first.
-  const order = rng.shuffle([...tris]).map((t) => {
-    t.g = [(pts[t.a][0] + pts[t.b][0] + pts[t.c][0]) / 3, (pts[t.a][1] + pts[t.b][1] + pts[t.c][1]) / 3];
-    return t;
-  }).sort((p, q) => distAt(...p.g) - distAt(...q.g));
-  for (const t of order) {
+  // Choose each cell's stroke edge, nearest the walls first.
+  const order = rng.shuffle(cells).sort((p, q) => distAt(...p.g) - distAt(...q.g));
+  for (const c of order) {
     let best = null;
-    for (const [a, b, c] of [[t.a, t.b, t.c], [t.b, t.c, t.a], [t.c, t.a, t.b]]) {
+    const m = c.v.length;
+    for (let i = 0; i < m; i++) {
+      const a = c.v[i], b = c.v[(i + 1) % m];
       if (onWall(a, b)) continue;
       const ang = Math.atan2(pts[b][1] - pts[a][1], pts[b][0] - pts[a][0]);
       let score = Math.PI / 2;
-      for (const [p, q] of [[t.a, t.b], [t.b, t.c], [t.c, t.a]])
-        for (const nb of byEdge.get(key(p, q))) if (nb !== t && nb.ang !== undefined) score = Math.min(score, lineAngleDiff(ang, nb.ang));
-      if (!wallAngleOK(t.g[0], t.g[1], ang, o)) score -= 0.6;
-      // Prefer an edge whose strokes fit within the group size.
-      const [ax, ay] = pts[a], [bx, by] = pts[b], [cx, cy] = pts[c];
-      const h = Math.abs((bx - ax) * (cy - ay) - (by - ay) * (cx - ax)) / Math.hypot(bx - ax, by - ay);
-      if (h / sp > o.maxLines + 0.5) score -= 0.3;
+      for (let j = 0; j < m; j++)
+        for (const nb of cellByEdge.get(key(c.v[j], c.v[(j + 1) % m]))) if (nb !== c && nb.ang !== undefined) score = Math.min(score, lineAngleDiff(ang, nb.ang));
+      if (!wallAngleOK(c.g[0], c.g[1], ang, o)) score -= 0.6;
+      // Owning an edge that a neighbour's strokes already end against turns
+      // those ends into T-junctions.
+      const k = key(a, b);
+      if (cellByEdge.get(k).some((nb) => nb !== c && nb.ang !== undefined && nb.own !== k)) score += 0.25;
+      // Prefer an edge whose stack of strokes fits within the group size.
+      const ux = (pts[b][0] - pts[a][0]), uy = (pts[b][1] - pts[a][1]), L = Math.hypot(ux, uy);
+      const h = Math.max(...c.v.map((v) => Math.abs(ux * (pts[v][1] - pts[a][1]) - uy * (pts[v][0] - pts[a][0])) / L));
+      if (h / sp > o.maxLines + 0.5) score -= 0.35;
       score += rng.range(0, 0.15);
-      if (!best || score > best.score) best = { score, a, b, c, ang, h };
+      if (!best || score > best.score) best = { score, a, b, ang, h, k };
     }
-    if (best) Object.assign(t, { ang: best.ang, ea: best.a, eb: best.b, ec: best.c, h: best.h });
+    if (best) Object.assign(c, { ang: best.ang, ea: best.a, eb: best.b, h: best.h, own: best.k });
   }
 
-  // Fill: strokes parallel to the chosen edge, from the edge toward the
-  // opposite corner, shortening to a dot there.
+  // Where the hatched area gives out, strokes are cut by the wandering edge
+  // with some overshoot, rather than at straight cell edges.
+  const fray = (s) => {
+    const inA = mask.inside(s.x0, s.y0), inB = mask.inside(s.x1, s.y1);
+    if (inA && inB) return s;
+    const L = Math.hypot(s.x1 - s.x0, s.y1 - s.y0);
+    if (!inA && !inB) return mask.inside((s.x0 + s.x1) / 2, (s.y0 + s.y1) / 2) && L > sp ? s : null;
+    const [fx, fy, tx, ty] = inA ? [s.x0, s.y0, s.x1, s.y1] : [s.x1, s.y1, s.x0, s.y0];
+    const ux = (tx - fx) / L, uy = (ty - fy) / L;
+    let t = 0;
+    while (t < L && mask.inside(fx + ux * t, fy + uy * t)) t += 1;
+    t = Math.min(L, Math.max(0, t + rng.range(-0.5, 0.8) * sp));
+    if (t < sp * 0.6) return null;
+    return inA ? { x0: fx, y0: fy, x1: fx + ux * t, y1: fy + uy * t } : { x0: fx + ux * t, y0: fy + uy * t, x1: fx, y1: fy };
+  };
+
+  // Fill: strokes parallel to the chosen edge, from that edge across the
+  // cell, each clipped to the cell. After 3-5 strokes the rest of the cell is
+  // cut off along the last stroke and filled as a cell of its own, turned to
+  // a new direction, so its strokes end against that last stroke.
   const store = SegStore();
   for (const w of WALLS) store.add({ ...w, w: o.wallw });
   const off0 = o.weight * 0.6, trim = o.weight * 0.45;
-  for (const t of order) {
-    if (t.ang === undefined) continue;
-    const [ax, ay] = pts[t.ea], [bx, by] = pts[t.eb], [cx, cy] = pts[t.ec];
+
+  // Strokes across convex polygon `poly` (points), parallel to edge i.
+  function fillPoly(poly, i, c) {
+    const m = poly.length, [ax, ay] = poly[i], [bx, by] = poly[(i + 1) % m];
+    const L0 = Math.hypot(bx - ax, by - ay), ux = (bx - ax) / L0, uy = (by - ay) / L0;
+    let nx = -uy, ny = ux;
+    const gx = poly.reduce((t, p) => t + p[0], 0) / m, gy = poly.reduce((t, p) => t + p[1], 0) / m;
+    if ((gx - ax) * nx + (gy - ay) * ny < 0) { nx = -nx; ny = -ny; }
+    const h = Math.max(...poly.map(([x, y]) => (x - ax) * nx + (y - ay) * ny));
     const g = { bend: (rng.chance(0.5) ? 1 : -1) * o.curve }, flip = rng.chance(0.5);
-    for (let d = off0; d < t.h - 0.8; d += sp) {
-      const f = d / t.h;
-      let px = ax + (cx - ax) * f, py = ay + (cy - ay) * f, qx = bx + (cx - bx) * f, qy = by + (cy - by) * f;
-      const L = Math.hypot(qx - px, qy - py);
-      // Ends stop a little short of the edges, by uneven amounts, so the
-      // seams between triangles look inked rather than ruled.
-      const t0 = trim + rng.range(0, o.seam) * sp, t1 = trim + rng.range(0, o.seam) * sp;
-      if (L > t0 + t1 + 0.6) {
-        const ux = (qx - px) / L, uy = (qy - py) / L;
-        px += ux * t0; py += uy * t0; qx -= ux * t1; qy -= uy * t1;
+    const cap = Math.min(o.maxLines, rng.int(3, 5));
+    let d = off0, k = 0;
+    for (; d < h - 0.8; d += sp * rng.range(0.95, 1.05)) {
+      if (k === cap && h - d > sp * 1.2) break;
+      const qx = ax + nx * d, qy = ay + ny * d;
+      let t0 = Infinity, t1 = -Infinity;
+      for (let j = 0; j < m; j++) {
+        const [p1x, p1y] = poly[j], [p2x, p2y] = poly[(j + 1) % m];
+        const ex = p2x - p1x, ey = p2y - p1y, den = ux * ey - uy * ex;
+        if (Math.abs(den) < 1e-9) continue;
+        const wx = p1x - qx, wy = p1y - qy;
+        const t = (wx * ey - wy * ex) / den, u = (wx * uy - wy * ux) / den;
+        if (u >= -1e-6 && u <= 1 + 1e-6) { t0 = Math.min(t0, t); t1 = Math.max(t1, t); }
       }
-      const s = flip ? { x0: qx, y0: qy, x1: px, y1: py } : { x0: px, y0: py, x1: qx, y1: qy };
+      if (!(t1 > t0)) continue;
+      // Ends stop a little short of the edges, by uneven amounts.
+      const e0 = trim + rng.range(0, o.seam) * sp, e1 = trim + rng.range(0, o.seam) * sp;
+      if (t1 - t0 > e0 + e1 + 0.6) { t0 += e0; t1 -= e1; }
+      let s = { x0: qx + ux * t0, y0: qy + uy * t0, x1: qx + ux * t1, y1: qy + uy * t1 };
+      if (flip) s = { x0: s.x1, y0: s.y1, x1: s.x0, y1: s.y0 };
+      k++;
+      s = fray(s);
+      if (!s) continue;
       inkStroke(ctx, s, o, rng, g);
       addStroke(store, s);
+      c.n++;
     }
+    if (d >= h - 0.8) return;
+    // Cut off the rest, half a spacing past the last stroke.
+    const cut = d - sp * 0.5, rest = [];
+    for (let j = 0; j < m; j++) {
+      const P = poly[j], Q = poly[(j + 1) % m];
+      const dp = (P[0] - ax) * nx + (P[1] - ay) * ny - cut, dq = (Q[0] - ax) * nx + (Q[1] - ay) * ny - cut;
+      if (dp >= 0) rest.push(P);
+      if ((dp >= 0) !== (dq >= 0)) { const f = dp / (dp - dq); rest.push([P[0] + (Q[0] - P[0]) * f, P[1] + (Q[1] - P[1]) * f]); }
+    }
+    if (rest.length < 3) return;
+    // Its new edge to stack from: any but the cut, well away from our direction.
+    const ang = Math.atan2(uy, ux);
+    let best = null;
+    for (let j = 0; j < rest.length; j++) {
+      const [px, py] = rest[j], [qx, qy] = rest[(j + 1) % rest.length];
+      const len = Math.hypot(qx - px, qy - py);
+      if (len < sp) continue;
+      const a2 = Math.atan2(qy - py, qx - px);
+      let score = lineAngleDiff(a2, ang);
+      if (score < 0.5) continue;
+      if (!wallAngleOK((px + qx) / 2, (py + qy) / 2, a2, o)) score -= 0.6;
+      score += rng.range(0, 0.2);
+      if (!best || score > best.score) best = { score, j };
+    }
+    if (best) fillPoly(rest, best.j, c);
+  }
+
+  for (const c of order) {
+    c.n = 0;
+    if (c.ang === undefined) continue;
+    const poly = c.v.map((v) => pts[v]);
+    fillPoly(poly, c.v.indexOf(c.ea), c);
   }
   edgeDashes(ctx, rng, mask, store, o);
+  store.cells = order;
   return store;
 }
 
@@ -905,9 +1039,9 @@ function wallStroke(ctx, [x0, y0], [x1, y1], o, rng) {
 }
 
 // ---------- wiring --------------------------------------------------------------------
-const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "seam", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
+const ids = ["weight", "vary", "curve", "wobble", "maxlines", "spacing", "length", "minlen", "depth", "mingroup", "wallang", "dots", "holes", "tri", "stretch", "quads", "seam", "shrink", "nearw", "flecks", "pstart", "pmid", "pend", "wallw", "wallin", "wallseg", "wallkink", "wallwob", "wallvary", "gridwob", "gridbreak"];
 const times = (v) => `${(+v).toFixed(2)}×`;
-const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
+const fmt = { weight: (v) => `${v}px`, vary: (v) => `${Math.round(v * 100)}%`, curve: (v) => `${(v * 100).toFixed(1)}% of length`, wobble: (v) => `${v}px`, maxlines: (v) => v, pstart: times, pmid: times, pend: times, spacing: (v) => `${v}px`, length: (v) => `${v} tiles`, minlen: (v) => `${v}× spacing`, flecks: (v) => `${Math.round(v * 100)}%`, wallw: (v) => `${v}px`, wallwob: (v) => `${v}px`, wallkink: (v) => `${v}px`, wallseg: (v) => `${v} tiles`, wallin: (v) => `${Math.round(v * 100)}%`, nearw: (v) => `+${Math.round(v * 100)}%`, shrink: (v) => `${Math.round(v * 100)}%`, mingroup: (v) => v, wallang: (v) => `${Math.round((v * 180) / Math.PI)}°`, dots: (v) => `${Math.round(v * 100)}%`, tri: (v) => `${v} tiles`, seam: (v) => `${v}× spacing`, stretch: (v) => `${v}×`, quads: (v) => `${Math.round(v * 100)}%`, holes: (v) => (v >= 2 ? "off" : `${v}× spacing`), gridwob: (v) => `${v}px`, gridbreak: (v) => `${Math.round(v * 100)}%`, wallvary: (v) => `${Math.round(v * 100)}%`, depth: (v) => `${v} tiles` };
 let seed = (Math.random() * 2 ** 32) >>> 0;
 
 function params() {
