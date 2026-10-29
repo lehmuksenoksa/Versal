@@ -4,6 +4,7 @@
 import { renderMap, INK, PAPER } from "./maprender.js";
 
 const DESK = "#2b221c";
+export const ZOOM = { start: 0.75, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
 // mockup (mockups/glyphs.html). Sizes are in tiles; bold and halo are
@@ -71,6 +72,7 @@ export class Renderer {
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     this.glyphMetrics = new Map();
     this.vis = { ...VIS_DEFAULTS };
+    this.zoom = ZOOM.start;
     this.layer = document.createElement("canvas");
     this.resize();
   }
@@ -96,6 +98,16 @@ export class Renderer {
     this.buildMap();
   }
 
+  // Zoom the view. The map is redrawn at the new resolution once zooming
+  // pauses; until then the old drawing is scaled.
+  setZoom(z) {
+    z = Math.max(ZOOM.min, Math.min(ZOOM.max, z));
+    if (z === this.zoom) return;
+    this.zoom = z;
+    clearTimeout(this.rebuild);
+    if (this.world) this.rebuild = setTimeout(() => this.buildMap(), 300);
+  }
+
   resize() {
     const r = this.canvas.getBoundingClientRect();
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -113,7 +125,8 @@ export class Renderer {
 
   buildMap() {
     const L = this.world.level;
-    this.map = renderMap(L, this.TS, this.dpr, this.world.seed).canvas;
+    this.mapScale = this.dpr * this.zoom;
+    this.map = renderMap(L, this.TS, this.mapScale, this.world.seed).canvas;
     this.buildMemory();
     // How visible and how known each tile is, easing toward the world's
     // current state so newly seen ground inks in.
@@ -219,7 +232,7 @@ export class Renderer {
   }
 
   screenToTile(px, py) {
-    return { x: Math.floor((px + this.cam.x) / this.TS), y: Math.floor((py + this.cam.y) / this.TS) };
+    return { x: Math.floor((px / this.zoom + this.cam.x) / this.TS), y: Math.floor((py / this.zoom + this.cam.y) / this.TS) };
   }
 
   frame(now) {
@@ -230,6 +243,8 @@ export class Renderer {
     const dt = Math.min(0.1, (now - (this.lastNow || now)) / 1000);
     this.lastNow = now;
     const motion = this.reduced ? 0.35 : 1;
+    // The view in map units, and map units to device pixels.
+    const vw = this.vw / this.zoom, vh = this.vh / this.zoom, sc = this.dpr * this.zoom, ms = this.mapScale;
 
     // Camera follows the player's drawn position.
     const pv = this.view(w.player);
@@ -237,17 +252,17 @@ export class Renderer {
     const px = (pv.fx + (pv.x - pv.fx) * pk + 0.5) * TS, py = (pv.fy + (pv.y - pv.fy) * pk + 0.5) * TS;
     const mw = L.w * TS, mh = L.h * TS;
     const fit = (target, view, size) => (size + 64 < view ? (size - view) / 2 : Math.max(-32, Math.min(size - view + 32, target)));
-    const tx = fit(px - this.vw / 2, this.vw, mw), ty = fit(py - this.vh / 2, this.vh, mh);
+    const tx = fit(px - vw / 2, vw, mw), ty = fit(py - vh / 2, vh, mh);
     if (this.cam.snap) { this.cam.x = tx; this.cam.y = ty; this.cam.snap = false; }
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;
     this.cam.y += (ty - this.cam.y) * f;
-    const cx = Math.round(this.cam.x * this.dpr) / this.dpr, cy = Math.round(this.cam.y * this.dpr) / this.dpr;
+    const cx = Math.round(this.cam.x * sc) / sc, cy = Math.round(this.cam.y * sc) / sc;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = DESK;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, -cx * this.dpr, -cy * this.dpr);
+    ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
 
     // The page, casting a soft shadow onto the desk.
     ctx.save();
@@ -256,12 +271,12 @@ export class Renderer {
     ctx.fillStyle = PAPER;
     ctx.fillRect(0, 0, mw, mh);
     ctx.restore();
-    const world = [this.dpr, 0, 0, this.dpr, -cx * this.dpr, -cy * this.dpr];
+    const world = [sc, 0, 0, sc, -cx * sc, -cy * sc];
     const drawRegion = (g, img) => {
       const sx0 = Math.max(0, cx), sy0 = Math.max(0, cy);
-      const sx1 = Math.min(mw, cx + this.vw), sy1 = Math.min(mh, cy + this.vh);
+      const sx1 = Math.min(mw, cx + vw), sy1 = Math.min(mh, cy + vh);
       if (sx1 > sx0 && sy1 > sy0)
-        g.drawImage(img, sx0 * this.dpr, sy0 * this.dpr, (sx1 - sx0) * this.dpr, (sy1 - sy0) * this.dpr, sx0, sy0, sx1 - sx0, sy1 - sy0);
+        g.drawImage(img, sx0 * ms, sy0 * ms, (sx1 - sx0) * ms, (sy1 - sy0) * ms, sx0, sy0, sx1 - sx0, sy1 - sy0);
     };
     // Draw `paint` into the offscreen layer, keep (or cut away) the masked
     // part, and lay the result over the canvas.
@@ -306,7 +321,7 @@ export class Renderer {
       ctx.save();
       ctx.globalCompositeOperation = "multiply";
       ctx.fillStyle = g;
-      ctx.fillRect(cx, cy, this.vw, this.vh);
+      ctx.fillRect(cx, cy, vw, vh);
       ctx.restore();
     };
     if (v.light === "candle" && v.lightUnknown !== "yes") candle();
@@ -429,4 +444,20 @@ function edgeNoise(w, h) {
       out[y * w + x] = (a + (b - a) * t) * 0.75 + Math.random() * 0.25;
     }
   return out;
+}
+
+// Zoom with the mouse wheel or trackpad, the + and - keys, and 0 to reset.
+export function bindZoom(renderer, canvas) {
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    renderer.setZoom(renderer.zoom * Math.exp(-e.deltaY * 0.0015));
+  }, { passive: false });
+  window.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey || ["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+    if (e.key === "+" || e.key === "=") renderer.setZoom(renderer.zoom * ZOOM.step);
+    else if (e.key === "-" || e.key === "_") renderer.setZoom(renderer.zoom / ZOOM.step);
+    else if (e.key === "0") renderer.setZoom(ZOOM.start);
+    else return;
+    e.preventDefault();
+  });
 }

@@ -1,7 +1,7 @@
 // Bootstrap: fonts, input and the animation loop.
 
 import { World } from "./world.js";
-import { Renderer } from "./render.js";
+import { Renderer, bindZoom } from "./render.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -46,6 +46,7 @@ canvas.addEventListener("click", (e) => {
 });
 
 window.addEventListener("resize", () => renderer.resize());
+bindZoom(renderer, canvas);
 
 function loop(now) {
   renderer.frame(now);

@@ -22,7 +22,7 @@ python3 -m http.server 8000
 Then open <http://localhost:8000>.
 
 Move with the arrow keys, numpad, `hjkl`/`yubn` or `wasd`, or click or tap toward a spot. Press `.` or
-space to wait a turn. Walk into a door to open it. `window.versal` exposes the world and renderer
+space to wait a turn. Zoom with the mouse wheel or `+`/`-` (`0` resets to 75%). `window.versal` exposes the world and renderer
 in the browser console.
 
 ## Code map

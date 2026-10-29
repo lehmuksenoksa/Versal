@@ -53,7 +53,7 @@
 <canvas id="view" aria-label="Dungeon map"></canvas>
 <aside>
   <h1>Sight and light</h1>
-  <p>Walk with the arrow keys, numpad, <kbd>hjklyubn</kbd> or <kbd>wasd</kbd>, or click toward a spot; <kbd>.</kbd> waits a turn. Changes apply at once.</p>
+  <p>Walk with the arrow keys, numpad, <kbd>hjklyubn</kbd> or <kbd>wasd</kbd>, or click toward a spot; <kbd>.</kbd> waits a turn. Zoom with the mouse wheel or <kbd>+</kbd> and <kbd>&minus;</kbd>, <kbd>0</kbd> to reset. Changes apply at once.</p>
   <div class="buttons">
     <button id="copy" type="button">Copy settings</button>
     <button id="newmap" class="plain" type="button">New map</button>
@@ -96,7 +96,7 @@
 
 <script type="module">
 import { World } from "../js/world.js";
-import { Renderer, VIS_DEFAULTS } from "../js/render.js";
+import { Renderer, VIS_DEFAULTS, bindZoom } from "../js/render.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -176,6 +176,7 @@ canvas.addEventListener("click", (e) => {
   if (dx || dy) world.playerMove(dx, dy);
 });
 window.addEventListener("resize", () => renderer.resize());
+bindZoom(renderer, canvas);
 
 function loop(now) {
   renderer.frame(now);
