@@ -62,13 +62,13 @@
 <body>
 <header>
   <h1>Character mockups</h1>
-  <p>The player and a goblin pack in a corner of the real map, in Texturina and Grenze Gotisch. The first rows try different letters for the player, the last rows different letters for the goblins; the controls apply to every scene. Click a scene to use its font and letter, then <i>Copy choice</i> and paste the result into the chat. Every letter offered exists in both fonts.</p>
+  <p>The player and some monsters in a corner of the real map, in Texturina and Grenze Gotisch. Type the monsters as letters: each letter is one monster, so <i>ggggg</i> is five goblins and <i>abbc</i> is one a, two b's and one c. Click a scene to pick its font, then <i>Copy choice</i> and paste the result into the chat. Both fonts have the basic Latin letters, plus @ &amp; Æ Œ Ð Þ Ø Ħ ß † and the accented g's (ĝ ǧ ğ ġ ģ); other symbols fall back to another typeface.</p>
 </header>
 
 <div class="controls">
   <div class="topbar">
     <button class="main" id="copy" type="button">Copy choice</button>
-    <label for="zoom" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)">Zoom <input id="zoom" type="range" min="0.5" max="2.5" step="0.25" value="0.75"><output id="zoom-v"></output></label>
+    <label for="zoom" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)">Zoom <input id="zoom" type="range" min="0.5" max="3" step="0.25" value="1.5"><output id="zoom-v"></output></label>
     <span id="picked-label"></span>
   </div>
   <div class="export" id="export-box" hidden>
@@ -80,13 +80,11 @@
     <summary>Symbols</summary>
     <div class="row">
       <label for="pglyph">Player letter <input id="pglyph" type="text" value="@" maxlength="3"></label>
-      <label for="pfont">Player font <select id="pfont"><option>Texturina</option><option>Grenze Gotisch</option></select></label>
       <label for="pweight">Player weight <output id="pweight-v"></output><input id="pweight" type="range" min="100" max="900" step="50" value="600"></label>
-      <label for="gglyph">Goblin letter <input id="gglyph" type="text" value="g" maxlength="3"></label>
-      <label for="gfont">Goblin font <select id="gfont"><option>Texturina</option><option>Grenze Gotisch</option></select></label>
-      <label for="gweight">Goblin weight <output id="gweight-v"></output><input id="gweight" type="range" min="100" max="900" step="50" value="600"></label>
+      <label for="gglyph">Monsters <input id="gglyph" type="text" value="gggggg" maxlength="14" style="width:11em"></label>
+      <label for="gweight">Monster weight <output id="gweight-v"></output><input id="gweight" type="range" min="100" max="900" step="50" value="600"></label>
       <label for="psize">Player size <output id="psize-v"></output><input id="psize" type="range" min="0.5" max="1.6" step="0.05" value="0.95"></label>
-      <label for="gsize">Goblin size <output id="gsize-v"></output><input id="gsize" type="range" min="0.5" max="1.6" step="0.05" value="1.05"></label>
+      <label for="gsize">Monster size <output id="gsize-v"></output><input id="gsize" type="range" min="0.5" max="1.6" step="0.05" value="1.05"></label>
     </div>
   </details>
 
@@ -95,7 +93,7 @@
     <div class="row">
       <label for="pink">Player ink <select id="pink">
         <option value="#1c3a72">Blue-black</option><option value="#1b1815">Black</option><option value="#5a3a22">Iron-gall brown</option><option value="#a3261b">Vermilion</option></select></label>
-      <label for="gink">Goblin ink <select id="gink">
+      <label for="gink">Monster ink <select id="gink">
         <option value="#1b1815">Black</option><option value="#5a3a22">Iron-gall brown</option><option value="#2d5a2c">Green-black</option><option value="#a3261b">Vermilion</option></select></label>
       <label for="bold">Extra weight <output id="bold-v"></output><input id="bold" type="range" min="0" max="0.08" step="0.005" value="0"></label>
       <label for="halo">Paper halo <output id="halo-v"></output><input id="halo" type="range" min="0" max="0.3" step="0.01" value="0.16"></label>
@@ -125,11 +123,8 @@ import { renderMap, INK, PAPER } from "../js/maprender.js";
 import { RNG } from "../js/rng.js";
 
 const FONTS = ["Texturina", "Grenze Gotisch"];
-// Letters both fonts contain.
-const PLAYER_LETTERS = ["@", "&", "Æ", "Œ", "Ð", "Þ", "Ø", "Ħ", "ß", "A", "H", "P", "†"];
-const GOBLIN_LETTERS = ["g", "ĝ", "ǧ", "ğ", "ġ", "ģ", "G", "Ĝ", "Ǧ", "Ğ"];
 
-// ---------- the scene: a room with a corridor, a player and a goblin pack ----------
+// ---------- the scene: a room with a corridor, the player and some monsters ----------
 const TW = 13, TH = 8, TS = 32, W = TW * TS, H = TH * TS;
 const tiles = new Uint8Array(TW * TH);
 const carve = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) tiles[y * TW + x] = 1; };
@@ -139,11 +134,22 @@ const level = { w: TW, h: TH, tiles, cave: new Uint8Array(TW * TH), rooms: [] };
 const isFloor = (x, y) => x >= 1 && y >= 1 && x <= 8 && y <= 6;
 
 const rng = new RNG(7);
-const actors = [{ kind: "player", x: 2, y: 3, home: [2, 3] }];
-for (const [x, y] of [[5, 2], [6, 3], [5, 4], [7, 4], [6, 5], [7, 2]]) actors.push({ kind: "goblin", x, y });
-for (const a of actors) Object.assign(a, { fx: a.x, fy: a.y, t0: 0, dur: 1, phase: Math.random() * 6.28, tilt: Math.random() * 2 - 1, dart: { ox: 0, oy: 0, tx: 0, ty: 0, next: 0 } });
+let actors = [];
+const newActor = (a) => Object.assign(a, { fx: a.x, fy: a.y, t0: 0, dur: 1, phase: Math.random() * 6.28, tilt: Math.random() * 2 - 1, dart: { ox: 0, oy: 0, tx: 0, ty: 0, next: 0 } });
+// One monster per letter typed, placed on free floor in the right of the room.
+function spawn(letters) {
+  const player = actors.find((a) => a.kind === "player") || newActor({ kind: "player", glyph: "@", x: 2, y: 3, home: [2, 3] });
+  const free = [];
+  for (let y = 1; y <= 6; y++) for (let x = 4; x <= 8; x++) free.push([x, y]);
+  for (let i = free.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
+  actors = [player];
+  for (const ch of [...letters].filter((c) => c.trim()).slice(0, free.length)) {
+    const [x, y] = free.pop();
+    actors.push(newActor({ kind: "monster", glyph: ch, x, y }));
+  }
+}
 
-// Every so often the goblins shuffle round their corner and the player steps.
+// Every so often the monsters shuffle round their corner and the player steps.
 let nextStep = 0;
 function stepWorld(now) {
   if (now < nextStep) return;
@@ -169,7 +175,7 @@ const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 // ---------- controls ----------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
-const ctlIds = ["pglyph", "pfont", "pweight", "gglyph", "gfont", "gweight", "psize", "gsize", "pink", "gink", "bold", "halo", "tilt", "shadow", "anim"];
+const ctlIds = ["pglyph", "pweight", "gglyph", "gweight", "psize", "gsize", "pink", "gink", "bold", "halo", "tilt", "shadow", "anim"];
 const fmt = { pweight: (v) => v, gweight: (v) => v, psize: (v) => `${v}× tile`, gsize: (v) => `${v}× tile`, bold: (v) => `${(v * 100).toFixed(1)}%`, halo: (v) => `${Math.round(v * 100)}%`, tilt: (v) => `±${Math.round((v * 180) / Math.PI)}°` };
 function opts() {
   const o = {};
@@ -181,53 +187,42 @@ function opts() {
   return o;
 }
 let o = opts();
-for (const id of ctlIds) $(id).addEventListener("input", () => { o = opts(); if (id.endsWith("glyph")) loadFonts(); showPicked(); });
-for (const id of ["shadow", "anim", "pink", "gink", "pfont", "gfont"]) $(id).addEventListener("change", () => { o = opts(); showPicked(); });
+for (const id of ctlIds) $(id).addEventListener("input", () => {
+  o = opts();
+  if (id.endsWith("glyph")) loadFonts();
+  if (id === "gglyph") spawn(o.gglyph);
+});
+for (const id of ["shadow", "anim", "pink", "gink"]) $(id).addEventListener("change", () => (o = opts()));
+let pickedFont = null;
 function showPicked() {
-  $("picked-label").textContent = `Player: ${o.pglyph} in ${o.pfont} ${o.pweight} · Goblins: ${o.gglyph} in ${o.gfont} ${o.gweight}`;
-  for (const c of cards) c.fig.classList.toggle("picked", c.role === "player" ? c.glyph === o.pglyph && c.family === o.pfont : c.glyph === o.gglyph && c.family === o.gfont);
+  $("picked-label").textContent = pickedFont ? `Picked: ${pickedFont}` : "Click a scene to pick its font";
+  for (const c of cards) c.fig.classList.toggle("picked", c.family === pickedFont);
 }
 
-// ---------- cards: one scene per font and letter ----------------------------------
+// ---------- cards: one scene per font ---------------------------------------------
 const grid = $("grid");
 const cards = [];
-for (const [role, letters, title] of [["player", PLAYER_LETTERS, "Player letters"], ["goblin", GOBLIN_LETTERS, "Goblin letters"]])
-  for (const family of FONTS) {
-    const h = document.createElement("h2");
-    h.className = "section";
-    h.textContent = `${title} in ${family}`;
-    grid.append(h);
-    for (const glyph of letters) {
-      const fig = document.createElement("figure");
-      fig.tabIndex = 0;
-      const canvas = document.createElement("canvas");
-      const cap = document.createElement("figcaption");
-      cap.innerHTML = "<b></b><span></span>";
-      cap.querySelector("b").textContent = glyph;
-      cap.querySelector("b").style.fontWeight = "normal";
-      cap.querySelector("span").textContent = `${role} · ${family}`;
-      fig.append(canvas, cap);
-      grid.append(fig);
-      const card = { role, family, glyph, fig, canvas, ctx: canvas.getContext("2d"), visible: true };
-      const pick = () => {
-        const pre = role === "player" ? "p" : "g";
-        $(pre + "glyph").value = glyph;
-        $(pre + "font").value = family;
-        o = opts();
-        showPicked();
-      };
-      fig.addEventListener("click", pick);
-      fig.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
-      cards.push(card);
-    }
-  }
+for (const family of FONTS) {
+  const fig = document.createElement("figure");
+  fig.tabIndex = 0;
+  const canvas = document.createElement("canvas");
+  const cap = document.createElement("figcaption");
+  cap.textContent = family;
+  fig.append(canvas, cap);
+  grid.append(fig);
+  const card = { family, fig, canvas, ctx: canvas.getContext("2d"), visible: true };
+  const pick = () => { pickedFont = family; showPicked(); };
+  fig.addEventListener("click", pick);
+  fig.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  cards.push(card);
+}
 const io = new IntersectionObserver((entries) => {
   for (const e of entries) { const c = cards.find((k) => k.fig === e.target); if (c) c.visible = e.isIntersecting; }
 });
 for (const c of cards) io.observe(c.fig);
 
 function loadFonts() {
-  const text = PLAYER_LETTERS.join("") + GOBLIN_LETTERS.join("") + $("pglyph").value + $("gglyph").value;
+  const text = "@&ÆŒÐÞØĦß†gĝǧğġģ" + $("pglyph").value + $("gglyph").value;
   return Promise.all(FONTS.map((f) => document.fonts.load(`500 32px "${f}"`, text).catch(() => {})));
 }
 
@@ -257,7 +252,7 @@ function glyphBox(ctx, ch, font) {
 function pose(a, now, t) {
   const motion = o.anim === "1" ? 1 : 0;
   let ox = 0, oy = 0, sx = 1, sy = 1, air = 0;
-  if (a.kind === "goblin") {
+  if (a.kind === "monster") {
     const h = Math.abs(Math.sin(t * 3 + a.phase)), land = Math.pow(1 - h, 6);
     oy = -h * 0.2; sx = 1 + 0.16 * land - 0.04 * h; sy = 1 - 0.2 * land + 0.08 * h; air = h;
     const d = a.dart;
@@ -269,7 +264,7 @@ function pose(a, now, t) {
   }
   const k = Math.min(1, (now - a.t0) / a.dur), e = ease(k);
   const x = a.fx + (a.x - a.fx) * e, y = a.fy + (a.y - a.fy) * e;
-  if (k < 1) oy -= Math.sin(Math.PI * k) * (a.kind === "goblin" ? 0.32 : 0.08);
+  if (k < 1) oy -= Math.sin(Math.PI * k) * (a.kind === "monster" ? 0.32 : 0.08);
   return { x: x + 0.5, y: y + 0.5, ox: ox * motion, oy: oy * motion, sx: 1 + (sx - 1) * motion, sy: 1 + (sy - 1) * motion, air: air * motion };
 }
 
@@ -280,10 +275,9 @@ function drawCard(c, now) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   for (const a of [...actors].sort((p, q) => p.y - q.y)) {
     const p = pose(a, now, t), player = a.kind === "player";
-    const mine = c.role === a.kind;
-    const ch = mine ? c.glyph : player ? o.pglyph : o.gglyph;
+    const ch = player ? o.pglyph : a.glyph;
     if (!ch) continue;
-    const family = mine ? c.family : player ? o.pfont : o.gfont;
+    const family = c.family;
     const size = TS * (player ? o.psize : o.gsize);
     const font = `${player ? o.pweight : o.gweight} ${size}px "${family}", serif`;
     const m = glyphBox(ctx, ch, font);
@@ -375,7 +369,7 @@ function loop(now) {
 
 // ---------- copy the choice -------------------------------------------------------------
 $("copy").addEventListener("click", () => {
-  const out = { ...o };
+  const out = { font: pickedFont, ...o };
   delete out.anim;
   const text = JSON.stringify(out);
   const box = $("export"), status = $("copy-status");
@@ -388,6 +382,7 @@ $("copy").addEventListener("click", () => {
 await loadFonts().catch(() => {});
 await document.fonts.load('italic 16px "IM Fell English"').catch(() => {});
 sizeCards();
+spawn(o.gglyph);
 showPicked();
 requestAnimationFrame(loop);
 </script>
