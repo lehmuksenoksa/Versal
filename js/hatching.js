@@ -562,20 +562,40 @@ function valueNoise(rng, W, H, cell) {
 export function nearestSeeds(seed, w, h) {
   const n = w * h, sx = new Int32Array(n).fill(-1), sy = new Int32Array(n), d2 = new Float64Array(n).fill(Infinity);
   for (let i = 0; i < n; i++) if (seed[i]) { sx[i] = i % w; sy[i] = (i / w) | 0; d2[i] = 0; }
-  const take = (x, y, nx, ny) => {
-    if (nx < 0 || ny < 0 || nx >= w || ny >= h) return;
-    const j = ny * w + nx;
-    if (sx[j] < 0) return;
-    const i = y * w + x, dx = x - sx[j], dy = y - sy[j], dd = dx * dx + dy * dy;
-    if (dd < d2[i]) { d2[i] = dd; sx[i] = sx[j]; sy[i] = sy[j]; }
+  // Pixel i at (x, y) takes neighbour j's seed if it is nearer.
+  const take = (i, x, y, j) => {
+    const s = sx[j];
+    if (s < 0) return;
+    const dx = x - s, dy = y - sy[j], dd = dx * dx + dy * dy;
+    if (dd < d2[i]) { d2[i] = dd; sx[i] = s; sy[i] = sy[j]; }
   };
   for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) { take(x, y, x - 1, y); take(x, y, x - 1, y - 1); take(x, y, x, y - 1); take(x, y, x + 1, y - 1); }
-    for (let x = w - 1; x >= 0; x--) take(x, y, x + 1, y);
+    const row = y * w;
+    for (let x = 0; x < w; x++) {
+      const i = row + x;
+      if (d2[i] === 0) continue;
+      if (x > 0) take(i, x, y, i - 1);
+      if (y > 0) {
+        if (x > 0) take(i, x, y, i - w - 1);
+        take(i, x, y, i - w);
+        if (x < w - 1) take(i, x, y, i - w + 1);
+      }
+    }
+    for (let x = w - 2; x >= 0; x--) if (d2[row + x] !== 0) take(row + x, x, y, row + x + 1);
   }
   for (let y = h - 1; y >= 0; y--) {
-    for (let x = w - 1; x >= 0; x--) { take(x, y, x + 1, y); take(x, y, x + 1, y + 1); take(x, y, x, y + 1); take(x, y, x - 1, y + 1); }
-    for (let x = 0; x < w; x++) take(x, y, x - 1, y);
+    const row = y * w;
+    for (let x = w - 1; x >= 0; x--) {
+      const i = row + x;
+      if (d2[i] === 0) continue;
+      if (x < w - 1) take(i, x, y, i + 1);
+      if (y < h - 1) {
+        if (x < w - 1) take(i, x, y, i + w + 1);
+        take(i, x, y, i + w);
+        if (x > 0) take(i, x, y, i + w - 1);
+      }
+    }
+    for (let x = 1; x < w; x++) if (d2[row + x] !== 0) take(row + x, x, y, row + x - 1);
   }
   return { d2, sx, sy };
 }

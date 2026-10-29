@@ -90,21 +90,20 @@ function valueNoise(rng, w, h, cell) {
 // Blur `a` (w by h) in place: a box blur of radius r, twice each way.
 function blur(a, w, h, r) {
   if (r < 1) return;
-  const tmp = new Float32Array(Math.max(w, h));
-  const pass = (len, count, at) => {
-    for (let c = 0; c < count; c++) {
-      let sum = 0;
-      for (let i = -r; i <= r; i++) sum += a[at(c, Math.max(0, Math.min(len - 1, i)))];
-      for (let i = 0; i < len; i++) {
-        tmp[i] = sum / (2 * r + 1);
-        sum += a[at(c, Math.min(len - 1, i + r + 1))] - a[at(c, Math.max(0, i - r))];
-      }
-      for (let i = 0; i < len; i++) a[at(c, i)] = tmp[i];
+  const tmp = new Float32Array(Math.max(w, h)), k = 1 / (2 * r + 1);
+  // One pass along a line of `len` values starting at `start`, `step` apart.
+  const line = (start, step, len) => {
+    let sum = 0;
+    for (let i = -r; i <= r; i++) sum += a[start + Math.max(0, Math.min(len - 1, i)) * step];
+    for (let i = 0; i < len; i++) {
+      tmp[i] = sum * k;
+      sum += a[start + Math.min(len - 1, i + r + 1) * step] - a[start + Math.max(0, i - r) * step];
     }
+    for (let i = 0; i < len; i++) a[start + i * step] = tmp[i];
   };
-  for (let k = 0; k < 2; k++) {
-    pass(w, h, (y, x) => y * w + x);
-    pass(h, w, (x, y) => y * w + x);
+  for (let pass = 0; pass < 2; pass++) {
+    for (let y = 0; y < h; y++) line(y * w, 1, w);
+    for (let x = 0; x < w; x++) line(x, w, h);
   }
 }
 
@@ -207,10 +206,13 @@ export class Expression {
     const { mw, mh, floor, seen, S, TS } = this, px = (tx + 0.5) * TS, py = (ty + 0.5) * TS, far = S.sight + S.sightFade;
     this.player = { x: tx, y: ty };
     const path = this.walls.visible(px, py, (far + 1) * TS);
-    const c = blank(mw, mh), g = c.getContext("2d", { willReadFrequently: true });
-    g.setTransform(R / TS, 0, 0, R / TS, 0, 0);
+    // Only the square the view can reach is looked at.
+    const m = Math.ceil((far + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
+    const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
+    const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
+    g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
     g.fill(path);
-    const a = g.getImageData(0, 0, mw, mh).data;
+    const a = g.getImageData(0, 0, bw, bh).data;
     let grew = false;
     const vis = new Float32Array(mw * mh), level = (j) => {
       const d = Math.hypot(((j % mw) + 0.5) / R - px / TS, (((j / mw) | 0) + 0.5) / R - py / TS);
@@ -220,20 +222,22 @@ export class Expression {
     // sight now). Remembered as seen: any of it inside, and the floor next to
     // that, so the coarse record reaches past the true edge of the view; the
     // drawing is trimmed to that edge by `seenShape`.
-    const touched = new Uint8Array(mw * mh);
-    for (let j = 0; j < mw * mh; j++) {
-      if (!floor[j] || a[j * 4 + 3] === 0) continue;
-      touched[j] = 1;
-      if (a[j * 4 + 3] >= 128) vis[j] = level(j);
-    }
-    for (let y = 0; y < mh; y++)
-      for (let x = 0; x < mw; x++) {
+    const touched = new Uint8Array(bw * bh);
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
+        const j = y * mw + x, b = (y - y0) * bw + (x - x0);
+        if (!floor[j] || a[b * 4 + 3] === 0) continue;
+        touched[b] = 1;
+        if (a[b * 4 + 3] >= 128) vis[j] = level(j);
+      }
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
         const j = y * mw + x;
         if (!floor[j]) continue;
-        let near = touched[j];
+        let near = touched[(y - y0) * bw + (x - x0)];
         for (let k = 0; k < 9 && !near; k++) {
           const nx = x + (k % 3) - 1, ny = y + ((k / 3) | 0) - 1;
-          near = nx >= 0 && ny >= 0 && nx < mw && ny < mh && touched[ny * mw + nx];
+          near = nx >= x0 && ny >= y0 && nx < x1 && ny < y1 && touched[(ny - y0) * bw + (nx - x0)];
         }
         if (!near) continue;
         const v = level(j);
@@ -253,7 +257,7 @@ export class Expression {
       this.addShape(v);
     }
     this.visNow = vis;
-    this.sightRock(vis);
+    this.sightRock(vis, x0, y0, x1, y1);
     return grew;
   }
 
@@ -284,23 +288,36 @@ export class Expression {
   // floor (rock, and floor not yet seen alike) takes how well its nearest
   // drawn floor is in sight now (`vis`), out to the hatching's reach,
   // softened. Its walls and hatching are drawn in the in-sight look.
-  sightRock(vis) {
-    const { mw, mh, floor, seen, S } = this, n = mw * mh, any = new Uint8Array(n);
-    for (let j = 0; j < n; j++) any[j] = floor[j] && drawnAs(seen[j]) > 0 ? 1 : 0;
-    const { d2, sx, sy } = nearestSeeds(any, mw, mh), far = (S.reach * R) ** 2;
+  sightRock(vis, vx0 = 0, vy0 = 0, vx1 = this.mw, vy1 = this.mh) {
+    const { mw, mh, floor, seen, S } = this, br = Math.round(R * 0.5);
+    // Only round the square in view: out to the hatching's reach from it,
+    // and as far again for the floor that might be nearer.
+    const m = Math.ceil(2 * S.reach * R) + 3 * br;
+    const x0 = Math.max(0, vx0 - m), y0 = Math.max(0, vy0 - m), x1 = Math.min(mw, vx1 + m), y1 = Math.min(mh, vy1 + m);
+    const bw = x1 - x0, bh = y1 - y0, n = bw * bh, at = (b) => (y0 + ((b / bw) | 0)) * mw + x0 + (b % bw);
+    const any = new Uint8Array(n);
+    for (let b = 0; b < n; b++) {
+      const j = at(b);
+      any[b] = floor[j] && drawnAs(seen[j]) > 0 ? 1 : 0;
+    }
+    const { d2, sx, sy } = nearestSeeds(any, bw, bh), far = (S.reach * R) ** 2;
     const v = new Float32Array(n);
-    for (let j = 0; j < n; j++) {
-      if (any[j]) v[j] = vis[j];
-      else if (sx[j] >= 0 && d2[j] <= far) v[j] = vis[sy[j] * mw + sx[j]];
+    for (let b = 0; b < n; b++) {
+      if (any[b]) v[b] = vis[at(b)];
+      else if (sx[b] >= 0 && d2[b] <= far) v[b] = vis[(y0 + sy[b]) * mw + x0 + sx[b]];
     }
     // (Softened with the floor in it, so it doesn't dip along the walls, where
     // the remembered look would show through the ink.)
-    blur(v, mw, mh, Math.round(R * 0.5));
-    const img = new ImageData(mw, mh);
-    for (let j = 0; j < n; j++) if (!any[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
+    blur(v, bw, bh, br);
+    const img = new ImageData(bw, bh);
+    for (let b = 0; b < n; b++) if (!any[b]) img.data[b * 4 + 3] = Math.round(255 * v[b]);
     if (!this.rockSight) this.rockSight = blank(mw, mh);
-    this.rockSight.getContext("2d").putImageData(img, 0, 0);
+    const g = this.rockSight.getContext("2d");
+    if (this.rockBox) g.clearRect(...this.rockBox);
+    g.putImageData(img, x0, y0);
+    this.rockBox = [x0, y0, bw, bh];
   }
+
 
   // The depth map: for each mask pixel, 0 (black: the heaviest hatching) to 1
   // (white: none). Three ways to make it from the known floor, its walls and
@@ -388,6 +405,17 @@ export class Expression {
       const wallSeed = new Uint8Array(hn);
       for (let i = 0; i < hn; i++) wallSeed[i] = type[i] === WALL ? 1 : 0;
       const dW = nearestSeeds(wallSeed, hw, hh).d2;
+      // Only near the walls and openings is there anything to spread: the
+      // box round them, out to where it has died away.
+      let bx0 = hw, by0 = hh, bx1 = 0, by1 = 0;
+      for (let y = 0; y < hh; y++)
+        for (let x = 0; x < hw; x++) {
+          const t = type[y * hw + x];
+          if (t !== WALL && t !== OPEN) continue;
+          bx0 = Math.min(bx0, x); by0 = Math.min(by0, y); bx1 = Math.max(bx1, x + 1); by1 = Math.max(by1, y + 1);
+        }
+      const bm = Math.ceil(5 * L);
+      bx0 = Math.max(0, bx0 - bm); by0 = Math.max(0, by0 - bm); bx1 = Math.min(hw, bx1 + bm); by1 = Math.min(hh, by1 + bm);
       const spread = function* (openWhite) {
         const u = new Float32Array(hn);
         const fixed = (i) => type[i] === WALL || type[i] === KNOWN || (openWhite && type[i] === OPEN);
@@ -403,17 +431,18 @@ export class Expression {
           if (cnt) u[i] += 1.7 * (sum / (cnt + ks) - u[i]);
         };
         for (let it = 0; it < 60; it++) {
-          if (it % 2) { for (let y = hh - 1; y >= 0; y--) for (let x = hw - 1; x >= 0; x--) step(x, y); }
-          else for (let y = 0; y < hh; y++) for (let x = 0; x < hw; x++) step(x, y);
+          if (it % 2) { for (let y = by1 - 1; y >= by0; y--) for (let x = bx1 - 1; x >= bx0; x--) step(x, y); }
+          else for (let y = by0; y < by1; y++) for (let x = bx0; x < bx1; x++) step(x, y);
           if (it % 10 === 9) yield;
         }
         return u;
       };
       const withOpen = yield* spread(true), without = yield* spread(false), keep = new Float32Array(hn);
       for (let i = 0; i < hn; i++) keep[i] = without[i] > 1e-6 ? clamp01(withOpen[i] / without[i]) : 0;
-      const dWall = nearestSeeds(walls, mw, mh).d2;
+      const dWall = nearestSeeds(walls, mw, mh).d2, beyond = (S.reach * (1 + S.ragged) * R) ** 2;
       for (let j = 0; j < n; j++) {
         if (isKnown[j]) continue;
+        if (dWall[j] >= beyond) { grey[j] = 1; continue; } // past any hatching
         // Bilinear, from the half-resolution grid.
         const fx = Math.max(0, Math.min(hw - 1.001, ((j % mw) + 0.5) / h - 0.5)), fy = Math.max(0, Math.min(hh - 1.001, (((j / mw) | 0) + 0.5) / h - 0.5));
         const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0, i = y0 * hw + x0;
