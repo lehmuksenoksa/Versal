@@ -1,4 +1,4 @@
-// Dungeon generation: rectangular rooms joined by corridors, plus the
+// Map generation: rectangular rooms joined by corridors, plus the
 // furniture a Dyson-style map would show (pillars, coffins, wells, rubble).
 
 export const T = {
@@ -8,29 +8,26 @@ export const T = {
   PILLAR: 3,
   COFFIN: 4,
   WELL: 5,
-  STAIRS_DOWN: 6,
-  STAIRS_UP: 7,
 };
 
 export const isOpen = (t) => t !== T.ROCK;
-export const isWalkable = (t) =>
-  t === T.FLOOR || t === T.DOOR || t === T.STAIRS_DOWN || t === T.STAIRS_UP;
+export const isWalkable = (t) => t === T.FLOOR || t === T.DOOR;
 
 export const DIRS8 = [
   [0, -1], [1, 0], [0, 1], [-1, 0],
   [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
 
-export function generateLevel(depth, rng, { finalDepth = false } = {}) {
+export function generateLevel(rng) {
   const W = 64, H = 44;
   for (let attempt = 0; attempt < 20; attempt++) {
-    const level = tryGenerate(W, H, depth, rng, finalDepth);
+    const level = tryGenerate(W, H, rng);
     if (level) return level;
   }
   throw new Error("dungeon generation failed");
 }
 
-function tryGenerate(W, H, depth, rng, finalDepth) {
+function tryGenerate(W, H, rng) {
   const tiles = new Uint8Array(W * H);
   const corridor = new Uint8Array(W * H);
   const idx = (x, y) => y * W + x;
@@ -111,27 +108,12 @@ function tryGenerate(W, H, depth, rng, finalDepth) {
     }
   }
 
-  // Stairs: start in one room, go down from the room farthest away.
   const startRoom = rng.pick(rooms);
-  const far = bfs(tiles, W, H, startRoom.cx, startRoom.cy);
-  const ranked = rooms
-    .filter((r) => r !== startRoom)
-    .sort((a, b) => far[idx(b.cx, b.cy)] - far[idx(a.cx, a.cy)]);
-  // The boss lair prefers a large room among the most distant ones.
-  const lair = ranked.slice(0, 3).sort((a, b) => b.w * b.h - a.w * a.h)[0];
-  tiles[idx(startRoom.cx, startRoom.cy)] = T.STAIRS_UP;
-  let down = null;
-  if (!finalDepth) {
-    // Stairs sit off-centre so the lair's guardian can stand before them.
-    down = { x: lair.cx + (lair.w > 5 ? 1 : 0), y: lair.cy };
-    tiles[idx(down.x, down.y)] = T.STAIRS_DOWN;
-  }
-
   const level = {
-    w: W, h: H, depth, tiles, rooms, doors,
+    w: W, h: H, tiles, rooms, doors,
     decor: [],
     start: { x: startRoom.cx, y: startRoom.cy },
-    startRoom, lair, down,
+    startRoom,
     idx, get,
   };
   furnish(level, rng, corridor);
@@ -143,8 +125,6 @@ function furnish(level, rng, corridor) {
   const keepClear = new Set();
   const markClear = (x, y) => { for (const [dx, dy] of [[0, 0], ...DIRS8]) keepClear.add(idx(x + dx, y + dy)); };
   markClear(level.start.x, level.start.y);
-  if (level.down) markClear(level.down.x, level.down.y);
-  markClear(level.lair.cx, level.lair.cy);
 
   const tryBlock = (x, y, type) => {
     const i = idx(x, y);

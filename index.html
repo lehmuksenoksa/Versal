@@ -4,63 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Versal</title>
-<meta name="description" content="A proof-of-concept roguelike in ink and gold: hand-drawn dungeon maps, blackletter monsters, and illuminated capitals for bosses.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="app">
-  <main id="stage">
-    <canvas id="view" aria-label="Dungeon map"></canvas>
-    <div id="card" class="card-scrim" hidden>
-      <div class="card" role="dialog" aria-labelledby="card-title">
-        <canvas id="card-versal" aria-hidden="true"></canvas>
-        <h2 id="card-title">Versal</h2>
-        <p id="card-body"></p>
-        <button id="card-button" type="button">Open the book</button>
-        <p class="card-hint">Arrow keys, numpad or <kbd>hjklyubn</kbd> to move &middot; click or tap to walk</p>
-      </div>
-    </div>
-  </main>
-
-  <aside id="codex">
-    <header class="masthead">
-      <canvas id="title-versal" aria-hidden="true"></canvas>
-      <h1><span class="sr-only">V</span>ersal</h1>
-    </header>
-    <p id="leaf" class="leaf">Leaf I</p>
-
-    <section class="vitals" aria-label="Your condition">
-      <div class="bar-row">
-        <span class="label">Vigour</span>
-        <span id="hp-text" class="num">30 / 30</span>
-      </div>
-      <div class="bar"><div id="hp-fill" class="fill hp"></div></div>
-      <div class="bar-row">
-        <span class="label">Level <span id="level" class="num">1</span></span>
-        <span id="xp-text" class="num">0 / 10</span>
-      </div>
-      <div class="bar thin"><div id="xp-fill" class="fill xp"></div></div>
-      <dl class="stats">
-        <div><dt>Attack</dt><dd id="attack" class="num">1&ndash;4</dd></div>
-        <div><dt>Armour</dt><dd id="armour" class="num">0</dd></div>
-        <div><dt>Gold</dt><dd id="gold" class="num">0</dd></div>
-      </dl>
-      <p class="kit"><span id="weapon-name">bare fists</span> &middot; <span id="armour-name">travelling cloak</span></p>
-    </section>
-
-    <section class="satchel" aria-label="Satchel">
-      <button id="btn-quaff" type="button"><span class="g">!</span> Quaff <span class="count" id="potions">1</span><kbd>q</kbd></button>
-      <button id="btn-read" type="button"><span class="g">?</span> Read <span class="count" id="scrolls">0</span><kbd>r</kbd></button>
-      <button id="btn-wait" type="button"><span class="g">&middot;</span> Wait<kbd>.</kbd></button>
-      <button id="btn-descend" type="button" hidden><span class="g">&gt;</span> Descend<kbd>&gt;</kbd></button>
-    </section>
-
-    <section class="chronicle" aria-label="Chronicle">
-      <h2>Chronicle</h2>
-      <ol id="log" aria-live="polite"></ol>
-    </section>
-  </aside>
-</div>
+<canvas id="view" aria-label="Dungeon map"></canvas>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -245,37 +245,6 @@ function drawFurniture(ctx, level, TS, rng) {
         ctx.fillStyle = INK;
         break;
       }
-      case T.STAIRS_DOWN:
-      case T.STAIRS_UP: {
-        const down = tiles[i] === T.STAIRS_DOWN;
-        ctx.lineWidth = 1.1;
-        const steps = 6;
-        ctx.beginPath();
-        for (let s = 0; s <= steps; s++) {
-          const t = s / steps;
-          const half = TS * (down ? 0.42 - t * 0.17 : 0.27 + t * 0.15);
-          const yy = y + TS * 0.08 + t * TS * 0.84;
-          penLine(ctx, cx - half, yy, cx + half, yy, rng, 0.25);
-        }
-        // Side stringers.
-        const h0 = TS * (down ? 0.42 : 0.27), h1 = TS * (down ? 0.25 : 0.42);
-        penLine(ctx, cx - h0, y + TS * 0.08, cx - h1, y + TS * 0.92, rng, 0.25);
-        penLine(ctx, cx + h0, y + TS * 0.08, cx + h1, y + TS * 0.92, rng, 0.25);
-        ctx.stroke();
-        if (down) {
-          // The deep end in shadow.
-          ctx.save();
-          ctx.globalAlpha = 0.55;
-          ctx.beginPath();
-          ctx.moveTo(cx - TS * 0.3, y + TS * 0.64);
-          ctx.lineTo(cx + TS * 0.3, y + TS * 0.64);
-          ctx.lineTo(cx + h1, y + TS * 0.92);
-          ctx.lineTo(cx - h1, y + TS * 0.92);
-          ctx.fill();
-          ctx.restore();
-        }
-        break;
-      }
     }
   }
   for (const d of level.decor) {
@@ -345,19 +314,3 @@ function drawRoomKeys(ctx, level, TS) {
   });
 }
 
-// An ink blot, added to the map after a death so the page records the fight.
-export function inkBlot(ctx, cx, cy, TS, rng, color = "rgba(92, 24, 16, 0.55)") {
-  ctx.save();
-  ctx.fillStyle = color;
-  const r = TS * rng.range(0.16, 0.24);
-  ctx.beginPath();
-  penCircle(ctx, cx, cy, r, rng, r * 0.2);
-  ctx.fill();
-  for (let k = rng.int(4, 8); k > 0; k--) {
-    const a = rng.range(0, Math.PI * 2), d = r * rng.range(1.1, 2.1), s = TS * rng.range(0.02, 0.06);
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, s, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
