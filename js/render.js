@@ -1,5 +1,5 @@
-// Per-frame drawing: the pre-inked map, doors, and the animated blackletter
-// glyphs for the player and the goblins.
+// Per-frame drawing: the pre-inked map and the animated blackletter glyphs
+// for the player and the goblins.
 
 import { renderMap, INK, PAPER } from "./maprender.js";
 
@@ -32,7 +32,6 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.views = new Map();
-    this.doorAnims = new Map();
     this.cam = { x: 0, y: 0, snap: true };
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     this.glyphMetrics = new Map();
@@ -85,7 +84,6 @@ export class Renderer {
         v.t0 = now;
         v.dur = e.actor === this.world.player ? 120 : 150;
       }
-      if (e.type === "door") this.doorAnims.set(e.door, now);
     }
   }
 
@@ -132,7 +130,6 @@ export class Renderer {
     if (sx1 > sx0 && sy1 > sy0)
       ctx.drawImage(this.map, sx0 * this.dpr, sy0 * this.dpr, (sx1 - sx0) * this.dpr, (sy1 - sy0) * this.dpr, sx0, sy0, sx1 - sx0, sy1 - sy0);
 
-    this.drawDoors(ctx, now);
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) this.drawActor(ctx, a, this.view(a), now, t, motion);
 
     // Candlelit vignette in screen space.
@@ -217,32 +214,5 @@ export class Renderer {
     ctx.restore();
     const player = a === this.world.player;
     this.drawGlyph(ctx, a.glyph, cx, cy, TS * (player ? 0.95 : 1.05), player ? PLAYER_INK : INK, p);
-  }
-
-  drawDoors(ctx, now) {
-    const TS = this.TS;
-    for (const door of this.world.level.doors.values()) {
-      const t0 = this.doorAnims.get(door);
-      const k = door.open ? (t0 === undefined ? 1 : ease(clamp01((now - t0) / 280))) : 0;
-      ctx.save();
-      ctx.translate((door.x + 0.5) * TS, (door.y + 0.5) * TS);
-      // For axis "h" the passage runs left-right, so the slab stands upright across it.
-      if (door.axis === "v") ctx.rotate(Math.PI / 2);
-      const len = TS * 0.94, wid = TS * 0.24;
-      // Swing about the hinge at one end.
-      ctx.translate(0, -len / 2);
-      ctx.rotate((-k * Math.PI) / 2);
-      ctx.fillStyle = PAPER;
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 1.6;
-      ctx.fillRect(-wid / 2, 0, wid, len);
-      ctx.strokeRect(-wid / 2, 0, wid, len);
-      ctx.lineWidth = 0.7;
-      ctx.beginPath();
-      ctx.moveTo(0, len * 0.12);
-      ctx.lineTo(0, len * 0.88);
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 }

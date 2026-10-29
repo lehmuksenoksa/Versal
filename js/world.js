@@ -38,25 +38,14 @@ export class World {
   }
 
   tileAt(x, y) { return this.level.get(x, y); }
-  doorAt(x, y) { return this.level.doors.get(y * this.level.w + x); }
   actorAt(x, y) { return this.actors.find((a) => a.x === x && a.y === y); }
-  isFree(x, y) {
-    const t = this.tileAt(x, y);
-    if (t === T.DOOR && !this.doorAt(x, y).open) return false;
-    return isWalkable(t) && !this.actorAt(x, y);
-  }
+  isFree(x, y) { return isWalkable(this.tileAt(x, y)) && !this.actorAt(x, y); }
 
   // Returns true if a turn passed.
   playerMove(dx, dy) {
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (this.actorAt(nx, ny)) return false;
-    const t = this.tileAt(nx, ny);
-    if (t === T.DOOR && !this.doorAt(nx, ny).open) {
-      this.doorAt(nx, ny).open = true;
-      this.events.push({ type: "door", door: this.doorAt(nx, ny) });
-      return this.tick();
-    }
-    if (!isWalkable(t)) return false;
+    if (!isWalkable(this.tileAt(nx, ny))) return false;
     this.moveActor(p, nx, ny);
     return this.tick();
   }

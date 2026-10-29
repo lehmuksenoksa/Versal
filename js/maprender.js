@@ -1,8 +1,7 @@
 // Renders a level once, offscreen, in the manner of a hand-inked dungeon map:
 // heavy walls drawn as chains of short pen strokes (straight in rooms, jagged
-// in caves), a grey shadow cast down and to the right of walls and pillars,
-// bold stone hatching in the rock (see hatching.js), a hand-drawn floor grid,
-// and furniture drawn in pen.
+// in caves), a grey shadow cast down and to the right, bold stone hatching in
+// the rock (see hatching.js), a hand-drawn floor grid and pencilled room numbers.
 
 import { T, isOpen } from "./dungeon.js";
 import { RNG } from "./rng.js";
@@ -48,24 +47,10 @@ export function renderMap(level, TS, scale, seed) {
   drawGrid(ctx, W, H, TS, rng.fork(), open);
   ctx.restore();
 
-  drawCracks(ctx, level, TS, rng);
-  drawFurniture(ctx, level, TS, rng);
   drawWalls(ctx, loops, TS, rng);
   drawRoomKeys(ctx, level, TS);
 
   return { canvas, ctx };
-}
-
-function penCircle(ctx, cx, cy, r, rng, amp = 0.4) {
-  const n = Math.max(12, Math.round(r * 1.5));
-  const p = rng.range(0, 6.28);
-  for (let i = 0; i <= n; i++) {
-    const a = (i / n) * Math.PI * 2;
-    const rr = r + amp * Math.sin(a * 3 + p) * (i === n ? 0 : 1);
-    const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
-    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-  }
-  ctx.closePath();
 }
 
 // ---------- outlines ---------------------------------------------------------
@@ -256,7 +241,7 @@ function drawPaper(ctx, w, h, rng) {
   for (let i = 0; i < (w * h) / 220; i++) ctx.fillRect(rng.range(0, w), rng.range(0, h), rng.range(0.6, 1.4), rng.range(0.6, 1.4));
 }
 
-// The rock and the pillars, shifted down and right, painted grey onto the
+// The rock, shifted down and right, painted grey onto the
 // floor (the caller has clipped to it): light falls from the top left.
 function drawShadow(ctx, level, TS, floor) {
   const off = TS * 0.22;
@@ -267,14 +252,6 @@ function drawShadow(ctx, level, TS, floor) {
   ctx.translate(off, off);
   ctx.fillStyle = SHADOW;
   ctx.fill(solid, "evenodd");
-  ctx.beginPath();
-  for (let i = 0; i < level.tiles.length; i++) {
-    if (level.tiles[i] !== T.PILLAR) continue;
-    const cx = ((i % level.w) + 0.5) * TS, cy = (Math.floor(i / level.w) + 0.5) * TS;
-    ctx.moveTo(cx + TS * 0.38, cy);
-    ctx.arc(cx, cy, TS * 0.38, 0, Math.PI * 2);
-  }
-  ctx.fill();
   ctx.restore();
 }
 
@@ -309,73 +286,6 @@ function drawGrid(ctx, W, H, TS, rng, open) {
       if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS);
       if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS);
     }
-}
-
-// ---------- floor details and furniture ------------------------------------------
-
-function drawCracks(ctx, level, TS, rng) {
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 0.6;
-  for (let y = 0; y < level.h; y++)
-    for (let x = 0; x < level.w; x++) {
-      const i = y * level.w + x;
-      if (level.tiles[i] !== T.FLOOR || level.cave[i] || !rng.chance(0.025)) continue;
-      ctx.beginPath();
-      let px = (x + rng.range(0.1, 0.4)) * TS, py = (y + rng.range(0.2, 0.8)) * TS;
-      ctx.moveTo(px, py);
-      for (let k = 0; k < 4; k++) {
-        px += TS * rng.range(0.1, 0.2);
-        py += TS * rng.range(-0.15, 0.15);
-        ctx.lineTo(px, py);
-      }
-      ctx.stroke();
-    }
-}
-
-function drawFurniture(ctx, level, TS, rng) {
-  const { w: W, tiles } = level;
-  ctx.strokeStyle = INK;
-  ctx.fillStyle = INK;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  for (let i = 0; i < tiles.length; i++) {
-    const x = (i % W) * TS, y = Math.floor(i / W) * TS, cx = x + TS / 2, cy = y + TS / 2;
-    switch (tiles[i]) {
-      case T.PILLAR: {
-        ctx.beginPath();
-        penCircle(ctx, cx, cy, TS * 0.3, rng, 0.5);
-        ctx.fill();
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        penCircle(ctx, cx, cy, TS * 0.38, rng, 0.4);
-        ctx.stroke();
-        break;
-      }
-    }
-  }
-  for (const d of level.decor) {
-    if (d.type === "rubble") drawRubble(ctx, d.x * TS, d.y * TS, TS, new RNG(Math.floor(d.seed * 1e9)), d.small);
-  }
-}
-
-function drawRubble(ctx, x, y, TS, rng, small) {
-  const n = small ? rng.int(2, 4) : rng.int(5, 9);
-  const ox = rng.range(0.25, 0.75) * TS, oy = rng.range(0.25, 0.75) * TS;
-  ctx.lineWidth = 0.9;
-  for (let k = 0; k < n; k++) {
-    const sx = x + ox + rng.range(-0.28, 0.28) * TS, sy = y + oy + rng.range(-0.28, 0.28) * TS;
-    const r = TS * rng.range(0.035, small ? 0.07 : 0.1);
-    const sides = rng.int(4, 6);
-    ctx.beginPath();
-    for (let s = 0; s < sides; s++) {
-      const a = (s / sides) * Math.PI * 2 + rng.range(-0.3, 0.3);
-      const rr = r * rng.range(0.7, 1.2);
-      s ? ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr) : ctx.moveTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr);
-    }
-    ctx.closePath();
-    if (rng.chance(0.35)) ctx.fill();
-    else { ctx.fillStyle = PAPER; ctx.fill(); ctx.fillStyle = INK; ctx.stroke(); }
-  }
 }
 
 function drawRoomKeys(ctx, level, TS) {
