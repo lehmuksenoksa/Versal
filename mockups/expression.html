@@ -83,7 +83,6 @@
     <label for="lightFull">Full brightness out to <output id="lightFull-v"></output><input id="lightFull" type="range" min="0" max="0.95" step="0.05"></label>
     <label for="flame">Size of the flame (sets how soft the shadows are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
     <label for="flicker">Flicker <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
-    <label for="wobble">Wavering edge <output id="wobble-v"></output><input id="wobble" type="range" min="0" max="0.4" step="0.02"></label>
     <label for="warmth">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
@@ -187,7 +186,7 @@ const LIGHT_BAND = 0.6;
 const STEP_MS = 140; // a step from tile to tile
 const DEFAULTS = {
   sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
-  radius: 5, lightFull: 0.3, flame: 0.3, flicker: 0.4, wobble: 0.12, warmth: 0.5,
+  radius: 5, lightFull: 0.3, flame: 0.3, flicker: 0.4, warmth: 0.5,
   darkColor: "#16181d", dark: 0.6, memShade: 0.3,
   seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
   memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
@@ -199,14 +198,14 @@ const DEFAULTS = {
 };
 // Settings that only change how sight and light are laid over the drawing;
 // the rest mean redrawing it.
-const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "flame", "flicker", "wobble", "warmth", "darkColor", "dark", "memShade"]);
+const LIVE = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "flame", "flicker", "warmth", "darkColor", "dark", "memShade"]);
 const pct = (v) => `${Math.round(v * 100)}%`;
 const tiles = (v) => `${v} tiles`;
 const fmt = {
   sight: tiles, sightFade: (v) => (+v ? tiles(v) : "nothing: a sharp edge"), blockSoft: (v) => (+v ? tiles(v) : "nothing: a sharp edge"),
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
-  flicker: pct, wobble: pct, warmth: pct, dark: pct, memShade: pct,
+  flicker: pct, warmth: pct, dark: pct, memShade: pct,
   seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct,
@@ -312,9 +311,30 @@ function learn(p) {
   g.fill(path);
   const a = g.getImageData(0, 0, mw, mh).data;
   let grew = false;
-  for (let j = 0; j < mw * mh; j++)
-    if (floor[j] && !seen[j] && a[j * 4 + 3] >= 128) { seen[j] = 1; grew = true; }
+  const vis = new Uint8Array(mw * mh);
+  for (let j = 0; j < mw * mh; j++) {
+    if (!floor[j] || a[j * 4 + 3] < 128) continue;
+    vis[j] = 1;
+    if (!seen[j]) { seen[j] = 1; grew = true; }
+  }
+  sightRock(vis);
   return grew;
+}
+
+// The rock that goes with the floor in sight: rock whose nearest known floor
+// is in sight (`vis`), out to the hatching's reach, its edge softened. Its
+// walls and hatching are drawn in the in-sight look.
+function sightRock(vis) {
+  const { mw, mh, floor, seen } = M, n = mw * mh, known = new Uint8Array(n);
+  for (let j = 0; j < n; j++) known[j] = floor[j] && seen[j] ? 1 : 0;
+  const { d2, sx, sy } = nearestSeeds(known, mw, mh), far = (S.reach * R) ** 2;
+  const v = new Float32Array(n);
+  for (let j = 0; j < n; j++) if (!floor[j] && sx[j] >= 0 && d2[j] <= far && vis[sy[j] * mw + sx[j]]) v[j] = 1;
+  blur(v, mw, mh, Math.round(R * 0.25));
+  const img = new ImageData(mw, mh);
+  for (let j = 0; j < n; j++) if (!floor[j]) img.data[j * 4 + 3] = Math.round(255 * v[j]);
+  if (!M.rockSight) M.rockSight = blank(mw, mh);
+  M.rockSight.getContext("2d").putImageData(img, 0, 0);
 }
 
 // Blur `a` (w by h) in place: a box blur of radius r, twice each way.
@@ -637,12 +657,12 @@ function drawnPlayer(now) {
 }
 
 // What is in sight from (px, py), at full resolution: the floor the player
-// can see and the rock just past the wall faces they look at, clear out to
+// can see and the rock that goes with it (its walls and hatching), clear out to
 // `sight` and fading out with distance after it; where walls block the view
 // the edge is nearly sharp.
 function castSight(px, py) {
   const { target } = M.view, g = target.getContext("2d"), far = S.sight + S.sightFade;
-  const path = M.sightWalls.visible(px, py, (Math.max(far, S.radius * (1 + S.wobble)) + 1) * TS);
+  const path = M.sightWalls.visible(px, py, (Math.max(far, S.radius) + 1) * TS);
   M.sightPath = path;
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, target.width, target.height);
@@ -651,13 +671,16 @@ function castSight(px, py) {
   grad.addColorStop(0, "#000");
   const clear = S.sight / far;
   for (let k = 0; k <= 6; k++) grad.addColorStop(clear + (1 - clear) * (k / 6), `rgba(0, 0, 0, ${smooth(1 - k / 6)})`);
+  // The rock that goes with the floor in sight (see sightRock), fading with
+  // distance the same way; then the floor itself.
+  g.imageSmoothingEnabled = true;
+  g.drawImage(M.rockSight, 0, 0, M.W * TS, M.H * TS);
+  g.globalCompositeOperation = "destination-in";
   g.fillStyle = grad;
+  g.fillRect(px - far * TS, py - far * TS, 2 * far * TS, 2 * far * TS);
+  g.globalCompositeOperation = "source-over";
   g.filter = S.blockSoft > 0 ? `blur(${S.blockSoft * TS * M.scale * 0.5}px)` : "none";
   g.fill(path);
-  g.save();
-  g.clip(M.rock, "evenodd");
-  g.fill(path.beyond(WALL_BAND * TS));
-  g.restore();
   g.filter = "none";
   M.sightFrom = [px, py];
   M.easeUntil = performance.now() + S.reveal * 1500 + 100;
@@ -683,8 +706,7 @@ function easeSight(dt) {
 // The candle: a flame of some size, so each wall casts a shadow that is
 // sharp close to it and softer further off (the light is the sum of what
 // can be seen from a few points across the flame). Full brightness out to
-// `lightFull` of its reach, then fading out; its edge wavers, and it
-// flickers.
+// `lightFull` of its reach, then fading out; it flickers.
 function castLight(px, py, t) {
   const { light } = M.view, g = light.getContext("2d"), rad = S.radius * TS;
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -692,28 +714,18 @@ function castLight(px, py, t) {
   if (!(rad > 0)) return;
   // The light's points: the middle of the flame, and four round its edge.
   if (!M.lightFrom || M.lightFrom[0] !== px || M.lightFrom[1] !== py || M.lightFrom[2] !== S.flame) {
-    const f = S.flame * TS, reach = rad * (1 + S.wobble) + TS;
+    const f = S.flame * TS, reach = rad + TS;
     const pts = f > 0 ? [[0, 0], [f, 0], [-f, 0], [0, f], [0, -f]] : [[0, 0]];
     M.lightPaths = pts.map(([dx, dy]) => M.sightWalls.visible(px + dx, py + dy, reach));
     M.lightFrom = [px, py, S.flame];
   }
-  // The wavering edge: the reach varying round the flame, and over time.
-  const edge = new Path2D();
-  for (let k = 0; k <= 64; k++) {
-    const a = (k / 64) * Math.PI * 2;
-    const w = 0.5 * Math.sin(3 * a + 2.1 * t) + 0.3 * Math.sin(5 * a - 3.3 * t + 1) + 0.2 * Math.sin(9 * a + 5.7 * t + 2);
-    const r = rad * (1 + S.wobble * w);
-    k ? edge.lineTo(px + Math.cos(a) * r, py + Math.sin(a) * r) : edge.moveTo(px + Math.cos(a) * r, py + Math.sin(a) * r);
-  }
-  edge.closePath();
   const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
   const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
   g.setTransform(M.scale, 0, 0, M.scale, 0, 0);
-  const grad = g.createRadialGradient(px, py, 0, px, py, rad * (1 + S.wobble));
+  const grad = g.createRadialGradient(px, py, 0, px, py, rad);
   grad.addColorStop(0, "#000");
   for (let k = 0; k <= 8; k++) grad.addColorStop(S.lightFull + (1 - S.lightFull) * (k / 8), `rgba(0, 0, 0, ${smooth(1 - k / 8)})`);
   g.save();
-  g.clip(edge);
   g.fillStyle = grad;
   g.globalCompositeOperation = "lighter";
   g.globalAlpha = bright / M.lightPaths.length;
@@ -778,7 +790,10 @@ function frame(now) {
   wg.globalAlpha = 1;
   wg.drawImage(light, 0, 0);
   wg.globalCompositeOperation = "source-over";
+  // Multiplied, so ink stays black in the dark.
+  ctx.globalCompositeOperation = "multiply";
   ctx.drawImage(work, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
   if (S.warmth > 0) {
     wg.clearRect(0, 0, cw, ch);
     wg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
