@@ -53,6 +53,8 @@
   figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 10px; max-width: 100%; overflow-x: auto; }
   figure canvas { display: block; width: var(--pw, 576px); height: auto; max-width: none; }
   figcaption { padding: 8px 2px 0; width: var(--pw, 576px); max-width: calc(100vw - 56px); }
+  .export { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  .export textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); padding: 6px; resize: vertical; }
   .zoom { display: flex; align-items: center; gap: 8px; color: var(--ink); }
   .zoom input { width: 160px; accent-color: var(--accent); }
   .zoom output { min-width: 3.5em; font-variant-numeric: tabular-nums; }
@@ -70,7 +72,12 @@
 <div class="controls">
   <div class="topbar"><button id="reseed" type="button">New layout</button>
     <label class="zoom" for="zoom">Zoom <input id="zoom" type="range" min="0.5" max="3" step="0.25" value="1"><output id="zoom-v">100%</output></label>
+    <button id="copy" type="button">Copy settings</button>
     <span>Click a group's title to fold it away.</span></div>
+  <div class="export" id="export-box" hidden>
+    <label for="export">Settings, ready to paste <span id="copy-status"></span></label>
+    <textarea id="export" readonly rows="3"></textarea>
+  </div>
   <details class="group" open>
     <summary>Strokes</summary>
     <div class="row">
@@ -1275,6 +1282,23 @@ for (const id of ids)
     requestAnimationFrame(() => { pending = false; render(); });
   });
 drawProfile();
+// Copy every control's value as JSON, for pasting into the chat.
+document.getElementById("copy").addEventListener("click", () => {
+  const out = {};
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    out[id] = el.type === "checkbox" ? el.checked : parseFloat(el.value);
+  }
+  out.zoom = zoom();
+  const text = JSON.stringify(out);
+  const box = document.getElementById("export"), status = document.getElementById("copy-status");
+  document.getElementById("export-box").hidden = false;
+  box.value = text;
+  const fallback = () => { box.focus(); box.select(); status.textContent = "(selected: press Ctrl+C or Cmd+C to copy)"; };
+  try {
+    navigator.clipboard.writeText(text).then(() => (status.textContent = "(copied to the clipboard)"), fallback);
+  } catch { fallback(); }
+});
 document.getElementById("reseed").addEventListener("click", () => { seed = (Math.random() * 2 ** 32) >>> 0; render(); });
 render();
 </script>
