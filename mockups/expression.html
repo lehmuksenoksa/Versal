@@ -54,7 +54,7 @@
 <div id="stage"><canvas id="view" aria-label="Dungeon map"></canvas></div>
 <aside>
   <h1>Hatching expression</h1>
-  <p>One hatching for all the rock: our cells with zones, drawn as if the whole map were solid stone. The pattern never changes. A depth map from the known walls, black near them and white away from them, sets how heavily it is inked. Click a room or corridor to make it known or unknown.</p>
+  <p>One hatching for all the rock: our cells with zones, drawn as if the whole map were solid stone. The pattern never changes. A depth map from the known walls, black near them and white away from them, sets how heavily it is inked. What is in sight and what is only remembered each make a depth map; the darker one inks each spot.</p>
   <p id="status"></p>
   <div class="buttons">
     <button id="copy" type="button">Copy settings</button>
@@ -67,12 +67,21 @@
   </div>
 
   <fieldset>
-    <legend>Known ground</legend>
+    <legend>Ground</legend>
+    <p style="margin:0;color:var(--muted);font-size:13px">Click a room or corridor to cycle it: unknown, in sight, remembered.</p>
     <div class="buttons">
-      <button id="all" class="plain" type="button">All known</button>
+      <button id="some" class="plain" type="button">Partly explored</button>
+      <button id="all" class="plain" type="button">All in sight</button>
+      <button id="allmem" class="plain" type="button">All remembered</button>
       <button id="none" class="plain" type="button">None known</button>
-      <button id="some" class="plain" type="button">A few rooms</button>
     </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Remembered, out of sight</legend>
+    <label for="memDepth">Its walls hatch as dark as <output id="memDepth-v"></output><input id="memDepth" type="range" min="0" max="1" step="0.05"></label>
+    <label for="memInk">Its hatching inked at <output id="memInk-v"></output><input id="memInk" type="range" min="0" max="1" step="0.05"></label>
+    <label for="memWash">Its floor and walls washed out by <output id="memWash-v"></output><input id="memWash" type="range" min="0" max="0.9" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -108,18 +117,20 @@
 <script type="module">
 import { generateLevel, isOpen } from "../js/dungeon.js";
 import { RNG } from "../js/rng.js";
-import { renderMap, drawPaper, INK } from "../js/maprender.js";
+import { renderMap, drawPaper, INK, PAPER } from "../js/maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds } from "../js/hatching.js";
 
 const TS = 32; // map units per tile (the hatching's own scale)
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
-const DEFAULTS = { depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2, keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1, show: "map", zoom: 0.3 };
+// What is known of each room and corridor.
+const UNKNOWN = 0, REMEMBERED = 1, SIGHT = 2;
+const DEFAULTS = { depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2, keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1, memDepth: 0.6, memInk: 0.6, memWash: 0.3, show: "map", zoom: 0.3 };
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   full: (v) => `${v} tiles`, reach: (v) => `${v} tiles`, ragged: pct, opening: (v) => `${v} tiles`, taper: (v) => `${v} tiles before an opening`,
-  keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
+  memDepth: pct, memInk: pct, memWash: pct, keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
 const $ = (id) => document.getElementById(id);
@@ -166,7 +177,8 @@ function newMap(seed = (Math.random() * 2 ** 32) >>> 0) {
       }
       units++;
     }
-  M = { seed, level, W, H, solid, unitOf, units, known: new Uint8Array(units).fill(1), noise: valueNoise(new RNG(seed ^ 0x7a9), W * TS, H * TS, TS * 3.5) };
+  M = { seed, level, W, H, solid, unitOf, units, state: new Uint8Array(units), noise: valueNoise(new RNG(seed ^ 0x7a9), W * TS, H * TS, TS * 3.5) };
+  explore();
   drawBase();
 }
 
@@ -359,15 +371,34 @@ function depthMap(isKnown, d2) {
 // Lay the hatching, expressed by distance from the known floor, then the
 // known rooms and corridors over it.
 function compose() {
-  const { mw, mh, pixUnit, known, solid, scale, noise } = M, n = mw * mh;
+  const { mw, mh, pixUnit, state, solid, scale } = M, n = mw * mh;
   const t0 = performance.now();
-  const isKnown = new Uint8Array(n);
-  for (let j = 0; j < n; j++) isKnown[j] = pixUnit[j] >= 0 && known[pixUnit[j]] ? 1 : 0;
+  // Known floor (in sight or remembered), the floor in sight, and the
+  // floor only remembered.
+  const isKnown = new Uint8Array(n), isSight = new Uint8Array(n), isMem = new Uint8Array(n);
+  for (let j = 0; j < n; j++) {
+    const st = pixUnit[j] >= 0 ? state[pixUnit[j]] : UNKNOWN;
+    isKnown[j] = st !== UNKNOWN ? 1 : 0;
+    isSight[j] = st === SIGHT ? 1 : 0;
+    isMem[j] = st === REMEMBERED ? 1 : 0;
+  }
   const { d2 } = nearestSeeds(isKnown, mw, mh);
-  const grey = depthMap(isKnown, d2);
-  const greyAt = (x, y) => {
+  // Two depth maps: from the walls in sight, and (weaker) from all the known
+  // walls. Each spot takes the darker; `fromMem` marks where that is memory.
+  const greySight = depthMap(isSight, nearestSeeds(isSight, mw, mh).d2), greyKnown = depthMap(isKnown, d2);
+  const grey = new Float32Array(n), fromMem = new Uint8Array(n);
+  for (let j = 0; j < n; j++) {
+    const dS = 1 - greySight[j], dM = (1 - greyKnown[j]) * S.memDepth;
+    grey[j] = 1 - Math.max(dS, dM);
+    fromMem[j] = dM > dS ? 1 : 0;
+  }
+  const cell = (x, y) => {
     const i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
-    return i < 0 || k < 0 || i >= mw || k >= mh ? 1 : grey[k * mw + i];
+    return i < 0 || k < 0 || i >= mw || k >= mh ? -1 : k * mw + i;
+  };
+  const greyAt = (x, y) => {
+    const j = cell(x, y);
+    return j < 0 ? 1 : grey[j];
   };
   // Black to mid grey to white: from the black value through the grey one
   // to `white`.
@@ -403,7 +434,7 @@ function compose() {
     // Drop strokes by rank: a group's own rank, plus more for each later
     // stroke in it, so groups lose their last strokes first.
     if (st.rank >= ramp(g, 1, S.keepGrey, 0)) continue;
-    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, S.inkGrey);
+    const keep = ramp(g, 1, S.lenGrey, 0), ink = ramp(g, 1, S.inkGrey, S.inkGrey) * (fromMem[cell(x, y)] ? S.memInk : 1);
     if (keep < 0.03 || ink < 0.02) continue;
     // Each stroke on its own: overlapping strokes can wind opposite ways.
     ctx.globalAlpha = ink;
@@ -432,8 +463,27 @@ function compose() {
   lg.drawImage(mask, 0, 0, layer.width, layer.height);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(layer, 0, 0);
-  const k = known.reduce((a, b) => a + b, 0);
-  $("status").textContent = `${k} of ${known.length} rooms and corridors known; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
+
+  // Remembered rooms and corridors washed toward the paper: their floor, and
+  // their walls' ink where they are nearer than any floor in sight.
+  if (S.memWash > 0 && isMem.some((v) => v)) {
+    const dM = nearestSeeds(isMem, mw, mh).d2, dS = nearestSeeds(isSight, mw, mh).d2;
+    const wash = new ImageData(mw, mh);
+    for (let j = 0; j < n; j++)
+      if (isMem[j] || (pixUnit[j] < 0 && Math.sqrt(dM[j]) / R < WALL_BAND && dM[j] <= dS[j])) wash.data[j * 4 + 3] = 255;
+    mask.getContext("2d").putImageData(wash, 0, 0);
+    lg.globalCompositeOperation = "source-over";
+    lg.clearRect(0, 0, layer.width, layer.height);
+    lg.fillStyle = PAPER;
+    lg.fillRect(0, 0, layer.width, layer.height);
+    lg.globalCompositeOperation = "destination-in";
+    lg.drawImage(mask, 0, 0, layer.width, layer.height);
+    ctx.globalAlpha = S.memWash;
+    ctx.drawImage(layer, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+  const count = (v) => state.reduce((a, b) => a + (b === v ? 1 : 0), 0);
+  $("status").textContent = `${count(SIGHT)} in sight, ${count(REMEMBERED)} remembered, of ${state.length} rooms and corridors; ${drawnStrokes} strokes drawn (${Math.round(performance.now() - t0)} ms).`;
 }
 
 // Only the settings the chosen depth map uses.
@@ -462,16 +512,19 @@ canvas.addEventListener("click", (e) => {
   const tx = Math.floor(((e.clientX - r.left) / r.width) * M.W), ty = Math.floor(((e.clientY - r.top) / r.height) * M.H);
   const u = M.unitOf[ty * M.W + tx];
   if (u < 0) return;
-  M.known[u] ^= 1;
+  // Unknown, then in sight, then remembered, then unknown again.
+  M.state[u] = [SIGHT, UNKNOWN, REMEMBERED][M.state[u]];
   compose();
 });
-$("all").addEventListener("click", () => { M.known.fill(1); compose(); });
-$("none").addEventListener("click", () => { M.known.fill(0); compose(); });
-$("some").addEventListener("click", () => {
-  // A room, and what lies a step or two from it: as if partly explored.
-  M.known.fill(0);
-  const rng = new RNG(), { level, unitOf, W, H } = M;
-  const start = rng.int(0, level.rooms.length - 1);
+$("all").addEventListener("click", () => { M.state.fill(SIGHT); compose(); });
+$("allmem").addEventListener("click", () => { M.state.fill(REMEMBERED); compose(); });
+$("none").addEventListener("click", () => { M.state.fill(UNKNOWN); compose(); });
+$("some").addEventListener("click", () => { explore(); compose(); });
+
+// As if partly explored: a room and the corridors leading out of it in
+// sight, and what lies a few steps beyond remembered.
+function explore() {
+  const { level, unitOf, W, H, state } = M, rng = new RNG();
   const adj = new Map();
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
@@ -486,12 +539,13 @@ $("some").addEventListener("click", () => {
         adj.get(b).add(a);
       }
     }
+  state.fill(UNKNOWN);
+  const start = rng.int(0, level.rooms.length - 1);
+  state[start] = SIGHT;
   let front = [start];
-  M.known[start] = 1;
-  for (let step = 0; step < 3; step++)
-    front = front.flatMap((u) => [...(adj.get(u) || [])].filter((v) => !M.known[v] && (M.known[v] = 1)));
-  compose();
-});
+  for (let step = 0; step < 4; step++)
+    front = front.flatMap((u) => [...(adj.get(u) || [])].filter((v) => state[v] === UNKNOWN && (state[v] = step === 0 ? SIGHT : REMEMBERED)));
+}
 $("newmap").addEventListener("click", () => setTimeout(() => newMap(), 20));
 $("reset").addEventListener("click", () => {
   const zoomChanged = S.zoom !== DEFAULTS.zoom;
