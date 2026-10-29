@@ -1,12 +1,11 @@
 // Map generation: rooms (rectangular, or irregular caves) joined by corridors,
-// plus the furniture a Dyson-style map would show (pillars, wells, rubble).
+// plus the furniture a Dyson-style map would show (pillars, rubble).
 
 export const T = {
   ROCK: 0,
   FLOOR: 1,
   DOOR: 2,
   PILLAR: 3,
-  WELL: 5,
 };
 
 export const isOpen = (t) => t !== T.ROCK;
@@ -152,9 +151,6 @@ function furnish(level, rng, corridor) {
         tryBlock(x, y0 + 1, T.PILLAR);
         tryBlock(x, y1 - 1, T.PILLAR);
       }
-    } else if (roll < 0.6 && r.w >= 5 && r.h >= 5) {
-      r.kind = "well";
-      tryBlock(r.cx, r.cy, T.WELL);
     } else {
       r.kind = "plain";
     }
