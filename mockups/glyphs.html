@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Character Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=UnifrakturCook:wght@700&family=Pirata+One&family=Grenze+Gotisch:wght@700&family=Germania+One&family=New+Rocker&family=Jacquard+24&family=Texturina:wght@700&family=IM+Fell+English:ital@0;1&family=IM+Fell+DW+Pica&family=Uncial+Antiqua&family=Almendra:wght@700&family=MedievalSharp&family=Metamorphous&family=Cinzel+Decorative:wght@700&family=Rye&family=Special+Elite&family=Fredericka+the+Great&family=Cabin+Sketch:wght@700&family=Permanent+Marker&family=Rock+Salt&family=Sedgwick+Ave+Display&family=Gochi+Hand&family=Architects+Daughter&family=Caveat+Brush&family=Kalam:wght@700&family=Gloria+Hallelujah&family=Henny+Penny&family=Eagle+Lake&family=Macondo&display=block">
+<style>
+  /* Layout: a control strip over a wrapping grid of small map scenes, one per typeface. */
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  [hidden] { display: none !important; }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  header p { margin: 0 0 16px; max-width: 75ch; color: var(--muted); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 10px; margin-bottom: 18px; }
+  .topbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: var(--muted); font-size: 13px; }
+  .group { background: var(--paper); border: 1px solid var(--rule); padding: 8px 12px 10px; min-width: 0; }
+  .group summary { cursor: pointer; font-size: 16px; padding: 2px 0; }
+  .group[open] summary { margin-bottom: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; }
+  label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); min-width: 140px; }
+  output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 150px; accent-color: var(--accent); }
+  input[type="text"], select { font: 16px var(--body); padding: 4px 6px; border: 1px solid var(--rule); background: #fffdf7; color: var(--ink); }
+  input[type="text"] { width: 7em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .chips button { min-width: 2em; padding: 2px 6px; font: 17px var(--body); color: var(--ink); background: #fffdf7; border: 1px solid var(--rule); border-radius: 2px; cursor: pointer; }
+  .chips button:hover { border-color: var(--ink); }
+  button.main { font: 15px var(--body); padding: 6px 14px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, figure:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .export { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+  .export textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); padding: 6px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; overflow-x: auto; cursor: pointer; }
+  figure.picked { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  figure canvas { display: block; width: var(--cw); height: auto; max-width: none; }
+  figcaption { padding: 6px 2px 0; display: flex; justify-content: space-between; gap: 8px; width: var(--cw); max-width: calc(100vw - 52px); }
+  figcaption span { color: var(--muted); font-size: 13px; }
+  .section { width: 100%; margin: 10px 0 0; font-size: 18px; font-weight: normal; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Character mockups</h1>
+  <p>The player and a goblin pack in a corner of the real map, set in different typefaces. The controls apply to every scene. Click a scene to pick it, then <i>Copy choice</i> and paste the result into the chat. A symbol a typeface lacks is drawn in the browser's fallback font instead.</p>
+</header>
+
+<div class="controls">
+  <div class="topbar">
+    <button class="main" id="copy" type="button">Copy choice</button>
+    <label for="zoom" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)">Zoom <input id="zoom" type="range" min="0.75" max="2.5" step="0.25" value="1"><output id="zoom-v"></output></label>
+    <span id="picked-label">Picked: none</span>
+  </div>
+  <div class="export" id="export-box" hidden>
+    <label for="export">Choice, ready to paste <span id="copy-status"></span></label>
+    <textarea id="export" readonly rows="2"></textarea>
+  </div>
+
+  <details class="group" open>
+    <summary>Symbols</summary>
+    <div class="row">
+      <label for="pglyph">Player <input id="pglyph" type="text" value="@" maxlength="3">
+        <span class="chips" data-for="pglyph"></span></label>
+      <label for="gglyph">Goblin <input id="gglyph" type="text" value="g" maxlength="3">
+        <span class="chips" data-for="gglyph"></span></label>
+      <label for="psize">Player size <output id="psize-v"></output><input id="psize" type="range" min="0.5" max="1.6" step="0.05" value="0.95"></label>
+      <label for="gsize">Goblin size <output id="gsize-v"></output><input id="gsize" type="range" min="0.5" max="1.6" step="0.05" value="1.05"></label>
+    </div>
+  </details>
+
+  <details class="group" open>
+    <summary>Ink</summary>
+    <div class="row">
+      <label for="pink">Player ink <select id="pink">
+        <option value="#1c3a72">Blue-black</option><option value="#1b1815">Black</option><option value="#5a3a22">Iron-gall brown</option><option value="#a3261b">Vermilion</option></select></label>
+      <label for="gink">Goblin ink <select id="gink">
+        <option value="#1b1815">Black</option><option value="#5a3a22">Iron-gall brown</option><option value="#2d5a2c">Green-black</option><option value="#a3261b">Vermilion</option></select></label>
+      <label for="bold">Extra weight <output id="bold-v"></output><input id="bold" type="range" min="0" max="0.08" step="0.005" value="0"></label>
+      <label for="halo">Paper halo <output id="halo-v"></output><input id="halo" type="range" min="0" max="0.3" step="0.01" value="0.16"></label>
+      <label for="tilt">Hand-placed tilt <output id="tilt-v"></output><input id="tilt" type="range" min="0" max="0.3" step="0.01" value="0"></label>
+    </div>
+  </details>
+
+  <details class="group" open>
+    <summary>Shadow and motion</summary>
+    <div class="row">
+      <label for="shadow">Shadow <select id="shadow">
+        <option value="ellipse">Soft ellipse (current)</option>
+        <option value="none">None</option>
+        <option value="map">Map shadow (offset, like the walls)</option>
+        <option value="hatch">Hatched (three short strokes)</option>
+        <option value="dash">Ground dash (one pen stroke)</option>
+      </select></label>
+      <label for="anim">Animation <select id="anim"><option value="1">On</option><option value="0">Off</option></select></label>
+    </div>
+  </details>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script type="module">
+import { renderMap, INK, PAPER } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+
+// [family, css weight, category]
+const FONTS = [
+  ["UnifrakturMaguntia", 400, "Blackletter"], ["UnifrakturCook", 700, "Blackletter"], ["Pirata One", 400, "Blackletter"],
+  ["Grenze Gotisch", 700, "Blackletter"], ["Germania One", 400, "Blackletter"], ["New Rocker", 400, "Blackletter"],
+  ["Jacquard 24", 400, "Blackletter"], ["Texturina", 700, "Blackletter"],
+  ["IM Fell English", 400, "Old print"], ["IM Fell DW Pica", 400, "Old print"], ["Uncial Antiqua", 400, "Old print"],
+  ["Almendra", 700, "Old print"], ["MedievalSharp", 400, "Old print"], ["Metamorphous", 400, "Old print"],
+  ["Cinzel Decorative", 700, "Old print"], ["Rye", 400, "Old print"], ["Special Elite", 400, "Old print"],
+  ["Fredericka the Great", 400, "Sketched"], ["Cabin Sketch", 700, "Sketched"], ["Henny Penny", 400, "Sketched"],
+  ["Eagle Lake", 400, "Sketched"], ["Macondo", 400, "Sketched"],
+  ["Permanent Marker", 400, "Marker and hand"], ["Rock Salt", 400, "Marker and hand"], ["Sedgwick Ave Display", 400, "Marker and hand"],
+  ["Gochi Hand", 400, "Marker and hand"], ["Architects Daughter", 400, "Marker and hand"], ["Caveat Brush", 400, "Marker and hand"],
+  ["Kalam", 700, "Marker and hand"], ["Gloria Hallelujah", 400, "Marker and hand"],
+];
+const PRESETS = { pglyph: ["@", "&", "☺", "✠", "Ψ", "♞", "☥", "Ж", "P", "Ω"], gglyph: ["g", "G", "ɠ", "ǥ", "ʛ", "ɣ", "♣", "§"] };
+
+// ---------- the scene: a room with a corridor, a player and a goblin pack ----------
+const TW = 13, TH = 8, TS = 32, W = TW * TS, H = TH * TS;
+const tiles = new Uint8Array(TW * TH);
+const carve = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) tiles[y * TW + x] = 1; };
+carve(1, 1, 8, 6);
+carve(9, 3, 12, 3);
+const level = { w: TW, h: TH, tiles, cave: new Uint8Array(TW * TH), rooms: [] };
+const isFloor = (x, y) => x >= 1 && y >= 1 && x <= 8 && y <= 6;
+
+const rng = new RNG(7);
+const actors = [{ kind: "player", x: 2, y: 3, home: [2, 3] }];
+for (const [x, y] of [[5, 2], [6, 3], [5, 4], [7, 4], [6, 5], [7, 2]]) actors.push({ kind: "goblin", x, y });
+for (const a of actors) Object.assign(a, { fx: a.x, fy: a.y, t0: 0, dur: 1, phase: Math.random() * 6.28, tilt: Math.random() * 2 - 1, dart: { ox: 0, oy: 0, tx: 0, ty: 0, next: 0 } });
+
+// Every so often the goblins shuffle round their corner and the player steps.
+let nextStep = 0;
+function stepWorld(now) {
+  if (now < nextStep) return;
+  nextStep = now + 1100;
+  for (const a of actors) {
+    if (a.kind === "player") {
+      if (Math.random() < 0.4) moveTo(a, a.x === a.home[0] ? a.home[0] + 1 : a.home[0], a.y, now);
+      continue;
+    }
+    if (Math.random() < 0.55) continue;
+    const opts = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
+      .map(([dx, dy]) => [a.x + dx, a.y + dy])
+      .filter(([x, y]) => isFloor(x, y) && x >= 4 && !actors.some((b) => b.x === x && b.y === y));
+    if (opts.length) { const [x, y] = opts[Math.floor(Math.random() * opts.length)]; moveTo(a, x, y, now); }
+  }
+}
+function moveTo(a, x, y, now) {
+  const k = ease(Math.min(1, (now - a.t0) / a.dur));
+  a.fx += (a.x - a.fx) * k; a.fy += (a.y - a.fy) * k;
+  a.x = x; a.y = y; a.t0 = now; a.dur = a.kind === "player" ? 140 : 170;
+}
+const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+
+// ---------- controls ----------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const ctlIds = ["pglyph", "gglyph", "psize", "gsize", "pink", "gink", "bold", "halo", "tilt", "shadow", "anim"];
+const fmt = { psize: (v) => `${v}× tile`, gsize: (v) => `${v}× tile`, bold: (v) => `${(v * 100).toFixed(1)}%`, halo: (v) => `${Math.round(v * 100)}%`, tilt: (v) => `±${Math.round((v * 180) / Math.PI)}°` };
+function opts() {
+  const o = {};
+  for (const id of ctlIds) {
+    const el = $(id);
+    o[id] = el.type === "range" ? parseFloat(el.value) : el.value;
+    if (fmt[id]) $(id + "-v").textContent = fmt[id](el.value);
+  }
+  return o;
+}
+for (const box of document.querySelectorAll(".chips")) {
+  const input = $(box.dataset.for);
+  for (const g of PRESETS[box.dataset.for]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = g;
+    b.addEventListener("click", (e) => { e.preventDefault(); input.value = g; input.dispatchEvent(new Event("input")); });
+    box.append(b);
+  }
+}
+let o = opts();
+for (const id of ctlIds) $(id).addEventListener("input", () => { o = opts(); if (id.endsWith("glyph")) loadFonts(); });
+for (const id of ["shadow", "anim", "pink", "gink"]) $(id).addEventListener("change", () => (o = opts()));
+
+// ---------- cards -----------------------------------------------------------------------
+const grid = $("grid");
+const cards = [];
+let picked = null;
+let lastCat = null;
+for (const [family, weight, cat] of FONTS) {
+  if (cat !== lastCat) {
+    const h = document.createElement("h2");
+    h.className = "section";
+    h.textContent = cat;
+    grid.append(h);
+    lastCat = cat;
+  }
+  const fig = document.createElement("figure");
+  fig.tabIndex = 0;
+  const canvas = document.createElement("canvas");
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<b></b><span></span>`;
+  cap.querySelector("b").textContent = family;
+  cap.querySelector("b").style.fontWeight = "normal";
+  cap.querySelector("span").textContent = cat;
+  fig.append(canvas, cap);
+  grid.append(fig);
+  const card = { family, weight, cat, fig, canvas, ctx: canvas.getContext("2d"), visible: true };
+  const pick = () => {
+    if (picked) picked.fig.classList.remove("picked");
+    picked = card;
+    fig.classList.add("picked");
+    $("picked-label").textContent = `Picked: ${family}`;
+  };
+  fig.addEventListener("click", pick);
+  fig.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  cards.push(card);
+}
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) { const c = cards.find((k) => k.fig === e.target); if (c) c.visible = e.isIntersecting; }
+});
+for (const c of cards) io.observe(c.fig);
+
+function loadFonts() {
+  const text = `${$("pglyph").value}${$("gglyph").value}`;
+  return Promise.all(FONTS.map(([f, w]) => document.fonts.load(`${w} 32px "${f}"`, text).catch(() => {})));
+}
+
+// ---------- drawing ---------------------------------------------------------------------
+let map = null, zoom = 1, dpr = 1;
+function sizeCards() {
+  zoom = parseFloat($("zoom").value);
+  $("zoom-v").textContent = `${Math.round(zoom * 100)}%`;
+  dpr = Math.min(3, (window.devicePixelRatio || 1) * zoom);
+  document.documentElement.style.setProperty("--cw", `${W * zoom}px`);
+  for (const c of cards) { c.canvas.width = Math.round(W * dpr); c.canvas.height = Math.round(H * dpr); }
+  map = renderMap(level, TS, dpr, 1234).canvas;
+}
+$("zoom").addEventListener("input", sizeCards);
+
+const metrics = new Map();
+function glyphBox(ctx, ch, font) {
+  const key = font + ch;
+  if (!metrics.has(key)) {
+    ctx.font = font;
+    const m = ctx.measureText(ch);
+    metrics.set(key, { asc: m.actualBoundingBoxAscent || 10, desc: m.actualBoundingBoxDescent || 0 });
+  }
+  return metrics.get(key);
+}
+
+function pose(a, now, t) {
+  const motion = o.anim === "1" ? 1 : 0;
+  let ox = 0, oy = 0, sx = 1, sy = 1, air = 0;
+  if (a.kind === "goblin") {
+    const h = Math.abs(Math.sin(t * 3 + a.phase)), land = Math.pow(1 - h, 6);
+    oy = -h * 0.2; sx = 1 + 0.16 * land - 0.04 * h; sy = 1 - 0.2 * land + 0.08 * h; air = h;
+    const d = a.dart;
+    if (now > d.next) { d.tx = (Math.random() - 0.5) * 0.44; d.ty = (Math.random() - 0.5) * 0.26; d.next = now + 600 + Math.random() * 700; }
+    d.ox += (d.tx - d.ox) * 0.18; d.oy += (d.ty - d.oy) * 0.18;
+    ox += d.ox; oy += d.oy;
+  } else {
+    sy = 1 + Math.sin(t * 2.2) * 0.035; sx = 1 - Math.sin(t * 2.2) * 0.015;
+  }
+  const k = Math.min(1, (now - a.t0) / a.dur), e = ease(k);
+  const x = a.fx + (a.x - a.fx) * e, y = a.fy + (a.y - a.fy) * e;
+  if (k < 1) oy -= Math.sin(Math.PI * k) * (a.kind === "goblin" ? 0.32 : 0.08);
+  return { x: x + 0.5, y: y + 0.5, ox: ox * motion, oy: oy * motion, sx: 1 + (sx - 1) * motion, sy: 1 + (sy - 1) * motion, air: air * motion };
+}
+
+function drawCard(c, now) {
+  const ctx = c.ctx, t = now / 1000;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(map, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const a of [...actors].sort((p, q) => p.y - q.y)) {
+    const p = pose(a, now, t), player = a.kind === "player";
+    const ch = player ? o.pglyph : o.gglyph;
+    if (!ch) continue;
+    const size = TS * (player ? o.psize : o.gsize);
+    const font = `${c.weight} ${size}px "${c.family}", serif`;
+    const m = glyphBox(ctx, ch, font);
+    const gx = (p.x + p.ox) * TS, gy = (p.y + p.oy) * TS, feet = gy + (m.asc + m.desc) / 2;
+    const groundY = p.y * TS + (m.asc + m.desc) / 2;
+    const color = player ? o.pink : o.gink;
+    const rot = o.tilt * a.tilt;
+    drawShadow(ctx, ch, font, m, p, gx, feet, groundY, size, rot);
+    ctx.save();
+    ctx.translate(gx, feet);
+    ctx.rotate(rot);
+    ctx.scale(p.sx, p.sy);
+    ctx.font = font;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.lineJoin = "round";
+    if (o.halo > 0) {
+      ctx.lineWidth = size * o.halo;
+      ctx.strokeStyle = "rgba(247, 242, 230, 0.9)";
+      ctx.strokeText(ch, 0, -m.desc);
+    }
+    if (o.bold > 0) {
+      ctx.lineWidth = size * o.bold;
+      ctx.strokeStyle = color;
+      ctx.strokeText(ch, 0, -m.desc);
+    }
+    ctx.fillStyle = color;
+    ctx.fillText(ch, 0, -m.desc);
+    ctx.restore();
+  }
+}
+
+function drawShadow(ctx, ch, font, m, p, gx, feet, groundY, size, rot) {
+  const bx = p.x * TS + p.ox * TS * 0.6;
+  ctx.save();
+  switch (o.shadow) {
+    case "ellipse":
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.ellipse(bx, p.y * TS + TS * 0.36, TS * 0.26 * (1 - p.air * 0.35), TS * 0.065, 0, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case "map": {
+      // The glyph itself, flattened onto the floor and pushed down-right in
+      // the same grey as the walls' shadow; it drifts further when airborne.
+      const off = TS * (0.12 + p.air * 0.12);
+      ctx.translate(gx + off, groundY + off * 0.6);
+      ctx.rotate(rot);
+      ctx.scale(p.sx, p.sy * 0.85);
+      ctx.font = font;
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(70, 62, 55, 0.3)";
+      ctx.fillText(ch, 0, -m.desc);
+      break;
+    }
+    case "hatch": {
+      ctx.strokeStyle = INK;
+      ctx.globalAlpha = 0.55;
+      ctx.lineCap = "round";
+      ctx.lineWidth = Math.max(1, TS * 0.04);
+      const w = TS * 0.22 * (1 - p.air * 0.35), y = p.y * TS + TS * 0.38;
+      ctx.beginPath();
+      for (let k = -1; k <= 1; k++) { ctx.moveTo(bx + k * w * 0.6 - w * 0.2, y + w * 0.25); ctx.lineTo(bx + k * w * 0.6 + w * 0.2, y - w * 0.25); }
+      ctx.stroke();
+      break;
+    }
+    case "dash": {
+      ctx.strokeStyle = INK;
+      ctx.globalAlpha = 0.6;
+      ctx.lineCap = "round";
+      ctx.lineWidth = Math.max(1.2, TS * 0.05);
+      const w = TS * 0.26 * (1 - p.air * 0.4), y = p.y * TS + TS * 0.38;
+      ctx.beginPath();
+      ctx.moveTo(bx - w, y + 0.6);
+      ctx.quadraticCurveTo(bx, y - 1.2, bx + w, y);
+      ctx.stroke();
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+function loop(now) {
+  if (o.anim === "1") stepWorld(now);
+  for (const c of cards) if (c.visible) drawCard(c, now);
+  requestAnimationFrame(loop);
+}
+
+// ---------- copy the choice -------------------------------------------------------------
+$("copy").addEventListener("click", () => {
+  const out = { font: picked ? picked.family : null, ...o };
+  delete out.anim;
+  const text = JSON.stringify(out);
+  const box = $("export"), status = $("copy-status");
+  $("export-box").hidden = false;
+  box.value = text;
+  const fallback = () => { box.focus(); box.select(); status.textContent = "(selected: press Ctrl+C or Cmd+C to copy)"; };
+  try { navigator.clipboard.writeText(text).then(() => (status.textContent = "(copied to the clipboard)"), fallback); } catch { fallback(); }
+});
+
+await loadFonts().catch(() => {});
+await document.fonts.load('italic 16px "IM Fell English"').catch(() => {});
+sizeCards();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
