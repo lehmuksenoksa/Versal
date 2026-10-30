@@ -17,7 +17,7 @@ const LETTERING = {
   font: "Texturina, Georgia, serif",
   // (The player, unlit, has a heavy ring of the dark band's colour instead
   // of the paper halo.)
-  player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.24 },
+  player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.24, darkInk: "#741a12" },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
   halo: 0.1,
@@ -422,11 +422,17 @@ export class Renderer {
     ctx.lineWidth = size * LETTERING.halo;
     ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * (style.darkRing ? 1 - dark : lit)})`;
     ctx.strokeText(ch, 0, -m.desc);
-    // A little extra weight, to stand up to the heavy map lines.
+    // A little extra weight, to stand up to the heavy map lines. (Darker in
+    // the dark, for a letter with a colour for it.)
+    let ink = style.ink;
+    if (style.darkInk && dark > 0) {
+      const h = (s, i) => parseInt(s.slice(1 + 2 * i, 3 + 2 * i), 16);
+      ink = `rgb(${[0, 1, 2].map((i) => Math.round(h(style.ink, i) + (h(style.darkInk, i) - h(style.ink, i)) * dark)).join(", ")})`;
+    }
     ctx.lineWidth = size * LETTERING.bold;
-    ctx.strokeStyle = style.ink;
+    ctx.strokeStyle = ink;
     ctx.strokeText(ch, 0, -m.desc);
-    ctx.fillStyle = style.ink;
+    ctx.fillStyle = ink;
     ctx.fillText(ch, 0, -m.desc);
     ctx.restore();
   }
