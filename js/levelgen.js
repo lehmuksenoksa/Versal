@@ -116,6 +116,12 @@ function tryAreas(S, rng) {
       const big = rng.chance(0.25);
       w = big ? rng.int(9, 13) : rng.int(4, 9);
       h = big ? rng.int(7, 9) : rng.int(4, 7);
+      // (Half of them an even number of squares each way, which pillars on
+      // the grid crossings need to sit evenly.)
+      if (rng.chance(0.5)) {
+        w += w % 2;
+        h += h % 2;
+      }
     }
     w = clamp(w, 4, W - 6);
     h = clamp(h, 4, H - 6);
@@ -364,8 +370,8 @@ function tryAreas(S, rng) {
   // Where each kind fits.
   const fits = {
     plain: () => true, store: () => true, crypt: () => true,
-    gallery: (r) => lo(r) >= 4 && hi(r) >= 6,
-    hall: (r) => lo(r) >= 4,
+    gallery: (r) => lo(r) >= 4 && hi(r) >= 6 && hi(r) % 2 === 0,
+    hall: (r) => (lo(r) >= 4 && r.w % 2 === 0 && r.h % 2 === 0) || lo(r) >= 7,
     jail: (r) => hi(r) >= 5,
     barracks: (r) => lo(r) >= 4 && hi(r) >= 5,
     dining: (r) => lo(r) >= 3 && hi(r) >= 4,
@@ -387,7 +393,7 @@ function tryAreas(S, rng) {
     });
     const free = (x, y) => inRoom(x, y) && !used.has(idx(x, y));
     const take = (x, y) => used.add(idx(x, y));
-    const shape = rng.chance(0.6) ? "round" : "square", style = rng.chance(0.5) ? "post" : "column";
+    const shape = rng.chance(0.6) ? "round" : "square";
     // A post on the grid crossing (x, y); a column filling the square (x, y),
     // if it is free: rock, walled and hatched like the rest.
     const post = (x, y) => {
@@ -400,15 +406,6 @@ function tryAreas(S, rng) {
       tiles[idx(x, y)] = T.ROCK;
       take(x, y);
       return true;
-    };
-    // Columns where they fit, in groups (`places`: lists of squares) that
-    // go in whole or not at all, so they stay matched; should fewer than
-    // half of them, or fewer than two columns, go in (the ways in being in
-    // the way), posts instead.
-    const columns = (places, posts) => {
-      const fit = places.filter((g) => g.every((p) => free(...p)));
-      if (fit.length * 2 >= places.length && fit.flat().length >= 2) for (const g of fit) for (const p of g) column(...p);
-      else for (const p of posts) post(...p);
     };
     // Things in the free squares along the walls, nearest the corners first,
     // up to `count`.
@@ -464,26 +461,18 @@ function tryAreas(S, rng) {
     } else if (kind === "plain") {
       if (rng.chance(S.decor * 0.7)) corners(rng.int(1, 3));
     } else if (kind === "gallery") {
-      // Pillars along both long walls: posts on every other crossing a
-      // square in, or columns in every other square a square in.
-      const [a0, n] = spread(A - 2, 1, 2), cols = [], pts = [];
-      for (let i = 0; i < n; i++) {
-        cols.push([1, B - 2].map((b) => at(1 + a0 + 2 * i, b)));
-        for (const b of [1, B - 1]) pts.push(at(1 + a0 + 2 * i, b));
-      }
-      if (style === "post") for (const p of pts) post(...p);
-      else columns(cols, pts);
+      // Posts along both long walls, a square in from them, on every other
+      // crossing (the long way being even, they sit evenly).
+      for (let a = 2; a <= A - 2; a += 2) for (const b of [1, B - 1]) post(...at(a, b));
       if (rng.chance(S.decor * 0.5)) corners(rng.int(1, 2));
     } else if (kind === "hall") {
-      // Filled with pillars. Where the room is an even number of squares
-      // each way, posts on every other crossing right across it, and half
-      // posts on the walls in step with them (where the wall is whole);
-      // otherwise columns in every other square a square in.
-      const pts = [], cols = [], [a0, na] = spread(A - 2, 1, 2), [b0, nb] = spread(B - 2, 1, 2);
-      for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) pts.push([x, y]);
-      for (let i = 0; i < na; i++) for (let k = 0; k < nb; k++) cols.push([at(1 + a0 + 2 * i, 1 + b0 + 2 * k)]);
-      if (r.w % 2 === 0 && r.h % 2 === 0) {
-        for (const p of pts) post(...p);
+      // An even room is filled with posts: on every other crossing right
+      // across it, and half posts on the walls in step with them (where the
+      // wall is whole). A big room otherwise has columns holding it up, a
+      // few, set evenly about its middle: four, a third of the way in from
+      // the walls (and two more in the middle of a long one), all or none.
+      if (r.w % 2 === 0 && r.h % 2 === 0 && lo(r) >= 4) {
+        for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) post(x, y);
         r.halfPosts = true;
         for (const sd of SIDES)
           for (let u = 2; u < sd.len(r); u += 2) {
@@ -492,7 +481,13 @@ function tryAreas(S, rng) {
             const [ax, ay] = mid(r, sd, u - 1, -1), [bx, by] = mid(r, sd, u, -1);
             features.push({ type: "post", x: (ax + bx) / 2 - sd.into[0] * 0.5, y: (ay + by) / 2 - sd.into[1] * 0.5, shape });
           }
-      } else columns(cols, pts);
+      } else {
+        const ia = Math.max(2, Math.round(A * 0.28)), ib = Math.max(2, Math.round(B * 0.28));
+        const as = [ia, A - 1 - ia], bs = [...new Set([ib, B - 1 - ib])];
+        if (A % 2 === 1 && A >= 2 * B - 1 && A >= 11) as.push((A - 1) / 2);
+        const sq = as.flatMap((a) => bs.map((b) => at(a, b)));
+        if (sq.every((p) => free(...p))) for (const p of sq) column(...p);
+      }
     } else if (kind === "crypt") {
       // Niches two deep cut every other square round the walls, each with a
       // coffin; a sarcophagus in the middle of a bigger crypt.
@@ -569,10 +564,7 @@ function tryAreas(S, rng) {
       for (const [x, y] of [sd.at(r, Math.round((L - 1) / 2 - 2), -1), sd.at(r, Math.round((L - 1) / 2 + 2), -1)]) take(x, y);
       if (L >= 6) {
         const along = [-sd.into[1], sd.into[0]];
-        for (const side of [-1, 1]) {
-          if (style === "post") post(Math.round(ax + sd.into[0] * 0.5 + along[0] * side * 2), Math.round(ay + sd.into[1] * 0.5 + along[1] * side * 2));
-          else column(Math.floor(ax + sd.into[0] + along[0] * side * 2), Math.floor(ay + sd.into[1] + along[1] * side * 2));
-        }
+        for (const side of [-1, 1]) post(Math.round(ax + sd.into[0] * 0.5 + along[0] * side * 2), Math.round(ay + sd.into[1] * 0.5 + along[1] * side * 2));
       }
     }
     // Recesses: rows of shallow alcoves (a fifth of a square deep) along a
