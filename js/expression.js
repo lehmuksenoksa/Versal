@@ -993,15 +993,28 @@ export class Expression {
         const my = box.y + (y + 0.5) / res;
         for (let x = 0; x < size; x++) {
           const p = y * size + x, i = p * 4, mx = box.x + (x + 0.5) / res;
-          const v = rd[i] / 255;
-          let n = -1;
+          let n = -1, m = -1;
           const noiseAt = () => (n < 0 ? (n = this.fine(mx, my)) : n);
+          const wander = () => (m < 0 ? (m = 0.65 * noiseAt() + 0.35 * this.noise(mx, my)) : m);
+          // The shadows' edges, which run out from the player, ragged like
+          // the bands': near one, how lit it is a little to the side, by the
+          // same noise.
+          let v = rd[i];
+          const dx = mx - px, dy = my - py, d = Math.sqrt(dx * dx + dy * dy);
+          if (rag > 0 && d > TS) {
+            const sx = (-dy / d) * rag * res, sy = (dx / d) * rag * res;
+            const at = (k) => {
+              const qx = Math.round(x + sx * k), qy = Math.round(y + sy * k);
+              return qx < 0 || qy < 0 || qx >= size || qy >= size ? 0 : rd[(qy * size + qx) * 4];
+            };
+            if (at(1) !== v || at(-1) !== v) v = at(2 * wander() - 1);
+          }
+          v /= 255;
           const reached = v >= 0.97 ? 3 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 3 : v > 0.08 + 0.2 * noiseAt() ? 2 : 0;
           let band = 0;
           if (reached) {
-            const d = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
             if (d < out + rag) {
-              const e = nearEdge(d) ? d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1) : d;
+              const e = nearEdge(d) ? d + rag * (2 * wander() - 1) : d;
               band = e < rFull ? 3 : e < rad ? 2 : e < out ? 1 : 0;
             }
           }
