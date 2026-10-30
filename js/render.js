@@ -15,10 +15,11 @@ export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 // fractions of the letter size; tilt is the most a letter leans, in radians.
 const LETTERING = {
   font: "Texturina, Georgia, serif",
-  player: { weight: 800, size: 0.9, ink: "#a3261b" },
+  // (The player, unlit, glows a little, warm, with no halo.)
+  player: { weight: 800, size: 0.9, ink: "#a3261b", glow: "255, 190, 120" },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
-  halo: 0.1, haloDark: 0.18,
+  halo: 0.1,
   tilt: 0.06,
 };
 
@@ -75,11 +76,6 @@ const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0.5, lightDim: 0, lightDark
 const DART = [0.22, 0.6, 1.3];
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
-// Colour a (at k 0) to b (at k 1), as hex.
-const mix = (a, b, k) => {
-  const c = (h, i) => parseInt(h.slice(1 + 2 * i, 3 + 2 * i), 16);
-  return "#" + [0, 1, 2].map((i) => Math.round(c(a, i) + (c(b, i) - c(a, i)) * clamp01(k)).toString(16).padStart(2, "0")).join("");
-};
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 export class Renderer {
@@ -402,20 +398,28 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
-    // A halo keeps the letter legible over grid and hatching: paper where
-    // the light falls; where it doesn't, the darkness's colour, and wider.
-    // (Dim light reads as lit; the dark band, as dark.)
-    const lit = clamp01(((p.lit ?? 1) - 0.2) / 0.5), ink = style.ink;
-    ctx.lineWidth = size * (LETTERING.haloDark + (LETTERING.halo - LETTERING.haloDark) * lit);
-    ctx.strokeStyle = mix(this.settings.darkColor, "#f7f2e6", lit);
-    ctx.globalAlpha *= 0.95;
+    // A paper-coloured halo keeps the letter legible over grid and hatching
+    // (only as far as the light shows the paper). A letter with a glow (the
+    // player) has it instead where the light is dark (dim light reads as
+    // lit; the dark band, as dark).
+    const lit = p.lit ?? 1, dark = style.glow ? 1 - clamp01((lit - 0.2) / 0.5) : 0;
+    if (dark > 0) {
+      const t = ctx.getTransform();
+      ctx.save();
+      ctx.shadowColor = `rgba(${style.glow}, ${0.8 * dark})`;
+      ctx.shadowBlur = size * 0.6 * Math.hypot(t.a, t.b);
+      ctx.fillStyle = `rgba(${style.glow}, ${0.8 * dark})`;
+      for (let k = 0; k < 2; k++) ctx.fillText(ch, 0, -m.desc);
+      ctx.restore();
+    }
+    ctx.lineWidth = size * LETTERING.halo;
+    ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * (style.glow ? 1 - dark : lit)})`;
     ctx.strokeText(ch, 0, -m.desc);
-    ctx.globalAlpha /= 0.95;
     // A little extra weight, to stand up to the heavy map lines.
     ctx.lineWidth = size * LETTERING.bold;
-    ctx.strokeStyle = ink;
+    ctx.strokeStyle = style.ink;
     ctx.strokeText(ch, 0, -m.desc);
-    ctx.fillStyle = ink;
+    ctx.fillStyle = style.ink;
     ctx.fillText(ch, 0, -m.desc);
     ctx.restore();
   }
