@@ -15,7 +15,7 @@ export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 // fractions of the letter size; tilt is the most a letter leans, in radians.
 const LETTERING = {
   font: "Texturina, Georgia, serif",
-  player: { weight: 800, size: 0.9, ink: "#a3261b" },
+  player: { weight: 800, size: 0.9, ink: "#a3261b", dark: "#e08a76" },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
   halo: 0.1,
@@ -75,6 +75,11 @@ const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0.5, lightDim: 0, lightDark
 const DART = [0.22, 0.6, 1.3];
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
+// Colour a (at k 0) to b (at k 1), as hex.
+const mix = (a, b, k) => {
+  const c = (h, i) => parseInt(h.slice(1 + 2 * i, 3 + 2 * i), 16);
+  return "#" + [0, 1, 2].map((i) => Math.round(c(a, i) + (c(b, i) - c(a, i)) * clamp01(k)).toString(16).padStart(2, "0")).join("");
+};
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 export class Renderer {
@@ -397,16 +402,21 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
-    // A paper-coloured halo keeps the letter legible over grid and hatching
-    // (only as far as the light shows the paper).
+    // A halo keeps the letter legible over grid and hatching: paper where
+    // the light falls, the darkness's colour where it doesn't. A letter with
+    // a colour for the dark (the player's) pales toward it there.
+    // (Dim light reads as lit; the dark band, as dark.)
+    const lit = clamp01(((p.lit ?? 1) - 0.2) / 0.5), ink = style.dark ? mix(style.dark, style.ink, lit) : style.ink;
     ctx.lineWidth = size * LETTERING.halo;
-    ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * (p.lit ?? 1)})`;
+    ctx.strokeStyle = mix(this.settings.darkColor, "#f7f2e6", lit);
+    ctx.globalAlpha *= 0.95;
     ctx.strokeText(ch, 0, -m.desc);
+    ctx.globalAlpha /= 0.95;
     // A little extra weight, to stand up to the heavy map lines.
     ctx.lineWidth = size * LETTERING.bold;
-    ctx.strokeStyle = style.ink;
+    ctx.strokeStyle = ink;
     ctx.strokeText(ch, 0, -m.desc);
-    ctx.fillStyle = style.ink;
+    ctx.fillStyle = ink;
     ctx.fillText(ch, 0, -m.desc);
     ctx.restore();
   }
