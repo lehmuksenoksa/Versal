@@ -284,8 +284,8 @@ function drawShadow(ctx, level, TS, floor) {
 
 // The floor grid, one thin pen stroke per tile edge: each slightly tilted and
 // bowed, often stopping short of a crossing, now and then broken mid-way. On
-// a cave's floor (`cave(x, y)`) it is a rougher guide: short dashes with
-// uneven gaps, wandering more and thinner.
+// a cave's floor (`cave(x, y)`) it is a rougher guide: dashes and gaps of
+// uneven lengths (now and then a dot), wandering more, its weight varying.
 function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
   const k = TS / 32;
   ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
@@ -293,8 +293,10 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
   const edge = (x0, y0, x1, y1, loose) => {
     const wob = GRID.wobble * k * (loose ? 3.5 : 1), brk = loose ? 0.3 : GRID.breaks;
     if (loose) {
-      ctx.setLineDash([rng.range(2.5, 6) * k, rng.range(2.5, 5.5) * k]);
-      ctx.lineDashOffset = rng.range(0, 8) * k;
+      const dash = [];
+      for (let i = 0; i < 4; i++) dash.push((rng.chance(0.2) ? rng.range(0.3, 1) : rng.range(1.5, 9)) * k, rng.range(1.5, 7) * k);
+      ctx.setLineDash(dash);
+      ctx.lineDashOffset = rng.range(0, 20) * k;
     } else ctx.setLineDash([]);
     const ux = (x1 - x0) / TS, uy = (y1 - y0) / TS, nx = -uy, ny = ux;
     const a = rng.chance(brk) ? rng.range(1, 3.5) * k : -0.4;
@@ -307,7 +309,7 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
     for (const [p, q] of pieces) {
       const s0 = rng.range(-0.5, 0.5) * wob, s1 = rng.range(-0.5, 0.5) * wob, bow = rng.range(-1, 1) * wob;
       const m = (p + q) / 2, sm = (s0 + s1) / 2 + bow;
-      ctx.lineWidth = rng.range(0.6, 1.05) * Math.max(1, k) * (loose ? 0.85 : 1);
+      ctx.lineWidth = (loose ? rng.range(0.4, 1.1) : rng.range(0.6, 1.05)) * Math.max(1, k);
       ctx.beginPath();
       ctx.moveTo(x0 + ux * p + nx * s0, y0 + uy * p + ny * s0);
       ctx.quadraticCurveTo(x0 + ux * m + nx * sm, y0 + uy * m + ny * sm, x0 + ux * q + nx * s1, y0 + uy * q + ny * s1);
@@ -324,13 +326,30 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
 }
 
 // Rubble on the floor (`level.rubble`, 0 to 3 a tile): a few small stones
-// outlined in pen, more filled in, and grit.
+// outlined in pen, more filled in, and grit; no stone over another (each
+// placed where it touches none drawn yet), no grit on an outlined stone.
 function drawRubble(ctx, level, TS, rng) {
   const k = TS / 32, { w: W, h: H } = level;
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
-  ctx.lineWidth = 1.3 * k;
+  ctx.lineWidth = 1.9 * k;
+  // The stones placed so far, by tile: [x, y, r, outlined].
+  const placed = new Map();
+  const near = (x, y) => {
+    const out = [];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) out.push(...(placed.get((y + dy) * W + x + dx) ?? []));
+    return out;
+  };
+  // A spot in tile (x, y) for a stone of radius r clear of the others, or
+  // null if none is found in a few tries.
+  const spot = (x, y, r, gap) => {
+    for (let t = 0; t < 8; t++) {
+      const px = (x + rng.range(0.1, 0.9)) * TS, py = (y + rng.range(0.1, 0.9)) * TS;
+      if (near(x, y).every(([qx, qy, qr]) => Math.hypot(px - qx, py - qy) > r * 1.2 + qr + gap)) return [px, py];
+    }
+    return null;
+  };
   // A pebble: a lumpy round shape about (cx, cy).
   const pebble = (cx, cy, r) => {
     const m = rng.int(5, 7), a0 = rng.range(0, Math.PI * 2);
@@ -341,24 +360,26 @@ function drawRubble(ctx, level, TS, rng) {
     }
     ctx.closePath();
   };
-  const at = () => [rng.range(0.1, 0.9) * TS, rng.range(0.1, 0.9) * TS];
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const amount = level.rubble[y * W + x];
       if (!amount) continue;
-      for (let s = amount - 1 + rng.int(0, 1); s > 0; s--) {
-        const [px, py] = at();
-        pebble(x * TS + px, y * TS + py, TS * rng.range(0.08, 0.16));
-        ctx.stroke();
-      }
-      for (let s = amount * 2 + rng.int(0, 1); s > 0; s--) {
-        const [px, py] = at();
-        pebble(x * TS + px, y * TS + py, TS * rng.range(0.04, 0.1));
-        ctx.fill();
+      const here = [];
+      placed.set(y * W + x, here);
+      const stones = [];
+      for (let s = amount - 1 + rng.int(0, 1); s > 0; s--) stones.push([TS * rng.range(0.08, 0.16), true]);
+      for (let s = amount * 2 + rng.int(0, 1); s > 0; s--) stones.push([TS * rng.range(0.04, 0.1), false]);
+      for (const [r, outlined] of stones) {
+        const at = spot(x, y, r, 1.5 * k);
+        if (!at) continue;
+        here.push([...at, r, outlined]);
+        pebble(at[0], at[1], r);
+        outlined ? ctx.stroke() : ctx.fill();
       }
       for (let d = amount * 4; d > 0; d--) {
-        const r = rng.range(0.8, 1.8) * k;
-        ctx.fillRect((x + rng.next()) * TS - r / 2, (y + rng.next()) * TS - r / 2, r, r);
+        const r = rng.range(0.8, 1.8) * k, gx = (x + rng.next()) * TS, gy = (y + rng.next()) * TS;
+        if (near(x, y).some(([qx, qy, qr, outlined]) => outlined && Math.hypot(gx - qx, gy - qy) < qr * 1.3 + r)) continue;
+        ctx.fillRect(gx - r / 2, gy - r / 2, r, r);
       }
     }
 }
