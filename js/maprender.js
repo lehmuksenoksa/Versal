@@ -202,7 +202,8 @@ export function wallLine(ctx, a, b, TS, rng) {
 }
 
 // Doors (each { x, y, dx, dy }: in the tile at x, y, opening that way into a
-// room): across the middle of that square, a short jamb of wall standing out
+// room): across that square a little way out from the room's edge, a short
+// jamb of wall standing out
 // from each side wall, and between their ends a pen outline of the door; a
 // little uneven, as if drawn by hand.
 function drawDoors(ctx, doors, TS, rng) {
@@ -214,7 +215,8 @@ function drawDoors(ctx, doors, TS, rng) {
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
   for (const { x, y, dx, dy } of doors) {
-    const cx = (x + 0.5) * TS, cy = (y + 0.5) * TS, thick = TS * rng.range(0.28, 0.33);
+    // (An eighth of the square back from the middle, toward the room.)
+    const cx = (x + 0.5 + dx * 0.12) * TS, cy = (y + 0.5 + dy * 0.12) * TS, thick = TS * rng.range(0.28, 0.33);
     const j = () => rng.range(-0.6, 0.6) * k;
     ctx.save();
     ctx.translate(cx, cy);
