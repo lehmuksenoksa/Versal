@@ -68,6 +68,8 @@ const LAMPS = { fire: { full: 2.5, dim: 1.5, dark: 2 } };
 // pouring out of them in bands as the player's, in squares past their edge.
 const LIT = { dim: 1, dark: 2 };
 const LAMP_SEE = 24;
+// How much a fire's light swells and shrinks as it flickers (of its size).
+const FIRE_SWELL = 0.04;
 // How warm their light is (as `warmth`; theirs whatever the player's lamp).
 const LAMP_WARMTH = 0.7;
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -1526,13 +1528,35 @@ export class Expression {
         wg.drawImage(c, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
         wg.setTransform(T);
       }
+      // (Where the lights fall: the steady light, and each fire's swelling
+      // and shrinking a little about it, on a wave of its own.)
+      const m = this.lampMask || (this.lampMask = blank(1, 1)), mg = m.getContext("2d");
+      if (m.width !== w.width || m.height !== w.height) { m.width = w.width; m.height = w.height; }
+      mg.setTransform(1, 0, 0, 1, 0, 0);
+      mg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
+      mg.setTransform(T);
+      mg.imageSmoothingEnabled = true;
+      this.region(mg, this.lampCanvas, R / this.TS, lamp.view);
+      for (const l of this.lampsSeen) {
+        if (!l.fire) continue;
+        const { x, y, ph, pic, at } = l.fire, TS = this.TS;
+        const k = 1 + FIRE_SWELL * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6));
+        mg.save();
+        mg.translate(x * TS, y * TS);
+        mg.scale(k, k);
+        mg.translate(-x * TS, -y * TS);
+        mg.drawImage(pic, (at[0] * TS) / R, (at[1] * TS) / R, (pic.width * TS) / R, (pic.height * TS) / R);
+        mg.restore();
+      }
       wg.globalCompositeOperation = "destination-in";
-      this.region(wg, this.lampCanvas, R / this.TS, lamp.view);
+      wg.setTransform(1, 0, 0, 1, 0, 0);
+      wg.drawImage(m, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
+      wg.setTransform(T);
       this.region(wg, this.sightCanvas.eased, ss, lamp.view);
       this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
       this.region(wg, this.seenShape, this.scale, lamp.view);
-      // A fire's light flickers, each its own way: dimming most toward its
-      // edge, as if it swelled and shrank. (Lit places are steady.)
+      // A fire's light flickers in brightness too, each its own way, dimming
+      // most toward its edge. (Lit places are steady.)
       wg.globalCompositeOperation = "destination-out";
       wg.setTransform(T);
       for (const l of this.lampsSeen) {
@@ -1540,9 +1564,9 @@ export class Expression {
         const { x, y, out, full, ph } = l.fire, TS = this.TS;
         const k = clamp01(0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7));
         const grad = wg.createRadialGradient(x * TS, y * TS, 0, x * TS, y * TS, out * TS);
-        grad.addColorStop(0, `rgba(0, 0, 0, ${0.06 * k})`);
-        grad.addColorStop(full / out, `rgba(0, 0, 0, ${0.14 * k})`);
-        grad.addColorStop(1, `rgba(0, 0, 0, ${0.6 * k})`);
+        grad.addColorStop(0, `rgba(0, 0, 0, ${0.04 * k})`);
+        grad.addColorStop(full / out, `rgba(0, 0, 0, ${0.08 * k})`);
+        grad.addColorStop(1, `rgba(0, 0, 0, ${0.3 * k})`);
         wg.fillStyle = grad;
         wg.fillRect((x - out) * TS, (y - out) * TS, 2 * out * TS, 2 * out * TS);
       }
@@ -1651,12 +1675,16 @@ export class Expression {
     this.lampLevel = this.lampCanvas = this.lampSight = null;
     this.lamps = [];
     if (!lights.length && !places.length) return;
-    const level = (this.lampLevel = new Float32Array(mw * mh));
-    // (Every fourth map point each way that the light being laid lights.)
-    let cells;
+    const level = (this.lampLevel = new Float32Array(mw * mh)), steady = new Float32Array(mw * mh);
+    // (Every fourth map point each way that the light being laid lights; and
+    // a fire's light kept apart, `own`, to flicker in size; the rest,
+    // `steady`.)
+    let cells, own = null;
     const mark = (x, y, j, v) => {
       if (v > level[j]) level[j] = v;
       if (v > 0 && !(x & 3) && !(y & 3)) cells.add(j);
+      if (!own) { if (v > steady[j]) steady[j] = v; }
+      else if (own.a) { const k = (y - own.y0) * own.w + (x - own.x0); if (v > own.a[k]) own.a[k] = v; }
     };
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
     // Lights the map points round (x, y) (squares) in line of sight within
@@ -1673,6 +1701,7 @@ export class Expression {
       g.fillStyle = "#0f0";
       g.fill(view);
       const a = g.getImageData(0, 0, bw, bh).data;
+      if (own) Object.assign(own, { x0, y0, w: bw, h: bh, a: new Float32Array(bw * bh) });
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
           const b = ((y - y0) * bw + (x - x0)) * 4, j = y * mw + x;
@@ -1684,8 +1713,14 @@ export class Expression {
     for (const l of lights) {
       const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
       cells = new Set();
+      own = {};
       shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4 } });
+      // (Its light as a picture of its own, at mask resolution.)
+      const c = blank(own.w, own.h), im = new ImageData(own.w, own.h);
+      for (let k = 0; k < own.a.length; k++) im.data[k * 4 + 3] = Math.round(255 * own.a[k]);
+      c.getContext("2d").putImageData(im, 0, 0);
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, pic: c, at: [own.x0, own.y0] } });
+      own = null;
     }
     const out = LIT.dim + LIT.dark;
     for (const p of places) {
@@ -1706,14 +1741,15 @@ export class Expression {
         shine(x + 0.5, y + 0.5, out + 0.5, (mx, my) => Math.hypot(Math.max(x - mx / TS, 0, mx / TS - x - 1), Math.max(y - my / TS, 0, my / TS - y - 1)), (e) => (e <= 0 ? 1 : e < LIT.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
       this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, cells: [...cells] });
     }
-    const pic = (alpha) => {
+    const pic = (level, alpha) => {
       const c = blank(mw, mh), im = new ImageData(mw, mh);
       for (let j = 0; j < mw * mh; j++) im.data[j * 4 + 3] = Math.round(255 * alpha(level[j]));
       c.getContext("2d").putImageData(im, 0, 0);
       return c;
     };
-    this.lampCanvas = pic((v) => v);
-    this.lampSight = pic((v) => clamp01(v / Math.max(0.01, S.darkLevel)));
+    // (`lampCanvas`: the steady light; the fires' are laid over it as drawn.)
+    this.lampCanvas = pic(steady, (v) => v);
+    this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)));
   }
 
   // The level's lit places: each a run of lit squares ([x, y]s), its box
