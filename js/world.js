@@ -17,7 +17,8 @@ export class World {
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
     this.actors = [this.player];
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom));
-    for (const room of rooms.slice(0, 4)) this.spawnPack(room, this.rng.int(4, 7));
+    // A pack in about a third of the rooms.
+    for (const room of rooms.slice(0, Math.round(level.rooms.length / 3))) this.spawnPack(room, this.rng.int(4, 7));
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
     this.updateFov();

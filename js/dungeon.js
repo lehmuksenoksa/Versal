@@ -13,8 +13,12 @@ export const DIRS8 = [
   [1, -1], [1, 1], [-1, 1], [-1, -1],
 ];
 
+// The level's size in squares. Room counts and the like scale with its area
+// (they were set for 64 by 44).
+export const LEVEL = { w: 96, h: 64 };
+
 export function generateLevel(rng) {
-  const W = 64, H = 44;
+  const { w: W, h: H } = LEVEL;
   for (let attempt = 0; attempt < 20; attempt++) {
     const level = tryGenerate(W, H, rng);
     if (level) return level;
@@ -28,8 +32,9 @@ function tryGenerate(W, H, rng) {
   const idx = (x, y) => y * W + x;
   const rooms = [];
 
-  const target = rng.int(10, 14);
-  for (let tries = 0; tries < 600 && rooms.length < target; tries++) {
+  const per = (W * H) / (64 * 44), more = (n) => Math.round(n * per);
+  const target = more(rng.int(10, 14));
+  for (let tries = 0; tries < more(600) && rooms.length < target; tries++) {
     const isCave = rng.chance(0.35);
     const big = rng.chance(0.25);
     const w = isCave ? rng.int(6, 12) : big ? rng.int(9, 13) : rng.int(4, 9);
@@ -42,7 +47,7 @@ function tryGenerate(W, H, rng) {
     );
     if (!clash) rooms.push(r);
   }
-  if (rooms.length < 7) return null;
+  if (rooms.length < more(7)) return null;
 
   for (const r of rooms) {
     if (r.cave) carveCave(r, rng, (x, y) => { tiles[idx(x, y)] = T.FLOOR; cave[idx(x, y)] = 1; });
@@ -77,7 +82,7 @@ function tryGenerate(W, H, rng) {
     inTree.add(best.j);
   }
   // A few loops so the map is not a pure tree.
-  for (let k = rng.int(2, 4); k > 0; k--) {
+  for (let k = more(rng.int(2, 4)); k > 0; k--) {
     const a = rng.pick(rooms);
     const near = rooms.filter((r) => r !== a).sort((p, q) => dist(a, p) - dist(a, q));
     connect(a, near[rng.int(1, Math.min(2, near.length - 1))]);
