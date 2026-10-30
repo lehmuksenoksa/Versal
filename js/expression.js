@@ -216,7 +216,7 @@ export class Expression {
     this.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
     this.rock.addPath(drawn.floor);
     const sw = Math.ceil(W * TS * this.sightScale), sh = Math.ceil(H * TS * this.sightScale);
-    this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh) };
+    this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
@@ -311,10 +311,12 @@ export class Expression {
     const near = (l) => Math.hypot(Math.max(l.x0 - tx - 0.5, 0, tx + 0.5 - l.x1), Math.max(l.y0 - ty - 0.5, 0, ty + 0.5 - l.y1)) < LAMP_SEE;
     const lamps = this.lampLevel && this.lamps.some(near);
     const reach = lamps ? Math.max(far, LAMP_SEE) : far;
-    // (The far view from the player's middle alone; near, from the flame's
-    // points too.)
-    const path = this.viewFrom(px, py, (far + 1) * TS);
-    this.lampView = lamps ? this.walls.visible(px, py, (LAMP_SEE + 1) * TS) : null;
+    // (The view from the flame's points; and, as far as lights may light
+    // what is seen, from the same points, so the two agree.)
+    // (The one view serves for both when lights are near: what it sees beyond
+    // `far` counts only where lit.)
+    this.lampView = lamps ? this.viewFrom(px, py, (LAMP_SEE + 1) * TS) : null;
+    const path = this.lampView ?? this.viewFrom(px, py, (far + 1) * TS);
     // Only the square the view can reach is looked at.
     const m = Math.ceil((reach + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
     const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
@@ -374,20 +376,23 @@ export class Expression {
     }
     this.visNow = vis;
     // (The lights that light anything in sight now: a few points round each.)
-    this.lampsSeen = (this.lamps ?? []).filter((l) => lamps && l.probes.some(([x, y]) => {
-      const i = Math.floor(x * R), j = Math.floor(y * R);
-      return i >= 0 && j >= 0 && i < mw && j < mh && vis[j * mw + i] > 0.01;
-    }));
+    this.lampsSeen = (this.lamps ?? []).filter((l) => lamps && l.cells.some((j) => vis[j] > 0.01));
     this.sightRock(visRock, x0, y0, x1, y1);
     return grew;
   }
 
   // What can be seen from (px, py), out to `r`: from any of the flame's
   // points, so what the light reaches is seen.
+  // (Its `beyond(depth)`: the same view pushed that far on into the rock.)
   viewFrom(px, py, r) {
-    const f = this.S.flame * this.TS, path = new Path2D();
-    path.addPath(this.walls.visible(px, py, r));
-    if (f > 0) for (const [dx, dy] of [[f, 0], [-f, 0], [0, f], [0, -f]]) path.addPath(this.walls.visible(px + dx, py + dy, r));
+    const f = this.S.flame * this.TS, path = new Path2D(), views = [this.walls.visible(px, py, r)];
+    if (f > 0) for (const [dx, dy] of [[f, 0], [-f, 0], [0, f], [0, -f]]) views.push(this.walls.visible(px + dx, py + dy, r));
+    for (const v of views) path.addPath(v);
+    path.beyond = (depth) => {
+      const out = new Path2D();
+      for (const v of views) out.addPath(v.beyond(depth));
+      return out;
+    };
     return path;
   }
 
@@ -1148,12 +1153,30 @@ export class Expression {
     g.filter = S.blockSoft > 0 ? `blur(${S.blockSoft * TS * this.sightScale * 0.5}px)` : "none";
     g.fill(path);
     g.filter = "none";
-    // And what lights light, far off, in view from the player's square.
+    // And what lights light, far off, in view from the player's square (and
+    // the rock they light past the walls in view).
+    // (Kept apart too, `lamps`: where their light is seen, for showing it only
+    // there, not on rock seen from its dark side.)
+    const lg = this.sightCanvas.lamps.getContext("2d");
+    lg.setTransform(1, 0, 0, 1, 0, 0);
+    lg.clearRect(0, 0, target.width, target.height);
     if (this.lampView && this.lampSight) {
+      for (const c of [g, lg]) {
+        c.save();
+        c.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
+        c.clip(this.lampView.beyond(S.lightWall * TS));
+        c.imageSmoothingEnabled = true;
+        c.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
+        c.restore();
+      }
+      // (The rock round lit floor seen as far off as the floor is: round the
+      // lights in sight, behind the walls in view.)
       g.save();
-      g.clip(this.lampView);
-      g.imageSmoothingEnabled = true;
-      g.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
+      g.beginPath();
+      for (const l of this.lampsSeen ?? []) g.rect(l.x0 * TS, l.y0 * TS, (l.x1 - l.x0) * TS, (l.y1 - l.y0) * TS);
+      g.clip();
+      g.clip(this.lampView.beyond(S.reach * TS));
+      g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
       g.restore();
     }
     this.sightFrom = [px, py];
@@ -1472,14 +1495,35 @@ export class Expression {
       wg.clip();
       wg.setTransform(T);
       this.region(wg, this.lit, this.scale, lamp.view);
+      // (Warmed twice over, as where the player's lamp warms it too: so the
+      // same with the lamp lit or out. Where the lamp's light is, it does
+      // the second warming itself.)
       {
+        const warm = `rgba(255, 196, 120, ${LAMP_WARMTH * 0.35})`, v = lamp.view;
         wg.globalCompositeOperation = "multiply";
-        wg.fillStyle = `rgba(255, 196, 120, ${LAMP_WARMTH * 0.35})`;
-        wg.fillRect(lamp.view.x, lamp.view.y, lamp.view.w, lamp.view.h);
+        wg.fillStyle = warm;
+        wg.fillRect(v.x, v.y, v.w, v.h);
+        const c = this.warm2 || (this.warm2 = blank(1, 1)), cg = c.getContext("2d");
+        if (c.width !== w.width || c.height !== w.height) { c.width = w.width; c.height = w.height; }
+        cg.setTransform(1, 0, 0, 1, 0, 0);
+        cg.globalCompositeOperation = "source-over";
+        cg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
+        cg.setTransform(T);
+        cg.fillStyle = warm;
+        cg.fillRect(v.x, v.y, v.w, v.h);
+        if (S.warmth > 0) {
+          cg.globalCompositeOperation = "destination-out";
+          this.drawLightBox(cg);
+          cg.globalCompositeOperation = "source-over";
+        }
+        wg.setTransform(1, 0, 0, 1, 0, 0);
+        wg.drawImage(c, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
+        wg.setTransform(T);
       }
       wg.globalCompositeOperation = "destination-in";
       this.region(wg, this.lampCanvas, R / this.TS, lamp.view);
       this.region(wg, this.sightCanvas.eased, ss, lamp.view);
+      this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
       this.region(wg, this.seenShape, this.scale, lamp.view);
       wg.restore();
       g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1581,14 +1625,20 @@ export class Expression {
   // (mask resolution), as a picture to show the lit map through
   // (`lampCanvas`), and what it lets the player see from afar
   // (`lampSight`). Each light and lit place, for finding those in sight:
-  // `lamps` (each the box it lights { x0, y0, x1, y1 } and points in it to
-  // look for, `probes`, in squares).
+  // `lamps` (each the box it lights { x0, y0, x1, y1 }, in squares, and
+  // some of the map points it lights to look for, `cells`).
   lightLamps() {
     const { mw, mh, TS, S, level: L } = this, lights = L.lights ?? [], places = this.litPlaces();
     this.lampLevel = this.lampCanvas = this.lampSight = null;
     this.lamps = [];
     if (!lights.length && !places.length) return;
     const level = (this.lampLevel = new Float32Array(mw * mh));
+    // (Every fourth map point each way that the light being laid lights.)
+    let cells;
+    const mark = (x, y, j, v) => {
+      if (v > level[j]) level[j] = v;
+      if (v > 0 && !(x & 3) && !(y & 3)) cells.add(j);
+    };
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
     // Lights the map points round (x, y) (squares) in line of sight within
     // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly.
@@ -1604,20 +1654,18 @@ export class Expression {
         for (let x = x0; x < x1; x++) {
           if (a[((y - y0) * bw + (x - x0)) * 4 + 3] < 128) continue;
           const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R), j = y * mw + x;
-          const v = band(dist(mx, my) + rag(mx, my));
-          if (v > level[j]) level[j] = v;
+          mark(x, y, j, band(dist(mx, my) + rag(mx, my)));
         }
     };
     for (const l of lights) {
       const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
+      cells = new Set();
       shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      const probes = [];
-      for (const r of [0, B.full * 0.5, B.full, B.full + B.dim])
-        for (let k = 0; k < (r ? 12 : 1); k++) probes.push([l.x + r * Math.cos((k * Math.PI) / 6), l.y + r * Math.sin((k * Math.PI) / 6)]);
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, probes });
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells] });
     }
     const out = LIT.dim + LIT.dark;
     for (const p of places) {
+      cells = new Set();
       // Throughout: its squares, and the rock round them as far as a light
       // lights past a wall.
       const wall = Math.ceil(S.lightWall * R);
@@ -1626,15 +1674,13 @@ export class Expression {
           for (let mx = x * R - wall; mx < (x + 1) * R + wall; mx++) {
             if (mx < 0 || my < 0 || mx >= mw || my >= mh) continue;
             const j = my * mw + mx, inside = mx >= x * R && mx < (x + 1) * R && my >= y * R && my < (y + 1) * R;
-            if (inside || (!this.floor[j] && Math.hypot(Math.max(x * R - mx - 0.5, 0, mx + 0.5 - (x + 1) * R), Math.max(y * R - my - 0.5, 0, my + 0.5 - (y + 1) * R)) / R + rag((mx + 0.5) * (TS / R), (my + 0.5) * (TS / R)) < S.lightWall)) level[j] = 1;
+            if (inside || (!this.floor[j] && Math.hypot(Math.max(x * R - mx - 0.5, 0, mx + 0.5 - (x + 1) * R), Math.max(y * R - my - 0.5, 0, my + 0.5 - (y + 1) * R)) / R + rag((mx + 0.5) * (TS / R), (my + 0.5) * (TS / R)) < S.lightWall)) mark(mx, my, j, 1);
           }
       // Out of each opening: from each of its squares by unlit floor, the
       // bands by how far past that square's edge.
       for (const [x, y] of p.edges)
         shine(x + 0.5, y + 0.5, out + 0.5, (mx, my) => Math.hypot(Math.max(x - mx / TS, 0, mx / TS - x - 1), Math.max(y - my / TS, 0, my / TS - y - 1)), (e) => (e <= 0 ? 1 : e < LIT.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      const probes = p.squares.filter((_, i) => i % 3 === 0).map(([x, y]) => [x + 0.5, y + 0.5]);
-      for (const [x, y] of p.edges) probes.push([x + 0.5, y + 0.5]);
-      this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, probes });
+      this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, cells: [...cells] });
     }
     const pic = (alpha) => {
       const c = blank(mw, mh), im = new ImageData(mw, mh);
