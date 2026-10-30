@@ -633,7 +633,7 @@ function tryAreas(S, rng) {
     blocks.add(idx(best.x, best.y));
     r.campfire = true;
     lights.push({ x: best.x + 0.5, y: best.y + 0.5, kind: "fire" });
-    features.push({ type: "campfire", x: best.x + 0.5, y: best.y + 0.5, logs: rng.int(0, 2), stones: rng.int(6, 9) });
+    features.push({ type: "campfire", x: best.x + 0.5, y: best.y + 0.5 });
   }
   for (const r of rooms) {
     if (!r.kind || !rng.chance(S.litRooms)) continue;

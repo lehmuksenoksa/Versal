@@ -4,6 +4,7 @@
 
 import { INK, PAPER } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
+import { drawFire } from "./fire.js";
 
 export { EXPRESSION_DEFAULTS };
 
@@ -125,6 +126,7 @@ export class Renderer {
 
   setWorld(world) {
     this.world = world;
+    this.fires = new Map();
     this.world.sight = this.settings.sight;
     this.world.updateFov();
     this.views.clear();
@@ -357,6 +359,15 @@ export class Renderer {
     const view = { x: cx, y: cy, w: vw, h: vh };
     this.exp.update(now, dt, px, py);
     this.exp.drawMap(ctx, view, now);
+    // Campfires burning, while in sight (fading in and out as goblins do).
+    this.fires ??= new Map();
+    (L.lights ?? []).forEach((l, i) => {
+      if (l.kind !== "fire") return;
+      const x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
+      const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
+      this.fires.set(l, a);
+      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(ctx, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a);
+    });
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
       // Goblins show only while in sight, fading in and out.

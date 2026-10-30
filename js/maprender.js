@@ -311,7 +311,17 @@ export function pen(ctx, rng, k, mode = "paper") {
       if (inked) ctx.stroke();
     }
   };
-  return { j, line, shape, box, round };
+  // A lump, as the rubble's stones: a closed outline through `pts` in one
+  // heavy stroke, round at the corners; `fill` inside if given.
+  const lump = (pts, width, fill) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    if (fill) paint(fill);
+    ctx.lineWidth = width * k;
+    if (inked) ctx.stroke();
+  };
+  return { j, line, shape, box, round, lump };
 }
 
 // Doors (each { x, y, dx, dy, open }: in the tile at x, y, opening that way
@@ -656,31 +666,31 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper") {
       const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
       P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
     } else if (f.type === "campfire") {
-      // A ring of stones, crossed logs, and the fire a burst of short
-      // strokes.
-      const n = 7, a0 = rng.range(0, 2 * Math.PI);
-      for (let i = 0; i < n; i++) {
-        const a = a0 + (i * 2 * Math.PI) / n + rng.range(-0.15, 0.15), rr = TS * rng.range(0.36, 0.42);
-        P.round(x + Math.cos(a) * rr, y + Math.sin(a) * rr, TS * rng.range(0.08, 0.11), IN, PAPER);
+      // A ring of lumpy stones of mixed sizes, each touching the next (their
+      // sizes scaled a little so the ring closes), round a heap of logs. (The
+      // flame is drawn over it as it burns: fire.js.)
+      const R = TS * 0.42, rs = [];
+      for (let len = 0; len < 2 * Math.PI * R; ) {
+        const r = TS * rng.range(0.07, 0.14);
+        len += (rs.at(-1) ?? 0) + r;
+        rs.push(r);
       }
-      const b = rng.range(0, Math.PI);
-      for (const a of [b, b + Math.PI / 2 + rng.range(-0.3, 0.3)]) {
-        const c = Math.cos(a) * TS * 0.24, sn = Math.sin(a) * TS * 0.24;
-        P.line(x - c, y - sn, x + c, y + sn, OUT);
-      }
-      for (let i = 0; i < 9; i++) {
-        const a = (i * 2 * Math.PI) / 9 + rng.range(-0.2, 0.2), r0 = TS * 0.06, r1 = TS * rng.range(0.16, 0.26);
-        P.line(x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1, IN);
-      }
-    } else if (f.type === "torch") {
-      // A bracket off the wall (dx, dy: into the wall), the flame at its end
-      // with a few short rays.
-      const fx = x - f.dx * TS * 0.2, fy = y - f.dy * TS * 0.2;
-      P.line(x + f.dx * TS * 0.05, y + f.dy * TS * 0.05, fx, fy, IN + 0.6);
-      P.round(fx, fy, TS * 0.07, IN, INK);
-      for (let i = 0; i < 6; i++) {
-        const a = Math.atan2(-f.dy, -f.dx) + ((i - 2.5) * Math.PI) / 6 + rng.range(-0.15, 0.15), r0 = TS * 0.11, r1 = TS * rng.range(0.17, 0.23);
-        P.line(fx + Math.cos(a) * r0, fy + Math.sin(a) * r0, fx + Math.cos(a) * r1, fy + Math.sin(a) * r1, 1.4);
+      const fit = (2 * Math.PI * R) / rs.reduce((t, r, i) => t + r + rs[(i + 1) % rs.length], 0);
+      let a = rng.range(0, 2 * Math.PI);
+      rs.forEach((r, i) => {
+        const at = R + rng.range(-0.02, 0.02) * TS, cx = x + Math.cos(a) * at, cy = y + Math.sin(a) * at;
+        const m = rng.int(6, 8), a0 = rng.range(0, 2 * Math.PI), pts = [];
+        for (let q = 0; q < m; q++) {
+          const b = a0 + (q / m) * 2 * Math.PI + rng.range(-0.25, 0.25), rr = ((r * fit) / 0.9) * rng.range(0.8, 1.12);
+          pts.push([cx + Math.cos(b) * rr, cy + Math.sin(b) * rr]);
+        }
+        P.lump(pts, 2.7, PAPER);
+        a += ((r + rs[(i + 1) % rs.length]) * fit) / R;
+      });
+      for (const b of [0.2, 1.3, 2.4, 3.5, 4.6, 5.6]) {
+        const c = Math.cos(b), sn = Math.sin(b), lx = x + c * 0.12 * TS, ly = y + sn * 0.12 * TS;
+        P.box(lx, ly, 0.42 * TS, 0.11 * TS, b, IN + 0.4, PAPER);
+        P.round(lx + c * 0.21 * TS, ly + sn * 0.21 * TS, 0.05 * TS, 1.2);
       }
     }
   }
