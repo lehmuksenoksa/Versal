@@ -201,8 +201,8 @@ export function wallLine(ctx, a, b, TS, rng) {
   wallStroke(ctx, a, b, WALL.weight * k, WALL.bow * k, rng);
 }
 
-// Doors (each { x, y, dx, dy }: in the tile at x, y, opening that way into a
-// room): across that square a little way out from the room's edge, a short
+// Doors (each { x, y, dx, dy, open }: in the tile at x, y, opening that way
+// into a room; shut, or swung open): across that square a little way out from the room's edge, a short
 // jamb of wall standing out
 // from each side wall, and between their ends a pen outline of the door; a
 // little uneven, as if drawn by hand.
@@ -214,7 +214,7 @@ function drawDoors(ctx, doors, TS, rng) {
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
-  for (const { x, y, dx, dy } of doors) {
+  for (const { x, y, dx, dy, open } of doors) {
     // (A quarter of the square back from the middle, toward the room, so
     // near it but not into it.)
     const cx = (x + 0.5 + dx * 0.25) * TS, cy = (y + 0.5 + dy * 0.25) * TS, thick = TS * rng.range(0.28, 0.33);
@@ -236,11 +236,19 @@ function drawDoors(ctx, doors, TS, rng) {
       ctx.fill();
     }
     ctx.lineWidth = weight * 0.45;
+    // Shut, across the way between the jambs' ends; open, swung on its hinge
+    // at one jamb away from the room, lying along the side wall just off it.
+    let [x0, y0, x1, y1] = [-thick / 2, -tip, thick / 2, tip];
+    if (open) {
+      const side = rng.chance(0.5) ? 1 : -1;
+      [x0, x1] = [-thick / 2 - 2 * tip, -thick / 2];
+      [y0, y1] = side > 0 ? [tip - thick, tip] : [-tip, -tip + thick];
+    }
     ctx.beginPath();
-    ctx.moveTo(-thick / 2 + j(), -tip + j());
-    ctx.lineTo(thick / 2 + j(), -tip + j());
-    ctx.lineTo(thick / 2 + j(), tip + j());
-    ctx.lineTo(-thick / 2 + j(), tip + j());
+    ctx.moveTo(x0 + j(), y0 + j());
+    ctx.lineTo(x1 + j(), y0 + j());
+    ctx.lineTo(x1 + j(), y1 + j());
+    ctx.lineTo(x0 + j(), y1 + j());
     ctx.closePath();
     ctx.stroke();
     ctx.restore();

@@ -91,6 +91,7 @@
     <label for="density">Rooms <output id="density-v"></output><input id="density" type="range" min="0.1" max="1" step="0.05"></label>
     <label for="loops">Extra corridors, making loops <output id="loops-v"></output><input id="loops" type="range" min="0" max="1" step="0.05"></label>
     <label for="doors">Doors in dungeon rooms' doorways <output id="doors-v"></output><input id="doors" type="range" min="0" max="1" step="0.05"></label>
+    <label for="openDoors">Doors left open <output id="openDoors-v"></output><input id="openDoors" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -129,7 +130,7 @@ const TINT = { dungeon: "61, 106, 158", cavern: "78, 138, 74", collapsed: "184, 
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
-  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct,
+  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct, openDoors: pct,
   caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
   collapse: pct, rubble: pct, caveRubble: pct, zoom: pct,
 };

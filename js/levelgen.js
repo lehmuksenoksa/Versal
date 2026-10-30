@@ -8,8 +8,9 @@
 // A corridor changes as it crosses from one region into another.
 // The level has the shape the game and the map drawing expect (see
 // dungeon.js), and also `area` (each tile's region type, an index into
-// AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy }: a
-// door in the tile at x, y, the dungeon room it opens into that way) and `regions`
+// AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy, open }:
+// a door in the tile at x, y, the dungeon room it opens into that way, shut
+// or open) and `regions`
 // (their seed points and types).
 
 import { T, carveCave } from "./dungeon.js";
@@ -23,8 +24,9 @@ export const LEVELGEN_DEFAULTS = {
   // How many regions, and how likely each type is.
   regions: 3, dungeon: 2, cavern: 2, collapsed: 1,
   // Rooms per 100 squares of level; extra corridors (making loops) per room;
-  // the share of doorways into clean dungeon rooms that have a door.
-  density: 0.4, loops: 0.2, doors: 0.8,
+  // the share of doorways into clean dungeon rooms that have a door, and of
+  // those doors left open.
+  density: 0.4, loops: 0.2, doors: 0.8, openDoors: 0.25,
   // Caves' size; rock formations per 30 squares of a big cave, and their
   // largest size in squares; cavern passages' width in squares.
   caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
@@ -318,7 +320,7 @@ function tryAreas(S, rng) {
       // Walled to either side, along the wall.
       if (floorAt(x + dy, y + dx) || floorAt(x - dy, y - dx)) continue;
       if (!plain(x, y) || !plain(x + dy, y + dx) || !plain(x - dy, y - dx)) continue;
-      if (rng.chance(S.doors)) doors.push({ x, y, dx, dy });
+      if (rng.chance(S.doors)) doors.push({ x, y, dx, dy, open: rng.chance(S.openDoors) });
     }
   }
 
