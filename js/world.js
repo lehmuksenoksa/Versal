@@ -57,7 +57,13 @@ export class World {
     this.lit = new Uint8Array(level.w * level.h);
     const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     for (const l of level.lights ?? [])
-      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), l.kind === "fire" ? 4 : 2.5, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
+      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 4, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
+    // (A lit place, and the open squares next to it, its light's dim band.)
+    for (let y = 0; y < level.h; y++)
+      for (let x = 0; x < level.w; x++) {
+        if (!level.lit?.[y * level.w + x]) continue;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!opaque(x + dx, y + dy)) this.lit[(y + dy) * level.w + x + dx] = 1;
+      }
     // A pack round every campfire, awake; and in about a third of the rooms.
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
     const packs = Math.max(Math.round(level.rooms.length / 3), rooms.filter((r) => r.campfire).length);

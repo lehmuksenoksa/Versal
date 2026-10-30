@@ -16,6 +16,7 @@ import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds } from "./hatching.js";
 import { RNG } from "./rng.js";
 import { Walls } from "./sightline.js";
+import { T } from "./dungeon.js";
 
 export const EXPRESSION_DEFAULTS = {
   // Sight: clear out to `sight` tiles, then fading out with distance over
@@ -60,10 +61,15 @@ export const EXPRESSION_DEFAULTS = {
 export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
-// Lights in the level (campfires, torches): their bands, in squares from the
+// Lights in the level (campfires): their bands, in squares from the
 // light, like the candle's; and how far off the player sees what they light.
-const LAMPS = { fire: { full: 2.5, dim: 1.5, dark: 2 }, torch: { full: 1.5, dim: 1, dark: 1.5 } };
+const LAMPS = { fire: { full: 2.5, dim: 1.5, dark: 2 } };
+// Lit places (rooms, stretches of corridor): lit throughout, the light
+// pouring out of them in bands as the player's, in squares past their edge.
+const LIT = { dim: 1, dark: 2 };
 const LAMP_SEE = 24;
+// How warm their light is (as `warmth`; theirs whatever the player's lamp).
+const LAMP_WARMTH = 0.7;
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
 // Walls show beside floor seen this near (in tiles, over the floor).
@@ -302,7 +308,8 @@ export class Expression {
     const { mw, mh, floor, seen, S, TS } = this, px = (tx + 0.5) * TS, py = (ty + 0.5) * TS, far = S.sight + S.sightFade;
     this.player = { x: tx, y: ty };
     // (Further, where lights near by may light what can be seen far off.)
-    const lamps = this.lampLevel && (this.level.lights ?? []).some((l) => Math.hypot(l.x - tx - 0.5, l.y - ty - 0.5) < LAMP_SEE + 6);
+    const near = (l) => Math.hypot(Math.max(l.x0 - tx - 0.5, 0, tx + 0.5 - l.x1), Math.max(l.y0 - ty - 0.5, 0, ty + 0.5 - l.y1)) < LAMP_SEE;
+    const lamps = this.lampLevel && this.lamps.some(near);
     const reach = lamps ? Math.max(far, LAMP_SEE) : far;
     // (The far view from the player's middle alone; near, from the flame's
     // points too.)
@@ -367,16 +374,10 @@ export class Expression {
     }
     this.visNow = vis;
     // (The lights that light anything in sight now: a few points round each.)
-    this.lampsSeen = (this.level.lights ?? []).filter((l) => {
-      if (!lamps) return false;
-      const B = LAMPS[l.kind] ?? LAMPS.torch;
-      for (const r of [0, B.full * 0.5, B.full, B.full + B.dim])
-        for (let k = 0; k < (r ? 12 : 1); k++) {
-          const i = Math.floor((l.x + r * Math.cos((k * Math.PI) / 6)) * R), j = Math.floor((l.y + r * Math.sin((k * Math.PI) / 6)) * R);
-          if (i >= 0 && j >= 0 && i < mw && j < mh && vis[j * mw + i] > 0.01) return true;
-        }
-      return false;
-    });
+    this.lampsSeen = (this.lamps ?? []).filter((l) => lamps && l.probes.some(([x, y]) => {
+      const i = Math.floor(x * R), j = Math.floor(y * R);
+      return i >= 0 && j >= 0 && i < mw && j < mh && vis[j * mw + i] > 0.01;
+    }));
     this.sightRock(visRock, x0, y0, x1, y1);
     return grew;
   }
@@ -1471,9 +1472,9 @@ export class Expression {
       wg.clip();
       wg.setTransform(T);
       this.region(wg, this.lit, this.scale, lamp.view);
-      if (S.warmth > 0) {
+      {
         wg.globalCompositeOperation = "multiply";
-        wg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
+        wg.fillStyle = `rgba(255, 196, 120, ${LAMP_WARMTH * 0.35})`;
         wg.fillRect(lamp.view.x, lamp.view.y, lamp.view.w, lamp.view.h);
       }
       wg.globalCompositeOperation = "destination-in";
@@ -1548,11 +1549,10 @@ export class Expression {
     const TS = this.TS;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const l of this.lampsSeen ?? []) {
-      const B = LAMPS[l.kind] ?? LAMPS.torch, out = B.full + B.dim + B.dark + 1;
-      x0 = Math.min(x0, (l.x - out) * TS);
-      y0 = Math.min(y0, (l.y - out) * TS);
-      x1 = Math.max(x1, (l.x + out) * TS);
-      y1 = Math.max(y1, (l.y + out) * TS);
+      x0 = Math.min(x0, (l.x0 - 1) * TS);
+      y0 = Math.min(y0, (l.y0 - 1) * TS);
+      x1 = Math.max(x1, (l.x1 + 1) * TS);
+      y1 = Math.max(y1, (l.y1 + 1) * TS);
     }
     if (!(x1 > x0)) return null;
     const X0 = Math.max(0, Math.floor(T.a * x0 + T.e)), Y0 = Math.max(0, Math.floor(T.d * y0 + T.f));
@@ -1574,20 +1574,27 @@ export class Expression {
 
   // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
   // light it is in, if in sight.
-  // The level's lights (campfires, torches), each cast against the walls,
-  // posts and shut doors and lighting the rim of rock past them, in bands
-  // with ragged edges like the candle's: `lampLevel` (mask resolution), as a
-  // picture to show the lit map through (`lampCanvas`), and what it lets the
-  // player see from afar (`lampSight`).
+  // The level's lights (campfires), each cast against the walls, posts and
+  // shut doors and lighting the rim of rock past them, in bands with ragged
+  // edges like the candle's; and its lit places, lit throughout, the light
+  // pouring out of their openings in bands the same way. As `lampLevel`
+  // (mask resolution), as a picture to show the lit map through
+  // (`lampCanvas`), and what it lets the player see from afar
+  // (`lampSight`). Each light and lit place, for finding those in sight:
+  // `lamps` (each the box it lights { x0, y0, x1, y1 } and points in it to
+  // look for, `probes`, in squares).
   lightLamps() {
-    const { mw, mh, TS, S } = this, lights = this.level.lights ?? [];
+    const { mw, mh, TS, S, level: L } = this, lights = L.lights ?? [], places = this.litPlaces();
     this.lampLevel = this.lampCanvas = this.lampSight = null;
-    if (!lights.length) return;
+    this.lamps = [];
+    if (!lights.length && !places.length) return;
     const level = (this.lampLevel = new Float32Array(mw * mh));
-    for (const l of lights) {
-      const B = LAMPS[l.kind] ?? LAMPS.torch, out = B.full + B.dim + B.dark;
-      const rim = this.lightWalls.visible(l.x * TS, l.y * TS, (out + 0.5) * TS).beyond(S.lightWall * TS);
-      const m = Math.ceil((out + 1) * R), cx = Math.floor(l.x * R), cy = Math.floor(l.y * R);
+    const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
+    // Lights the map points round (x, y) (squares) in line of sight within
+    // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly.
+    const shine = (x, y, out, dist, band) => {
+      const rim = this.lightWalls.visible(x * TS, y * TS, (out + 0.5) * TS).beyond(S.lightWall * TS);
+      const m = Math.ceil((out + 1) * R), cx = Math.floor(x * R), cy = Math.floor(y * R);
       const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
       const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
       g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
@@ -1597,10 +1604,37 @@ export class Expression {
         for (let x = x0; x < x1; x++) {
           if (a[((y - y0) * bw + (x - x0)) * 4 + 3] < 128) continue;
           const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R), j = y * mw + x;
-          const e = Math.hypot(mx / TS - l.x, my / TS - l.y) + S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
-          const v = e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0;
+          const v = band(dist(mx, my) + rag(mx, my));
           if (v > level[j]) level[j] = v;
         }
+    };
+    for (const l of lights) {
+      const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
+      shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
+      const probes = [];
+      for (const r of [0, B.full * 0.5, B.full, B.full + B.dim])
+        for (let k = 0; k < (r ? 12 : 1); k++) probes.push([l.x + r * Math.cos((k * Math.PI) / 6), l.y + r * Math.sin((k * Math.PI) / 6)]);
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, probes });
+    }
+    const out = LIT.dim + LIT.dark;
+    for (const p of places) {
+      // Throughout: its squares, and the rock round them as far as a light
+      // lights past a wall.
+      const wall = Math.ceil(S.lightWall * R);
+      for (const [x, y] of p.squares)
+        for (let my = y * R - wall; my < (y + 1) * R + wall; my++)
+          for (let mx = x * R - wall; mx < (x + 1) * R + wall; mx++) {
+            if (mx < 0 || my < 0 || mx >= mw || my >= mh) continue;
+            const j = my * mw + mx, inside = mx >= x * R && mx < (x + 1) * R && my >= y * R && my < (y + 1) * R;
+            if (inside || (!this.floor[j] && Math.hypot(Math.max(x * R - mx - 0.5, 0, mx + 0.5 - (x + 1) * R), Math.max(y * R - my - 0.5, 0, my + 0.5 - (y + 1) * R)) / R + rag((mx + 0.5) * (TS / R), (my + 0.5) * (TS / R)) < S.lightWall)) level[j] = 1;
+          }
+      // Out of each opening: from each of its squares by unlit floor, the
+      // bands by how far past that square's edge.
+      for (const [x, y] of p.edges)
+        shine(x + 0.5, y + 0.5, out + 0.5, (mx, my) => Math.hypot(Math.max(x - mx / TS, 0, mx / TS - x - 1), Math.max(y - my / TS, 0, my / TS - y - 1)), (e) => (e <= 0 ? 1 : e < LIT.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
+      const probes = p.squares.filter((_, i) => i % 3 === 0).map(([x, y]) => [x + 0.5, y + 0.5]);
+      for (const [x, y] of p.edges) probes.push([x + 0.5, y + 0.5]);
+      this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, probes });
     }
     const pic = (alpha) => {
       const c = blank(mw, mh), im = new ImageData(mw, mh);
@@ -1610,6 +1644,37 @@ export class Expression {
     };
     this.lampCanvas = pic((v) => v);
     this.lampSight = pic((v) => clamp01(v / Math.max(0.01, S.darkLevel)));
+  }
+
+  // The level's lit places: each a run of lit squares ([x, y]s), its box
+  // (x0, y0, x1, y1, in squares), and its `edges`, the squares of it by floor
+  // not lit (where its light pours out).
+  litPlaces() {
+    const L = this.level, lit = L.lit, W = L.w, H = L.h, done = new Uint8Array(W * H), places = [];
+    if (!lit) return places;
+    const floor = (x, y) => x >= 0 && y >= 0 && x < W && y < H && L.tiles[y * W + x] === T.FLOOR;
+    for (let i = 0; i < W * H; i++) {
+      if (!lit[i] || done[i]) continue;
+      const squares = [], edges = [], q = [i];
+      done[i] = 1;
+      let x0 = W, y0 = H, x1 = 0, y1 = 0;
+      while (q.length) {
+        const j = q.pop(), x = j % W, y = (j - x) / W;
+        squares.push([x, y]);
+        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + 1); y1 = Math.max(y1, y + 1);
+        let edge = false;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy, n = ny * W + nx;
+            if (!floor(nx, ny)) continue;
+            if (!lit[n]) edge = true;
+            else if (!done[n] && (dx === 0 || dy === 0)) { done[n] = 1; q.push(n); }
+          }
+        if (edge) edges.push([x, y]);
+      }
+      places.push({ squares, edges, x0, y0, x1, y1 });
+    }
+    return places;
   }
 
   lightAt(x, y) {
