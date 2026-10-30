@@ -205,17 +205,25 @@ export function wallLine(ctx, a, b, TS, rng) {
 }
 
 // Doors (each { x, y, dx, dy }: in the tile at x, y, opening that way into a
-// room): a pen outline set across the way in, on the room's wall line (which
-// lies a little out into the rock), a little uneven as if drawn by hand.
+// room): on the room's wall line (which lies a little out into the rock), a
+// stub of wall standing out from each side of the way in, and between them a
+// pen outline of the door, a little uneven as if drawn by hand.
 function drawDoors(ctx, doors, TS, rng) {
   const k = TS / 32, weight = WALL.weight * k, shift = weight * (0.5 - WALL.inside);
   ctx.save();
   ctx.strokeStyle = INK;
+  ctx.fillStyle = INK;
   ctx.lineJoin = "round";
-  ctx.lineWidth = weight * 0.5;
   for (const { x, y, dx, dy } of doors) {
     const cx = (x + 0.5 + dx * 0.5) * TS - dx * shift, cy = (y + 0.5 + dy * 0.5) * TS - dy * shift;
-    const len = TS * rng.range(0.94, 1.02), thick = TS * rng.range(0.32, 0.38);
+    const thick = TS * rng.range(0.32, 0.38), stub = TS * rng.range(0.15, 0.2), len = TS - 2 * stub + weight * 0.3;
+    // The stubs: from inside each side wall out into the way in.
+    const ux = -dy, uy = dx;
+    for (const side of [1, -1]) {
+      const from = TS / 2 + weight * 0.3, to = TS / 2 - stub;
+      wallStroke(ctx, [cx + ux * side * from, cy + uy * side * from], [cx + ux * side * to, cy + uy * side * to], thick * 0.95, WALL.bow * k, rng);
+    }
+    ctx.lineWidth = weight * 0.5;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(Math.atan2(dy, dx) + rng.range(-0.04, 0.04));
