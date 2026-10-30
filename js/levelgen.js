@@ -20,12 +20,12 @@ export const LEVELGEN_DEFAULTS = {
   // The level's size in squares.
   w: 96, h: 64,
   // How many regions, and how likely each type is.
-  regions: 3, dungeon: 1, cavern: 1, collapsed: 1,
+  regions: 3, dungeon: 2, cavern: 1, collapsed: 1,
   // Rooms per 100 squares of level; extra corridors (making loops) per room.
   density: 0.4, loops: 0.2,
   // Caves' size; rock formations per 30 squares of a big cave, and their
   // largest size in squares; cavern passages' width in squares.
-  caveSize: 1, formations: 0.6, formationSize: 4, passage: 2,
+  caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
   // In collapsed regions: the share of built rooms fallen in; and how much
   // rubble lies about.
   collapse: 0.6, rubble: 0.5,
