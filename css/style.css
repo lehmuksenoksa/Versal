@@ -5,4 +5,20 @@
 
 html, body { height: 100%; margin: 0; }
 body { background: #2b221c; overflow: hidden; }
-#view { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+#view { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+
+/* The actions, for touch screens: a small strip of inked paper buttons. */
+#actions {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: none; gap: 8px;
+}
+@media (pointer: coarse) { #actions { display: flex; } }
+#actions button {
+  font: italic 17px "IM Fell English", Georgia, serif; color: #1b1815;
+  background: #f7f2e6; border: 2px solid #1b1815; border-radius: 4px 7px 5px 8px / 7px 4px 8px 5px;
+  min-height: 44px; padding: 6px 12px; white-space: nowrap; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+#actions button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4); }
+#actions button:disabled { opacity: 0.45; }

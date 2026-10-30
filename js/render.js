@@ -353,6 +353,14 @@ export class Renderer {
     ctx.restore();
   }
 
+  // Where the player's square's middle is on the screen (CSS pixels), and a
+  // square's size there; null before the first frame.
+  playerOnScreen() {
+    const w = this.world, c = this.drawnCam;
+    if (!w || !c) return null;
+    return { x: ((w.player.x + 0.5) * this.TS - c[0]) * this.zoom, y: ((w.player.y + 0.5) * this.TS - c[1]) * this.zoom, size: this.TS * this.zoom };
+  }
+
   screenToTile(px, py) {
     return { x: Math.floor((px / this.zoom + this.cam.x) / this.TS), y: Math.floor((py / this.zoom + this.cam.y) / this.TS) };
   }
@@ -374,8 +382,11 @@ export class Renderer {
     const pk = ease(clamp01((now - pv.t0) / pv.dur));
     const px = (pv.fx + (pv.x - pv.fx) * pk + 0.5) * TS, py = (pv.fy + (pv.y - pv.fy) * pk + 0.5) * TS;
     const mw = L.w * TS, mh = L.h * TS;
+    // (The view above anything along the bottom of the screen, `inset`: the
+    // action strip.)
     const fit = (target, view, size) => (size + 64 < view ? (size - view) / 2 : Math.max(-32, Math.min(size - view + 32, target)));
-    const tx = fit(px - vw / 2, vw, mw), ty = fit(py - vh / 2, vh, mh);
+    const ih = vh - (this.inset ?? 0) / this.zoom;
+    const tx = fit(px - vw / 2, vw, mw), ty = fit(py - ih / 2, ih, mh);
     if (this.cam.snap) { this.cam.x = tx; this.cam.y = ty; this.cam.snap = false; }
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;
@@ -387,6 +398,7 @@ export class Renderer {
     const key = `${cx},${cy},${sc},${this.canvas.width},${this.canvas.height}`;
     const fresh = !this.low || !this.mapCache || now - this.mapAt >= 1000 / (key !== this.mapKey ? LOW.movingFps : LOW.mapFps);
     if (!fresh) [cx, cy] = this.mapCam;
+    this.drawnCam = [cx, cy];
     const view = { x: cx, y: cy, w: vw, h: vh };
     if (this.low) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
     else this.exp.update(now, dt, px, py);

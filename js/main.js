@@ -48,20 +48,95 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// Click or tap: one step toward that spot.
-canvas.addEventListener("click", (e) => {
-  if (!world) return;
-  const r = canvas.getBoundingClientRect();
-  const t = renderer.screenToTile(e.clientX - r.left, e.clientY - r.top);
-  const dx = Math.sign(t.x - world.player.x), dy = Math.sign(t.y - world.player.y);
-  if (dx || dy) step(dx, dy, false);
+// Touch and mouse: a tap steps once toward the finger, which way by the
+// angle from the player (straight up, down and across taking more of it
+// than the diagonals, `straight`); held, the player keeps walking, steered
+// by the finger, sliding round a wall in the way, until a goblin not in
+// sight before comes into it. Too near the player (`dead`, in squares), no
+// step.
+const HOLD = { delay: 280, every: 160, dead: 0.45, straight: 27.5 };
+let hold = null;
+
+function dirTo(clientX, clientY) {
+  const r = canvas.getBoundingClientRect(), p = renderer.playerOnScreen();
+  if (!p) return null;
+  const x = clientX - r.left - p.x, y = clientY - r.top - p.y;
+  if (Math.hypot(x, y) < HOLD.dead * p.size) return null;
+  const a = Math.atan2(y, x), q = Math.PI / 2, c = Math.round(a / q) * q;
+  const along = Math.abs(a - c) <= (HOLD.straight * Math.PI) / 180 ? c : Math.round((a - q / 2) / q) * q + q / 2;
+  return { a, along };
+}
+
+const stepAt = (t) => [Math.round(Math.cos(t)), Math.round(Math.sin(t))];
+
+// A step along `d`; walking, if that way is blocked, the way 45° either side
+// nearer the finger.
+function stepToward(d, walking) {
+  const tries = [d.along];
+  if (walking) tries.push(...[d.along + Math.PI / 4, d.along - Math.PI / 4].sort((p, q) => Math.abs(Math.atan2(Math.sin(p - d.a), Math.cos(p - d.a))) - Math.abs(Math.atan2(Math.sin(q - d.a), Math.cos(q - d.a)))));
+  for (const t of tries) if (world.playerMove(...stepAt(t))) return true;
+  return false;
+}
+
+const goblinsInSight = () => new Set(world.actors.filter((a) => a.kind === "goblin" && world.isVisible(a.x, a.y)).map((a) => a.id));
+
+function walk() {
+  if (!hold || !world) return;
+  const d = dirTo(hold.x, hold.y);
+  if (d) {
+    stepToward(d, true);
+    const now = goblinsInSight();
+    if ([...now].some((id) => !hold.seen.has(id))) return endHold();
+    hold.seen = now;
+  }
+  hold.timer = setTimeout(walk, HOLD.every);
+}
+
+function endHold() {
+  if (hold) clearTimeout(hold.timer);
+  hold = null;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  if (!world || !e.isPrimary || e.button > 0) return;
+  e.preventDefault();
+  canvas.setPointerCapture?.(e.pointerId);
+  endHold();
+  const d = dirTo(e.clientX, e.clientY);
+  if (d) stepToward(d, false);
+  hold = { x: e.clientX, y: e.clientY, seen: goblinsInSight() };
+  hold.timer = setTimeout(walk, HOLD.delay);
 });
+canvas.addEventListener("pointermove", (e) => {
+  if (hold && e.isPrimary) Object.assign(hold, { x: e.clientX, y: e.clientY });
+});
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) canvas.addEventListener(type, endHold);
+canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// The action strip (touch screens): search (or wait), the lamp, closing a
+// door; kept up to date each frame.
+const act = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
+act("act-search", () => world.search());
+act("act-lamp", () => renderer.toggleLamp());
+act("act-close", () => world.closeDoor());
+function updateActions() {
+  const lamp = document.getElementById("act-lamp"), close = document.getElementById("act-close");
+  if (!world || !lamp) return;
+  // (The view keeps above the strip.)
+  const strip = document.getElementById("actions").getBoundingClientRect();
+  renderer.inset = strip.height ? window.innerHeight - strip.top : 0;
+  const label = world.sneaking ? "Light lamp" : "Lamp out";
+  if (lamp.textContent !== label) lamp.textContent = label;
+  const can = world.canCloseDoor();
+  if (close.disabled === can) close.disabled = !can;
+}
 
 window.addEventListener("resize", () => renderer.resize());
 bindZoom(renderer, canvas);
 
 function loop(now) {
   renderer.frame(now);
+  updateActions();
   requestAnimationFrame(loop);
 }
 

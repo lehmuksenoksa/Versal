@@ -146,6 +146,15 @@ export class World {
     return this.tick();
   }
 
+  // Is there an open door next to the player to close (none standing in it)?
+  canCloseDoor() {
+    const p = this.player;
+    return DIRS8.some(([dx, dy]) => {
+      const d = this.doorAt(p.x + dx, p.y + dy);
+      return d && d.open && !this.actorAt(d.x, d.y);
+    });
+  }
+
   // Close an open door next to the player (none standing in it). Returns
   // true if one was, which takes the turn.
   closeDoor() {
