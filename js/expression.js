@@ -1,6 +1,7 @@
 // How the map is shown as it is explored. Colour comes from the light only:
-// where the player's candle falls, the paper floor and the rock's colour;
-// everywhere else, one colour of darkness. Ink shows the map: in sight, the
+// where the player's candle falls, in flat bands, the paper floor and a rim
+// of the rock's colour; everywhere else, one colour of darkness, with the
+// floor in sight showing the paper dimly. Ink shows the map: in sight, the
 // full ink (black walls, the floor grid and its shadow, the hatching);
 // beyond sight, fainter walls and lighter hatching. The hatching is one
 // pattern for all the rock (the map hatched as solid stone), inked by a
@@ -24,12 +25,15 @@ export const EXPRESSION_DEFAULTS = {
   // Known walls and hatching this near the player (in tiles) keep the ink
   // in sight, seen or not (round a corner), softening over `nearSoft`.
   nearInk: 3, nearSoft: 1.5,
-  // The candle: its reach, full brightness out to `lightFull` of it, how far
-  // it lights the rock past a wall's face, the flame's size (how soft its
-  // shadows are), flicker in brightness and in size, and warmth.
-  radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
-  // The colour of everything the candle doesn't light.
-  darkColor: "#3b3936",
+  // The candle, in flat bands: full brightness out to `lightFull` of its
+  // reach, then `lightDim` out to the reach, the bands' edges ragged by
+  // `lightRag` tiles. It lights a rim of rock about `lightWall` tiles past a
+  // wall's face. The flame's size sets how wide the shadows' dim edges are.
+  // Flicker in brightness and in size, and warmth.
+  radius: 5, lightFull: 0.6, lightDim: 0.55, lightRag: 0.3, lightWall: 0.6, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
+  // The colour of everything the candle doesn't light; floor in sight but
+  // not lit, the paper this strong over it.
+  darkColor: "#3b3936", dimFloor: 0.2,
   // The ink in sight and beyond it: colour and strength of the floor
   // markings, walls and hatching; the hatching beyond sight is inked from a
   // weaker depth map.
@@ -49,7 +53,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight` and
 // `sightFade` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightDim", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -167,12 +171,7 @@ export class Expression {
     this.rock.addPath(drawn.floor);
     const sw = Math.ceil(W * TS * this.sightScale), sh = Math.ceil(H * TS * this.sightScale);
     this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh) };
-    // The rock, for cutting the light to (see castLight).
-    this.rockPicture = blank(sw, sh);
-    const rg = this.rockPicture.getContext("2d");
-    rg.scale(this.sightScale, this.sightScale);
-    rg.fill(this.rock, "evenodd");
-    this.lightReach = null;
+    this.lightReach = this.floorPaper = null;
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
     this.job = null;
@@ -197,6 +196,14 @@ export class Expression {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = "source-over";
     g.drawImage(this.paper, 0, 0);
+    // (And the paper on the floor alone, for the floor in sight but unlit.)
+    if (!this.floorPaper || this.floorPaper.width !== this.paper.width || this.floorPaper.height !== this.paper.height) {
+      this.floorPaper = blank(this.paper.width, this.paper.height);
+      const fg = this.floorPaper.getContext("2d");
+      fg.drawImage(this.paper, 0, 0);
+      fg.globalCompositeOperation = "destination-in";
+      fg.drawImage(this.floorLayer, 0, 0);
+    }
     if (S.rockTone > 0) {
       g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
       g.globalCompositeOperation = "multiply";
@@ -741,7 +748,12 @@ export class Expression {
       }
       yield;
       this.lay(g, this.floorLayer, glimpsedHi, null, 1, null, "destination-out", true);
-      if (pre === "see") this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
+      // In sight, under it all, the seen floor's paper, dimly (shown through
+      // the sight like the ink; paper over the lit paper changes nothing).
+      if (pre === "see") {
+        this.lay(g, this.floorPaper, maskHi, null, S.dimFloor, null, "destination-over", true);
+        this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
+      }
       yield;
       // The markings and walls together, cut to the floor's mask once.
       const w = this.scratch, wg = w.getContext("2d");
@@ -942,79 +954,86 @@ export class Expression {
     eg.globalAlpha = 1;
   }
 
-  // The candle: a flame of some size, so each wall casts a shadow that is
-  // sharp close to it and softer further off (the light reaches what can be
-  // seen from a few points across the flame, and the rock just past the wall
-  // faces it falls on). That reach is drawn once for each place the player
-  // stands; over it, full brightness out to `lightFull` of the candle's
-  // radius, then fading out, flickering in brightness and in size.
+  // The candle, drawn in flat tones like the rest of the map. For each place
+  // the player stands: what the light reaches (seen from a few points across
+  // the flame, and a rim of the rock past the wall faces it falls on), made
+  // full or dim or nothing by a ragged threshold, so shadows and the rim
+  // have hand-drawn edges; and the bands, full out to `lightFull` of the
+  // radius and dim out to it, their edges ragged too (both ragged by noise
+  // fixed to the map, so nothing wavers). Each frame, the bands grow and
+  // shrink a little about the player, and the whole flickers in brightness.
   castLight(px, py, t) {
-    const { S, TS } = this, rad = S.radius * TS;
+    const { S, TS } = this, rad = S.radius * TS, rag = S.lightRag * TS;
     this.lightBox = null;
     if (!(rad > 0)) return;
     // Drawn on a square just big enough for the light round the player.
-    const half = rad * (1 + S.flickerSize) + S.lightWall * TS + TS, res = Math.min(this.scale, 640 / (2 * half));
+    const half = (rad + rag) * (1 + S.flickerSize) + TS, res = Math.min(this.scale, 640 / (2 * half));
     const size = Math.ceil(2 * half * res), box = { x: px - half, y: py - half, w: 2 * half, res };
     const toBox = (g) => g.setTransform(res, 0, 0, res, -box.x * res, -box.y * res);
     if (!this.lightReach || this.lightReach.width !== size) {
       this.lightReach = blank(size, size);
-      this.lightRockCut = blank(size, size);
+      this.lightBands = blank(size, size);
       this.lightCanvas = blank(size, size);
       this.lightFrom = null;
     }
     if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py) {
-      const f = S.flame * TS, reach = rad * (1 + S.flickerSize) + TS;
+      // How much of the light reaches each point: the share of the flame's
+      // points that see it, and of the depths past the walls' faces.
+      const f = S.flame * TS, reach = half;
       const pts = f > 0 ? [[0, 0], [f, 0], [-f, 0], [0, f], [0, -f]] : [[0, 0]];
-      const paths = pts.map(([dx, dy]) => this.walls.visible(px + dx, py + dy, reach));
-      const g = this.lightReach.getContext("2d"), r = this.lightRockCut.getContext("2d");
-      for (const c of [g, r]) {
-        c.setTransform(1, 0, 0, 1, 0, 0);
-        c.clearRect(0, 0, size, size);
-        toBox(c);
-        c.fillStyle = "#000";
-        c.globalCompositeOperation = "lighter";
-        c.globalAlpha = 1 / paths.length;
-      }
-      // (The rock part softened, so the light fades off into the rock
-      // rather than stopping at an edge.)
-      r.filter = S.lightWall > 0 ? `blur(${S.lightWall * TS * res * 0.35}px)` : "none";
-      for (const p of paths) {
-        g.fill(p);
-        r.fill(p.beyond(S.lightWall * TS));
-      }
-      r.filter = "none";
-      // The rock part: cut to the rock, then added in.
-      r.globalAlpha = 1;
-      r.globalCompositeOperation = "destination-in";
-      r.setTransform(1, 0, 0, 1, 0, 0);
-      const ss = this.sightScale;
-      r.drawImage(this.rockPicture, box.x * ss, box.y * ss, box.w * ss, box.w * ss, 0, 0, size, size);
+      const depths = S.lightWall > 0 ? 6 : 1;
+      const g = this.lightReach.getContext("2d", { willReadFrequently: true });
       g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, size, size);
+      toBox(g);
+      g.fillStyle = "#000";
+      g.globalCompositeOperation = "lighter";
+      g.globalAlpha = 1 / (pts.length * depths);
+      for (const [dx, dy] of pts) {
+        const p = this.walls.visible(px + dx, py + dy, reach);
+        for (let i = 1; i <= depths; i++) g.fill(depths > 1 ? p.beyond((S.lightWall * TS * i) / depths) : p);
+      }
       g.globalAlpha = 1;
-      g.drawImage(this.lightRockCut, 0, 0);
       g.globalCompositeOperation = "source-over";
-      r.globalCompositeOperation = "source-over";
+      // Made flat: full where most of it reaches, dim at the edges of that,
+      // the threshold wandering with a fine noise; and the bands.
+      const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data;
+      const bandImg = new ImageData(size, size), bd = bandImg.data;
+      const dim = Math.round(255 * S.lightDim), rFull = rad * S.lightFull;
+      for (let y = 0; y < size; y++) {
+        const my = box.y + (y + 0.5) / res;
+        for (let x = 0; x < size; x++) {
+          const i = (y * size + x) * 4, mx = box.x + (x + 0.5) / res;
+          const v = rd[i + 3] / 255;
+          let n = -1;
+          const noiseAt = () => (n < 0 ? (n = this.fine(mx, my)) : n);
+          rd[i + 3] = v >= 0.97 ? 255 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 255 : v > 0.08 + 0.2 * noiseAt() ? dim : 0;
+          const d = Math.hypot(mx - px, my - py);
+          if (d > rad + rag) continue;
+          const e = d < rFull - rag || (d > rFull + rag && d < rad - rag) ? d : d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1);
+          bd[i + 3] = e < rFull ? 255 : e < rad ? dim : 0;
+        }
+      }
+      g.putImageData(reachImg, 0, 0);
+      this.lightBands.getContext("2d").putImageData(bandImg, 0, 0);
       this.lightFrom = [px, py];
     }
     const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
     const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
-    // The size flickers too, on a wave of its own: the whole pool of light
-    // grows and shrinks a little.
+    // The size flickers too, on a wave of its own: the bands grow and shrink
+    // a little about the player.
     const swell = (Math.sin(t * 5.1) + 0.5 * Math.sin(t * 8.9 + 0.7) + 0.3 * Math.sin(t * 13.3 + 2)) / 1.8;
-    const r = rad * (1 + S.flickerSize * swell);
+    const k = 1 + S.flickerSize * swell, cx = (px - box.x) * res, cy = (py - box.y) * res;
     const light = this.lightCanvas, g = light.getContext("2d");
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, size, size);
     g.globalAlpha = bright;
     g.drawImage(this.lightReach, 0, 0);
     g.globalAlpha = 1;
-    toBox(g);
-    const grad = g.createRadialGradient(px, py, 0, px, py, r);
-    grad.addColorStop(0, "#000");
-    for (let k = 0; k <= 8; k++) grad.addColorStop(S.lightFull + (1 - S.lightFull) * (k / 8), `rgba(0, 0, 0, ${smooth(1 - k / 8)})`);
     g.globalCompositeOperation = "destination-in";
-    g.fillStyle = grad;
-    g.fillRect(box.x, box.y, box.w, box.w);
+    g.setTransform(k, 0, 0, k, cx * (1 - k), cy * (1 - k));
+    g.drawImage(this.lightBands, 0, 0);
+    g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = "source-over";
     this.lightBox = box;
   }
@@ -1164,13 +1183,13 @@ export class Expression {
     return { x0, y0, w: x1 - x0, h: y1 - y0, view: { x: (x0 - T.e) / T.a, y: (y0 - T.f) / T.d, w: (x1 - x0) / T.a, h: (y1 - y0) / T.d } };
   }
 
-  // How lit the map point (x, y) is, 0 to 1, roughly: by its distance from
-  // the light, if in sight.
+  // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
+  // light it is in, if in sight.
   lightAt(x, y) {
     const S = this.S, from = this.lightFrom, r = S.radius * this.TS;
     if (!from || !(r > 0)) return 0;
     const d = Math.hypot(x - from[0], y - from[1]);
-    return smooth(1 - (d - S.lightFull * r) / Math.max(1, (1 - S.lightFull) * r)) * this.inSight(x, y);
+    return (d < S.lightFull * r ? 1 : d < r ? S.lightDim : 0) * this.inSight(x, y);
   }
 
 
