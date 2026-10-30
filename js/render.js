@@ -57,7 +57,18 @@ const SOUNDS = {
   growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 16, dur: 1.2 },
   alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 20, dur: 1.4 },
   snore: { words: ["zzz", "zz", "zzZ", "z"], range: 8, dur: 1.8 },
+  // The fighting, and doors.
+  attack: { words: ["stab!", "hack!", "chomp!", "slash!", "jab!"], range: 20, dur: 1 },
+  whack: { words: ["WHACK!", "thwack!", "bonk!", "THUD!"], range: 20, dur: 1 },
+  miss: { words: ["whiff", "swish"], range: 20, dur: 0.9 },
+  fall: { words: ["urk!", "eek!", "gak!"], range: 20, dur: 1.2 },
+  door: { words: ["creak", "clunk"], range: 12, dur: 1.1 },
+  rattle: { words: ["rattle", "thump", "bang"], range: 14, dur: 1 },
+  lamp: { words: [""], range: 1, dur: 1.3 },
 };
+
+// The lamp out: sight close round the player, only the dark band of light.
+const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0.5, lightDim: 0, lightDark: 3, flicker: 0, flickerSize: 0, warmth: 0 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
 // [range in tiles, min and max seconds between darts]
@@ -77,6 +88,8 @@ export class Renderer {
     // Noises showing, and when each pack was last heard moving.
     this.sounds = [];
     this.packHeard = new Map();
+    // Goblins falling, struck down.
+    this.ghosts = [];
     this.settings = { ...EXPRESSION_DEFAULTS };
     this.zoom = ZOOM.start;
     this.resize();
@@ -94,12 +107,25 @@ export class Renderer {
     }
   }
 
+  // Put the lamp out (sneaking) or light it again.
+  toggleLamp() {
+    const w = this.world;
+    if (!w) return;
+    const on = !w.sneaking;
+    if (on) {
+      this.lit = Object.fromEntries(Object.keys(SNEAK).map((k) => [k, this.settings[k]]));
+      this.setVis(SNEAK);
+    } else this.setVis(this.lit ?? Object.fromEntries(Object.keys(SNEAK).map((k) => [k, EXPRESSION_DEFAULTS[k]])));
+    w.setSneaking(on, this.settings.sight);
+  }
+
   setWorld(world) {
     this.world = world;
     this.world.sight = this.settings.sight;
     this.world.updateFov();
     this.views.clear();
     this.sounds = [];
+    this.ghosts = [];
     this.packHeard.clear();
     this.exp = null; // a new map starts unseen
     this.cam.snap = true;
@@ -187,22 +213,37 @@ export class Renderer {
         // the step is over.
         if (e.actor === this.world.player && this.exp?.learn(e.actor.x, e.actor.y)) this.redraw(v.dur + 30);
       } else if (e.type === "door" && this.exp) {
-        // A door opened: drawn open, and what is beyond it seen.
+        // A door opened or shut: drawn so, and what can be seen found again.
         this.exp.doorChanged(e.door);
         this.redraw(30);
-      }
+        if (e.by && e.by !== this.world.player) this.hear(e.by, "door", now);
+      } else if (e.type === "rattle") this.hear(e.actor, "rattle", now);
+      else if (e.type === "attack") {
+        this.hear(e.actor, "attack", now);
+        this.view(e.actor).strikeT = now;
+        this.view(this.world.player).hitT = now;
+      } else if (e.type === "whack") {
+        const v = this.view(e.target);
+        this.hear(e.target, e.hit ? "whack" : "miss", now);
+        if (e.hit) v.hitT = now;
+        if (e.killed) {
+          this.hear(e.target, "fall", now);
+          this.ghosts.push({ glyph: e.target.glyph, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
+          this.views.delete(e.target.id);
+        }
+      } else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
     }
   }
 
   // A noise from actor `a`, if the player sees it or is near enough to hear
   // it: written above it, fainter the further off it is when out of sight.
-  hear(a, kind, now) {
+  hear(a, kind, now, text = null) {
     const S = SOUNDS[kind], p = this.world.player, TS = this.TS;
     const d = Math.hypot(a.x - p.x, a.y - p.y), seen = this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS);
     if (!seen && d > S.range) return;
     const v = this.view(a), j = (r) => (Math.random() - 0.5) * 2 * r;
     this.sounds.push({
-      text: S.words[Math.floor(Math.random() * S.words.length)], kind, t0: now, dur: S.dur * 1000,
+      text: text ?? S.words[Math.floor(Math.random() * S.words.length)], kind, t0: now, dur: S.dur * 1000,
       x: (v.x + 0.5 + j(0.25)) * TS, y: (v.y + 0.1) * TS, rot: j(0.18),
       alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / S.range),
     });
@@ -249,7 +290,8 @@ export class Renderer {
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
     for (const s of this.sounds) {
-      const k = (now - s.t0) / s.dur, size = TS * (s.kind === "alarm" ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
+      const big = s.kind === "alarm" || s.kind === "whack" || s.kind === "attack" || s.kind === "fall";
+      const k = (now - s.t0) / s.dur, size = TS * (big ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
       const a = s.alpha * Math.min(1, k / 0.08) * (k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45);
       ctx.save();
       ctx.translate(s.x + (s.kind === "snore" ? k * TS * 0.35 : 0), s.y - k * TS * (s.kind === "snore" ? 0.6 : 0.45));
@@ -318,6 +360,12 @@ export class Renderer {
       if (v.alpha === undefined) v.alpha = target;
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
       if (v.alpha > 0.02) this.drawActor(ctx, a, v, now, t, motion);
+    }
+    // Goblins struck down, tipping over and fading.
+    this.ghosts = this.ghosts.filter((g) => now - g.t0 < 700);
+    for (const g of this.ghosts) {
+      const k = (now - g.t0) / 700;
+      this.drawGlyph(ctx, g.glyph, (g.x + 0.5) * TS, (g.y + 0.5 + 0.15 * k) * TS, LETTERING.monster, { rot: g.tilt * 1.4 * ease(k), sx: 1, sy: 1 - 0.3 * k, alpha: 1 - k, lit: this.exp.lightAt((g.x + 0.5) * TS, (g.y + 0.5) * TS) });
     }
     // What can be heard, seen or not.
     this.listen(now);
@@ -390,6 +438,16 @@ export class Renderer {
       d.oy += (d.ty - d.oy) * 0.18;
       p.ox += d.ox;
       p.oy += d.oy;
+    }
+
+    // Struck: a shake for a moment. Striking: a lunge at the player.
+    const hit = now - (v.hitT ?? -1e9);
+    if (hit < 260) p.ox += Math.sin(hit / 18) * 0.09 * (1 - hit / 260);
+    const strike = now - (v.strikeT ?? -1e9);
+    if (strike < 220 && goblin) {
+      const dx = pl.x - a.x, dy = pl.y - a.y, d = Math.hypot(dx, dy) || 1, f = Math.sin((Math.PI * strike) / 220) * 0.35;
+      p.ox += (dx / d) * f;
+      p.oy += (dy / d) * f;
     }
 
     // Tween between tiles; goblins arc high as they hop across.

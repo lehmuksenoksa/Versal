@@ -1,22 +1,45 @@
-// The world: one map, the player, and a few packs of goblins milling about.
-// Turn-based: goblins take a step each time the player does. The player sees
-// what lies in their field of view, and remembers what they have seen.
-// A goblin is "neutral" (milling about), "sleeping" (still; some packs start
-// so), or "aggressive" (holding its ground, having seen the player close by);
-// a pack turns together, and calms again once the player is out of sight a
-// while.
+// The world: one map, the player, and a few packs of goblins. Turn-based:
+// each turn the player acts (steps, whacks a goblin in the way, opens or
+// closes a door, or waits) and the goblins, a little slower, act after.
+// The player sees what lies in their field of view, and remembers what they
+// have seen; with the lamp out (sneaking) they see less, and are noticed
+// less.
+// A goblin is "neutral" (milling about with its pack), "sleeping" (still;
+// some packs start so), or "aggressive" (chasing the player, attacking when
+// next to them, opening doors in the way now and then). A pack turns
+// together; it gives up when the player is out of its sight a while, or far
+// off.
 
 import { RNG } from "./rng.js";
 import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
 import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 
-// Turns out of sight before an aggressive pack calms down.
-const AGGRO_TURNS = 6;
+const GOBLIN = {
+  // Moves a goblin makes for each of the player's.
+  speed: 0.75,
+  // Hits it takes.
+  hp: [1, 2],
+  // How far (in squares) a goblin notices the player, lamp lit and out; and
+  // a sleeper.
+  notice: 7, noticeSneaking: 3, wake: 3, wakeSneaking: 1,
+  // The chance, each turn, that a goblin notices a sneaking player in reach.
+  sneakChance: 0.5,
+  // An aggressive pack gives up after this many turns not seeing the player,
+  // or at once when they are further off than `lose`.
+  calm: 8, lose: 14,
+  // The chance a chasing goblin gets a shut door open.
+  door: 0.5,
+  // How far off a whack wakes sleeping packs.
+  hearWhack: 8,
+};
+// The player's chance to hit with a whack.
+const WHACK = 0.75;
 
 export class World {
   constructor(seed, { sight = 9 } = {}) {
     this.sight = sight;
+    this.sneaking = false;
     this.rng = new RNG(seed);
     this.seed = this.rng.seed;
     this.events = [];
@@ -33,16 +56,21 @@ export class World {
     for (const room of rooms.slice(0, Math.round(level.rooms.length / 3))) this.spawnPack(room, this.rng.int(4, 7));
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
+    // What has a line of sight to the player (for goblins noticing them,
+    // whatever the player can see).
+    this.inView = new Uint8Array(level.w * level.h);
     this.updateFov();
   }
 
   updateFov() {
-    const { w, h } = this.level;
+    const { w, h } = this.level, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     this.visible.fill(0);
-    computeFov(w, h, this.player.x, this.player.y, this.sight, (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y), (x, y) => {
+    computeFov(w, h, this.player.x, this.player.y, this.sight, opaque, (x, y) => {
       this.visible[y * w + x] = 1;
       this.seen[y * w + x] = 1;
     });
+    this.inView.fill(0);
+    computeFov(w, h, this.player.x, this.player.y, GOBLIN.lose, opaque, (x, y) => (this.inView[y * w + x] = 1));
   }
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }
@@ -53,7 +81,7 @@ export class World {
     for (let k = 0; k < n; k++) {
       const spot = this.freeSpotIn(room);
       if (!spot) break;
-      const g = { id: this.nextId++, kind: "goblin", glyph: "g", x: spot.x, y: spot.y, state, calm: 0 };
+      const g = { id: this.nextId++, kind: "goblin", glyph: "g", x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...GOBLIN.hp), energy: this.rng.next() };
       g.leader = leader || g;
       leader = g.leader;
       this.actors.push(g);
@@ -79,53 +107,176 @@ export class World {
     if (!dx || !dy) return true;
     return !this.posts.has((y + (dy > 0 ? 1 : 0)) * (this.level.w + 1) + x + (dx > 0 ? 1 : 0));
   }
+  pack(g) { return this.actors.filter((a) => a.kind === "goblin" && a.leader === g.leader); }
 
-  // Returns true if a turn passed.
+  // The player steps by (dx, dy): into a goblin, a whack; into a shut door,
+  // opening it. Returns true if a turn passed.
   playerMove(dx, dy) {
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
-    if (this.actorAt(nx, ny)) return false;
-    if (!isWalkable(this.tileAt(nx, ny)) || !this.canStep(p.x, p.y, dx, dy)) return false;
-    // Walking into a shut door opens it, which takes the turn.
+    if (!this.canStep(p.x, p.y, dx, dy)) return false;
+    const g = this.actorAt(nx, ny);
+    if (g && g.kind === "goblin") {
+      this.whack(g);
+      return this.tick();
+    }
+    if (g || !isWalkable(this.tileAt(nx, ny))) return false;
     if (this.shut(nx, ny)) {
-      const door = this.doorAt(nx, ny);
-      door.open = true;
-      this.events.push({ type: "door", door });
+      this.setDoor(this.doorAt(nx, ny), true, p);
       return this.tick();
     }
     this.moveActor(p, nx, ny);
     return this.tick();
   }
 
+  // Close an open door next to the player (none standing in it). Returns
+  // true if one was, which takes the turn.
+  closeDoor() {
+    const p = this.player;
+    for (const [dx, dy] of DIRS8) {
+      const d = this.doorAt(p.x + dx, p.y + dy);
+      if (!d || !d.open || this.actorAt(d.x, d.y)) continue;
+      this.setDoor(d, false, p);
+      return this.tick();
+    }
+    return false;
+  }
+
+  setDoor(door, open, by) {
+    door.open = open;
+    this.events.push({ type: "door", door, by });
+  }
+
+  // Lamp out (sneaking, seeing only `sight`) or lit again.
+  setSneaking(on, sight) {
+    this.sneaking = on;
+    this.sight = sight;
+    this.updateFov();
+    this.events.push({ type: "sneak", on });
+  }
+
+  // A whack at goblin `g`: it may miss; a goblin out of hits falls. Its pack
+  // turns on the player, and the noise wakes packs asleep near by.
+  whack(g) {
+    const hit = this.rng.chance(WHACK);
+    if (hit) g.hp--;
+    const killed = g.hp <= 0;
+    this.events.push({ type: "whack", target: g, hit, killed });
+    for (const a of this.pack(g)) {
+      a.state = "aggressive";
+      a.calm = 0;
+    }
+    if (killed) {
+      this.actors.splice(this.actors.indexOf(g), 1);
+      // (A pack whose leader falls follows another.)
+      if (g.leader === g) {
+        const rest = this.pack(g);
+        for (const a of rest) a.leader = rest[0];
+      }
+    }
+    const p = this.player;
+    for (const a of this.actors)
+      if (a.kind === "goblin" && a.state === "sleeping" && Math.hypot(a.x - p.x, a.y - p.y) <= GOBLIN.hearWhack) a.state = "neutral";
+  }
+
+  // A turn passes: the goblins act (each as its speed allows), then see
+  // what they notice.
   tick() {
-    for (const g of this.actors) if (g !== this.player) this.mill(g);
+    this.updateFov();
+    this.chaseMap = null;
+    for (const g of [...this.actors]) {
+      if (g === this.player) continue;
+      g.energy += GOBLIN.speed;
+      if (g.energy < 1) continue;
+      g.energy -= 1;
+      if (g.state === "aggressive") this.chase(g);
+      else if (g.state === "neutral") this.mill(g);
+    }
     this.updateFov();
     this.notice();
     return true;
   }
 
-  // Goblins that see the player close by (seen by them, as the player sees
-  // them) turn aggressive, their packs with them; a sleeper only when very
-  // close. Aggressive ones calm down after AGGRO_TURNS out of sight.
+  // Goblins that see the player close by turn aggressive, their packs with
+  // them; a sleeper only when very close. With the lamp out, only nearer
+  // and not every turn. Aggressive packs give up after GOBLIN.calm turns of
+  // not seeing the player, or when they are far off.
   notice() {
-    const p = this.player, angry = new Set();
+    const p = this.player, angry = new Set(), W = this.level.w;
+    const reach = this.sneaking ? GOBLIN.noticeSneaking : GOBLIN.notice, wake = this.sneaking ? GOBLIN.wakeSneaking : GOBLIN.wake;
     for (const g of this.actors) {
       if (g === p) continue;
-      const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), seen = this.isVisible(g.x, g.y);
-      if (seen && d <= (g.state === "sleeping" ? 3 : 7)) angry.add(g.leader);
+      const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), sees = this.inView[g.y * W + g.x] === 1;
+      g.sees = sees;
+      if (!sees || d > (g.state === "sleeping" ? wake : reach)) continue;
+      if (this.sneaking && !this.rng.chance(GOBLIN.sneakChance)) continue;
+      angry.add(g.leader);
     }
     for (const g of this.actors) {
       if (g === p) continue;
       if (angry.has(g.leader)) {
         g.state = "aggressive";
         g.calm = 0;
-      } else if (g.state === "aggressive" && ++g.calm >= AGGRO_TURNS) g.state = "neutral";
+      }
     }
+    // (A pack keeps on while any of it sees the player.)
+    for (const g of this.actors) {
+      if (g === p || g.state !== "aggressive" || g.leader !== g) continue;
+      const pack = this.pack(g), far = pack.every((a) => Math.max(Math.abs(a.x - p.x), Math.abs(a.y - p.y)) > GOBLIN.lose);
+      const calm = pack.some((a) => a.sees) ? 0 : (g.calm ?? 0) + 1;
+      for (const a of pack) {
+        a.calm = calm;
+        if (far || calm >= GOBLIN.calm) a.state = "neutral";
+      }
+    }
+  }
+
+  // Steps to the player from each square (walking, through doors shut or
+  // not), out a little past where packs give up.
+  chaseSteps() {
+    if (this.chaseMap) return this.chaseMap;
+    const { w, h } = this.level, dist = new Int16Array(w * h).fill(-1), p = this.player, q = [p.y * w + p.x];
+    dist[q[0]] = 0;
+    for (let i = 0; i < q.length; i++) {
+      const j = q[i], x = j % w, y = (j / w) | 0;
+      if (dist[j] > GOBLIN.lose * 2) break;
+      for (const [dx, dy] of DIRS8) {
+        const nx = x + dx, ny = y + dy, k = ny * w + nx;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || dist[k] >= 0 || !isWalkable(this.tileAt(nx, ny)) || !this.canStep(x, y, dx, dy)) continue;
+        dist[k] = dist[j] + 1;
+        q.push(k);
+      }
+    }
+    return (this.chaseMap = dist);
+  }
+
+  // An aggressive goblin: next to the player, it attacks; otherwise a step
+  // nearer, opening a shut door in the way now and then.
+  chase(g) {
+    const p = this.player, dx = p.x - g.x, dy = p.y - g.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) === 1 && this.canStep(g.x, g.y, dx, dy) && !this.shut(p.x, p.y)) {
+      this.events.push({ type: "attack", actor: g });
+      return;
+    }
+    const dist = this.chaseSteps(), W = this.level.w, here = dist[g.y * W + g.x];
+    if (here < 0) return this.mill(g);
+    let best = null;
+    for (const [sx, sy] of this.rng.shuffle([...DIRS8])) {
+      const x = g.x + sx, y = g.y + sy, d = dist[y * W + x];
+      if (d < 0 || d >= here || !this.canStep(g.x, g.y, sx, sy)) continue;
+      if (this.actorAt(x, y)) continue;
+      if (!best || d < best.d) best = { x, y, d };
+    }
+    if (!best) return;
+    if (this.shut(best.x, best.y)) {
+      if (this.rng.chance(GOBLIN.door)) this.setDoor(this.doorAt(best.x, best.y), true, g);
+      else this.events.push({ type: "rattle", actor: g });
+      return;
+    }
+    this.moveActor(g, best.x, best.y);
   }
 
   // Leaders wander; the rest of the pack stays within two steps of them.
   mill(g) {
-    // (Sleepers lie still; the aggressive hold their ground.)
-    if (g.state !== "neutral") return;
     const L = g.leader;
     if (L === g) {
       if (this.rng.chance(0.4)) this.randomStep(g);

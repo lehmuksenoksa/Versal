@@ -14,7 +14,12 @@ and some goblins.
 - The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
   Some packs sleep (slumped, breathing slowly); a pack that sees the player close by turns
-  aggressive and lunges at them from where it stands, calming once they are out of sight a while.
+  aggressive: it chases them (a little slower than they move), attacks when next to them (no damage
+  yet), and opens doors in the way now and then; it gives up when they are out of sight a while or
+  far off.
+- The player whacks a goblin by walking into it (goblins take a hit or two), opens a door by walking
+  into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
+  round them, only the dark band of light, and goblins much less likely to notice or wake.
 - Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
   move, "grr" when aggressive, "zzz" asleep. They show out of sight too, within hearing, fainter
   with distance.
@@ -34,8 +39,10 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-Move with the arrow keys, numpad, `hjkl`/`yubn` or `wasd`, or click or tap toward a spot. Press `.` or
-space to wait a turn. Zoom with the mouse wheel or `+`/`-` (`0` resets to 75%). `window.versal` exposes the world and renderer
+Move with the arrow keys, numpad, `hjkl`/`yubn` or `wasd`, or click or tap toward a spot; walk into
+a goblin to whack it, into a shut door to open it. Press `c` to close a door next to you, `f` to put
+the lamp out (sneak) or light it, and `.` or space to wait a turn. Zoom with the mouse wheel or
+`+`/`-` (`0` resets to 48%). `window.versal` exposes the world and renderer
 in the browser console.
 
 ## Code map

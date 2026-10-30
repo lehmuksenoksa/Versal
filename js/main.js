@@ -33,6 +33,14 @@ window.addEventListener("keydown", (e) => {
     // Wait a turn and watch the goblins.
     e.preventDefault();
     world.tick();
+  } else if (e.key === "c" || e.key === "C") {
+    // Close a door next to the player.
+    e.preventDefault();
+    world.closeDoor();
+  } else if (e.key === "f" || e.key === "F") {
+    // Put the lamp out (sneak), or light it again.
+    e.preventDefault();
+    renderer.toggleLamp();
   }
 });
 
