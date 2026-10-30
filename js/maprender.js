@@ -237,12 +237,13 @@ function drawDoors(ctx, doors, TS, rng) {
     }
     ctx.lineWidth = weight * 0.45;
     // Shut, across the way between the jambs' ends; open, swung on its hinge
-    // at one jamb away from the room, lying along the side wall just off it.
+    // at one jamb away from the room, lying along the side wall, touching it.
     let [x0, y0, x1, y1] = [-thick / 2, -tip, thick / 2, tip];
     if (open) {
       const side = rng.chance(0.5) ? 1 : -1;
       [x0, x1] = [-thick / 2 - 2 * tip, -thick / 2];
-      [y0, y1] = side > 0 ? [tip - thick, tip] : [-tip, -tip + thick];
+      const wall = face - weight * 0.2;
+      [y0, y1] = side > 0 ? [wall - thick, wall] : [-wall, -wall + thick];
     }
     ctx.beginPath();
     ctx.moveTo(x0 + j(), y0 + j());
