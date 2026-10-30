@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fire Symbols</title>
+<title>Bonfire Stones</title>
 <style>
   /* Layout: two wrapping grids of animated cards, bonfires then torches. */
   :root {
@@ -43,8 +43,8 @@
 </head>
 <body>
 <header>
-  <h1>Bonfire and torch symbols</h1>
-  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. Tell me the letters you like; parts can be mixed, e.g. "B's flame on C's logs".</p>
+  <h1>Bonfire stones</h1>
+  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. The big bonfire's flame over four rings of stones, each packed with no gaps and the stones varied in size.</p>
   <div class="bar">
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
@@ -52,10 +52,7 @@
   </div>
 </header>
 
-<h2>Bonfires</h2>
 <div class="grid" id="fires"></div>
-<h2>Torches</h2>
-<div class="grid" id="torches"></div>
 
 <script type="module">
 import { pen, PAPER, INK, wallLine } from "../js/maprender.js";
@@ -170,67 +167,85 @@ function embers(g, pts, TS, t) {
 
 // ---- What lies under the flame (drawn once) --------------------------------
 
-function stones(P, rng, x, y, TS, n = 7, r = [0.36, 0.42]) {
-  const a0 = rng.range(0, 2 * Math.PI);
-  for (let i = 0; i < n; i++) {
-    const a = a0 + (i * 2 * Math.PI) / n + rng.range(-0.15, 0.15), rr = TS * rng.range(...r);
-    P.round(x + Math.cos(a) * rr, y + Math.sin(a) * rr, TS * rng.range(0.08, 0.11), IN, PAPER);
+// Stones round (x, y), touching: sizes picked at random, then all scaled a
+// little so the ring closes with no gap. Each [cx, cy, r, a] (a: its angle).
+function ring(rng, x, y, TS, { R = 0.42, min = 0.07, max = 0.14, squeeze = 0.9 } = {}) {
+  const rs = [], target = 2 * Math.PI * R * TS;
+  let len = 0;
+  while (len < target) {
+    const r = TS * rng.range(min, max);
+    len += (rs.length ? rs.at(-1) : 0) + r;
+    rs.push(r);
+  }
+  // (Closing: the last stone touches the first.)
+  const out = [];
+  let a = rng.range(0, 2 * Math.PI);
+  const sum = rs.reduce((t, r, i) => t + r + rs[(i + 1) % rs.length], 0), f = target / sum;
+  rs.forEach((r, i) => {
+    const rr = r * f / squeeze, rad = R * TS + rng.range(-0.02, 0.02) * TS;
+    out.push([x + Math.cos(a) * rad, y + Math.sin(a) * rad, rr, a]);
+    a += (r * f + rs[(i + 1) % rs.length] * f) / (R * TS);
+  });
+  return out;
+}
+
+// A lumpy stone about (cx, cy), as the map's rubble, stretched `along` the
+// ring by `stretch`.
+function pebble(g, rng, cx, cy, r, along = 0, stretch = 1) {
+  const m = rng.int(6, 8), a0 = rng.range(0, Math.PI * 2), c = Math.cos(along), s = Math.sin(along);
+  g.beginPath();
+  for (let i = 0; i < m; i++) {
+    const a = a0 + (i / m) * Math.PI * 2 + rng.range(-0.25, 0.25), rr = r * rng.range(0.8, 1.12);
+    const u = Math.cos(a) * rr * stretch, v = Math.sin(a) * rr / Math.sqrt(stretch);
+    g[i ? "lineTo" : "moveTo"](cx + u * c - v * s, cy + u * s + v * c);
+  }
+  g.closePath();
+}
+function lumps(g, rng, stones, TS, { stretch = 1, width = 2.7 } = {}) {
+  g.lineJoin = "round";
+  g.lineWidth = width * TS / 32;
+  g.strokeStyle = INK;
+  for (const [cx, cy, r, a] of stones) {
+    pebble(g, rng, cx, cy, r, a + Math.PI / 2, stretch);
+    g.fillStyle = PAPER;
+    g.fill();
+    g.stroke();
   }
 }
-// Logs, each a long box with an end ring, laid at the angles given.
-function logs(P, rng, x, y, TS, angles, L = 0.5, off = 0) {
-  for (const a of angles) {
-    const c = Math.cos(a), s = Math.sin(a), cx = x + c * off * TS, cy = y + s * off * TS;
-    const p = P.box(cx, cy, L * TS, 0.11 * TS, a, IN + 0.4, PAPER);
-    P.round(cx + c * L * TS * 0.5, cy + s * L * TS * 0.5, 0.05 * TS, 1.2);
+
+// The big fire's heap of logs.
+function heap(P, rng, x, y, TS) {
+  for (const a of [0.2, 1.3, 2.4, 3.5, 4.6, 5.6]) {
+    const c = Math.cos(a), s = Math.sin(a), cx = x + c * 0.12 * TS, cy = y + s * 0.12 * TS;
+    P.box(cx, cy, 0.42 * TS, 0.11 * TS, a, IN + 0.4, PAPER);
+    P.round(cx + c * 0.21 * TS, cy + s * 0.21 * TS, 0.05 * TS, 1.2);
   }
 }
+const bigFlame = (g, x, y, TS, t) => { rising(g, x, y + TS * 0.18, TS, t, { n: 5, w: 0.2, h: 0.8, spread: 0.11 }); sparks(g, x, y - TS * 0.4, TS, t, { n: 8, rise: 1.4 }); };
 
 const FIRES = [
-  { id: "A", name: "Rising flame", note: "Stone ring, crossed logs; three warm tongues swaying, ink outlined.",
-    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS); logs(P, rng, x, y, TS, [0.5, 0.5 + Math.PI / 2], 0.52); },
-    flame: (g, x, y, TS, t) => rising(g, x, y + TS * 0.12, TS, t) },
-  { id: "B", name: "Ink flame, on twos", note: "Same ring; the flame solid ink with a paper heart, its lines redrawn a few times a second like a hand-animated cartoon.",
-    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 8); logs(P, rng, x, y, TS, [-0.3, -0.3 + Math.PI / 2], 0.5); },
-    flame: (g, x, y, TS, t) => rising(g, x, y + TS * 0.12, TS, t, { look: "ink", boil: true }) },
-  { id: "C", name: "From above", note: "A star of five logs; the flame seen from overhead, tongues licking out every way.",
-    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 9, [0.4, 0.45]); logs(P, rng, x, y, TS, [0, 1.25, 2.5, 3.75, 5].map((a) => a + 0.2), 0.3, 0.2); },
-    flame: (g, x, y, TS, t) => radiating(g, x, y, TS, t) },
-  { id: "D", name: "Moving burst", note: "Today's symbol, its ink rays growing and shrinking.",
-    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS); logs(P, rng, x, y, TS, [1, 1 + Math.PI / 2], 0.48); },
-    flame: (g, x, y, TS, t) => rays(g, x, y, TS, t) },
-  { id: "E", name: "Embers and sparks", note: "No stones: a bed of glowing embers in the ash, a small flame, sparks rising and dying.",
-    base: (P, rng, x, y, TS) => { P.round(x, y, TS * 0.36, 1.2); for (let i = 0; i < 10; i++) { const a = rng.range(0, 6.3), r = rng.range(0.2, 0.33) * TS; P.line(x + Math.cos(a) * r, y + Math.sin(a) * r, x + Math.cos(a) * (r + TS * 0.06), y + Math.sin(a) * (r + TS * 0.06), 1.1); } },
-    embers: (x, y) => [[-0.16, 0.06, 0.05], [0.14, 0.1, 0.045], [0.02, 0.18, 0.04], [-0.06, -0.12, 0.04], [0.17, -0.08, 0.035], [-0.2, -0.06, 0.03]].map(([a, b, r]) => [x + a, y + b, r]),
-    flame: (g, x, y, TS, t) => { rising(g, x, y + TS * 0.04, TS, t, { n: 2, w: 0.17, h: 0.36, spread: 0.1 }); sparks(g, x, y - TS * 0.15, TS, t); } },
-  { id: "F", name: "Big bonfire", note: "A heaped pile of logs, tall tongues and sparks, for a fire that's the heart of a cave.",
-    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 10, [0.42, 0.47]); logs(P, rng, x, y, TS, [0.2, 1.3, 2.4, 3.5, 4.6, 5.6], 0.42, 0.12); },
-    flame: (g, x, y, TS, t) => { rising(g, x, y + TS * 0.18, TS, t, { n: 5, w: 0.2, h: 0.8, spread: 0.11 }); sparks(g, x, y - TS * 0.4, TS, t, { n: 8, rise: 1.4 }); } },
-];
+  { id: "S1", name: "Round stones", note: "Pen-drawn rounds of mixed sizes, packed so each touches the next.",
+    base: (P, rng, x, y, TS, g) => { for (const [cx, cy, r] of ring(rng, x, y, TS)) P.round(cx, cy, r, IN, PAPER); heap(P, rng, x, y, TS); } },
+  { id: "S2", name: "Rubble stones", note: "Lumpy stones like the cave rubble, heavy outlined, mixed sizes, packed tight.",
+    base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); } },
+  { id: "S3", name: "Laid stones", note: "Lumpy stones longer along the ring, as if laid end to end; mixed lengths.",
+    base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS, { min: 0.09, max: 0.17, squeeze: 0.85 }).map(([a, b, r, an]) => [a, b, r * 0.8, an]), TS, { stretch: 1.6 }); heap(P, rng, x, y, TS); } },
+  { id: "S4", name: "Big and small", note: "A few big rubble stones, small ones wedged in the gaps between them.",
+    base: (P, rng, x, y, TS, g) => {
+      const big = ring(rng, x, y, TS, { min: 0.09, max: 0.16, squeeze: 0.75 });
+      const small = big.map(([ax, ay, ar, aa], i) => { const [bx, by, br] = big[(i + 1) % big.length], mx = (ax + bx) / 2, my = (ay + by) / 2, d = Math.hypot(mx - x, my - y); return [x + (mx - x) * (d + TS * 0.08) / d, y + (my - y) * (d + TS * 0.08) / d, TS * rng.range(0.04, 0.06), 0]; });
+      lumps(g, rng, small, TS, { width: 2 });
+      lumps(g, rng, big, TS);
+      heap(P, rng, x, y, TS);
+    } },
+].map((v) => ({ ...v, flame: bigFlame }));
 
-// Torches on the wall at the top of the scene (the wall at y = wy).
-const TORCHES = [
-  { id: "T1", name: "Moving burst", note: "Today's bracket and ink dot, its rays moving.",
-    base: (P, rng, x, wy, TS) => { P.line(x, wy - TS * 0.05, x, wy + TS * 0.2, IN + 0.6); P.round(x, wy + TS * 0.2, TS * 0.07, IN, INK); },
-    flame: (g, x, wy, TS, t) => rays(g, x, wy + TS * 0.2, TS, t, { n: 6, r0: 0.11, r1: 0.22, width: 1.4, from: Math.PI / 2, span: Math.PI * 0.85 }), at: 0.2 },
-  { id: "T2", name: "Sconce", note: "A half-round cup on the wall, a small warm tongue in it.",
-    base: (P, rng, x, wy, TS) => { P.shape([[x - TS * 0.16, wy], [x - TS * 0.12, wy + TS * 0.14], [x, wy + TS * 0.19], [x + TS * 0.12, wy + TS * 0.14], [x + TS * 0.16, wy]], IN, PAPER); },
-    flame: (g, x, wy, TS, t) => rising(g, x, wy + TS * 0.12, TS, t, { n: 1, w: 0.17, h: 0.36 }), at: 0.1 },
-  { id: "T3", name: "Torch in a ring", note: "A stick angled out from an iron ring, an ink flame on its end, on twos.",
-    base: (P, rng, x, wy, TS) => { P.round(x, wy + TS * 0.05, TS * 0.06, 1.3); P.box(x + TS * 0.04, wy + TS * 0.16, TS * 0.07, TS * 0.3, -0.25, IN, PAPER); },
-    flame: (g, x, wy, TS, t) => rising(g, x + TS * 0.08, wy + TS * 0.32, TS, t, { n: 2, w: 0.15, h: 0.32, look: "ink", boil: true, spread: 0.07 }), at: 0.3 },
-  { id: "T4", name: "Brazier", note: "Not on the wall: an iron bowl on the floor near it, with a fire of its own.",
-    base: (P, rng, x, wy, TS) => { const y = wy + TS * 1; for (let i = 0; i < 3; i++) { const a = i * 2.09 + 0.5; P.line(x + Math.cos(a) * TS * 0.2, y + Math.sin(a) * TS * 0.2, x + Math.cos(a) * TS * 0.33, y + Math.sin(a) * TS * 0.33, 1.4); } P.round(x, y, TS * 0.22, OUT, PAPER); P.round(x, y, TS * 0.14, 1.1); },
-    flame: (g, x, wy, TS, t) => rising(g, x, wy + TS * 1.06, TS, t, { n: 3, w: 0.15, h: 0.42, spread: 0.08 }), at: 1 },
-  { id: "T5", name: "Teardrop", note: "A bracket with a single ink teardrop flame, a spark or two lifting off it.",
-    base: (P, rng, x, wy, TS) => { P.line(x, wy - TS * 0.05, x, wy + TS * 0.22, IN + 0.4); P.line(x - TS * 0.08, wy + TS * 0.22, x + TS * 0.08, wy + TS * 0.22, IN); },
-    flame: (g, x, wy, TS, t) => { rising(g, x, wy + TS * 0.2, TS, t, { n: 1, w: 0.14, h: 0.32, look: "ink" }); sparks(g, x, wy + TS * 0.05, TS, t, { n: 3, rise: 0.5, spread: 0.08 }); }, at: 0.2 },
-];
+const TORCHES = [];
 
 // ---- Scenes ------------------------------------------------------------------
 
 // (Game size: a wide patch, to see the bands; close up, just round the fire.)
-const SIZES = { game: [9, 7], big: [4, 3] }, scenes = [];
+const SIZES = { game: [9, 7], big: [5, 3] }, scenes = [];
 let COLS = 9, ROWS = 7;
 
 // The paper, a loose grid, and (for a torch) a wall with rock above it.
@@ -293,8 +308,8 @@ function build(view, v, torch) {
   const P = pen(g, rng, TS / 32);
   g.strokeStyle = INK;
   g.lineCap = "round";
-  const x = COLS * TS / 2, y = torch ? wy : ROWS * TS / 2;
-  v.base(P, rng, x, y, TS);
+  const x = (Math.floor(COLS / 2) + 0.5) * TS, y = torch ? wy : (Math.floor(ROWS / 2) + 0.5) * TS;
+  v.base(P, rng, x, y, TS, g);
   // (Where the light comes from, and where the flame goes.)
   view.at = { x, y, lx: x, ly: torch ? wy + TS * v.at : y };
 }
@@ -347,7 +362,6 @@ function frame(now) {
 }
 
 FIRES.forEach((v) => makeScene($("fires"), v, false));
-TORCHES.forEach((v) => makeScene($("torches"), v, true));
 const rebuild = () => scenes.forEach((s) => s.views.forEach((view) => build(view, s.v, s.torch)));
 $("big").addEventListener("input", rebuild);
 rebuild();
