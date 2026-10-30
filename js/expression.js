@@ -21,7 +21,7 @@ export const EXPRESSION_DEFAULTS = {
   // Sight: clear out to `sight` tiles, then fading out with distance over
   // `sightFade`; where walls block the view the edge softens over
   // `blockSoft`. Changes ease in over `reveal` seconds.
-  sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
+  sight: 8, sightFade: 1.5, blockSoft: 0.1, reveal: 0.4,
   // Known walls and hatching this near the player (in tiles) keep the ink
   // in sight, seen or not (round a corner), softening over `nearSoft`.
   nearInk: 3, nearSoft: 1.5,
@@ -30,18 +30,18 @@ export const EXPRESSION_DEFAULTS = {
   // edge of sight (`sight`), the bands' edges ragged by `lightRag` tiles. It lights a rim of rock about `lightWall` tiles past a
   // wall's face. The flame's size sets how wide the shadows' dim edges are.
   // Flicker in brightness and in size, and warmth.
-  radius: 5, lightFull: 0.6, lightDim: 0.55, lightFaint: 0.2, lightRag: 0.3, lightWall: 0.6, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
+  radius: 5, lightFull: 0.85, lightDim: 0.75, lightFaint: 0.2, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
   // The colour of everything the candle doesn't light.
   darkColor: "#3b3936",
   // The ink in sight and beyond it: colour and strength of the floor
   // markings, walls and hatching; the hatching beyond sight is inked from a
   // weaker depth map.
   seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
+  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.55, memHatchC: "#6b5f52", memHatch: 0.55,
   // The depth map: how it is made, black up to `full` tiles from the known
   // walls and white from `reach`, its ragged edge, and (for some ways of
   // making it) how openings soften it.
-  depth: "diffuse", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
+  depth: "distance", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
   // The hatching from black to white: strokes kept, their width, length and
   // ink in mid grey (each going on to nothing at white, but ink).
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
