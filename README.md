@@ -8,6 +8,9 @@ and some goblins.
   stone hatching in the rock. The hatching is one pattern for all the rock (the map hatched as solid
   stone); a depth map from the known walls sets how heavily it is inked, so it never gives away
   ground not yet seen.
+- Levels are made by areas: dungeon (built rooms and straight corridors; rooms of different kinds
+  with pillars, niches, jail cells, beds, tables, shelves, crates and doors), cavern (misshapen caves
+  with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).
 - The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
 - The player sees what lies in their line of sight, cast against the walls: sharp where walls block
@@ -34,13 +37,15 @@ in the browser console.
 
 | File | What it does |
 | --- | --- |
-| `js/dungeon.js` | Rooms and caves, corridors, doors and furniture. |
-| `js/maprender.js` | The hand-inked map: wall outlines and strokes, shadow, floor grid, furniture, room numbers. |
+| `js/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern and collapsed ground, their rooms, corridors, rubble, doors, room kinds and furnishings. |
+| `js/dungeon.js` | Tile types, cave carving, and the older single-kind generator (still used by the expression mockup). |
+| `js/maprender.js` | The hand-inked map: wall outlines and strokes, recesses, doors, shadow, floor grid (looser on cave floors), rubble, furniture and pillars, room numbers. |
+| `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
 | `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
-| `js/world.js` | The player, goblin packs and their milling about; field of view and memory. |
+| `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); field of view and memory. |
 | `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |

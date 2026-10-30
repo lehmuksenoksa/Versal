@@ -166,8 +166,10 @@ export class Expression {
     const drawn = layer({ floor: true, shadow: false });
     this.floorLayer = drawn.canvas; // (for its shape)
     this.shadowLayer = layer({ floor: true, fill: false }).canvas;
-    this.markLayer = layer({ grid: true, keys: true }).canvas;
-    this.wallLayer = layer({ walls: true }).canvas;
+    // (The things in the rooms cut out of the grid and inked with the walls,
+    // as the layers are recoloured.)
+    this.markLayer = layer({ grid: true, keys: true, furniture: "erase" }).canvas;
+    this.wallLayer = layer({ walls: true, furniture: "ink" }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
     this.paper = blank(cw, ch);
     const pg = this.paper.getContext("2d");

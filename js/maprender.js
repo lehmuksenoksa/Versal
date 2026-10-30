@@ -24,8 +24,12 @@ const GRID = { wobble: 0.8, breaks: 0.35 };
 // them as separate layers.
 // Returns the canvas, the floor outline (a path and its loops) and the
 // hatching strokes.
+// The things in the rooms (`furniture`) are drawn with the grid on paper
+// ("paper"); or, for drawings recoloured as one ink, cut out of the grid
+// ("erase", with the grid) and inked with the walls ("ink", with the walls).
 export function renderMap(level, TS, scale, seed, {
   plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, fill = true, shadow = true, grid = !plan, walls = true, keys = true,
+  furniture = "paper",
 } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
@@ -64,8 +68,9 @@ export function renderMap(level, TS, scale, seed, {
   if (grid) {
     drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
     if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
-    if (level.features) drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7));
+    if (level.features && furniture !== "ink") drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), furniture);
   }
+  if (walls && level.features && furniture === "ink") drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), "ink");
   ctx.restore();
 
   if (walls) {
@@ -236,8 +241,22 @@ export function wallLine(ctx, a, b, TS, rng) {
 // a touch past its points as a quick hand does; shapes drawn a side at a
 // time; rounds closing with a slight overlap. Widths are in pixels at 32 px
 // squares (scaled by k).
-function pen(ctx, rng, k) {
+// `mode` "paper" fills and inks as asked; "erase" cuts the fills (and any
+// solid ink) out of what is there and inks nothing; "ink" cuts the paper
+// fills out, and inks the rest; shadows only on paper. The same random
+// numbers are taken whatever the mode, so the drawings match.
+function pen(ctx, rng, k, mode = "paper") {
   const j = (a = 0.5) => rng.range(-a, a) * k;
+  const paint = (fill) => {
+    if (fill === SHADOW && mode !== "paper") return;
+    const cut = mode === "erase" || (mode === "ink" && fill === PAPER);
+    ctx.save();
+    if (cut) ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = cut ? "#000" : fill;
+    ctx.fill();
+    ctx.restore();
+  };
+  const inked = mode !== "erase";
   const line = (ax, ay, bx, by, width) => {
     const L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L, nx = -uy, ny = ux;
     const o0 = rng.range(-0.2, 1.1) * k, o1 = rng.range(-0.2, 1.1) * k, bow = rng.range(-1, 1) * Math.min(1.2 * k, L * 0.05);
@@ -246,7 +265,7 @@ function pen(ctx, rng, k) {
     ctx.moveTo(sx, sy);
     ctx.quadraticCurveTo((sx + ex) / 2 + nx * bow * 2, (sy + ey) / 2 + ny * bow * 2, ex, ey);
     ctx.lineWidth = width * k * rng.range(0.88, 1.08);
-    ctx.stroke();
+    if (inked) ctx.stroke();
   };
   // A closed shape through `pts` ([x, y]s, each a little off): `fill` inside
   // if given, then each side (if `width`). Its corners as drawn.
@@ -256,8 +275,7 @@ function pen(ctx, rng, k) {
       ctx.beginPath();
       p.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.closePath();
-      ctx.fillStyle = fill;
-      ctx.fill();
+      paint(fill);
     }
     if (width) p.forEach(([x, y], i) => line(x, y, ...p[(i + 1) % p.length], width));
     return p;
@@ -277,15 +295,14 @@ function pen(ctx, rng, k) {
       ctx.beginPath();
       for (let i = 0; i < m; i++) ctx[i ? "lineTo" : "moveTo"](...at(i / m));
       ctx.closePath();
-      ctx.fillStyle = fill;
-      ctx.fill();
+      paint(fill);
     }
     if (width) {
       const end = 1 + rng.range(0.03, 0.08);
       ctx.beginPath();
       for (let i = 0; i <= Math.ceil(m * end); i++) ctx[i ? "lineTo" : "moveTo"](...at(Math.min(end, i / m)));
       ctx.lineWidth = width * k;
-      ctx.stroke();
+      if (inked) ctx.stroke();
     }
   };
   return { j, line, shape, box, round };
@@ -530,8 +547,8 @@ function drawRubble(ctx, level, TS, rng) {
 // drawn with the pen: posts (pillars on grid crossings, or half of one on a
 // wall's line, the wall drawn over its back) in ink, casting a shadow;
 // furniture outlined over the paper.
-function drawFeatures(ctx, features, TS, rng) {
-  const k = TS / 32, P = pen(ctx, rng, k), OUT = 2.9, IN = 1.9;
+function drawFeatures(ctx, features, TS, rng, mode = "paper") {
+  const k = TS / 32, P = pen(ctx, rng, k, mode), OUT = 2.9, IN = 1.9;
   const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
   ctx.save();
   ctx.lineJoin = "round";

@@ -3,7 +3,8 @@
 // what lies in their field of view, and remembers what they have seen.
 
 import { RNG } from "./rng.js";
-import { generateLevel, T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
+import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
+import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 
 export class World {
@@ -13,7 +14,9 @@ export class World {
     this.seed = this.rng.seed;
     this.events = [];
     this.nextId = 1;
-    const level = (this.level = generateLevel(this.rng));
+    const level = (this.level = generateAreas(this.rng));
+    // Pillars on grid crossings, which no step goes diagonally past.
+    this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
     this.actors = [this.player];
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom));
@@ -58,12 +61,17 @@ export class World {
   tileAt(x, y) { return this.level.get(x, y); }
   actorAt(x, y) { return this.actors.find((a) => a.x === x && a.y === y); }
   isFree(x, y) { return isWalkable(this.tileAt(x, y)) && !this.actorAt(x, y); }
+  // Can a step go from (x, y) by (dx, dy)? Not diagonally past a post.
+  canStep(x, y, dx, dy) {
+    if (!dx || !dy) return true;
+    return !this.posts.has((y + (dy > 0 ? 1 : 0)) * (this.level.w + 1) + x + (dx > 0 ? 1 : 0));
+  }
 
   // Returns true if a turn passed.
   playerMove(dx, dy) {
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (this.actorAt(nx, ny)) return false;
-    if (!isWalkable(this.tileAt(nx, ny))) return false;
+    if (!isWalkable(this.tileAt(nx, ny)) || !this.canStep(p.x, p.y, dx, dy)) return false;
     this.moveActor(p, nx, ny);
     return this.tick();
   }
@@ -89,14 +97,14 @@ export class World {
   randomStep(a, ok = () => true) {
     for (const [dx, dy] of this.rng.shuffle([...DIRS8])) {
       const x = a.x + dx, y = a.y + dy;
-      if (this.isFree(x, y) && ok(x, y)) return this.moveActor(a, x, y);
+      if (this.isFree(x, y) && this.canStep(a.x, a.y, dx, dy) && ok(x, y)) return this.moveActor(a, x, y);
     }
   }
 
   stepToward(a, tx, ty) {
     const dx = Math.sign(tx - a.x), dy = Math.sign(ty - a.y);
     for (const [sx, sy] of [[dx, dy], [dx, 0], [0, dy]]) {
-      if ((sx || sy) && this.isFree(a.x + sx, a.y + sy)) return this.moveActor(a, a.x + sx, a.y + sy);
+      if ((sx || sy) && this.isFree(a.x + sx, a.y + sy) && this.canStep(a.x, a.y, sx, sy)) return this.moveActor(a, a.x + sx, a.y + sy);
     }
   }
 
