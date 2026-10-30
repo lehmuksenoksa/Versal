@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fire Symbols</title>
+<style>
+  /* Layout: two wrapping grids of animated cards, bonfires then torches. */
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  h2 { margin: 22px 0 8px; font-size: 19px; font-weight: normal; color: var(--muted); }
+  header p { margin: 0 0 12px; max-width: 75ch; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; color: var(--muted); }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  input[type="range"] { width: 130px; accent-color: var(--accent); }
+  .grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; }
+  .pair { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  canvas { display: block; }
+  figcaption { padding: 6px 2px 0; max-width: 360px; }
+  figcaption b { font-weight: normal; font-size: 17px; margin-right: 6px; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bonfire and torch symbols</h1>
+  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. Tell me the letters you like; parts can be mixed, e.g. "B's flame on C's logs".</p>
+  <div class="bar">
+    <label><input id="light" type="checkbox" checked> Light bands</label>
+    <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
+    <label>Close-up <input id="big" type="range" min="40" max="120" step="8" value="80"></label>
+  </div>
+</header>
+
+<h2>Bonfires</h2>
+<div class="grid" id="fires"></div>
+<h2>Torches</h2>
+<div class="grid" id="torches"></div>
+
+<script type="module">
+import { pen, PAPER, INK, wallLine } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+
+const GAME_TS = 40 * 0.48, OUT = 2.9, IN = 1.9;
+const FIRE = "#e8892f", FIRE_IN = "#f8d36a", EMBER = "#c2461f";
+const DARK = [59, 57, 54], PAPER_RGB = [247, 242, 230];
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+const $ = (id) => document.getElementById(id);
+
+// ---- Flames ----------------------------------------------------------------
+
+// A tongue of flame standing on (bx, by), `w` wide, `h` tall, its tip leaning
+// `lean`; its sides a little off by `jit` (for a boiling line).
+function tongue(g, bx, by, w, h, lean, jit = () => 0) {
+  const tx = bx + lean + jit(), ty = by - h + jit();
+  g.beginPath();
+  g.moveTo(tx, ty);
+  g.bezierCurveTo(bx + lean * 0.4 - w * 0.12 + jit(), by - h * 0.5, bx - w / 2 + jit(), by - h * 0.25, bx - w / 2, by);
+  g.bezierCurveTo(bx - w / 2, by + w * 0.55, bx + w / 2, by + w * 0.55, bx + w / 2, by);
+  g.bezierCurveTo(bx + w / 2 + jit(), by - h * 0.25, bx + lean * 0.4 + w * 0.12 + jit(), by - h * 0.5, tx, ty);
+  g.closePath();
+}
+
+// How a tongue moves: its height and lean at time t.
+const sway = (t, f) => ({
+  h: 0.82 + 0.13 * Math.sin(t * f.sp + f.ph) + 0.07 * Math.sin(t * f.sp * 2.3 + f.ph * 1.7),
+  lean: 0.35 * Math.sin(t * f.sp * 0.6 + f.ph) + 0.15 * Math.sin(t * f.sp * 1.9 + f.ph * 0.5),
+});
+
+// A fire of tongues rising from (x, y): `look` "colour" (warm, ink outlined),
+// "ink" (solid ink, a paper heart) or "line" (paper, ink outlined). `boil`
+// redraws the lines a little differently a few times a second, as on twos.
+function rising(g, x, y, TS, t, { n = 3, w = 0.22, h = 0.55, look = "colour", boil = false, spread = 0.12 } = {}) {
+  const k = TS / 32, tick = Math.floor(t * 8);
+  const rng = new RNG(boil ? 977 + (tick % 3) * 131 : 977), jit = boil ? () => rng.range(-0.6, 0.6) * k : () => 0;
+  const order = [...Array(n).keys()].sort((a, b) => Math.abs(b - (n - 1) / 2) - Math.abs(a - (n - 1) / 2));
+  for (const i of order) {
+    const mid = 1 - Math.abs(i - (n - 1) / 2) / n, f = { sp: 5 + i * 1.3, ph: i * 2.1 };
+    const s = sway(t, f), bx = x + (i - (n - 1) / 2) * spread * TS, tw = w * TS * (0.7 + 0.3 * mid), th = h * TS * mid * s.h;
+    tongue(g, bx, y, tw, th, s.lean * tw, jit);
+    g.fillStyle = look === "colour" ? FIRE : look === "ink" ? INK : PAPER;
+    g.fill();
+    if (look !== "ink") { g.lineWidth = 1.5 * k; g.strokeStyle = INK; g.stroke(); }
+    tongue(g, bx + s.lean * tw * 0.2, y, tw * 0.45, th * 0.5, s.lean * tw * 0.3, jit);
+    g.fillStyle = look === "colour" ? FIRE_IN : look === "ink" ? PAPER : PAPER;
+    if (look !== "line") g.fill();
+    else { g.lineWidth = 1.1 * k; g.stroke(); }
+  }
+}
+
+// Tongues pointing out every way from (x, y), as a fire seen from above.
+function radiating(g, x, y, TS, t, { n = 7, r0 = 0.05, h = 0.26, w = 0.14, look = "colour" } = {}) {
+  const k = TS / 32;
+  for (let i = 0; i < n; i++) {
+    const a = (i * 2 * Math.PI) / n + 0.3, f = { sp: 6 + (i % 3) * 1.4, ph: i * 1.9 }, s = sway(t, f);
+    g.save();
+    g.translate(x, y);
+    g.rotate(a + Math.PI / 2);
+    tongue(g, 0, -r0 * TS, w * TS, h * TS * s.h, s.lean * w * TS * 0.6);
+    g.fillStyle = look === "colour" ? FIRE : INK;
+    g.fill();
+    if (look === "colour") { g.lineWidth = 1.3 * k; g.strokeStyle = INK; g.stroke(); }
+    g.restore();
+  }
+  g.beginPath();
+  g.arc(x, y, (r0 + 0.07) * TS, 0, 2 * Math.PI);
+  g.fillStyle = look === "colour" ? FIRE_IN : PAPER;
+  g.fill();
+}
+
+// Short ink rays round (x, y), growing and shrinking: the old burst, moving.
+function rays(g, x, y, TS, t, { n = 9, r0 = 0.06, r1 = 0.24, width = 1.9, from = 0, span = 2 * Math.PI } = {}) {
+  const k = TS / 32;
+  g.lineCap = "round";
+  g.strokeStyle = INK;
+  g.lineWidth = width * k;
+  for (let i = 0; i < n; i++) {
+    const a = from + (span === 2 * Math.PI ? (i * span) / n : (i - (n - 1) / 2) * (span / (n - 1)));
+    const L = r1 * (0.7 + 0.2 * Math.sin(t * (7 + (i % 4)) + i * 2.3) + 0.1 * Math.sin(t * 13 + i));
+    g.beginPath();
+    g.moveTo(x + Math.cos(a) * r0 * TS, y + Math.sin(a) * r0 * TS);
+    g.lineTo(x + Math.cos(a) * L * TS, y + Math.sin(a) * L * TS);
+    g.stroke();
+  }
+}
+
+// Sparks drifting up from (x, y) and dying away.
+function sparks(g, x, y, TS, t, { n = 6, rise = 1.1, spread = 0.25 } = {}) {
+  for (let i = 0; i < n; i++) {
+    const p = (t * 0.7 + i / n) % 1, cycle = Math.floor(t * 0.7 + i / n);
+    const sx = x + (Math.sin(i * 12.9 + cycle * 7.3) * spread + Math.sin(p * 6 + i) * 0.06) * TS, sy = y - p * rise * TS;
+    g.fillStyle = `rgba(${p < 0.5 ? "214, 110, 40" : "27, 24, 21"}, ${(1 - p) * 0.9})`;
+    g.fillRect(sx - TS * 0.025, sy - TS * 0.025, TS * 0.05, TS * 0.05);
+  }
+}
+
+// Embers in a bed, glowing in turn.
+function embers(g, pts, TS, t) {
+  pts.forEach(([x, y, r], i) => {
+    const glow = 0.5 + 0.5 * Math.sin(t * (2 + (i % 3)) + i * 1.7);
+    g.beginPath();
+    g.arc(x, y, r * TS, 0, 2 * Math.PI);
+    g.fillStyle = `rgb(${Math.round(120 + 110 * glow)}, ${Math.round(40 + 90 * glow)}, ${Math.round(20 + 20 * glow)})`;
+    g.fill();
+    g.lineWidth = TS / 32;
+    g.strokeStyle = INK;
+    g.stroke();
+  });
+}
+
+// ---- What lies under the flame (drawn once) --------------------------------
+
+function stones(P, rng, x, y, TS, n = 7, r = [0.36, 0.42]) {
+  const a0 = rng.range(0, 2 * Math.PI);
+  for (let i = 0; i < n; i++) {
+    const a = a0 + (i * 2 * Math.PI) / n + rng.range(-0.15, 0.15), rr = TS * rng.range(...r);
+    P.round(x + Math.cos(a) * rr, y + Math.sin(a) * rr, TS * rng.range(0.08, 0.11), IN, PAPER);
+  }
+}
+// Logs, each a long box with an end ring, laid at the angles given.
+function logs(P, rng, x, y, TS, angles, L = 0.5, off = 0) {
+  for (const a of angles) {
+    const c = Math.cos(a), s = Math.sin(a), cx = x + c * off * TS, cy = y + s * off * TS;
+    const p = P.box(cx, cy, L * TS, 0.11 * TS, a, IN + 0.4, PAPER);
+    P.round(cx + c * L * TS * 0.5, cy + s * L * TS * 0.5, 0.05 * TS, 1.2);
+  }
+}
+
+const FIRES = [
+  { id: "A", name: "Rising flame", note: "Stone ring, crossed logs; three warm tongues swaying, ink outlined.",
+    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS); logs(P, rng, x, y, TS, [0.5, 0.5 + Math.PI / 2], 0.52); },
+    flame: (g, x, y, TS, t) => rising(g, x, y + TS * 0.12, TS, t) },
+  { id: "B", name: "Ink flame, on twos", note: "Same ring; the flame solid ink with a paper heart, its lines redrawn a few times a second like a hand-animated cartoon.",
+    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 8); logs(P, rng, x, y, TS, [-0.3, -0.3 + Math.PI / 2], 0.5); },
+    flame: (g, x, y, TS, t) => rising(g, x, y + TS * 0.12, TS, t, { look: "ink", boil: true }) },
+  { id: "C", name: "From above", note: "A star of five logs; the flame seen from overhead, tongues licking out every way.",
+    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 9, [0.4, 0.45]); logs(P, rng, x, y, TS, [0, 1.25, 2.5, 3.75, 5].map((a) => a + 0.2), 0.3, 0.2); },
+    flame: (g, x, y, TS, t) => radiating(g, x, y, TS, t) },
+  { id: "D", name: "Moving burst", note: "Today's symbol, its ink rays growing and shrinking.",
+    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS); logs(P, rng, x, y, TS, [1, 1 + Math.PI / 2], 0.48); },
+    flame: (g, x, y, TS, t) => rays(g, x, y, TS, t) },
+  { id: "E", name: "Embers and sparks", note: "No stones: a bed of glowing embers in the ash, a small flame, sparks rising and dying.",
+    base: (P, rng, x, y, TS) => { P.round(x, y, TS * 0.36, 1.2); for (let i = 0; i < 10; i++) { const a = rng.range(0, 6.3), r = rng.range(0.2, 0.33) * TS; P.line(x + Math.cos(a) * r, y + Math.sin(a) * r, x + Math.cos(a) * (r + TS * 0.06), y + Math.sin(a) * (r + TS * 0.06), 1.1); } },
+    embers: (x, y) => [[-0.16, 0.06, 0.05], [0.14, 0.1, 0.045], [0.02, 0.18, 0.04], [-0.06, -0.12, 0.04], [0.17, -0.08, 0.035], [-0.2, -0.06, 0.03]].map(([a, b, r]) => [x + a, y + b, r]),
+    flame: (g, x, y, TS, t) => { rising(g, x, y + TS * 0.04, TS, t, { n: 2, w: 0.17, h: 0.36, spread: 0.1 }); sparks(g, x, y - TS * 0.15, TS, t); } },
+  { id: "F", name: "Big bonfire", note: "A heaped pile of logs, tall tongues and sparks, for a fire that's the heart of a cave.",
+    base: (P, rng, x, y, TS) => { stones(P, rng, x, y, TS, 10, [0.42, 0.47]); logs(P, rng, x, y, TS, [0.2, 1.3, 2.4, 3.5, 4.6, 5.6], 0.42, 0.12); },
+    flame: (g, x, y, TS, t) => { rising(g, x, y + TS * 0.18, TS, t, { n: 5, w: 0.2, h: 0.8, spread: 0.11 }); sparks(g, x, y - TS * 0.4, TS, t, { n: 8, rise: 1.4 }); } },
+];
+
+// Torches on the wall at the top of the scene (the wall at y = wy).
+const TORCHES = [
+  { id: "T1", name: "Moving burst", note: "Today's bracket and ink dot, its rays moving.",
+    base: (P, rng, x, wy, TS) => { P.line(x, wy - TS * 0.05, x, wy + TS * 0.2, IN + 0.6); P.round(x, wy + TS * 0.2, TS * 0.07, IN, INK); },
+    flame: (g, x, wy, TS, t) => rays(g, x, wy + TS * 0.2, TS, t, { n: 6, r0: 0.11, r1: 0.22, width: 1.4, from: Math.PI / 2, span: Math.PI * 0.85 }), at: 0.2 },
+  { id: "T2", name: "Sconce", note: "A half-round cup on the wall, a small warm tongue in it.",
+    base: (P, rng, x, wy, TS) => { P.shape([[x - TS * 0.16, wy], [x - TS * 0.12, wy + TS * 0.14], [x, wy + TS * 0.19], [x + TS * 0.12, wy + TS * 0.14], [x + TS * 0.16, wy]], IN, PAPER); },
+    flame: (g, x, wy, TS, t) => rising(g, x, wy + TS * 0.12, TS, t, { n: 1, w: 0.17, h: 0.36 }), at: 0.1 },
+  { id: "T3", name: "Torch in a ring", note: "A stick angled out from an iron ring, an ink flame on its end, on twos.",
+    base: (P, rng, x, wy, TS) => { P.round(x, wy + TS * 0.05, TS * 0.06, 1.3); P.box(x + TS * 0.04, wy + TS * 0.16, TS * 0.07, TS * 0.3, -0.25, IN, PAPER); },
+    flame: (g, x, wy, TS, t) => rising(g, x + TS * 0.08, wy + TS * 0.32, TS, t, { n: 2, w: 0.15, h: 0.32, look: "ink", boil: true, spread: 0.07 }), at: 0.3 },
+  { id: "T4", name: "Brazier", note: "Not on the wall: an iron bowl on the floor near it, with a fire of its own.",
+    base: (P, rng, x, wy, TS) => { const y = wy + TS * 1; for (let i = 0; i < 3; i++) { const a = i * 2.09 + 0.5; P.line(x + Math.cos(a) * TS * 0.2, y + Math.sin(a) * TS * 0.2, x + Math.cos(a) * TS * 0.33, y + Math.sin(a) * TS * 0.33, 1.4); } P.round(x, y, TS * 0.22, OUT, PAPER); P.round(x, y, TS * 0.14, 1.1); },
+    flame: (g, x, wy, TS, t) => rising(g, x, wy + TS * 1.06, TS, t, { n: 3, w: 0.15, h: 0.42, spread: 0.08 }), at: 1 },
+  { id: "T5", name: "Teardrop", note: "A bracket with a single ink teardrop flame, a spark or two lifting off it.",
+    base: (P, rng, x, wy, TS) => { P.line(x, wy - TS * 0.05, x, wy + TS * 0.22, IN + 0.4); P.line(x - TS * 0.08, wy + TS * 0.22, x + TS * 0.08, wy + TS * 0.22, IN); },
+    flame: (g, x, wy, TS, t) => { rising(g, x, wy + TS * 0.2, TS, t, { n: 1, w: 0.14, h: 0.32, look: "ink" }); sparks(g, x, wy + TS * 0.05, TS, t, { n: 3, rise: 0.5, spread: 0.08 }); }, at: 0.2 },
+];
+
+// ---- Scenes ------------------------------------------------------------------
+
+// (Game size: a wide patch, to see the bands; close up, just round the fire.)
+const SIZES = { game: [9, 7], big: [4, 3] }, scenes = [];
+let COLS = 9, ROWS = 7;
+
+// The paper, a loose grid, and (for a torch) a wall with rock above it.
+function backdrop(g, TS, rng, wallY) {
+  const k = TS / 32;
+  g.fillStyle = PAPER;
+  g.fillRect(0, 0, COLS * TS, ROWS * TS);
+  g.strokeStyle = "rgba(27, 24, 21, 0.28)";
+  g.lineWidth = 0.9 * k;
+  for (let i = 1; i < COLS; i++) { g.beginPath(); g.moveTo(i * TS + rng.range(-0.6, 0.6) * k, wallY ?? 0); g.lineTo(i * TS + rng.range(-0.6, 0.6) * k, ROWS * TS); g.stroke(); }
+  for (let j = 1; j < ROWS; j++) { if (wallY != null && j * TS <= wallY) continue; g.beginPath(); g.moveTo(0, j * TS + rng.range(-0.6, 0.6) * k); g.lineTo(COLS * TS, j * TS + rng.range(-0.6, 0.6) * k); g.stroke(); }
+  if (wallY != null) {
+    g.fillStyle = PAPER;
+    g.fillRect(0, 0, COLS * TS, wallY);
+    // (Short strokes in threes, packed along the wall, as the map's hatching.)
+    g.strokeStyle = INK;
+    g.lineCap = "round";
+    for (let cx = -TS * 0.1; cx < COLS * TS + TS * 0.3; cx += TS * rng.range(0.32, 0.42)) {
+      const a = rng.range(0.4, 2.7), cy = wallY - TS * rng.range(0.2, 0.45), L = TS * rng.range(0.13, 0.18);
+      for (let m = -1; m <= 1; m++) {
+        const ox = Math.cos(a + Math.PI / 2) * m * TS * 0.09, oy = Math.sin(a + Math.PI / 2) * m * TS * 0.09;
+        g.lineWidth = 1.5 * k;
+        g.beginPath(); g.moveTo(cx + ox - Math.cos(a) * L, cy + oy - Math.sin(a) * L); g.lineTo(cx + ox + Math.cos(a) * L, cy + oy + Math.sin(a) * L); g.stroke();
+      }
+    }
+    g.fillStyle = INK;
+    g.strokeStyle = INK;
+    for (let i = -1; i <= COLS; i++) wallLine(g, [i * TS, wallY], [(i + 1) * TS, wallY], TS, rng);
+  }
+}
+
+function makeScene(host, v, torch) {
+  const fig = document.createElement("figure"), pair = document.createElement("div");
+  pair.className = "pair";
+  const views = [GAME_TS, 0].map((ts) => { const c = document.createElement("canvas"); pair.append(c); return { c, ts, big: !ts }; });
+  fig.append(pair);
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<b>${v.id}</b>${v.name}<br><span>${v.note}</span>`;
+  fig.append(cap);
+  host.append(fig);
+  scenes.push({ v, torch, views });
+}
+
+function build(view, v, torch) {
+  [COLS, ROWS] = view.big ? SIZES.big : SIZES.game;
+  const TS = view.big ? +$("big").value : GAME_TS, W = COLS * TS, H = ROWS * TS;
+  view.TS = TS;
+  view.c.width = Math.round(W * dpr);
+  view.c.height = Math.round(H * dpr);
+  view.c.style.width = `${W}px`;
+  view.c.style.height = `${H}px`;
+  const base = (view.base = document.createElement("canvas"));
+  base.width = view.c.width;
+  base.height = view.c.height;
+  const g = base.getContext("2d");
+  g.scale(dpr, dpr);
+  const rng = new RNG(4242 + v.id.charCodeAt(v.id.length - 1));
+  const wy = torch ? TS * (view.big ? 0.7 : 2.3) : null;
+  backdrop(g, TS, rng, wy);
+  const P = pen(g, rng, TS / 32);
+  g.strokeStyle = INK;
+  g.lineCap = "round";
+  const x = COLS * TS / 2, y = torch ? wy : ROWS * TS / 2;
+  v.base(P, rng, x, y, TS);
+  // (Where the light comes from, and where the flame goes.)
+  view.at = { x, y, lx: x, ly: torch ? wy + TS * v.at : y };
+}
+
+// The light's bands over what lies round it: full, dim, dark, then unseen.
+function light(g, TS, lx, ly, t, torch, wy) {
+  const B = torch ? { full: 1.5, dim: 1, dark: 1.5 } : { full: 2.5, dim: 1.5, dark: 2 };
+  const flick = 1 + 0.02 * Math.sin(t * 9) + 0.015 * Math.sin(t * 23);
+  const mix = (a) => `rgb(${DARK.map((d, i) => Math.round(d + (PAPER_RGB[i] - d) * a)).join(",")})`;
+  g.save();
+  g.globalCompositeOperation = "multiply";
+  g.fillStyle = mix(0);
+  g.fillRect(0, 0, COLS * TS, ROWS * TS);
+  g.globalCompositeOperation = "source-over";
+  const bands = [[B.full + B.dim + B.dark, 0.2], [B.full + B.dim, 0.75], [B.full, 1]];
+  // (Each band drawn as a ragged ring: the map shows through, toned.)
+  for (const [r, a] of bands) {
+    g.save();
+    // (A torch's light stops at its wall, lighting a thin rim of the rock.)
+    if (torch) { g.beginPath(); g.rect(0, wy - TS * 0.3, COLS * TS, ROWS * TS); g.clip(); }
+    g.beginPath();
+    for (let i = 0; i <= 48; i++) {
+      const ang = (i / 48) * 2 * Math.PI, rr = r * TS * flick * (1 + 0.03 * Math.sin(ang * 7 + r) + 0.02 * Math.sin(ang * 13));
+      g[i ? "lineTo" : "moveTo"](lx + Math.cos(ang) * rr, ly + Math.sin(ang) * rr);
+    }
+    g.clip();
+    g.drawImage(g.__base, 0, 0, COLS * TS, ROWS * TS);
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = a === 1 ? "rgba(255, 196, 120, 0.25)" : mix(a);
+    g.fillRect(0, 0, COLS * TS, ROWS * TS);
+    g.restore();
+  }
+  g.restore();
+}
+
+function frame(now) {
+  const t = (now / 1000) * +$("speed").value + 10;
+  for (const s of scenes)
+    for (const view of s.views) {
+      [COLS, ROWS] = view.big ? SIZES.big : SIZES.game;
+      const g = view.c.getContext("2d"), TS = view.TS, { x, y, lx, ly } = view.at;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.drawImage(view.base, 0, 0, COLS * TS, ROWS * TS);
+      g.__base = view.base;
+      if ($("light").checked) light(g, TS, lx, ly, t, s.torch, y);
+      if (s.v.embers) embers(g, s.v.embers(0, 0).map(([a, b, r]) => [x + a * TS, y + b * TS, r]), TS, t);
+      s.v.flame(g, x, y, TS, t);
+    }
+  requestAnimationFrame(frame);
+}
+
+FIRES.forEach((v) => makeScene($("fires"), v, false));
+TORCHES.forEach((v) => makeScene($("torches"), v, true));
+const rebuild = () => scenes.forEach((s) => s.views.forEach((view) => build(view, s.v, s.torch)));
+$("big").addEventListener("input", rebuild);
+rebuild();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

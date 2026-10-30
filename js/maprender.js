@@ -246,7 +246,7 @@ export function wallLine(ctx, a, b, TS, rng) {
 // solid ink) out of what is there and inks nothing; "ink" cuts the paper
 // fills out, and inks the rest; shadows only on paper. The same random
 // numbers are taken whatever the mode, so the drawings match.
-function pen(ctx, rng, k, mode = "paper") {
+export function pen(ctx, rng, k, mode = "paper") {
   const j = (a = 0.5) => rng.range(-a, a) * k;
   const paint = (fill) => {
     if (fill === SHADOW && mode !== "paper") return;
