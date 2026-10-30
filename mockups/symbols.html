@@ -342,7 +342,7 @@ function blazeAt(rng, { tips = 3, flicks = 0, size = 1 } = {}) {
     flicks: [...Array(flicks)].filter(() => rng.chance(0.6)).map(() => ({ x: r(-0.9, 0.9), y: r(2.0, 2.8), s: r(0.1, 0.16), lean: r(-0.1, 0.1) })),
   };
 }
-function blazeOnTwos(g, x, y, TS, t, o = {}, set = [[0, 0, 1]]) {
+function blazeOnTwos(g, x, y, TS, t, o = {}, set = [[0, 0, 1.45]]) {
   const tick = Math.floor(t * 8), rng = new RNG(17 + tick * 13);
   const jit = () => rng.range(-0.45, 0.45) * TS / 32;
   for (const [dx, dy, size] of set) blaze(g, x + dx * TS, y + dy * TS, TS, blazeAt(rng, { ...o, size }), { outline: o.outline, jit });
@@ -351,16 +351,16 @@ function blazeOnTwos(g, x, y, TS, t, o = {}, set = [[0, 0, 1]]) {
 const S2 = (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); };
 
 const FIRES = [
-  { id: "G1", name: "Cartoon fire, on twos", note: "Round and short, three tongues, red, orange and a pale yellow heart; redrawn eight times a second as D3.",
-    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t) },
+  { id: "G1", name: "Cartoon fire, on twos", note: "Round, three tongues, red, orange and a pale yellow heart; redrawn eight times a second as D3.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.24, TS, t) },
   { id: "G2", name: "With an ink outline", note: "G1 with a thin ink line round it, to sit with the inked map.",
-    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t, { outline: 1.4 }) },
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.24, TS, t, { outline: 1.4 }) },
   { id: "G3", name: "Four tongues and flicks", note: "A busier top, and little licks of flame breaking off above it now and then.",
-    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t, { tips: 4, flicks: 2 }) },
-  { id: "G4", name: "Smaller", note: "G1 a size down, so more of the stones and logs show.",
-    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.1, TS, t, {}, [[0, 0, 0.8]]) },
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.24, TS, t, { tips: 4, flicks: 2 }) },
+  { id: "G4", name: "Biggest", note: "G1 bigger still, spilling over the stones.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.3, TS, t, {}, [[0, 0, 1.8]]) },
   { id: "G5", name: "Two together", note: "Two smaller fires side by side, each redrawn on its own, for a wider blaze.",
-    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.12, TS, t, {}, [[-0.1, -0.02, 0.72], [0.1, 0.02, 0.8]]) },
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.22, TS, t, {}, [[-0.14, -0.03, 1.05], [0.14, 0.03, 1.15]]) },
 ].map((v) => ({ ...v, base: S2 }));
 
 const TORCHES = [];
