@@ -15,10 +15,10 @@ export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 // fractions of the letter size; tilt is the most a letter leans, in radians.
 const LETTERING = {
   font: "Texturina, Georgia, serif",
-  player: { weight: 800, size: 0.9, ink: "#a3261b", dark: "#e08a76" },
+  player: { weight: 800, size: 0.9, ink: "#a3261b" },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
-  halo: 0.1,
+  halo: 0.1, haloDark: 0.18,
   tilt: 0.06,
 };
 
@@ -403,11 +403,10 @@ export class Renderer {
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
     // A halo keeps the letter legible over grid and hatching: paper where
-    // the light falls, the darkness's colour where it doesn't. A letter with
-    // a colour for the dark (the player's) pales toward it there.
+    // the light falls; where it doesn't, the darkness's colour, and wider.
     // (Dim light reads as lit; the dark band, as dark.)
-    const lit = clamp01(((p.lit ?? 1) - 0.2) / 0.5), ink = style.dark ? mix(style.dark, style.ink, lit) : style.ink;
-    ctx.lineWidth = size * LETTERING.halo;
+    const lit = clamp01(((p.lit ?? 1) - 0.2) / 0.5), ink = style.ink;
+    ctx.lineWidth = size * (LETTERING.haloDark + (LETTERING.halo - LETTERING.haloDark) * lit);
     ctx.strokeStyle = mix(this.settings.darkColor, "#f7f2e6", lit);
     ctx.globalAlpha *= 0.95;
     ctx.strokeText(ch, 0, -m.desc);
