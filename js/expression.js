@@ -12,7 +12,7 @@
 // down each frame (`update`, `drawMap`). The settings were chosen in the
 // expression mockup (mockups/expression.html), which uses this module too.
 
-import { renderMap, drawPaper } from "./maprender.js";
+import { renderMap, drawPaper, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds } from "./hatching.js";
 import { RNG } from "./rng.js";
 import { Walls } from "./sightline.js";
@@ -51,7 +51,7 @@ export const EXPRESSION_DEFAULTS = {
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
   // Unexplored ground: its colour, how it fades in, and from where; and for
   // hexes, how far apart they are (in squares).
-  outColor: "#000000", fadeStyle: "hexes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75, hexSize: 1.5,
+  outColor: "#000000", fadeStyle: "cave", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75, hexSize: 1.5,
   // The rock outside the rooms, where lit: the paper toned toward a colour.
   rockColor: "#8f8a80", rockTone: 0.85,
 };
@@ -810,7 +810,50 @@ export class Expression {
         const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
         return smooth((u[j] - 0.5 + (this.fine(x, y) - 0.5) * 0.5) / 0.1);
       });
-    else if (S.fadeStyle === "hexes") {
+    else if (S.fadeStyle === "cave") {
+      // A ragged edge drawn like a cave's wall: where the cover starts,
+      // traced on a grid of half squares fixed to the map, each point where
+      // it crosses a side jittered by that side's place on the map (so
+      // neighbours share it), solid beyond, and the line inked with the
+      // walls' pen strokes.
+      cg.setTransform(scale, 0, 0, scale, 0, 0);
+      const h = TS / 2, salt = this.seed ^ 0xc4e;
+      const uAt = (i, j) => u[cell(i * h, j * h)] ?? 1;
+      const inside = (i, j) => uAt(i, j) >= 0;
+      // Where the edge crosses the side from lattice point (i, j) one step
+      // right (d 0) or down (d 1).
+      const cross = (i, j, d) => {
+        const a = uAt(i, j), b = d ? uAt(i, j + 1) : uAt(i + 1, j), t = clamp01(a / (a - b));
+        const r = cellRng(2 * i + d, j, salt);
+        return [(i + (d ? 0 : t)) * h + (r() - 0.5) * 0.4 * TS, (j + (d ? t : 0)) * h + (r() - 0.5) * 0.4 * TS];
+      };
+      const fill = new Path2D(), lines = [];
+      for (let j = Math.floor(sy0 / h); j <= Math.ceil(sy1 / h); j++)
+        for (let i = Math.floor(sx0 / h); i <= Math.ceil(sx1 / h); i++) {
+          // The cell's corners in turn and the sides from each to the next;
+          // the part inside, and the edge across it.
+          const corners = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+          const sides = [[i, j, 0], [i + 1, j, 1], [i, j + 1, 0], [i, j, 1]];
+          const ins = corners.map(([a, b]) => inside(a, b));
+          if (!ins.some(Boolean)) continue;
+          const poly = [];
+          for (let k = 0; k < 4; k++) {
+            if (ins[k]) poly.push({ p: [corners[k][0] * h, corners[k][1] * h] });
+            if (ins[k] !== ins[(k + 1) % 4]) poly.push({ p: cross(...sides[k]), edge: true });
+          }
+          fill.moveTo(...poly[0].p);
+          for (const { p } of poly.slice(1)) fill.lineTo(...p);
+          fill.closePath();
+          for (let k = 0; k < poly.length; k++) {
+            const a = poly[k], b = poly[(k + 1) % poly.length];
+            if (a.edge && b.edge) lines.push([a.p, b.p, cellRng(i, j, salt ^ (k + 1))]);
+          }
+        }
+      cg.fillStyle = S.outColor;
+      cg.fill(fill);
+      cg.fillStyle = S.seeWallC;
+      for (const [a, b, r] of lines) wallLine(cg, a, b, TS, { range: (lo, hi) => lo + (hi - lo) * r() });
+    } else if (S.fadeStyle === "hexes") {
       // Hexes fixed to the map, each as big as the cover is solid at its
       // middle (touching, and solid behind, at the far end), a little uneven
       // as if drawn by hand.

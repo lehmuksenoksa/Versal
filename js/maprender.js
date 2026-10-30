@@ -187,6 +187,13 @@ function drawWalls(ctx, loops, TS, rng) {
   }
 }
 
+// One pen stroke of wall from `a` to `b` (points [x, y]), as heavy as the
+// walls, for lines elsewhere drawn like them; `rng` gives range(lo, hi).
+export function wallLine(ctx, a, b, TS, rng) {
+  const k = TS / 32;
+  wallStroke(ctx, a, b, WALL.weight * k, WALL.bow * k, rng);
+}
+
 function wallStroke(ctx, [x0, y0], [x1, y1], weight, bowAmp, rng) {
   const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
   const n = Math.max(3, Math.round(len / 3));
