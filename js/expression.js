@@ -54,6 +54,8 @@ export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
+// Walls show beside floor seen this near (in tiles, over the floor).
+const WALL_SPREAD = 0.75;
 const PAPER_RGB = [247, 242, 230];
 // The most pixels in one of the full-map drawings, and in the sight and
 // light over them (lower, as they change every frame).
@@ -174,7 +176,7 @@ export class Expression {
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
     this.job = null;
-    this.bufs = this.hi = this.scratch = this.tints = null; // (made at the new size when drawn)
+    this.bufs = this.hi = this.scratch = this.tints = this.nearFloor = null; // (made at the new size when drawn)
     this.paint();
     // The exact shape of all that has been seen, at full resolution, recast
     // from every place it was seen from (see learn).
@@ -264,7 +266,9 @@ export class Expression {
     // sight now). Remembered as seen: any of it inside, and the floor next to
     // that, so the coarse record reaches past the true edge of the view; the
     // drawing is trimmed to that edge by `seenShape`.
-    const touched = new Uint8Array(bw * bh);
+    // (For the rock that goes with it: any floor the view touches, and the
+    // floor next to that, so rock behind walls seen edge-on goes with it.)
+    const touched = new Uint8Array(bw * bh), visRock = new Float32Array(mw * mh);
     for (let y = y0; y < y1; y++)
       for (let x = x0; x < x1; x++) {
         const j = y * mw + x, b = (y - y0) * bw + (x - x0);
@@ -284,6 +288,7 @@ export class Expression {
         if (!near) continue;
         const v = level(j);
         if (!(v > 0.01)) continue;
+        visRock[j] = v;
         // Only a real change is worth redrawing for (seeing ground a little
         // better as the player comes closer is not).
         if (v > seen[j]) {
@@ -300,12 +305,13 @@ export class Expression {
       this.addShape(v);
     }
     this.visNow = vis;
-    this.sightRock(vis, x0, y0, x1, y1);
+    this.sightRock(visRock, x0, y0, x1, y1);
     return grew;
   }
 
   // Add one view to `seenShape`: the floor seen from (px, py) out to `far`
-  // tiles, and the rock just past the wall faces seen (where their ink is).
+  // tiles, and the rock in a band all round it (where the walls' ink is,
+  // however edge-on the walls are seen).
   addShape({ path, px, py, far }) {
     if (!this.seenShape) return;
     const g = this.seenShape.getContext("2d"), TS = this.TS;
@@ -317,7 +323,10 @@ export class Expression {
     g.fillStyle = "#000";
     g.fill(path);
     g.clip(this.rock, "evenodd");
-    g.fill(path.beyond(WALL_BAND * TS));
+    g.strokeStyle = "#000";
+    g.lineWidth = 2 * WALL_BAND * TS;
+    g.lineJoin = "round";
+    g.stroke(path);
     g.restore();
   }
 
@@ -365,7 +374,7 @@ export class Expression {
   // The depth map: for each mask pixel, 0 (black: the heaviest hatching) to 1
   // (white: none). Three ways to make it from the known floor, its walls and
   // its openings. (A generator, so the work can be spread over frames.)
-  *depthSteps(isKnown, d2) {
+  *depthSteps(isKnown, d2, sx, sy) {
     const { mw, mh, floor, noise, S, TS } = this, n = mw * mh;
     const grey = new Float32Array(n);
     // The ragged edge: a slowly varying factor about 1.
@@ -395,7 +404,6 @@ export class Expression {
       // one step from its nearest known floor toward itself: rock there is a
       // wall, floor an opening. Softened (lighter only), so the hatching fades
       // out quicker round the end of a wall beside an opening.
-      const { sx, sy } = nearestSeeds(isKnown, mw, mh);
       const behind = new Float32Array(n).fill(1);
       for (let j = 0; j < n; j++) {
         if (isKnown[j] || sx[j] < 0) continue;
@@ -494,6 +502,27 @@ export class Expression {
         grey[j] = 1 - (1 - smooth((Math.sqrt(dWall[j]) / R - f) / (r - f))) * smooth(t);
       }
     }
+    if (S.depth !== "distance") {
+      // Past the edge of the known floor, floor not yet seen is an opening:
+      // no hatching there, however near a known wall's end (so none spills
+      // onto a room's floor just past what is seen). Each point looks one
+      // step from its nearest known floor toward itself; floor there makes it
+      // white. Softened a little, lighter only.
+      yield;
+      const behind = new Float32Array(n).fill(1);
+      for (let j = 0; j < n; j++) {
+        if (isKnown[j] || sx[j] < 0 || grey[j] >= 1) continue;
+        const dx = (j % mw) - sx[j], dy = ((j / mw) | 0) - sy[j], l = Math.hypot(dx, dy) || 1;
+        const nx = sx[j] + Math.round(dx / l), ny = sy[j] + Math.round(dy / l);
+        if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && floor[ny * mw + nx]) behind[j] = 0;
+      }
+      const soft = behind.slice();
+      blur(soft, mw, mh, Math.round(R * 0.3));
+      for (let j = 0; j < n; j++) if (!isKnown[j] && grey[j] < 1) grey[j] = 1 - (1 - grey[j]) * Math.min(behind[j], soft[j]);
+    }
+    // The known floor itself: white (no strokes start there to reach past
+    // what is seen).
+    for (let j = 0; j < n; j++) if (isKnown[j]) grey[j] = 1;
     return grey;
   }
 
@@ -581,9 +610,9 @@ export class Expression {
       known[j] = floor[j] && seen[j] >= 0.5 ? 1 : 0;
       glimpsed[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
     }
-    const { d2 } = nearestSeeds(known, mw, mh);
+    const { d2, sx, sy } = nearestSeeds(known, mw, mh);
     yield;
-    const grey = yield* this.depthSteps(known, d2);
+    const grey = yield* this.depthSteps(known, d2, sx, sy);
     // The set to draw into may still be fading out: wait for it.
     while (this.prev === buf) yield;
     // The area to redraw, in mask pixels: what is out of date, out to as far
@@ -625,11 +654,27 @@ export class Expression {
     // Known floor and the band of rock where its walls are inked (rock in
     // the band goes with its nearest glimpsed floor), and floor glimpsed,
     // whose hatching is cleared: at mask resolution, then at full
-    // resolution cut to the exact shape of what has been seen.
+    // resolution, the floor cut to the exact shape of what has been seen
+    // (walls are drawn beside seen floor, their faces seen or not).
+    // (For its walls, floor counts as seen as well as the floor within
+    // WALL_SPREAD of it, over the floor only: so the walls beside seen floor
+    // show even where only a strip down its middle was in view.)
     const band = (WALL_BAND * R) ** 2, mask = blank(mw, mh), img = new ImageData(mw, mh);
-    const near = nearestSeeds(glimpsed, mw, mh);
+    const seenW = seen.slice();
+    for (let pass = 0; pass < Math.round(WALL_SPREAD * R); pass++) {
+      const from = seenW.slice();
+      for (let y = 1; y < mh - 1; y++)
+        for (let x = 1; x < mw - 1; x++) {
+          const j = y * mw + x;
+          if (!floor[j]) continue;
+          const v = Math.max(from[j - 1], from[j + 1], from[j - mw], from[j + mw], from[j - mw - 1], from[j - mw + 1], from[j + mw - 1], from[j + mw + 1]);
+          if (v > seenW[j]) seenW[j] = v;
+        }
+    }
+    if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
+    const near = this.nearFloor;
     for (let j = 0; j < n; j++) {
-      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seen[near.sy[j] * mw + near.sx[j]] : 0);
+      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenW[near.sy[j] * mw + near.sx[j]] : 0);
       img.data[j * 4 + 3] = Math.round(255 * a);
     }
     mask.getContext("2d").putImageData(img, 0, 0);
@@ -645,8 +690,17 @@ export class Expression {
       // (The shape copied: more may be seen while this is being done.)
       g.drawImage(from || this.seenShape, 0, 0, cw, ch);
       if (from) {
+        // (The shape with all the rock added: only the floor is cut.)
+        const sg = this.scratch.getContext("2d");
+        clip(sg);
+        sg.clearRect(rx, ry, rw, rh);
+        sg.drawImage(shape, 0, 0);
+        sg.setTransform(scale, 0, 0, scale, 0, 0);
+        sg.fillStyle = "#000";
+        sg.fill(this.rock, "evenodd");
+        sg.restore();
         g.globalCompositeOperation = "destination-in";
-        g.drawImage(shape, 0, 0);
+        g.drawImage(this.scratch, 0, 0);
       }
       g.restore();
     }
