@@ -15,7 +15,8 @@ export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 // fractions of the letter size; tilt is the most a letter leans, in radians.
 const LETTERING = {
   font: "Texturina, Georgia, serif",
-  // (The player, unlit, has a heavy ink ring instead of the paper halo.)
+  // (The player, unlit, has a heavy ring of the dark band's colour instead
+  // of the paper halo.)
   player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.24 },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
@@ -402,14 +403,19 @@ export class Renderer {
     ctx.lineJoin = "round";
     // A paper-coloured halo keeps the letter legible over grid and hatching
     // (only as far as the light shows the paper). A letter with a ring for
-    // the dark (the player) has that instead where the light is dark (dim
+    // the dark (the player) has one of the dark band's colour instead where
+    // the light is dark (dim
     // light reads as lit; the dark band, as dark).
     const lit = p.lit ?? 1, dark = style.darkRing ? 1 - clamp01((lit - 0.2) / 0.5) : 0;
     if (dark > 0) {
       ctx.save();
       ctx.globalAlpha *= dark;
+      // (The floor's colour in the dark band: the darkness, the paper showing
+      // through as much as the band's light.)
+      const c = (i) => parseInt(this.settings.darkColor.slice(1 + 2 * i, 3 + 2 * i), 16), PAPER_RGB = [247, 242, 230];
+      const band = [0, 1, 2].map((i) => Math.round(c(i) + (PAPER_RGB[i] - c(i)) * this.settings.darkLevel));
       ctx.lineWidth = size * style.darkRing;
-      ctx.strokeStyle = INK;
+      ctx.strokeStyle = `rgb(${band.join(", ")})`;
       ctx.strokeText(ch, 0, -m.desc);
       ctx.restore();
     }
