@@ -44,7 +44,7 @@
 <body>
 <header>
   <h1>Bonfire flames</h1>
-  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. On the S2 stones: the big bonfire's flame, and flames made of fire icons dancing.</p>
+  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. On the S2 stones: cartoon fires in the reference's colours, redrawn on twos like D3.</p>
   <div class="bar">
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
@@ -284,21 +284,83 @@ function onTwos(g, x, y, TS, t, set, o = {}) {
   for (const [dx, size, side, sp, ph, dy = 0] of set) icon(g, x + dx * TS, y + dy * TS, TS, dance(rng.range(0, 60), { sp, ph, side }, size), { ...o, jit });
 }
 
+// A cartoon fire as in the reference: a round bulb `b` across (squares),
+// standing on (x, y), its top licking up in tongues (`tips`, each { x, h,
+// lean } in bulbs), drawn in layers: red, then orange, then a pale yellow
+// heart.
+const REDS = { outer: "#f2541b", mid: "#fba52b", heart: "#fde48e" };
+function blaze(g, x, y, TS, p, { outline = 0, jit = () => 0 } = {}) {
+  const layer = (cx, by, b, tips, fill) => {
+    const cy = by - b, J = () => jit() * b / (0.2 * TS);
+    g.beginPath();
+    g.moveTo(cx + b, cy);
+    let px = cx + b, py = cy;
+    tips.forEach((t, i) => {
+      const tx = cx + (t.x + t.lean) * b + J(), ty = cy - t.h * b + J();
+      // (Up to the tip, bowing out; then down into the notch before the next.)
+      g.bezierCurveTo(px + (i ? 0 : 0.08 * b), py - 0.35 * t.h * b, tx + 0.35 * b - t.lean * b * 0.5, cy - t.h * b * 0.55, tx, ty);
+      const n = tips[i + 1];
+      if (!n) return;
+      const nx = cx + ((t.x + n.x) / 2) * b + J(), ny = cy - Math.min(t.h, n.h) * b * t.notch;
+      g.bezierCurveTo(tx - 0.05 * b, ty + 0.35 * t.h * b, nx + 0.2 * b, ny - 0.1 * b, nx, ny);
+      px = nx;
+      py = ny;
+    });
+    const l = tips.at(-1);
+    g.bezierCurveTo(cx + (l.x - 0.35) * b, cy - l.h * b * 0.5, cx - b * 1.04, cy - b * 0.35, cx - b, cy);
+    g.arc(cx, cy, b, Math.PI, 0, true);
+    g.closePath();
+    g.fillStyle = fill;
+    g.fill();
+  };
+  const b = p.b * TS;
+  // (The ink outline, when asked, round the outer layer only.)
+  layer(x, y, b, p.outer, REDS.outer);
+  if (outline) { g.lineWidth = outline * TS / 32; g.strokeStyle = INK; g.lineJoin = "round"; g.stroke(); }
+  layer(x + p.midX * b, y, b * 0.68, p.mid, REDS.mid);
+  tongue(g, x + p.heartX * b, y - b * 0.18, b * 0.62, b * p.heartH, p.heartLean * b, jit);
+  g.fillStyle = REDS.heart;
+  g.fill();
+  for (const f of p.flicks ?? []) {
+    tongue(g, x + f.x * b, y - f.y * b, f.s * b, f.s * b * 2.2, f.lean * b);
+    g.fillStyle = REDS.outer;
+    g.fill();
+  }
+}
+
+// One drawing of the fire, at random within its shape: a new one each tick
+// (on twos, as D3).
+function blazeAt(rng, { tips = 3, flicks = 0, size = 1 } = {}) {
+  const r = (a, b) => rng.range(a, b), xs = tips === 4 ? [0.62, 0.2, -0.22, -0.62] : [0.56, -0.02, -0.6];
+  const mainAt = tips === 4 ? rng.int(1, 2) : 1;
+  return {
+    b: size * 0.2 * r(0.96, 1.04),
+    outer: xs.map((x, i) => ({ x: x + r(-0.08, 0.08), h: (i === mainAt ? r(1.75, 2.15) : r(0.95, 1.4)) * (1 + 0.1 * (tips === 4)), lean: r(-0.22, 0.22), notch: r(0.35, 0.6) })),
+    mid: [{ x: 0.45 + r(-0.1, 0.1), h: r(0.8, 1.15), lean: r(-0.15, 0.15), notch: r(0.35, 0.55) }, { x: -0.25 + r(-0.1, 0.1), h: r(1.3, 1.65), lean: r(-0.2, 0.2), notch: 0.5 }],
+    midX: r(-0.04, 0.04),
+    heartX: r(-0.05, 0.05), heartH: r(0.75, 1.0), heartLean: r(-0.12, 0.12),
+    flicks: [...Array(flicks)].filter(() => rng.chance(0.6)).map(() => ({ x: r(-0.9, 0.9), y: r(2.0, 2.8), s: r(0.1, 0.16), lean: r(-0.1, 0.1) })),
+  };
+}
+function blazeOnTwos(g, x, y, TS, t, o = {}, set = [[0, 0, 1]]) {
+  const tick = Math.floor(t * 8), rng = new RNG(17 + tick * 13);
+  const jit = () => rng.range(-0.45, 0.45) * TS / 32;
+  for (const [dx, dy, size] of set) blaze(g, x + dx * TS, y + dy * TS, TS, blazeAt(rng, { ...o, size }), { outline: o.outline, jit });
+}
+
 const S2 = (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); };
-const TRIO = [[-0.14, 0.62, -1, 4.3, 1.1, -0.02], [0.15, 0.68, 1, 3.7, 2.6, -0.02], [0, 1, 1, 3.1, 0]];
 
 const FIRES = [
-  { id: "F", name: "Big bonfire (as before)", note: "For comparison: the warm tongues you picked, on the S2 stones.", flame: bigFlame },
-  { id: "D1", name: "One icon, dancing", note: "A single inked fire icon: its tips sway and reach, the bulb breathes, the paper heart flickers.",
-    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, [[0, 1.05, 1, 3.1, 0]]) },
-  { id: "D2", name: "Three icons, dancing", note: "A big icon with two smaller ones behind it, leaning out, each dancing to its own beat.",
-    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, TRIO) },
-  { id: "D3", name: "Three icons, on twos", note: "The same three, but redrawn eight times a second, each drawing a little different, like a hand-animated cartoon.",
-    flame: (g, x, y, TS, t) => onTwos(g, x, y + TS * 0.16, TS, t, TRIO) },
-  { id: "D4", name: "Three icons, warm", note: "D2 in fire colours with an ink outline and a yellow heart, like the big bonfire.",
-    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, TRIO, { fill: FIRE, heart: FIRE_IN, outline: 1.6 }) },
-  { id: "D5", name: "Ring of small icons", note: "Five small icons dancing round the heap, with sparks: a wider, busier fire.",
-    flame: (g, x, y, TS, t) => { dancers(g, x, y + TS * 0.16, TS, t, [[-0.17, 0.5, -1, 4.6, 0.4, -0.06], [0.17, 0.5, 1, 4.1, 1.9, -0.06], [-0.09, 0.62, -1, 3.6, 3.1], [0.1, 0.62, 1, 3.3, 4.4], [0, 0.8, 1, 2.9, 5.2, 0.03]]); sparks(g, x, y - TS * 0.4, TS, t, { n: 6, rise: 1.3 }); } },
+  { id: "G1", name: "Cartoon fire, on twos", note: "Round and short, three tongues, red, orange and a pale yellow heart; redrawn eight times a second as D3.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t) },
+  { id: "G2", name: "With an ink outline", note: "G1 with a thin ink line round it, to sit with the inked map.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t, { outline: 1.4 }) },
+  { id: "G3", name: "Four tongues and flicks", note: "A busier top, and little licks of flame breaking off above it now and then.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.14, TS, t, { tips: 4, flicks: 2 }) },
+  { id: "G4", name: "Smaller", note: "G1 a size down, so more of the stones and logs show.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.1, TS, t, {}, [[0, 0, 0.8]]) },
+  { id: "G5", name: "Two together", note: "Two smaller fires side by side, each redrawn on its own, for a wider blaze.",
+    flame: (g, x, y, TS, t) => blazeOnTwos(g, x, y + TS * 0.12, TS, t, {}, [[-0.1, -0.02, 0.72], [0.1, 0.02, 0.8]]) },
 ].map((v) => ({ ...v, base: S2 }));
 
 const TORCHES = [];
