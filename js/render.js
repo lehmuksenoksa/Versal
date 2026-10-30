@@ -74,6 +74,16 @@ const SOUNDS = {
   secret: { words: ["a secret door!"], range: 30, dur: 2.2 },
 };
 
+// How the words look: ink with a paper halo; a death cry red; the fighting
+// (a goblin's attack, the player's whack or miss) yellow, edged in ink, in
+// small capitals.
+const FIGHT = { fill: "#f4c02c", edge: INK, halo: 0.3, caps: true };
+const SOUND_LOOK = {
+  default: { fill: INK, edge: PAPER, halo: 0.26 },
+  fall: { fill: "#c3271a", edge: PAPER, halo: 0.26 },
+  attack: FIGHT, whack: FIGHT, miss: FIGHT,
+};
+
 // The lamp out: sight close round the player, only the dark band of light.
 // (No full band at all: its ragged edge would light a speck round the
 // player.)
@@ -352,11 +362,12 @@ export class Renderer {
       ctx.translate(s.x + (s.kind === "snore" ? k * TS * 0.35 : 0), s.y - k * TS * (s.kind === "snore" ? 0.6 : 0.45));
       ctx.rotate(s.rot);
       ctx.globalAlpha = Math.max(0, a);
-      ctx.font = `italic 800 ${size}px ${LETTERING.font}`;
-      ctx.lineWidth = size * 0.26;
-      ctx.strokeStyle = PAPER;
+      const look = SOUND_LOOK[s.kind] ?? SOUND_LOOK.default;
+      ctx.font = `italic ${look.caps ? "small-caps " : ""}800 ${size}px ${LETTERING.font}`;
+      ctx.lineWidth = size * look.halo;
+      ctx.strokeStyle = look.edge;
       ctx.strokeText(s.text, 0, 0);
-      ctx.fillStyle = INK;
+      ctx.fillStyle = look.fill;
       ctx.fillText(s.text, 0, 0);
       ctx.restore();
     }
