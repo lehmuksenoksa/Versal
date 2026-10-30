@@ -27,9 +27,10 @@ const GRID = { wobble: 0.8, breaks: 0.35 };
 // The things in the rooms (`furniture`) are drawn with the grid on paper
 // ("paper"); or, for drawings recoloured as one ink, cut out of the grid
 // ("erase", with the grid) and inked with the walls ("ink", with the walls).
+// The doors go with the walls unless `doors` is false.
 export function renderMap(level, TS, scale, seed, {
   plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, fill = true, shadow = true, grid = !plan, walls = true, keys = true,
-  furniture = "paper",
+  furniture = "paper", doors = walls,
 } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
@@ -75,8 +76,8 @@ export function renderMap(level, TS, scale, seed, {
 
   if (walls) {
     drawWalls(ctx, loops, TS, rng);
-    if (level.doors) drawDoors(ctx, level.doors, TS, new RNG(seed ^ 0xd00));
   }
+  if (doors && level.doors) drawDoors(ctx, level.doors, TS, seed);
   if (keys) drawRoomKeys(ctx, level, TS);
 
   return { canvas, ctx, floor, loops, strokes: hatch.record };
@@ -312,16 +313,19 @@ function pen(ctx, rng, k, mode = "paper") {
 // into a room; shut, or swung open): across that square a little way out
 // from the room's edge, a short jamb of wall standing out from each side
 // wall, and between their ends the door, drawn with the pen.
-function drawDoors(ctx, doors, TS, rng) {
+// (Each door drawn with random numbers of its own, so it can be redrawn,
+// open or shut, without the others changing.)
+export function drawDoors(ctx, doors, TS, seed) {
   const k = TS / 32, weight = WALL.weight * k;
   // The side walls' inner faces, from the middle of the way (see drawWalls).
-  const face = TS / 2 - weight * WALL.inside, P = pen(ctx, rng, k);
+  const face = TS / 2 - weight * WALL.inside;
   ctx.save();
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   for (const { x, y, dx, dy, open } of doors) {
+    const rng = new RNG((seed ^ 0xd00) + x * 7919 + y * 104729), P = pen(ctx, rng, k);
     // (A quarter of the square back from the middle, toward the room, so
     // near it but not into it.)
     const cx = (x + 0.5 + dx * 0.25) * TS, cy = (y + 0.5 + dy * 0.25) * TS, thick = TS * rng.range(0.28, 0.33);

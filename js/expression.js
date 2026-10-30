@@ -12,7 +12,7 @@
 // down each frame (`update`, `drawMap`). The settings were chosen in the
 // expression mockup (mockups/expression.html), which uses this module too.
 
-import { renderMap, drawPaper, wallLine } from "./maprender.js";
+import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds } from "./hatching.js";
 import { RNG } from "./rng.js";
 import { Walls } from "./sightline.js";
@@ -169,8 +169,11 @@ export class Expression {
     // (The things in the rooms cut out of the grid and inked with the walls,
     // as the layers are recoloured.)
     this.markLayer = layer({ grid: true, keys: true, furniture: "erase" }).canvas;
-    this.wallLayer = layer({ walls: true, furniture: "ink" }).canvas;
+    this.wallLayer = layer({ walls: true, doors: false, furniture: "ink" }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
+    // The doors, a layer of their own (redrawn as they open).
+    this.doorLayer = blank(cw, ch);
+    this.drawDoorLayer();
     this.paper = blank(cw, ch);
     const pg = this.paper.getContext("2d");
     pg.scale(this.scale, this.scale);
@@ -183,6 +186,9 @@ export class Expression {
     this.floor = new Uint8Array(mw * mh);
     for (let j = 0; j < mw * mh; j++) this.floor[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
     this.walls = new Walls(drawn.loops, TS * 2);
+    // Shut doors stop sight and light: a wall across the way where each is.
+    this.doorWalls = new Map();
+    for (const d of level.doors ?? []) this.doorChanged(d, true);
     this.rock = new Path2D();
     this.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
     this.rock.addPath(drawn.floor);
@@ -313,7 +319,7 @@ export class Expression {
           this.changed = unite(this.changed, [x, y, x + 1, y + 1]);
         }
       }
-    const key = `${tx},${ty},${far},${S.flame}`;
+    const key = `${tx},${ty},${far},${S.flame},${this.doorsChanged ?? 0}`;
     if (!this.viewpoints) this.viewpoints = new Map();
     if (!this.viewpoints.has(key)) {
       const v = { path, px, py, far };
@@ -772,7 +778,7 @@ export class Expression {
       const w = this.scratch, wg = w.getContext("2d");
       clip(wg);
       wg.clearRect(rx, ry, rw, rh);
-      for (const [layer, c2, a] of [[this.markLayer, S[pre + "MarkC"], S[pre + "Mark"]], [this.wallLayer, S[pre + "WallC"], S[pre + "Wall"]]]) {
+      for (const [layer, c2, a] of [[this.markLayer, S[pre + "MarkC"], S[pre + "Mark"]], [this.wallLayer, S[pre + "WallC"], S[pre + "Wall"]], [this.doorLayer, S[pre + "WallC"], S[pre + "Wall"]]]) {
         if (!(a > 0)) continue;
         wg.globalAlpha = Math.min(1, a);
         wg.drawImage(this.tinted(layer, c2), 0, 0);
@@ -951,6 +957,40 @@ export class Expression {
     const c = blank(mw, mh);
     c.getContext("2d").putImageData(img, 0, 0);
     return c;
+  }
+
+  // The doors as they are, open or shut.
+  drawDoorLayer() {
+    const g = this.doorLayer.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, this.doorLayer.width, this.doorLayer.height);
+    g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    drawDoors(g, this.level.doors ?? [], this.TS, this.seed);
+  }
+
+  // Door `d` has opened or shut: the wall across its way is taken away or
+  // put back, and (unless `quiet`, as when first set up) it is redrawn,
+  // and what can be seen and lit found again.
+  doorChanged(d, quiet = false) {
+    const TS = this.TS, key = d.y * this.W + d.x;
+    const old = this.doorWalls.get(key);
+    if (old) this.walls.remove(old);
+    this.doorWalls.delete(key);
+    if (!d.open) {
+      // (On the door's line, reaching a little into the walls either side.)
+      const cx = (d.x + 0.5 + d.dx * 0.25) * TS, cy = (d.y + 0.5 + d.dy * 0.25) * TS, h = TS * 0.6;
+      const s = { x0: cx + d.dy * h, y0: cy - d.dx * h, x1: cx - d.dy * h, y1: cy + d.dx * h };
+      this.walls.add(s);
+      this.doorWalls.set(key, s);
+    }
+    if (quiet) return;
+    // (So the view from where the player stands is taken again.)
+    this.doorsChanged = (this.doorsChanged ?? 0) + 1;
+    this.drawDoorLayer();
+    this.tints?.delete(this.doorLayer);
+    this.changed = unite(this.changed, [(d.x - 1) * R, (d.y - 1) * R, (d.x + 2) * R, (d.y + 2) * R]);
+    this.sightFrom = this.lightFrom = null;
+    if (this.player) this.learn(this.player.x, this.player.y);
   }
 
   // A layer of the map recoloured (kept until the scale changes).

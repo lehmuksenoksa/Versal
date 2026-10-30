@@ -15,8 +15,10 @@ export class World {
     this.events = [];
     this.nextId = 1;
     const level = (this.level = generateAreas(this.rng));
-    // Pillars on grid crossings, which no step goes diagonally past.
+    // Pillars on grid crossings, which no step goes diagonally past; and the
+    // doors, by their square.
     this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
+    this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
     this.actors = [this.player];
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom));
@@ -30,7 +32,7 @@ export class World {
   updateFov() {
     const { w, h } = this.level;
     this.visible.fill(0);
-    computeFov(w, h, this.player.x, this.player.y, this.sight, (x, y) => !isOpen(this.tileAt(x, y)), (x, y) => {
+    computeFov(w, h, this.player.x, this.player.y, this.sight, (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y), (x, y) => {
       this.visible[y * w + x] = 1;
       this.seen[y * w + x] = 1;
     });
@@ -60,7 +62,10 @@ export class World {
 
   tileAt(x, y) { return this.level.get(x, y); }
   actorAt(x, y) { return this.actors.find((a) => a.x === x && a.y === y); }
-  isFree(x, y) { return isWalkable(this.tileAt(x, y)) && !this.actorAt(x, y); }
+  isFree(x, y) { return isWalkable(this.tileAt(x, y)) && !this.shut(x, y) && !this.actorAt(x, y); }
+  // The door in the square (x, y), if any; whether one is there and shut.
+  doorAt(x, y) { return this.doors.get(y * this.level.w + x); }
+  shut(x, y) { return this.doorAt(x, y)?.open === false; }
   // Can a step go from (x, y) by (dx, dy)? Not diagonally past a post.
   canStep(x, y, dx, dy) {
     if (!dx || !dy) return true;
@@ -72,6 +77,13 @@ export class World {
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (this.actorAt(nx, ny)) return false;
     if (!isWalkable(this.tileAt(nx, ny)) || !this.canStep(p.x, p.y, dx, dy)) return false;
+    // Walking into a shut door opens it, which takes the turn.
+    if (this.shut(nx, ny)) {
+      const door = this.doorAt(nx, ny);
+      door.open = true;
+      this.events.push({ type: "door", door });
+      return this.tick();
+    }
     this.moveActor(p, nx, ny);
     return this.tick();
   }

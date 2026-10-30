@@ -148,6 +148,10 @@ export class Renderer {
         // What the player sees from the new tile; the drawing is redone once
         // the step is over.
         if (e.actor === this.world.player && this.exp?.learn(e.actor.x, e.actor.y)) this.redraw(v.dur + 30);
+      } else if (e.type === "door" && this.exp) {
+        // A door opened: drawn open, and what is beyond it seen.
+        this.exp.doorChanged(e.door);
+        this.redraw(30);
       }
     }
   }

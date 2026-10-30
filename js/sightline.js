@@ -25,6 +25,15 @@ export class Walls {
       }
   }
 
+  // Take segment `s` (as added) away again.
+  remove(s) {
+    for (const [k, list] of this.cells) {
+      const i = list.indexOf(s);
+      if (i >= 0) list.splice(i, 1);
+      if (!list.length) this.cells.delete(k);
+    }
+  }
+
   // The wall segments touching the square of half-size r around (x, y).
   near(x, y, r) {
     const z = this.bucket, out = new Set();
