@@ -1176,12 +1176,10 @@ export class Expression {
         c.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
         c.restore();
       }
-      // (The rock round lit floor seen as far off as the floor is: round the
-      // lights in sight, behind the walls in view.)
+      // (The rock round lit floor seen as far off as the floor is, behind the
+      // walls in view. Its sight is the floor's, so fades as the floor's does
+      // where unlit.)
       g.save();
-      g.beginPath();
-      for (const l of this.lampsSeen ?? []) g.rect(l.x0 * TS, l.y0 * TS, (l.x1 - l.x0) * TS, (l.y1 - l.y0) * TS);
-      g.clip();
       g.clip(this.lampView.beyond(S.reach * TS));
       g.clip(this.rock, "evenodd");
       g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
