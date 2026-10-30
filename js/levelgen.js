@@ -10,7 +10,8 @@
 // dungeon.js), and also `area` (each tile's region type, an index into
 // AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy, open }:
 // a door in the tile at x, y, the dungeon room it opens into that way, shut
-// or open), `features` (things drawn in the dungeon rooms: see the
+// or open), `secrets` (secret doors, as doors, their squares rock until
+// found), `features` (things drawn in the dungeon rooms: see the
 // furnishing), `posts` (pillars on grid crossings, [x, y]: no step
 // diagonally past one), `recesses` (shallow alcoves in the walls, each
 // { x, y, dx, dy, w }: in the wall that way from the square x, y, w squares
@@ -49,6 +50,9 @@ export const LEVELGEN_DEFAULTS = {
   // Lights: how often a big cave has a campfire, a dungeon room is lit, and
   // a square of dungeon corridor starts a lit stretch.
   campfires: 0.4, litRooms: 0.3, litCorridors: 0.02,
+  // How often a door is a secret one (none into the start room, nor jail
+  // cells): rock to look at until the player finds it.
+  secretDoors: 0.15,
 };
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -659,8 +663,18 @@ function tryAreas(S, rng) {
 
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
   const startRoom = rng.pick(rooms);
+  // Secret doors: their squares rock until found (each { x, y, dx, dy }, as
+  // a door).
+  const secrets = [], inStart = (x, y) => x >= startRoom.x && y >= startRoom.y && x < startRoom.x + startRoom.w && y < startRoom.y + startRoom.h;
+  for (const d of [...doors]) {
+    if (mustDoor.has([d.x, d.y].join()) || inStart(d.x + d.dx, d.y + d.dy) || inStart(d.x - d.dx, d.y - d.dy) || !rng.chance(S.secretDoors)) continue;
+    doors.splice(doors.indexOf(d), 1);
+    tiles[idx(d.x, d.y)] = T.ROCK;
+    lit[idx(d.x, d.y)] = 0;
+    secrets.push({ x: d.x, y: d.y, dx: d.dx, dy: d.dy });
+  }
   return {
-    w: W, h: H, tiles, cave, rooms, area, rubble, doors, features, posts, recesses, lights, lit, blocks, regions,
+    w: W, h: H, tiles, cave, rooms, area, rubble, doors, secrets, features, posts, recesses, lights, lit, blocks, regions,
     start: { x: startRoom.cx, y: startRoom.cy },
     startRoom,
     idx, get,

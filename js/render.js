@@ -68,6 +68,9 @@ const SOUNDS = {
   door: { words: ["creak", "clunk"], range: 12, dur: 1.1 },
   rattle: { words: ["rattle", "thump", "bang"], range: 14, dur: 1 },
   lamp: { words: [""], range: 1, dur: 1.3 },
+  // Searching, and a secret door found.
+  search: { words: ["tap tap", "hmm…", "knock knock", "tap"], range: 1, dur: 1.1 },
+  secret: { words: ["a secret door!"], range: 30, dur: 2.2 },
 };
 
 // The lamp out: sight close round the player, only the dark band of light.
@@ -238,6 +241,14 @@ export class Renderer {
           this.views.delete(e.target.id);
         }
       } else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
+      else if (e.type === "search") this.hear(this.world.player, "search", now);
+      else if (e.type === "secret" && this.exp) {
+        // A secret door found: the map drawn again with it there (the drawing
+        // changes only round it), and what can be seen found again.
+        this.exp.doorsChanged = (this.exp.doorsChanged ?? 0) + 1;
+        this.exp.setScale(this.dpr * this.zoom, [e.door.x, e.door.y]);
+        this.hear({ id: `secret ${e.door.x},${e.door.y}`, x: e.door.x, y: e.door.y }, "secret", now);
+      }
     }
   }
 

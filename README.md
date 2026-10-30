@@ -25,6 +25,9 @@ and some goblins.
 - The player whacks a goblin by walking into it (goblins take a hit or two), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
   round them, only the dark band of light, and goblins much less likely to notice or wake.
+- Secret doors: some dungeon doors look like plain wall until found. Each turn the player may spot
+  one in sight within two squares (better next to it); searching with E spends a turn and gives
+  much better chances. Once found it is an ordinary door. Goblins don't use them until then.
 - Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
   move, "grr" when aggressive, "zzz" asleep. They show out of sight too, within hearing, fainter
   with distance.

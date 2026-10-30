@@ -92,6 +92,7 @@
     <label for="loops">Extra corridors, making loops <output id="loops-v"></output><input id="loops" type="range" min="0" max="1" step="0.05"></label>
     <label for="doors">Doors in dungeon rooms' doorways <output id="doors-v"></output><input id="doors" type="range" min="0" max="1" step="0.05"></label>
     <label for="openDoors">Doors left open <output id="openDoors-v"></output><input id="openDoors" type="range" min="0" max="1" step="0.05"></label>
+    <label for="secretDoors">Secret doors <output id="secretDoors-v"></output><input id="secretDoors" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -156,7 +157,7 @@ const fmt = {
   regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
   w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct, openDoors: pct, decor: pct, recesses: pct, supports: pct,
   caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
-  collapse: pct, rubble: pct, caveRubble: pct, campfires: pct, litRooms: pct, litCorridors: (v) => `starting at ${pct(v)} of the squares`, zoom: pct,
+  collapse: pct, rubble: pct, caveRubble: pct, campfires: pct, litRooms: pct, secretDoors: (v) => `${pct(v)} of the doors`, litCorridors: (v) => `starting at ${pct(v)} of the squares`, zoom: pct,
 };
 const $ = (id) => document.getElementById(id);
 const canvas = $("view"), ctx = canvas.getContext("2d");
@@ -184,7 +185,7 @@ function build() {
   const kinds = level.regions.map((r) => AREAS[r.type]);
   const rooms = {};
   for (const r of level.rooms) if (r.kind) rooms[r.kind] = (rooms[r.kind] ?? 0) + 1;
-  $("status").textContent = `${level.rooms.length} rooms: ${count((r) => !r.cave && !r.collapsed)} built, ${count((r) => r.collapsed)} fallen in, ${count((r) => r.cave)} caves; ${level.doors.length} doors; ${count((r) => r.lit)} rooms lit, ${count((r) => r.campfire)} campfires. Dungeon rooms: ${Object.entries(rooms).map(([k, n]) => `${n} ${k}`).join(", ") || "none"}. Regions: ${kinds.join(", ")}. Made in ${Math.round(t1 - t0)} ms, drawn in ${Math.round(t2 - t1)} ms.`;
+  $("status").textContent = `${level.rooms.length} rooms: ${count((r) => !r.cave && !r.collapsed)} built, ${count((r) => r.collapsed)} fallen in, ${count((r) => r.cave)} caves; ${level.doors.length} doors, ${level.secrets.length} secret; ${count((r) => r.lit)} rooms lit, ${count((r) => r.campfire)} campfires. Dungeon rooms: ${Object.entries(rooms).map(([k, n]) => `${n} ${k}`).join(", ") || "none"}. Regions: ${kinds.join(", ")}. Made in ${Math.round(t1 - t0)} ms, drawn in ${Math.round(t2 - t1)} ms.`;
 }
 
 // The drawing, and the regions tinted over it if asked.
@@ -202,6 +203,18 @@ function paint() {
   ctx.save();
   ctx.scale(k / TS, k / TS);
   level.lights.forEach((l, i) => drawFire(ctx, l.x * TS, l.y * TS, TS, 0, i));
+  // (Secret doors, rock in the game until found: an S on the wall where each is.)
+  ctx.fillStyle = "#a3261b";
+  ctx.font = `italic bold ${TS * 1.1}px Georgia, serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeStyle = "#f7f2e6";
+  ctx.lineWidth = TS * 0.16;
+  ctx.lineJoin = "round";
+  for (const d of level.secrets) {
+    ctx.strokeText("S", (d.x + 0.5) * TS, (d.y + 0.5) * TS);
+    ctx.fillText("S", (d.x + 0.5) * TS, (d.y + 0.5) * TS);
+  }
   ctx.restore();
   if (S.show !== "regions") return;
   for (let y = 0; y < level.h; y++)

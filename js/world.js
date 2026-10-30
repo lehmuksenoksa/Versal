@@ -35,6 +35,9 @@ const GOBLIN = {
 };
 // The player's chance to hit with a whack.
 const WHACK = 0.75;
+// The chance, each turn, of the player seeing a secret door in sight: next
+// to it, and two squares off; searching (a turn spent looking), and not.
+const SECRET = { near: 0.15, far: 0.06, searchNear: 0.6, searchFar: 0.3, reach: 2 };
 
 export class World {
   constructor(seed, { sight = 9 } = {}) {
@@ -161,6 +164,30 @@ export class World {
     this.events.push({ type: "door", door, by });
   }
 
+  // The player spends a turn searching for secret doors.
+  search() {
+    this.events.push({ type: "search" });
+    return this.tick(true);
+  }
+
+  // Each turn, the player may see a secret door in sight close by (more
+  // likely searching): it is a door from then on, shut.
+  spot(searching) {
+    const p = this.player, L = this.level;
+    for (const s of L.secrets ?? []) {
+      const d = Math.max(Math.abs(s.x - p.x), Math.abs(s.y - p.y));
+      if (s.found || d > SECRET.reach || !this.isVisible(s.x, s.y)) continue;
+      const chance = d <= 1 ? (searching ? SECRET.searchNear : SECRET.near) : searching ? SECRET.searchFar : SECRET.far;
+      if (!this.rng.chance(chance)) continue;
+      s.found = true;
+      L.tiles[s.y * L.w + s.x] = T.FLOOR;
+      const door = { x: s.x, y: s.y, dx: s.dx, dy: s.dy, open: false, secret: true };
+      L.doors.push(door);
+      this.doors.set(s.y * L.w + s.x, door);
+      this.events.push({ type: "secret", door });
+    }
+  }
+
   // Lamp out (sneaking, seeing only `sight`) or lit again.
   setSneaking(on, sight) {
     this.sneaking = on;
@@ -195,8 +222,9 @@ export class World {
 
   // A turn passes: the goblins act (each as its speed allows), then see
   // what they notice.
-  tick() {
+  tick(searching = false) {
     this.updateFov();
+    this.spot(searching);
     this.chaseMap = null;
     for (const g of [...this.actors]) {
       if (g === this.player) continue;

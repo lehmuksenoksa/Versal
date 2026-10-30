@@ -170,7 +170,10 @@ export class Expression {
   // drawings to a sensible size): the map without its hatching as separate
   // layers, the paper, the floor at mask resolution, and the walls to cast
   // sight and light against.
-  setScale(scale) {
+  // With `around` ([x, y], a square), the level has changed only round it
+  // (a secret door found): what is on show stays until that is redrawn, a
+  // slice at a time.
+  setScale(scale, around = null) {
     const { level, W, H, TS, seed, mw, mh } = this, area = W * TS * H * TS;
     this.scale = Math.min(scale, Math.sqrt(DRAWING_PIXELS / area));
     this.sightScale = Math.min(scale, Math.sqrt(SIGHT_PIXELS / area));
@@ -218,21 +221,28 @@ export class Expression {
     this.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
     this.rock.addPath(drawn.floor);
     const sw = Math.ceil(W * TS * this.sightScale), sh = Math.ceil(H * TS * this.sightScale);
-    this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
+    if (!around) this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
-    this.stat = this.prev = null;
-    this.job = null;
-    this.bufs = this.hi = this.scratch = this.tints = this.nearFloor = null; // (made at the new size when drawn)
+    this.tints = this.nearFloor = null;
+    if (!around) {
+      this.stat = this.prev = null;
+      this.job = null;
+      this.bufs = this.hi = this.scratch = null; // (made at the new size when drawn)
+    }
     this.paint();
     // The exact shape of all that has been seen, at full resolution, recast
     // from every place it was seen from (see learn).
     this.seenShape = blank(cw, ch);
     this.shapeRock();
     for (const v of this.viewpoints?.values() ?? []) this.addShape(v);
+    if (around) {
+      const [x, y] = around;
+      this.changed = unite(this.changed, [(x - 1) * R, (y - 1) * R, (x + 2) * R, (y + 2) * R]);
+    }
     if (this.player) {
       this.learn(this.player.x, this.player.y);
-      this.rebuild();
+      around ? this.rebuildSoon() : this.rebuild();
     }
   }
 

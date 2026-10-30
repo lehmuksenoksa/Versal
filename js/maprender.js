@@ -8,6 +8,14 @@ import { RNG } from "./rng.js";
 import { hatchRock, hatchSettings, distanceTransform } from "./hatching.js";
 
 export const INK = "#1b1815";
+
+// Random numbers of their own for a place: seeded by `seed` and the numbers
+// given (rounded).
+export function rngAt(seed, ...at) {
+  let h = seed >>> 0;
+  for (const v of at) h = Math.imul(h ^ (Math.round(v * 8) | 0), 0x9e3779b1) >>> 0, h ^= h >>> 15;
+  return new RNG(h);
+}
 export const PAPER = "#f7f2e6";
 const SHADOW_RGB = "rgb(70, 62, 55)", SHADOW_ALPHA = 0.3, SHADOW = `rgba(70, 62, 55, ${SHADOW_ALPHA})`;
 
@@ -38,6 +46,9 @@ export function renderMap(level, TS, scale, seed, {
   canvas.height = Math.ceil(H * TS * scale);
   const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
+  // (The walls, the caves' rough edges and the grid each take their random
+  // numbers by where they are, so a change in one place, a secret door
+  // found, changes the drawing only there.)
   const rng = new RNG(seed);
   const open = (x, y) => x >= 0 && y >= 0 && x < W && y < H && isOpen(level.tiles[y * W + x]);
 
@@ -46,7 +57,7 @@ export function renderMap(level, TS, scale, seed, {
     [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]].some(
       ([tx, ty]) => tx >= 0 && ty >= 0 && tx < W && ty < H && level.cave[ty * W + tx]
     );
-  const loops = cutRecesses(traceLoops(W, H, open).map((loop) => shapeLoop(loop, caveAt, rng, TS)), level.recesses ?? [], TS);
+  const loops = cutRecesses(traceLoops(W, H, open).map((loop) => shapeLoop(loop, caveAt, seed, TS)), level.recesses ?? [], TS);
   const floor = new Path2D();
   for (const loop of loops) addLoop(floor, loop);
 
@@ -64,7 +75,7 @@ export function renderMap(level, TS, scale, seed, {
     if (fill) ctx.fill(floor, "evenodd");
     if (shadow) drawShadow(ctx, level, TS, floor, seed);
   }
-  const gridRng = rng.fork();
+  const gridRng = seed;
   const caveTile = (x, y) => x >= 0 && y >= 0 && x < W && y < H && level.cave[y * W + x] === 1;
   if (grid) {
     drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
@@ -75,7 +86,7 @@ export function renderMap(level, TS, scale, seed, {
   ctx.restore();
 
   if (walls) {
-    drawWalls(ctx, loops, TS, rng);
+    drawWalls(ctx, loops, TS, seed);
   }
   if (doors && level.doors) drawDoors(ctx, level.doors, TS, seed);
   if (keys) drawRoomKeys(ctx, level, TS);
@@ -133,7 +144,7 @@ function traceLoops(W, H, open) {
 // Turns a loop of tile corners into pixel points. Built walls keep their
 // straight runs; cave walls get extra points, jittered, with some corners
 // cut off so the line goes jagged and angular.
-function shapeLoop(loop, caveAt, rng, TS) {
+function shapeLoop(loop, caveAt, seed, TS) {
   const n = loop.length;
   const pts = [];
   for (let i = 0; i < n; i++) {
@@ -146,6 +157,7 @@ function shapeLoop(loop, caveAt, rng, TS) {
   let dropped = false;
   for (const p of pts) {
     if (!p.cave) { jagged.push(p); continue; }
+    const rng = rngAt(seed, p.x, p.y, 1);
     if (!dropped && rng.chance(0.3)) { dropped = true; continue; }
     dropped = false;
     jagged.push({ x: p.x + rng.range(-0.2, 0.2), y: p.y + rng.range(-0.2, 0.2), cave: true });
@@ -199,7 +211,7 @@ function addLoop(path, loop) {
 // Walls as chains of short pen strokes, each tilted slightly off the wall
 // line and bowed a little; neighbours share their end points. The chain is
 // pushed out into the rock, so most of the wall's weight lies outside the room.
-function drawWalls(ctx, loops, TS, rng) {
+function drawWalls(ctx, loops, TS, seed) {
   const k = TS / 32, weight = WALL.weight * k, seg = WALL.seg * TS;
   const shift = weight * (0.5 - WALL.inside);
   ctx.fillStyle = INK;
@@ -218,7 +230,7 @@ function drawWalls(ctx, loops, TS, rng) {
       return [p.x + mx * shift, p.y + my * shift];
     });
     for (let i = 0; i < n; i++) {
-      const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % n];
+      const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % n], rng = rngAt(seed, x0 / TS, y0 / TS, x1 / TS, y1 / TS);
       const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len;
       const pts = [[x0, y0]];
       for (let at = seg * rng.range(0.7, 1.3); at < len - seg * 0.4; at += seg * rng.range(0.7, 1.3)) {
@@ -489,12 +501,12 @@ function drawShadow(ctx, level, TS, floor, seed) {
 // bowed, often stopping short of a crossing, now and then broken mid-way. On
 // a cave's floor (`cave(x, y)`) it is a rougher guide: dashes and gaps of
 // uneven lengths (now and then a dot), wandering more, its weight varying.
-function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
+function drawGrid(ctx, W, H, TS, seed, open, cave = () => false) {
   const k = TS / 32;
   ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
   ctx.lineCap = "round";
   const edge = (x0, y0, x1, y1, loose) => {
-    const wob = GRID.wobble * k * (loose ? 3.5 : 1), brk = loose ? 0.3 : GRID.breaks;
+    const rng = rngAt(seed, x0 / TS, y0 / TS, x1 / TS, y1 / TS), wob = GRID.wobble * k * (loose ? 3.5 : 1), brk = loose ? 0.3 : GRID.breaks;
     if (loose) {
       const dash = [];
       for (let i = 0; i < 4; i++) dash.push((rng.chance(0.2) ? rng.range(0.3, 1) : rng.range(1.5, 9)) * k, rng.range(1.5, 7) * k);

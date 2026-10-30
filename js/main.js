@@ -37,6 +37,10 @@ window.addEventListener("keydown", (e) => {
     // Close a door next to the player.
     e.preventDefault();
     world.closeDoor();
+  } else if (e.key === "e" || e.key === "E") {
+    // Search for secret doors close by (a turn).
+    e.preventDefault();
+    world.search();
   } else if (e.key === "f" || e.key === "F") {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
