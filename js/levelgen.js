@@ -14,7 +14,9 @@
 // furnishing), `posts` (pillars on grid crossings, [x, y]: no step
 // diagonally past one), `recesses` (shallow alcoves in the walls, each
 // { x, y, dx, dy, w }: in the wall that way from the square x, y, w squares
-// wide), each room's `kind`, and `regions` (their seed points and types).
+// wide), `lights` (campfires and torches, each { x, y, kind } in squares),
+// `blocks` (squares in the way though floor: campfires), each room's `kind`,
+// and `regions` (their seed points and types).
 // Columns are rock, a square each.
 
 import { T, carveCave } from "./dungeon.js";
@@ -43,6 +45,9 @@ export const LEVELGEN_DEFAULTS = {
   // rubble lies about. On cave floors, the rubble and grit (more along the
   // walls).
   collapse: 0.6, rubble: 0.5, caveRubble: 0.5,
+  // Lights: how often a big cave has a campfire, a dungeon room is lit by
+  // torches on its walls, and a square of dungeon corridor has a torch.
+  campfires: 0.4, litRooms: 0.3, corridorTorches: 0.05,
 };
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -607,10 +612,65 @@ function tryAreas(S, rng) {
     }
   }
 
+  // Lights (each { x, y, kind } in squares): campfires in big caves, in the
+  // middle of open floor (the fire's square is in the way: `blocks`);
+  // torches on the walls of some dungeon rooms, and here and there along
+  // dungeon corridors. Each is a thing drawn, too.
+  const lights = [], blocks = new Set(), doorAt = new Set(doors.map((d) => idx(d.x, d.y)));
+  const lightNear = (x, y, d) => lights.some((l) => Math.hypot(l.x - x, l.y - y) < d);
+  for (const r of rooms) {
+    if (!r.cave || !rng.chance(S.campfires)) continue;
+    let best = null;
+    for (let y = r.y + 1; y < r.y + r.h - 1; y++)
+      for (let x = r.x + 1; x < r.x + r.w - 1; x++) {
+        let open = true;
+        for (let dy = -1; dy <= 1 && open; dy++) for (let dx = -1; dx <= 1 && open; dx++) open = floorAt(x + dx, y + dy);
+        const d = Math.hypot(x - r.cx, y - r.cy);
+        if (open && (!best || d < best.d)) best = { x, y, d };
+      }
+    if (!best || best.d > 3) continue;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) rubble[idx(best.x + dx, best.y + dy)] = 0;
+    blocks.add(idx(best.x, best.y));
+    r.campfire = true;
+    lights.push({ x: best.x + 0.5, y: best.y + 0.5, kind: "fire" });
+    features.push({ type: "campfire", x: best.x + 0.5, y: best.y + 0.5 });
+  }
+  // A torch on the wall beside floor square (x, y), the wall that way.
+  const torch = (x, y, dx, dy) => {
+    features.push({ type: "torch", x: x + 0.5 + dx * 0.5, y: y + 0.5 + dy * 0.5, dx, dy });
+    lights.push({ x: x + 0.5 + dx * 0.15, y: y + 0.5 + dy * 0.15, kind: "torch" });
+  };
+  for (const r of rooms) {
+    if (!r.kind || !rng.chance(S.litRooms)) continue;
+    r.lit = true;
+    // On the long walls, about every four squares (on all four in a small
+    // room, a torch each).
+    const sides = SIDES.filter((sd) => sd.len(r) >= Math.max(r.w, r.h) || Math.max(r.w, r.h) <= 5);
+    for (const sd of sides) {
+      const L = sd.len(r), n = Math.max(1, Math.round(L / 4));
+      for (let i = 0; i < n; i++) {
+        const u = Math.floor(((i + 0.5) * L) / n), [x, y] = sd.at(r, u, -1), [wx, wy] = sd.at(r, u, 0);
+        if (!floorAt(x, y) || tiles[idx(wx, wy)] !== T.ROCK) continue;
+        torch(x, y, -sd.into[0], -sd.into[1]);
+      }
+    }
+  }
+  const inRoom = (x, y) => rooms.some((r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
+  for (let y = 2; y < H - 2; y++)
+    for (let x = 2; x < W - 2; x++) {
+      const j = idx(x, y);
+      if (!floorAt(x, y) || area[j] !== DUNGEON || cave[j] || rubble[j] || doorAt.has(j) || inRoom(x, y)) continue;
+      // (A straight stretch: walls both sides.)
+      const across = !floorAt(x, y - 1) && !floorAt(x, y + 1) ? [0, 1] : !floorAt(x - 1, y) && !floorAt(x + 1, y) ? [1, 0] : null;
+      if (!across || lightNear(x + 0.5, y + 0.5, 7) || !rng.chance(S.corridorTorches)) continue;
+      const side = rng.chance(0.5) ? 1 : -1;
+      torch(x, y, across[0] * side, across[1] * side);
+    }
+
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
   const startRoom = rng.pick(rooms);
   return {
-    w: W, h: H, tiles, cave, rooms, area, rubble, doors, features, posts, recesses, regions,
+    w: W, h: H, tiles, cave, rooms, area, rubble, doors, features, posts, recesses, lights, blocks, regions,
     start: { x: startRoom.cx, y: startRoom.cy },
     startRoom,
     idx, get,

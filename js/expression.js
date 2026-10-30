@@ -60,6 +60,10 @@ export const EXPRESSION_DEFAULTS = {
 export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
+// Lights in the level (campfires, torches): their bands, in squares from the
+// light, like the candle's; and how far off the player sees what they light.
+const LAMPS = { fire: { full: 2.5, dim: 1.5, dark: 2 }, torch: { full: 1.5, dim: 1, dark: 1.5 } };
+const LAMP_SEE = 24;
 // The rock this close to known floor (in tiles) shows the walls' ink.
 const WALL_BAND = 0.5;
 // Walls show beside floor seen this near (in tiles, over the floor).
@@ -201,6 +205,7 @@ export class Expression {
     // Shut doors stop sight and light: a wall across the way where each is.
     this.doorWalls = new Map();
     for (const d of level.doors ?? []) this.doorChanged(d, true);
+    this.lightLamps();
     this.rock = new Path2D();
     this.rock.rect(-W * TS, -H * TS, W * TS * 3, H * TS * 3);
     this.rock.addPath(drawn.floor);
@@ -215,6 +220,7 @@ export class Expression {
     // The exact shape of all that has been seen, at full resolution, recast
     // from every place it was seen from (see learn).
     this.seenShape = blank(cw, ch);
+    this.shapeRock();
     for (const v of this.viewpoints?.values() ?? []) this.addShape(v);
     if (this.player) {
       this.learn(this.player.x, this.player.y);
@@ -273,7 +279,19 @@ export class Expression {
     this.outOfDate();
     this.viewpoints?.clear();
     this.seenShape?.getContext("2d").clearRect(0, 0, this.seenShape.width, this.seenShape.height);
+    this.shapeRock();
     if (this.player) this.learn(this.player.x, this.player.y);
+  }
+
+  // All the rock, in `seenShape` from the start (it goes with the floor seen
+  // wherever the shape is used; and the level's lights show only on what is
+  // in it, never on floor not seen).
+  shapeRock() {
+    if (!this.seenShape) return;
+    const g = this.seenShape.getContext("2d");
+    g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    g.fillStyle = "#000";
+    g.fill(this.rock, "evenodd");
   }
 
   // The floor the player sees from tile (tx, ty), at mask resolution, and
@@ -283,18 +301,27 @@ export class Expression {
   learn(tx, ty) {
     const { mw, mh, floor, seen, S, TS } = this, px = (tx + 0.5) * TS, py = (ty + 0.5) * TS, far = S.sight + S.sightFade;
     this.player = { x: tx, y: ty };
+    // (Further, where lights near by may light what can be seen far off.)
+    const lamps = this.lampLevel && (this.level.lights ?? []).some((l) => Math.hypot(l.x - tx - 0.5, l.y - ty - 0.5) < LAMP_SEE + 6);
+    const reach = lamps ? Math.max(far, LAMP_SEE) : far;
+    // (The far view from the player's middle alone; near, from the flame's
+    // points too.)
     const path = this.viewFrom(px, py, (far + 1) * TS);
+    this.lampView = lamps ? this.walls.visible(px, py, (LAMP_SEE + 1) * TS) : null;
     // Only the square the view can reach is looked at.
-    const m = Math.ceil((far + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
+    const m = Math.ceil((reach + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
     const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
     const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
     g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
     g.fill(path);
+    if (this.lampView) g.fill(this.lampView);
     const a = g.getImageData(0, 0, bw, bh).data;
     let grew = false;
     const vis = new Float32Array(mw * mh), level = (j) => {
       const d = Math.hypot(((j % mw) + 0.5) / R - px / TS, (((j / mw) | 0) + 0.5) / R - py / TS);
-      return S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
+      const near = S.sightFade > 0 ? 1 - smooth((d - S.sight) / S.sightFade) : d <= S.sight ? 1 : 0;
+      // (What a light lights is seen, however far.)
+      return lamps && this.lampLevel[j] > 0 ? Math.max(near, clamp01(this.lampLevel[j] / Math.max(0.01, S.darkLevel))) : near;
     };
     // In sight: floor at least half inside the view (`vis`, for what is in
     // sight now). Remembered as seen: any of it inside, and the floor next to
@@ -334,11 +361,22 @@ export class Expression {
     const key = `${tx},${ty},${far},${S.flame},${this.doorsChanged ?? 0}`;
     if (!this.viewpoints) this.viewpoints = new Map();
     if (!this.viewpoints.has(key)) {
-      const v = { path, px, py, far };
+      const v = { path, px, py, far, lamps: this.lampView };
       this.viewpoints.set(key, v);
       this.addShape(v);
     }
     this.visNow = vis;
+    // (The lights that light anything in sight now: a few points round each.)
+    this.lampsSeen = (this.level.lights ?? []).filter((l) => {
+      if (!lamps) return false;
+      const B = LAMPS[l.kind] ?? LAMPS.torch;
+      for (const r of [0, B.full * 0.5, B.full, B.full + B.dim])
+        for (let k = 0; k < (r ? 12 : 1); k++) {
+          const i = Math.floor((l.x + r * Math.cos((k * Math.PI) / 6)) * R), j = Math.floor((l.y + r * Math.sin((k * Math.PI) / 6)) * R);
+          if (i >= 0 && j >= 0 && i < mw && j < mh && vis[j * mw + i] > 0.01) return true;
+        }
+      return false;
+    });
     this.sightRock(visRock, x0, y0, x1, y1);
     return grew;
   }
@@ -355,22 +393,48 @@ export class Expression {
   // Add one view to `seenShape`: the floor seen from (px, py) out to `far`
   // tiles, and the rock in a band all round it (where the walls' ink is,
   // however edge-on the walls are seen).
-  addShape({ path, px, py, far }) {
+  addShape({ path, px, py, far, lamps }) {
+    // (`lamps`: the far view, cut to where the lights reach.)
     if (!this.seenShape) return;
-    const g = this.seenShape.getContext("2d"), TS = this.TS;
+    const TS = this.TS;
+    const draw = (g, path) => {
+      g.fillStyle = "#000";
+      g.fill(path);
+      g.save();
+      g.clip(this.rock, "evenodd");
+      g.strokeStyle = "#000";
+      g.lineWidth = 2 * WALL_BAND * TS;
+      g.lineJoin = "round";
+      g.stroke(path);
+      g.restore();
+    };
+    const g = this.seenShape.getContext("2d");
     g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     g.save();
     g.beginPath();
     g.arc(px, py, (far + WALL_BAND) * TS, 0, Math.PI * 2);
     g.clip();
-    g.fillStyle = "#000";
-    g.fill(path);
-    g.clip(this.rock, "evenodd");
-    g.strokeStyle = "#000";
-    g.lineWidth = 2 * WALL_BAND * TS;
-    g.lineJoin = "round";
-    g.stroke(path);
+    draw(g, path);
     g.restore();
+    // Further off, what lights light: the far view cut to where they reach.
+    if (lamps && this.lampSight) {
+      const c = this.lampScratch && this.lampScratch.width === this.seenShape.width ? this.lampScratch : (this.lampScratch = blank(this.seenShape.width, this.seenShape.height));
+      const lg = c.getContext("2d"), r = (LAMP_SEE + 1) * TS;
+      lg.setTransform(1, 0, 0, 1, 0, 0);
+      lg.clearRect(0, 0, c.width, c.height);
+      lg.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+      lg.save();
+      lg.beginPath();
+      lg.rect(px - r, py - r, 2 * r, 2 * r);
+      lg.clip();
+      draw(lg, lamps);
+      lg.globalCompositeOperation = "destination-in";
+      lg.imageSmoothingEnabled = true;
+      lg.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
+      lg.restore();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(c, 0, 0);
+    }
   }
 
   // How well the map point (x, y) is in sight from the player's tile, 0 to 1.
@@ -1000,6 +1064,7 @@ export class Expression {
       this.doorWalls.set(key, s);
     }
     if (quiet) return;
+    this.lightLamps();
     // (So the view from where the player stands is taken again.)
     this.doorsChanged = (this.doorsChanged ?? 0) + 1;
     this.drawDoorLayer();
@@ -1082,6 +1147,14 @@ export class Expression {
     g.filter = S.blockSoft > 0 ? `blur(${S.blockSoft * TS * this.sightScale * 0.5}px)` : "none";
     g.fill(path);
     g.filter = "none";
+    // And what lights light, far off, in view from the player's square.
+    if (this.lampView && this.lampSight) {
+      g.save();
+      g.clip(this.lampView);
+      g.imageSmoothingEnabled = true;
+      g.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
+      g.restore();
+    }
     this.sightFrom = [px, py];
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
   }
@@ -1383,6 +1456,37 @@ export class Expression {
         g.drawImage(this.lightInk, b.x, b.y, b.w, b.w);
       }
     }
+    // The lit picture through the level's lights, where in sight (they
+    // flicker a little), warmed: only round the lights near the player, the
+    // only ones that can be in sight.
+    const lamp = this.lampCanvas && this.lampBox(T, g.canvas);
+    if (lamp) {
+      const t = performance.now() / 1000, flick = 1 - 0.08 * (1 + Math.sin(t * 6.1) * 0.6 + Math.sin(t * 10.3 + 1) * 0.4) / 2;
+      wg.setTransform(1, 0, 0, 1, 0, 0);
+      wg.globalCompositeOperation = "source-over";
+      wg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
+      wg.save();
+      wg.beginPath();
+      wg.rect(lamp.x0, lamp.y0, lamp.w, lamp.h);
+      wg.clip();
+      wg.setTransform(T);
+      this.region(wg, this.lit, this.scale, lamp.view);
+      if (S.warmth > 0) {
+        wg.globalCompositeOperation = "multiply";
+        wg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
+        wg.fillRect(lamp.view.x, lamp.view.y, lamp.view.w, lamp.view.h);
+      }
+      wg.globalCompositeOperation = "destination-in";
+      this.region(wg, this.lampCanvas, R / this.TS, lamp.view);
+      this.region(wg, this.sightCanvas.eased, ss, lamp.view);
+      this.region(wg, this.seenShape, this.scale, lamp.view);
+      wg.restore();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalAlpha = flick;
+      g.drawImage(w, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
+      g.globalAlpha = 1;
+      g.setTransform(T);
+    }
     // Where the ink in sight goes: the eased sight, and all round the player
     // out to `nearInk`.
     const mc = this.inkMask || (this.inkMask = blank(1, 1));
@@ -1437,6 +1541,26 @@ export class Expression {
     }
   }
 
+  // The box round the level's lights that light anything in sight, in view,
+  // on a canvas with transform `T`, in whole pixels, and that in map units;
+  // null if none.
+  lampBox(T, canvas) {
+    const TS = this.TS;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const l of this.lampsSeen ?? []) {
+      const B = LAMPS[l.kind] ?? LAMPS.torch, out = B.full + B.dim + B.dark + 1;
+      x0 = Math.min(x0, (l.x - out) * TS);
+      y0 = Math.min(y0, (l.y - out) * TS);
+      x1 = Math.max(x1, (l.x + out) * TS);
+      y1 = Math.max(y1, (l.y + out) * TS);
+    }
+    if (!(x1 > x0)) return null;
+    const X0 = Math.max(0, Math.floor(T.a * x0 + T.e)), Y0 = Math.max(0, Math.floor(T.d * y0 + T.f));
+    const X1 = Math.min(canvas.width, Math.ceil(T.a * x1 + T.e)), Y1 = Math.min(canvas.height, Math.ceil(T.d * y1 + T.f));
+    if (!(X1 > X0 && Y1 > Y0)) return null;
+    return { x0: X0, y0: Y0, w: X1 - X0, h: Y1 - Y0, view: { x: (X0 - T.e) / T.a, y: (Y0 - T.f) / T.d, w: (X1 - X0) / T.a, h: (Y1 - Y0) / T.d } };
+  }
+
   // The light's square on a canvas with transform `T`, in whole pixels (so
   // nothing shows at its edges), and that in map units; null if none.
   screenBox(T, canvas) {
@@ -1450,11 +1574,49 @@ export class Expression {
 
   // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
   // light it is in, if in sight.
+  // The level's lights (campfires, torches), each cast against the walls,
+  // posts and shut doors and lighting the rim of rock past them, in bands
+  // with ragged edges like the candle's: `lampLevel` (mask resolution), as a
+  // picture to show the lit map through (`lampCanvas`), and what it lets the
+  // player see from afar (`lampSight`).
+  lightLamps() {
+    const { mw, mh, TS, S } = this, lights = this.level.lights ?? [];
+    this.lampLevel = this.lampCanvas = this.lampSight = null;
+    if (!lights.length) return;
+    const level = (this.lampLevel = new Float32Array(mw * mh));
+    for (const l of lights) {
+      const B = LAMPS[l.kind] ?? LAMPS.torch, out = B.full + B.dim + B.dark;
+      const rim = this.lightWalls.visible(l.x * TS, l.y * TS, (out + 0.5) * TS).beyond(S.lightWall * TS);
+      const m = Math.ceil((out + 1) * R), cx = Math.floor(l.x * R), cy = Math.floor(l.y * R);
+      const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
+      const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
+      g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
+      g.fill(rim);
+      const a = g.getImageData(0, 0, bw, bh).data;
+      for (let y = y0; y < y1; y++)
+        for (let x = x0; x < x1; x++) {
+          if (a[((y - y0) * bw + (x - x0)) * 4 + 3] < 128) continue;
+          const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R), j = y * mw + x;
+          const e = Math.hypot(mx / TS - l.x, my / TS - l.y) + S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
+          const v = e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0;
+          if (v > level[j]) level[j] = v;
+        }
+    }
+    const pic = (alpha) => {
+      const c = blank(mw, mh), im = new ImageData(mw, mh);
+      for (let j = 0; j < mw * mh; j++) im.data[j * 4 + 3] = Math.round(255 * alpha(level[j]));
+      c.getContext("2d").putImageData(im, 0, 0);
+      return c;
+    };
+    this.lampCanvas = pic((v) => v);
+    this.lampSight = pic((v) => clamp01(v / Math.max(0.01, S.darkLevel)));
+  }
+
   lightAt(x, y) {
-    const S = this.S, from = this.lightFrom, TS = this.TS, r = (S.lightFull - 0.5 + S.lightDim) * TS;
-    if (!from || !(this.lightOut() > 0)) return 0;
-    const d = Math.hypot(x - from[0], y - from[1]);
-    return (d < (S.lightFull - 0.5) * TS ? 1 : d < r ? S.dimLevel : d < this.lightOut() * TS ? S.darkLevel : 0) * this.inSight(x, y);
+    const S = this.S, from = this.lightFrom ?? [-1e9, -1e9], TS = this.TS, r = (S.lightFull - 0.5 + S.lightDim) * TS;
+    const d = Math.hypot(x - from[0], y - from[1]), i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
+    const lamp = this.lampLevel && i >= 0 && k >= 0 && i < this.mw && k < this.mh ? this.lampLevel[k * this.mw + i] : 0;
+    return Math.max(lamp, d < (S.lightFull - 0.5) * TS ? 1 : d < r ? S.dimLevel : d < this.lightOut() * TS ? S.darkLevel : 0) * this.inSight(x, y);
   }
 
 

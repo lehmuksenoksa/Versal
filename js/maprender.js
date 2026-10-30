@@ -655,6 +655,33 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper") {
       P.box(x, y, w, h, 0, OUT + (f.type === "sarcophagus" ? 0.4 : 0), PAPER);
       const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
       P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
+    } else if (f.type === "campfire") {
+      // A ring of stones, crossed logs, and the fire a burst of short
+      // strokes.
+      const n = 7, a0 = rng.range(0, 2 * Math.PI);
+      for (let i = 0; i < n; i++) {
+        const a = a0 + (i * 2 * Math.PI) / n + rng.range(-0.15, 0.15), rr = TS * rng.range(0.36, 0.42);
+        P.round(x + Math.cos(a) * rr, y + Math.sin(a) * rr, TS * rng.range(0.08, 0.11), IN, PAPER);
+      }
+      const b = rng.range(0, Math.PI);
+      for (const a of [b, b + Math.PI / 2 + rng.range(-0.3, 0.3)]) {
+        const c = Math.cos(a) * TS * 0.24, sn = Math.sin(a) * TS * 0.24;
+        P.line(x - c, y - sn, x + c, y + sn, OUT);
+      }
+      for (let i = 0; i < 9; i++) {
+        const a = (i * 2 * Math.PI) / 9 + rng.range(-0.2, 0.2), r0 = TS * 0.06, r1 = TS * rng.range(0.16, 0.26);
+        P.line(x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1, IN);
+      }
+    } else if (f.type === "torch") {
+      // A bracket off the wall (dx, dy: into the wall), the flame at its end
+      // with a few short rays.
+      const fx = x - f.dx * TS * 0.2, fy = y - f.dy * TS * 0.2;
+      P.line(x + f.dx * TS * 0.05, y + f.dy * TS * 0.05, fx, fy, IN + 0.6);
+      P.round(fx, fy, TS * 0.07, IN, INK);
+      for (let i = 0; i < 6; i++) {
+        const a = Math.atan2(-f.dy, -f.dx) + ((i - 2.5) * Math.PI) / 6 + rng.range(-0.15, 0.15), r0 = TS * 0.11, r1 = TS * rng.range(0.17, 0.23);
+        P.line(fx + Math.cos(a) * r0, fy + Math.sin(a) * r0, fx + Math.cos(a) * r1, fy + Math.sin(a) * r1, 1.4);
+      }
     }
   }
 }

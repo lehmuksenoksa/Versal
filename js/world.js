@@ -3,7 +3,7 @@
 // closes a door, or waits) and the goblins, a little slower, act after.
 // The player sees what lies in their field of view, and remembers what they
 // have seen; with the lamp out (sneaking) they see less, and are noticed
-// less.
+// less, unless they stand where the level's lights fall.
 // A goblin is "neutral" (milling about with its pack), "sleeping" (still;
 // some packs start so), or "aggressive" (chasing the player, attacking when
 // next to them, opening doors in the way now and then). A pack turns
@@ -51,9 +51,17 @@ export class World {
     this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
     this.actors = [this.player];
-    const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom));
-    // A pack in about a third of the rooms.
-    for (const room of rooms.slice(0, Math.round(level.rooms.length / 3))) this.spawnPack(room, this.rng.int(4, 7));
+    // Squares in the way though floor (campfires), and squares lit by the
+    // level's lights (no sneaking there).
+    this.blocks = level.blocks ?? new Set();
+    this.lit = new Uint8Array(level.w * level.h);
+    const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
+    for (const l of level.lights ?? [])
+      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), l.kind === "fire" ? 4 : 2.5, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
+    // A pack round every campfire, awake; and in about a third of the rooms.
+    const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
+    const packs = Math.max(Math.round(level.rooms.length / 3), rooms.filter((r) => r.campfire).length);
+    for (const room of rooms.slice(0, packs)) this.spawnPack(room, this.rng.int(4, 7), room.campfire ? "neutral" : null);
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
     // What has a line of sight to the player (for goblins noticing them,
@@ -75,9 +83,9 @@ export class World {
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }
 
-  spawnPack(room, n) {
+  spawnPack(room, n, state = null) {
     let leader = null;
-    const state = this.rng.chance(0.35) ? "sleeping" : "neutral";
+    state ??= this.rng.chance(0.35) ? "sleeping" : "neutral";
     for (let k = 0; k < n; k++) {
       const spot = this.freeSpotIn(room);
       if (!spot) break;
@@ -98,7 +106,8 @@ export class World {
 
   tileAt(x, y) { return this.level.get(x, y); }
   actorAt(x, y) { return this.actors.find((a) => a.x === x && a.y === y); }
-  isFree(x, y) { return isWalkable(this.tileAt(x, y)) && !this.shut(x, y) && !this.actorAt(x, y); }
+  isFree(x, y) { return this.walkable(x, y) && !this.shut(x, y) && !this.actorAt(x, y); }
+  walkable(x, y) { return isWalkable(this.tileAt(x, y)) && !this.blocks.has(y * this.level.w + x); }
   // The door in the square (x, y), if any; whether one is there and shut.
   doorAt(x, y) { return this.doors.get(y * this.level.w + x); }
   shut(x, y) { return this.doorAt(x, y)?.open === false; }
@@ -119,7 +128,7 @@ export class World {
       this.whack(g);
       return this.tick();
     }
-    if (g || !isWalkable(this.tileAt(nx, ny))) return false;
+    if (g || !this.walkable(nx, ny)) return false;
     if (this.shut(nx, ny)) {
       this.setDoor(this.doorAt(nx, ny), true, p);
       return this.tick();
@@ -202,13 +211,15 @@ export class World {
   // not seeing the player, or when they are far off.
   notice() {
     const p = this.player, angry = new Set(), W = this.level.w;
-    const reach = this.sneaking ? GOBLIN.noticeSneaking : GOBLIN.notice, wake = this.sneaking ? GOBLIN.wakeSneaking : GOBLIN.wake;
+    // (In a lit place, the lamp out hides nothing.)
+    const hidden = this.sneaking && !this.lit[p.y * W + p.x];
+    const reach = hidden ? GOBLIN.noticeSneaking : GOBLIN.notice, wake = hidden ? GOBLIN.wakeSneaking : GOBLIN.wake;
     for (const g of this.actors) {
       if (g === p) continue;
       const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), sees = this.inView[g.y * W + g.x] === 1;
       g.sees = sees;
       if (!sees || d > (g.state === "sleeping" ? wake : reach)) continue;
-      if (this.sneaking && !this.rng.chance(GOBLIN.sneakChance)) continue;
+      if (hidden && !this.rng.chance(GOBLIN.sneakChance)) continue;
       angry.add(g.leader);
     }
     for (const g of this.actors) {
@@ -241,7 +252,7 @@ export class World {
       if (dist[j] > GOBLIN.lose * 2) break;
       for (const [dx, dy] of DIRS8) {
         const nx = x + dx, ny = y + dy, k = ny * w + nx;
-        if (nx < 0 || ny < 0 || nx >= w || ny >= h || dist[k] >= 0 || !isWalkable(this.tileAt(nx, ny)) || !this.canStep(x, y, dx, dy)) continue;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || dist[k] >= 0 || !this.walkable(nx, ny) || !this.canStep(x, y, dx, dy)) continue;
         dist[k] = dist[j] + 1;
         q.push(k);
       }

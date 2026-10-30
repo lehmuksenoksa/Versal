@@ -17,6 +17,9 @@ and some goblins.
   aggressive: it chases them (a little slower than they move), attacks when next to them (no damage
   yet), and opens doors in the way now and then; it gives up when they are out of sight a while or
   far off.
+- Light other than the player's: goblin campfires in the caverns (a pack always round them), and
+  dungeon rooms and corridors lit by torches. Lit places are seen from far off, in line of sight,
+  and a sneaking player standing in one is noticed as if their lamp were lit.
 - The player whacks a goblin by walking into it (goblins take a hit or two), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
   round them, only the dark band of light, and goblins much less likely to notice or wake.
