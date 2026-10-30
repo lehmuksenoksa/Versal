@@ -17,7 +17,7 @@ const LETTERING = {
   font: "Texturina, Georgia, serif",
   // (The player, unlit, has a heavy ring of the dark band's colour instead
   // of the paper halo.)
-  player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.24, darkInk: "#741a12" },
+  player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.14, darkInk: "#741a12" },
   monster: { weight: 600, size: 1.05, ink: INK },
   bold: 0.025,
   halo: 0.1,
