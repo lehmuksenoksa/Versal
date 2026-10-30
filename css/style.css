@@ -4,7 +4,7 @@
 @font-face { font-family: "IM Fell English"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
 
 html, body { height: 100%; margin: 0; }
-body { background: #2b221c; overflow: hidden; }
+body { background: #000; overflow: hidden; }
 #view { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
 /* The actions, for touch screens: a small strip of inked paper buttons. */

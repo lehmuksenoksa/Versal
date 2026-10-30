@@ -8,7 +8,8 @@ import { drawFire } from "./fire.js";
 
 export { EXPRESSION_DEFAULTS };
 
-const DESK = "#2b221c";
+// How far (in squares) the map fades into the darkness at its edges.
+const EDGE_FADE = 1.5;
 export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
@@ -403,21 +404,28 @@ export class Renderer {
     if (this.low) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
     else this.exp.update(now, dt, px, py);
     if (fresh) {
+      // Beyond the map, the darkness of ground not yet seen; the map fading
+      // into it at its edges, so no edge shows.
+      const out = this.settings.outColor;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = DESK;
+      ctx.fillStyle = out;
       ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
 
-      // The page, casting a soft shadow onto the desk.
-      ctx.save();
-      ctx.shadowColor = "rgba(0,0,0,0.5)";
-      ctx.shadowBlur = 24;
-      ctx.fillStyle = PAPER;
-      ctx.fillRect(0, 0, mw, mh);
-      ctx.restore();
-
       // The map as explored (light and darkness included).
       this.exp.drawMap(ctx, view, now);
+      const fade = EDGE_FADE * TS;
+      for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [
+        // (Each reaching a square past the edge, so no seam shows there.)
+        [0, 0, fade, 0, -TS, -TS, fade + TS, mh + 2 * TS], [mw, 0, mw - fade, 0, mw - fade, -TS, fade + TS, mh + 2 * TS],
+        [0, 0, 0, fade, -TS, -TS, mw + 2 * TS, fade + TS], [0, mh, 0, mh - fade, -TS, mh - fade, mw + 2 * TS, fade + TS],
+      ]) {
+        const g = ctx.createLinearGradient(x0, y0, x1, y1);
+        g.addColorStop(0, out);
+        g.addColorStop(1, `${out}00`);
+        ctx.fillStyle = g;
+        ctx.fillRect(rx, ry, rw, rh);
+      }
       if (this.low) {
         const c = this.mapCache ?? (this.mapCache = document.createElement("canvas"));
         if (c.width !== this.canvas.width || c.height !== this.canvas.height) { c.width = this.canvas.width; c.height = this.canvas.height; }
