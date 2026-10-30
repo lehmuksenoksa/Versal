@@ -85,6 +85,14 @@ const DART = [0.22, 0.6, 1.3];
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
+// Low power, for phones and slow machines: drawn at one device pixel to a
+// screen pixel at most, and the map put together again only `mapFps` times
+// a second while the view stands still (the letters, flames and words move
+// every frame over it). On for touch screens; or, after `slowMs` a frame
+// on average over a couple of seconds; or as `?quality=low` (`high`: never).
+const LOW = { mapFps: 12, slowMs: 50 };
+const QUALITY = new URLSearchParams(location.search).get("quality");
+
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -100,6 +108,8 @@ export class Renderer {
     this.ghosts = [];
     this.settings = { ...EXPRESSION_DEFAULTS };
     this.zoom = ZOOM.start;
+    this.low = QUALITY === "low" || (QUALITY !== "high" && !!window.matchMedia?.("(pointer: coarse)").matches);
+    this.frameTimes = [];
     this.resize();
   }
 
@@ -151,9 +161,25 @@ export class Renderer {
     if (this.world) this.rescale = setTimeout(() => this.buildMap(), 300);
   }
 
+  // Going slow (`ms` since the last frame)? Then low power from here on,
+  // unless asked for high quality.
+  watchSpeed(ms) {
+    if (this.low || QUALITY === "high" || !this.exp?.stat || this.exp.job || ms <= 0) return;
+    const f = this.frameTimes;
+    f.push(ms);
+    if (f.length < 90) return;
+    f.sort((a, b) => a - b);
+    const typical = f[f.length >> 1];
+    this.frameTimes = [];
+    if (typical < LOW.slowMs) return;
+    this.low = true;
+    this.resize();
+    this.buildMap();
+  }
+
   resize() {
     const r = this.canvas.getBoundingClientRect();
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.dpr = Math.min(this.low ? 1 : 2, window.devicePixelRatio || 1);
     this.vw = Math.max(1, r.width);
     this.vh = Math.max(1, r.height);
     this.canvas.width = Math.round(this.vw * this.dpr);
@@ -335,6 +361,7 @@ export class Renderer {
     this.consume(now);
     const ctx = this.ctx, TS = this.TS, L = w.level, t = now / 1000;
     const dt = Math.min(0.1, (now - (this.lastNow || now)) / 1000);
+    this.watchSpeed(now - (this.lastNow || now));
     this.lastNow = now;
     const motion = this.reduced ? 0.35 : 1;
     // The view in map units, and map units to device pixels.
@@ -353,23 +380,44 @@ export class Renderer {
     this.cam.y += (ty - this.cam.y) * f;
     const cx = Math.round(this.cam.x * sc) / sc, cy = Math.round(this.cam.y * sc) / sc;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = DESK;
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
-
-    // The page, casting a soft shadow onto the desk.
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 24;
-    ctx.fillStyle = PAPER;
-    ctx.fillRect(0, 0, mw, mh);
-    ctx.restore();
-
-    // The map as explored (light and darkness included), then the letters.
     const view = { x: cx, y: cy, w: vw, h: vh };
     this.exp.update(now, dt, px, py);
-    this.exp.drawMap(ctx, view, now);
+    // (In low power, the map as last put together, unless the view has
+    // moved or it is time.)
+    const key = `${cx},${cy},${sc},${this.canvas.width},${this.canvas.height}`;
+    if (!this.low || key !== this.mapKey || now - this.mapAt >= 1000 / LOW.mapFps) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = DESK;
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
+
+      // The page, casting a soft shadow onto the desk.
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = PAPER;
+      ctx.fillRect(0, 0, mw, mh);
+      ctx.restore();
+
+      // The map as explored (light and darkness included).
+      this.exp.drawMap(ctx, view, now);
+      if (this.low) {
+        const c = this.mapCache ?? (this.mapCache = document.createElement("canvas"));
+        if (c.width !== this.canvas.width || c.height !== this.canvas.height) { c.width = this.canvas.width; c.height = this.canvas.height; }
+        const g = c.getContext("2d");
+        g.globalCompositeOperation = "copy";
+        g.drawImage(this.canvas, 0, 0);
+        this.mapKey = key;
+        this.mapAt = now;
+      }
+    } else {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "copy";
+      ctx.drawImage(this.mapCache, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
+    }
+    // Then the letters.
     // Campfires burning, while in sight (fading in and out as goblins do).
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
