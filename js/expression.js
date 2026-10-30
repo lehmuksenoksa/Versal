@@ -176,7 +176,8 @@ export class Expression {
   setScale(scale, around = null) {
     const { level, W, H, TS, seed, mw, mh } = this, area = W * TS * H * TS;
     this.scale = Math.min(scale, Math.sqrt(DRAWING_PIXELS / area));
-    this.sightScale = Math.min(scale, Math.sqrt(SIGHT_PIXELS / area));
+    // (In low power, `low`, the sight a little coarser: it is soft anyway.)
+    this.sightScale = Math.min(scale * (this.low ? 0.6 : 1), Math.sqrt(SIGHT_PIXELS / area));
     const layer = (o) => renderMap(level, TS, this.scale, seed, { hatch: false, paper: false, floor: false, grid: false, walls: false, keys: false, ...o });
     const drawn = layer({ floor: true, shadow: false });
     this.floorLayer = drawn.canvas; // (for its shape)
@@ -329,13 +330,14 @@ export class Expression {
     // `far` counts only where lit.)
     this.lampView = lamps ? this.viewFrom(px, py, (LAMP_SEE + 1) * TS) : null;
     const path = this.lampView ?? this.viewFrom(px, py, (far + 1) * TS);
+    // (Kept for castSight from the same place: no need to cast it again.)
+    this.lastView = { px, py, r: (lamps ? LAMP_SEE + 1 : far + 1) * TS, path };
     // Only the square the view can reach is looked at.
     const m = Math.ceil((reach + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
     const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
     const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
     g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
     g.fill(path);
-    if (this.lampView) g.fill(this.lampView);
     const a = g.getImageData(0, 0, bw, bh).data;
     let grew = false;
     const vis = new Float32Array(mw * mh), level = (j) => {
@@ -350,7 +352,9 @@ export class Expression {
     // drawing is trimmed to that edge by `seenShape`.
     // (For the rock that goes with it: any floor the view touches, and the
     // floor next to that, so rock behind walls seen edge-on goes with it.)
+    // (And the box round it all, `rx0`.., for working out the rock.)
     const touched = new Uint8Array(bw * bh), visRock = new Float32Array(mw * mh);
+    let rx0 = cx, ry0 = cy, rx1 = cx + 1, ry1 = cy + 1;
     for (let y = y0; y < y1; y++)
       for (let x = x0; x < x1; x++) {
         const j = y * mw + x, b = (y - y0) * bw + (x - x0);
@@ -371,6 +375,10 @@ export class Expression {
         const v = level(j);
         if (!(v > 0.01)) continue;
         visRock[j] = v;
+        if (x < rx0) rx0 = x;
+        if (y < ry0) ry0 = y;
+        if (x >= rx1) rx1 = x + 1;
+        if (y >= ry1) ry1 = y + 1;
         // Only a real change is worth redrawing for (seeing ground a little
         // better as the player comes closer is not).
         if (v > seen[j]) {
@@ -389,7 +397,7 @@ export class Expression {
     this.visNow = vis;
     // (The lights that light anything in sight now: a few points round each.)
     this.lampsSeen = (this.lamps ?? []).filter((l) => lamps && l.cells.some((j) => vis[j] > 0.01));
-    this.sightRock(visRock, x0, y0, x1, y1);
+    this.sightRock(visRock, rx0, ry0, rx1, ry1);
     return grew;
   }
 
@@ -1124,7 +1132,7 @@ export class Expression {
 
   // Each frame, with the player drawn at map point (px, py): sight cast from
   // there when it moves, eased toward, and the candle.
-  update(now, dt, px, py) {
+  update(now, dt, px, py, drawn = true) {
     // Some of the redrawing, if there is any to do: slices until about 8 ms
     // are spent (at least one).
     if (this.job) {
@@ -1137,8 +1145,13 @@ export class Expression {
         }
       } while (performance.now() - t0 < 8);
     }
+    // (The sight's easing and the light only for a frame the map is drawn
+    // in, `drawn`; the time between is made up.)
+    this.easeDt = (this.easeDt ?? 0) + dt;
+    if (!drawn) return;
     if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
-    if (now < this.easeUntil) this.easeSight(dt);
+    if (now < this.easeUntil) this.easeSight(Math.min(0.1, this.easeDt));
+    this.easeDt = 0;
     this.castLight(px, py, now / 1000);
   }
 
@@ -1148,7 +1161,8 @@ export class Expression {
   // is nearly sharp.
   castSight(px, py) {
     const { S, TS } = this, { target } = this.sightCanvas, g = target.getContext("2d"), far = S.sight + S.sightFade;
-    const path = this.viewFrom(px, py, (Math.max(far, this.lightOut()) + 1) * TS);
+    const r = (Math.max(far, this.lightOut()) + 1) * TS, v = this.lastView;
+    const reuse = v && v.px === px && v.py === py && v.r >= r, path = reuse ? v.path : this.viewFrom(px, py, r);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, target.width, target.height);
     g.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
@@ -1163,7 +1177,14 @@ export class Expression {
     g.fillRect(px - far * TS, py - far * TS, 2 * far * TS, 2 * far * TS);
     g.globalCompositeOperation = "source-over";
     g.filter = S.blockSoft > 0 ? `blur(${S.blockSoft * TS * this.sightScale * 0.5}px)` : "none";
+    g.save();
+    if (reuse) {
+      g.beginPath();
+      g.rect(px - r, py - r, 2 * r, 2 * r);
+      g.clip();
+    }
     g.fill(path);
+    g.restore();
     g.filter = "none";
     // And what lights light, far off, in view from the player's square (and
     // the rock they light past the walls in view).

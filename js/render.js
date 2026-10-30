@@ -87,10 +87,11 @@ const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 // Low power, for phones and slow machines: drawn at one device pixel to a
 // screen pixel at most, and the map put together again only `mapFps` times
-// a second while the view stands still (the letters, flames and words move
-// every frame over it). On for touch screens; or, after `slowMs` a frame
+// a second while the view stands still, `movingFps` while it moves (the
+// letters, flames and words move every frame over it); sight and light cast
+// from the player's square, not from where the letter is on its way. On for touch screens; or, after `slowMs` a frame
 // on average over a couple of seconds; or as `?quality=low` (`high`: never).
-const LOW = { mapFps: 12, slowMs: 50 };
+const LOW = { mapFps: 12, movingFps: 30, slowMs: 50 };
 const QUALITY = new URLSearchParams(location.search).get("quality");
 
 export class Renderer {
@@ -199,6 +200,7 @@ export class Renderer {
       this.exp = new Expression(w.level, w.seed, this.TS, this.settings);
       this.exp.player = { x: w.player.x, y: w.player.y };
     }
+    this.exp.low = this.low;
     this.exp.setScale(this.dpr * this.zoom); // learns what is seen and draws
   }
 
@@ -378,14 +380,17 @@ export class Renderer {
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;
     this.cam.y += (ty - this.cam.y) * f;
-    const cx = Math.round(this.cam.x * sc) / sc, cy = Math.round(this.cam.y * sc) / sc;
+    let cx = Math.round(this.cam.x * sc) / sc, cy = Math.round(this.cam.y * sc) / sc;
 
-    const view = { x: cx, y: cy, w: vw, h: vh };
-    this.exp.update(now, dt, px, py);
-    // (In low power, the map as last put together, unless the view has
-    // moved or it is time.)
+    // (In low power, the map as last put together, and the view where it was
+    // then, until it is time.)
     const key = `${cx},${cy},${sc},${this.canvas.width},${this.canvas.height}`;
-    if (!this.low || key !== this.mapKey || now - this.mapAt >= 1000 / LOW.mapFps) {
+    const fresh = !this.low || !this.mapCache || now - this.mapAt >= 1000 / (key !== this.mapKey ? LOW.movingFps : LOW.mapFps);
+    if (!fresh) [cx, cy] = this.mapCam;
+    const view = { x: cx, y: cy, w: vw, h: vh };
+    if (this.low) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
+    else this.exp.update(now, dt, px, py);
+    if (fresh) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = DESK;
       ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -408,6 +413,7 @@ export class Renderer {
         g.globalCompositeOperation = "copy";
         g.drawImage(this.canvas, 0, 0);
         this.mapKey = key;
+        this.mapCam = [cx, cy];
         this.mapAt = now;
       }
     } else {

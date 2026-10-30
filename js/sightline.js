@@ -55,14 +55,21 @@ export class Walls {
     // Rays go to every wall corner within reach and to every point where a
     // wall crosses the edge of the reach (so long walls that run out of
     // reach still let a ray down the corridor they line).
-    const angles = [];
+    // (A corner two walls share is aimed at once.)
+    const angles = [], aimed = new Set();
     const aim = (x, y) => {
       const a = Math.atan2(y - py, x - px);
       angles.push(a - 1e-4, a, a + 1e-4);
     };
     const edges = segs.slice(-4);
     for (const s of segs) {
-      for (const [x, y] of [[s.x0, s.y0], [s.x1, s.y1]]) if (Math.abs(x - px) <= r && Math.abs(y - py) <= r) aim(x, y);
+      for (const [x, y] of [[s.x0, s.y0], [s.x1, s.y1]]) {
+        if (Math.abs(x - px) > r || Math.abs(y - py) > r) continue;
+        const k = `${x},${y}`;
+        if (aimed.has(k)) continue;
+        aimed.add(k);
+        aim(x, y);
+      }
       for (const e of edges) {
         const ax = s.x1 - s.x0, ay = s.y1 - s.y0, bx = e.x1 - e.x0, by = e.y1 - e.y0, den = ax * by - ay * bx;
         if (Math.abs(den) < 1e-12) continue;
@@ -72,11 +79,20 @@ export class Walls {
       }
     }
     angles.sort((a, b) => a - b);
+    // The walls nearest first, so each ray stops looking once the rest are
+    // all further off than what it has hit.
+    const dist = (s) => {
+      const ex = s.x1 - s.x0, ey = s.y1 - s.y0, L = ex * ex + ey * ey;
+      const t = L ? Math.max(0, Math.min(1, ((px - s.x0) * ex + (py - s.y0) * ey) / L)) : 0;
+      return Math.hypot(s.x0 + ex * t - px, s.y0 + ey * t - py);
+    };
+    const near = segs.map((s) => [dist(s), s]).sort((a, b) => a[0] - b[0]);
     const pts = [];
     for (const a of angles) {
       const dx = Math.cos(a), dy = Math.sin(a);
       let best = Infinity;
-      for (const s of segs) {
+      for (const [d, s] of near) {
+        if (d > best) break;
         const ex = s.x1 - s.x0, ey = s.y1 - s.y0, den = dx * ey - dy * ex;
         if (Math.abs(den) < 1e-12) continue;
         const qx = s.x0 - px, qy = s.y0 - py;
