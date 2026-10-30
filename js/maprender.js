@@ -333,7 +333,7 @@ function drawRubble(ctx, level, TS, rng) {
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
-  ctx.lineWidth = 1.9 * k;
+  ctx.lineWidth = 2.7 * k;
   // The stones placed so far, by tile: [x, y, r, outlined].
   const placed = new Map();
   const near = (x, y) => {
