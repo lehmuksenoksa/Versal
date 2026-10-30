@@ -11,8 +11,11 @@
 // AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy, open }:
 // a door in the tile at x, y, the dungeon room it opens into that way, shut
 // or open), `features` (things drawn in the dungeon rooms: see the
-// furnishing), each room's `kind`, and `regions` (their seed points and
-// types).
+// furnishing), `posts` (pillars on grid crossings, [x, y]: no step
+// diagonally past one), `recesses` (shallow alcoves in the walls, each
+// { x, y, dx, dy, w }: in the wall that way from the square x, y, w squares
+// wide), each room's `kind`, and `regions` (their seed points and types).
+// Columns are tiles of their own (T.PILLAR).
 
 import { T, carveCave } from "./dungeon.js";
 
@@ -311,10 +314,12 @@ function tryAreas(S, rng) {
 
   // Furnishing the clean dungeon rooms (built, in a dungeon region, not
   // fallen in): each of a kind, with what goes with it (pillars, niches and
-  // cells cut into the rock round it, furniture), and now and then recesses
-  // in its walls. Only drawn: nothing here is in the way. Each thing is
-  // { type, x, y, ... } in squares (x, y its middle).
-  const features = [], mustDoor = new Set();
+  // cells cut into the rock round it, furniture), and now and then rows of
+  // shallow recesses in its walls. Each thing is { type, x, y, ... } in
+  // squares (x, y its middle). Furniture is only drawn; columns (pillars
+  // filling a square) are in the way; posts (pillars on a grid crossing)
+  // only block a step diagonally past them.
+  const features = [], posts = [], recesses = [], mustDoor = new Set(), niches = new Set();
   // A room's sides: its squares just outside the wall (v 0) and on into the
   // rock (v 1, 2, ...; v -1 is the floor just inside), u along the side;
   // and the way into the room from there.
@@ -346,13 +351,13 @@ function tryAreas(S, rng) {
   // across it (b).
   const wh = (sd, a, b) => (sd.into[0] ? { w: b, h: a } : { w: a, h: b });
   const thing = (x, y, size) =>
-    features.push(rng.chance(0.6) ? { type: "crate", x, y, w: size, h: size, rot: rng.range(-0.3, 0.3) } : { type: "barrel", x, y, r: size * 0.5 });
+    features.push(rng.chance(0.6) ? { type: "crate", x, y, s: size, rot: rng.range(-0.25, 0.25) } : { type: "barrel", x, y, r: size * 0.5 });
   // One thing in the square at (x, y), or two smaller ones.
   const stuff = (x, y) => {
     if (rng.chance(0.3)) {
-      thing(x + rng.range(0.25, 0.35), y + rng.range(0.25, 0.4), rng.range(0.38, 0.45));
-      thing(x + rng.range(0.65, 0.75), y + rng.range(0.6, 0.75), rng.range(0.38, 0.45));
-    } else thing(x + 0.5 + rng.range(-0.08, 0.08), y + 0.5 + rng.range(-0.08, 0.08), rng.range(0.55, 0.72));
+      thing(x + rng.range(0.27, 0.33), y + rng.range(0.27, 0.38), rng.range(0.38, 0.44));
+      thing(x + rng.range(0.67, 0.73), y + rng.range(0.62, 0.73), rng.range(0.38, 0.44));
+    } else thing(x + 0.5 + rng.range(-0.06, 0.06), y + 0.5 + rng.range(-0.06, 0.06), rng.range(0.58, 0.72));
   };
   const KINDS = ["plain", "store", "gallery", "hall", "crypt", "jail", "barracks", "dining", "shrine"];
   const lo = (r) => Math.min(r.w, r.h), hi = (r) => Math.max(r.w, r.h);
@@ -360,10 +365,10 @@ function tryAreas(S, rng) {
   const fits = {
     plain: () => true, store: () => true, crypt: () => true,
     gallery: (r) => lo(r) >= 4 && hi(r) >= 6,
-    hall: (r) => lo(r) >= 6,
+    hall: (r) => lo(r) >= 5,
     jail: (r) => hi(r) >= 5,
-    barracks: (r) => lo(r) >= 4,
-    dining: (r) => lo(r) >= 4 && hi(r) >= 6,
+    barracks: (r) => lo(r) >= 4 && hi(r) >= 5,
+    dining: (r) => lo(r) >= 3 && hi(r) >= 4,
     shrine: (r) => lo(r) >= 4,
   };
   for (const r of rooms) {
@@ -382,10 +387,26 @@ function tryAreas(S, rng) {
     });
     const free = (x, y) => inRoom(x, y) && !used.has(idx(x, y));
     const take = (x, y) => used.add(idx(x, y));
-    // A pillar on the grid crossing (x, y), round or square.
-    const pillar = (x, y, shape) => {
-      features.push({ type: "pillar", x, y, shape });
+    const shape = rng.chance(0.6) ? "round" : "square", style = rng.chance(0.5) ? "post" : "column";
+    // A post on the grid crossing (x, y); a column filling the square (x, y),
+    // if it is free.
+    const post = (x, y) => {
+      features.push({ type: "post", x, y, shape });
+      posts.push([x, y]);
       for (const [px, py] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) take(px, py);
+    };
+    const column = (x, y) => {
+      if (!free(x, y)) return false;
+      tiles[idx(x, y)] = T.PILLAR;
+      features.push({ type: "column", x: x + 0.5, y: y + 0.5, shape });
+      take(x, y);
+      return true;
+    };
+    // Columns where they fit; should fewer than two (the ways in being in
+    // the way), posts instead.
+    const columns = (places, posts) => {
+      if (places.filter((p) => free(...p)).length >= 2) for (const p of places) column(...p);
+      else for (const p of posts) post(...p);
     };
     // Things in the free squares along the walls, nearest the corners first,
     // up to `count`.
@@ -404,33 +425,61 @@ function tryAreas(S, rng) {
         take(x, y);
       }
     };
+    // Evenly spaced places `pitch` apart along a length, centred: the first
+    // and how many, each `size` long.
+    const spread = (length, size, pitch) => {
+      const n = Math.max(0, Math.floor((length - size) / pitch) + 1);
+      return [Math.floor((length - (pitch * (n - 1) + size)) / 2), n];
+    };
     const weights = KINDS.map((k) => (fits[k](r) ? Math.max(0, S[k]) : 0)), total = weights.reduce((a, b) => a + b, 0);
     let pick = rng.next() * total, kind = "plain";
     if (total > 0) kind = KINDS[Math.max(0, weights.findIndex((w) => (pick -= w) < 0))];
     r.kind = kind;
     const across = r.w >= r.h; // (the room's long way is across)
-    const shape = rng.chance(0.6) ? "round" : "square";
-    if (kind === "store") corners(Math.round(r.w * r.h * (0.15 + 0.3 * S.decor)));
-    else if (kind === "plain") {
+    // A square of the room by its place along the long way (a) and across it (b).
+    const at = (a, b) => (across ? [r.x + a, r.y + b] : [r.x + b, r.y + a]);
+    const A = across ? r.w : r.h, B = across ? r.h : r.w;
+    const longSides = SIDES.filter((sd) => (sd.into[0] === 0) === across);
+    if (kind === "store") {
+      // Shelves along a wall or two (the longest free stretch of each, up to
+      // four squares), and things in the corners.
+      for (const sd of rng.shuffle([...SIDES]).slice(0, rng.int(1, 2))) {
+        let best = null;
+        for (let u = 0, run = 0; u <= sd.len(r); u++) {
+          const [x, y] = u < sd.len(r) ? sd.at(r, u, -1) : [-1, -1];
+          if (u < sd.len(r) && free(x, y)) run++;
+          else {
+            if (run >= 2 && (!best || run > best[1])) best = [u - run, run];
+            run = 0;
+          }
+        }
+        if (!best) continue;
+        const n = Math.min(4, best[1]), u0 = best[0] + Math.floor((best[1] - n) / 2), [x, y] = mid(r, sd, u0 + (n - 1) / 2, -1);
+        features.push({ type: "shelf", x: x - sd.into[0] * 0.22, y: y - sd.into[1] * 0.22, ...wh(sd, n - 0.15, 0.48), n });
+        for (let u = u0; u < u0 + n; u++) take(...sd.at(r, u, -1));
+      }
+      corners(Math.round(r.w * r.h * (0.08 + 0.2 * S.decor)));
+    } else if (kind === "plain") {
       if (rng.chance(S.decor * 0.7)) corners(rng.int(1, 3));
     } else if (kind === "gallery") {
-      // Pillars along both long walls, a square in from them, on every other
-      // grid crossing.
-      const L = across ? r.w : r.h, n = Math.floor((L - 2) / 2) + 1, start = 1 + Math.floor((L - 2 - 2 * (n - 1)) / 2);
+      // Pillars along both long walls: posts on every other crossing a
+      // square in, or columns in every other square a square in.
+      const [a0, n] = spread(A - 2, 1, 2), cols = [], pts = [];
       for (let i = 0; i < n; i++) {
-        const a = start + 2 * i;
-        if (across) {
-          pillar(r.x + a, r.y + 1, shape);
-          pillar(r.x + a, r.y + r.h - 1, shape);
-        } else {
-          pillar(r.x + 1, r.y + a, shape);
-          pillar(r.x + r.w - 1, r.y + a, shape);
-        }
+        for (const b of [1, B - 2]) cols.push(at(1 + a0 + 2 * i, b));
+        for (const b of [1, B - 1]) pts.push(at(1 + a0 + 2 * i, b));
       }
+      if (style === "post") for (const p of pts) post(...p);
+      else columns(cols, pts);
       if (rng.chance(S.decor * 0.5)) corners(rng.int(1, 2));
     } else if (kind === "hall") {
-      // A grid of pillars on every other crossing, two squares in.
-      for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) pillar(x, y, shape);
+      // A grid of pillars: posts on every other crossing two in, or columns
+      // in every other square a square in.
+      const pts = [], cols = [], [a0, na] = spread(A - 2, 1, 2), [b0, nb] = spread(B - 2, 1, 2);
+      for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) pts.push([x, y]);
+      for (let i = 0; i < na; i++) for (let k = 0; k < nb; k++) cols.push(at(1 + a0 + 2 * i, 1 + b0 + 2 * k));
+      if (style === "post") for (const p of pts) post(...p);
+      else columns(cols, pts);
     } else if (kind === "crypt") {
       // Niches two deep cut every other square round the walls, each with a
       // coffin; a sarcophagus in the middle of a bigger crypt.
@@ -439,10 +488,11 @@ function tryAreas(S, rng) {
           if (!solid(r, sd, u - 1, u + 1, 0, 2)) continue;
           hollow(r, sd, u, 0);
           hollow(r, sd, u, 1);
+          niches.add(sd.at(r, u, 0).join());
           const [x, y] = mid(r, sd, u, 0.5);
-          features.push({ type: "coffin", x, y, ...wh(sd, 0.62, 1.55) });
+          features.push({ type: "coffin", x, y, ...wh(sd, 0.66, 1.6), hx: -sd.into[0], hy: -sd.into[1] });
         }
-      if (lo(r) >= 5) features.push({ type: "coffin", big: true, x: r.x + r.w / 2, y: r.y + r.h / 2, ...(across ? { w: 2.1, h: 1.05 } : { w: 1.05, h: 2.1 }) });
+      if (lo(r) >= 5) features.push({ type: "sarcophagus", x: r.x + r.w / 2, y: r.y + r.h / 2, ...(across ? { w: 2.1, h: 1.05 } : { w: 1.05, h: 2.1 }) });
     } else if (kind === "jail") {
       // Cells two by two cut behind a wall (or more), each through a doorway
       // with a door, a bench against its back wall.
@@ -457,50 +507,75 @@ function tryAreas(S, rng) {
           mustDoor.add(sd.at(r, du, 0).join());
           for (let v = 1; v <= cd; v++) for (let a = u; a < u + cw; a++) hollow(r, sd, a, v);
           const [x, y] = mid(r, sd, u + (cw - 1) / 2, cd);
-          features.push({ type: "bench", x: x - sd.into[0] * 0.28, y: y - sd.into[1] * 0.28, ...wh(sd, cw - 0.5, 0.36) });
+          features.push({ type: "bench", x: x - sd.into[0] * 0.27, y: y - sd.into[1] * 0.27, ...wh(sd, cw - 0.45, 0.4) });
           cells++;
         }
       }
       if (rng.chance(S.decor)) corners(rng.int(1, 2));
     } else if (kind === "barracks") {
-      // Beds along the long walls, their heads to the wall.
-      for (const sd of SIDES) {
-        if (sd.len(r) !== hi(r)) continue;
-        for (let u = rng.int(0, 1); u < sd.len(r); u += 2) {
-          const [x1, y1] = sd.at(r, u, -1), [x2, y2] = sd.at(r, u, -2);
+      // Beds in a row along each long wall (one, in a narrow room), every
+      // other square, heads to the wall, the rows matching.
+      const [a0, n] = spread(A, 1, 2);
+      for (const sd of B >= 5 ? longSides : [rng.pick(longSides)])
+        for (let i = 0; i < n; i++) {
+          const u = a0 + 2 * i, [x1, y1] = sd.at(r, u, -1), [x2, y2] = sd.at(r, u, -2);
           if (!free(x1, y1) || !free(x2, y2)) continue;
           take(x1, y1);
           take(x2, y2);
           const [x, y] = mid(r, sd, u, -1.5);
-          features.push({ type: "bed", x, y, ...wh(sd, 0.72, 1.6), hx: -sd.into[0], hy: -sd.into[1] });
+          features.push({ type: "bed", x: x - sd.into[0] * 0.1, y: y - sd.into[1] * 0.1, ...wh(sd, 0.74, 1.62), hx: -sd.into[0], hy: -sd.into[1] });
         }
-      }
-      if (rng.chance(S.decor)) corners(1);
+      if (rng.chance(S.decor)) corners(rng.int(1, 2));
     } else if (kind === "dining") {
-      // A long table down the middle, benches either side.
-      const L = (across ? r.w : r.h) - 4, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
-      features.push({ type: "table", x: cx, y: cy, ...(across ? { w: L, h: 0.95 } : { w: 0.95, h: L }) });
-      for (const o of [-0.85, 0.85]) features.push({ type: "bench", x: cx + (across ? 0 : o), y: cy + (across ? o : 0), ...(across ? { w: L - 0.4, h: 0.32 } : { w: 0.32, h: L - 0.4 }) });
+      // Tables two squares long, chairs either side, in rows with room to
+      // walk between them.
+      const [a0, na] = spread(A - 2, 2, 3), [b0, nb] = spread(B - 2, 1, 3);
+      for (let i = 0; i < na; i++)
+        for (let k = 0; k < nb; k++) {
+          const a = 1 + a0 + 3 * i, b = 1 + b0 + 3 * k, t1 = at(a, b), t2 = at(a + 1, b);
+          if (!free(...t1) || !free(...t2)) continue;
+          take(...t1);
+          take(...t2);
+          const [cx, cy] = at(a + 1, b + 0.5);
+          features.push({ type: "table", x: cx, y: cy, ...(across ? { w: 1.75, h: 0.9 } : { w: 0.9, h: 1.75 }) });
+          for (const t of [a, a + 1])
+            for (const side of [-1, 1]) {
+              const c = at(t, b + side);
+              if (!free(...c) || !rng.chance(0.85)) continue;
+              const [x, y] = at(t + 0.5, b + 0.5 + side * 0.78);
+              features.push({ type: "chair", x, y, s: 0.36, hx: across ? 0 : side, hy: across ? side : 0 });
+            }
+        }
       if (rng.chance(S.decor)) corners(rng.int(1, 3));
     } else if (kind === "shrine") {
-      // An altar against a wall with no way in, pillars either side of it,
-      // two squares off, on the grid crossings a square out from the wall.
+      // An altar against a wall with no way in, pillars either side of it two
+      // squares off.
       const closed = SIDES.filter((sd, si) => !open.has(si)), sd = closed.length ? rng.pick(closed) : rng.pick(SIDES);
       const L = sd.len(r), [ax, ay] = mid(r, sd, (L - 1) / 2, -1);
       features.push({ type: "altar", x: ax - sd.into[0] * 0.12, y: ay - sd.into[1] * 0.12, ...wh(sd, 1.7, 0.75) });
+      for (const [x, y] of [sd.at(r, Math.round((L - 1) / 2 - 2), -1), sd.at(r, Math.round((L - 1) / 2 + 2), -1)]) take(x, y);
       if (L >= 6) {
         const along = [-sd.into[1], sd.into[0]];
-        for (const side of [-1, 1]) pillar(Math.round(ax + sd.into[0] * 0.5 + along[0] * side * 2), Math.round(ay + sd.into[1] * 0.5 + along[1] * side * 2), shape);
+        for (const side of [-1, 1]) {
+          if (style === "post") post(Math.round(ax + sd.into[0] * 0.5 + along[0] * side * 2), Math.round(ay + sd.into[1] * 0.5 + along[1] * side * 2));
+          else column(Math.floor(ax + sd.into[0] * 1.0 + along[0] * side * 2), Math.floor(ay + sd.into[1] * 1.0 + along[1] * side * 2));
+        }
       }
     }
-    // Recesses: shallow alcoves in the walls, one or two squares wide.
-    if (kind !== "crypt" && kind !== "jail" && rng.chance(S.recesses))
-      for (let t = 0, made = 0, want = rng.int(1, 3); t < 12 && made < want; t++) {
-        const sd = rng.pick(SIDES), wide = rng.chance(0.3) ? 2 : 1, u = rng.int(0, sd.len(r) - wide);
-        if (!solid(r, sd, u - 1, u + wide, 0, 1)) continue;
-        for (let a = u; a < u + wide; a++) hollow(r, sd, a, 0);
-        made++;
+    // Recesses: rows of shallow alcoves (a fifth of a square deep) along a
+    // wall or two, evenly spaced, clear of the ways in.
+    if (kind !== "crypt" && rng.chance(S.recesses)) {
+      const pitch = rng.pick([2, 3]), wide = rng.range(0.45, 0.65);
+      for (const sd of rng.chance(0.5) ? longSides : [rng.pick(SIDES)]) {
+        const [u0, n] = spread(sd.len(r) - 2, 1, pitch);
+        for (let i = 0; i < n; i++) {
+          const u = 1 + u0 + pitch * i;
+          if (!solid(r, sd, u - 1, u + 1, 0, 0)) continue;
+          const [x, y] = sd.at(r, u, -1);
+          recesses.push({ x, y, dx: -sd.into[0], dy: -sd.into[1], w: wide });
+        }
       }
+    }
   }
 
   // Doors: only into clean dungeon rooms (built, in a dungeon region, not
@@ -515,8 +590,8 @@ function tryAreas(S, rng) {
     for (let x = r.x; x < r.x + r.w; x++) ways.push([x, r.y - 1, 0, 1], [x, r.y + r.h, 0, -1]);
     for (let y = r.y; y < r.y + r.h; y++) ways.push([r.x - 1, y, 1, 0], [r.x + r.w, y, -1, 0]);
     for (const [x, y, dx, dy] of ways) {
-      // (A way in: floor on both sides of the wall's square; not a recess.)
-      if (!floorAt(x, y) || !floorAt(x + dx, y + dy) || !floorAt(x - dx, y - dy)) continue;
+      // (A way in: floor on both sides of the wall's square; not a niche.)
+      if (!floorAt(x, y) || !floorAt(x + dx, y + dy) || !floorAt(x - dx, y - dy) || niches.has([x, y].join())) continue;
       // Walled to either side, along the wall.
       if (floorAt(x + dy, y + dx) || floorAt(x - dy, y - dx)) continue;
       if (!plain(x, y) || !plain(x + dy, y + dx) || !plain(x - dy, y - dx)) continue;
@@ -528,7 +603,7 @@ function tryAreas(S, rng) {
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
   const startRoom = rng.pick(rooms);
   return {
-    w: W, h: H, tiles, cave, rooms, area, rubble, doors, features, regions,
+    w: W, h: H, tiles, cave, rooms, area, rubble, doors, features, posts, recesses, regions,
     start: { x: startRoom.cx, y: startRoom.cy },
     startRoom,
     idx, get,

@@ -41,7 +41,7 @@ export function renderMap(level, TS, scale, seed, {
     [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]].some(
       ([tx, ty]) => tx >= 0 && ty >= 0 && tx < W && ty < H && level.cave[ty * W + tx]
     );
-  const loops = traceLoops(W, H, open).map((loop) => shapeLoop(loop, caveAt, rng, TS));
+  const loops = cutRecesses(traceLoops(W, H, open).map((loop) => shapeLoop(loop, caveAt, rng, TS)), level.recesses ?? [], TS);
   const floor = new Path2D();
   for (const loop of loops) addLoop(floor, loop);
 
@@ -155,6 +155,36 @@ function shapeLoop(loop, caveAt, rng, TS) {
   return kept.map((p) => ({ x: p.x * TS, y: p.y * TS, cave: p.cave }));
 }
 
+// Shallow recesses cut into built walls (`recesses`, each { x, y, dx, dy, w }:
+// in the wall that way from the square x, y, w squares wide): a notch a fifth
+// of a square deep in the floor's outline, so the floor, its shadow, the
+// hatching and the wall all follow it.
+function cutRecesses(loops, recesses, TS) {
+  if (!recesses.length) return loops;
+  const depth = TS * 0.2;
+  return loops.map((loop) => {
+    const out = [];
+    for (let i = 0; i < loop.length; i++) {
+      const a = loop[i], b = loop[(i + 1) % loop.length];
+      out.push(a);
+      const L = Math.hypot(b.x - a.x, b.y - a.y);
+      if (a.cave || b.cave || !L) continue;
+      // Along the side, and out into the rock (the floor is on the left).
+      const ux = (b.x - a.x) / L, uy = (b.y - a.y) / L, nx = -uy, ny = ux, cuts = [];
+      for (const r of recesses) {
+        if (Math.abs(r.dx - nx) > 0.01 || Math.abs(r.dy - ny) > 0.01) continue;
+        const mx = (r.x + 0.5 + r.dx * 0.5) * TS, my = (r.y + 0.5 + r.dy * 0.5) * TS, half = (r.w * TS) / 2;
+        const t = (mx - a.x) * ux + (my - a.y) * uy, off = (mx - a.x) * nx + (my - a.y) * ny;
+        if (Math.abs(off) < 1 && t - half > 0.05 * TS && t + half < L - 0.05 * TS) cuts.push([t, half]);
+      }
+      cuts.sort((p, q) => p[0] - q[0]);
+      const at = (s, d) => ({ x: a.x + ux * s + nx * d, y: a.y + uy * s + ny * d, cave: false });
+      for (const [t, half] of cuts) out.push(at(t - half, 0), at(t - half, depth), at(t + half, depth), at(t + half, 0));
+    }
+    return out;
+  });
+}
+
 function addLoop(path, loop) {
   loop.forEach((p, i) => (i ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y)));
   path.closePath();
@@ -202,19 +232,78 @@ export function wallLine(ctx, a, b, TS, rng) {
   wallStroke(ctx, a, b, WALL.weight * k, WALL.bow * k, rng);
 }
 
+// A pen for the small drawings: each line a little bowed, starting and ending
+// a touch past its points as a quick hand does; shapes drawn a side at a
+// time; rounds closing with a slight overlap. Widths are in pixels at 32 px
+// squares (scaled by k).
+function pen(ctx, rng, k) {
+  const j = (a = 0.5) => rng.range(-a, a) * k;
+  const line = (ax, ay, bx, by, width) => {
+    const L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L, nx = -uy, ny = ux;
+    const o0 = rng.range(-0.2, 1.1) * k, o1 = rng.range(-0.2, 1.1) * k, bow = rng.range(-1, 1) * Math.min(1.2 * k, L * 0.05);
+    const sx = ax - ux * o0, sy = ay - uy * o0, ex = bx + ux * o1, ey = by + uy * o1;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.quadraticCurveTo((sx + ex) / 2 + nx * bow * 2, (sy + ey) / 2 + ny * bow * 2, ex, ey);
+    ctx.lineWidth = width * k * rng.range(0.88, 1.08);
+    ctx.stroke();
+  };
+  // A closed shape through `pts` ([x, y]s, each a little off): `fill` inside
+  // if given, then each side (if `width`). Its corners as drawn.
+  const shape = (pts, width, fill) => {
+    const p = pts.map(([x, y]) => [x + j(), y + j()]);
+    if (fill) {
+      ctx.beginPath();
+      p.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    if (width) p.forEach(([x, y], i) => line(x, y, ...p[(i + 1) % p.length], width));
+    return p;
+  };
+  const box = (cx, cy, w, h, rot, width, fill) => {
+    const c = Math.cos(rot), s = Math.sin(rot);
+    return shape([[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].map(([x, y]) => [cx + x * c - y * s, cy + x * s + y * c]), width, fill);
+  };
+  const round = (cx, cy, r, width, fill) => {
+    const a0 = rng.range(0, 2 * Math.PI), m = 18, lump = rng.range(-0.06, 0.06), ph = rng.range(0, 6);
+    // (Widening a little as it goes, so the end passes the start.)
+    const at = (t) => {
+      const a = a0 + t * 2 * Math.PI, rr = r * (1 + lump * Math.sin(2 * a + ph) + 0.05 * (t - 0.5));
+      return [cx + Math.cos(a) * rr, cy + Math.sin(a) * rr];
+    };
+    if (fill) {
+      ctx.beginPath();
+      for (let i = 0; i < m; i++) ctx[i ? "lineTo" : "moveTo"](...at(i / m));
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    if (width) {
+      const end = 1 + rng.range(0.03, 0.08);
+      ctx.beginPath();
+      for (let i = 0; i <= Math.ceil(m * end); i++) ctx[i ? "lineTo" : "moveTo"](...at(Math.min(end, i / m)));
+      ctx.lineWidth = width * k;
+      ctx.stroke();
+    }
+  };
+  return { j, line, shape, box, round };
+}
+
 // Doors (each { x, y, dx, dy, open }: in the tile at x, y, opening that way
-// into a room; shut, or swung open): across that square a little way out from the room's edge, a short
-// jamb of wall standing out
-// from each side wall, and between their ends a pen outline of the door; a
-// little uneven, as if drawn by hand.
+// into a room; shut, or swung open): across that square a little way out
+// from the room's edge, a short jamb of wall standing out from each side
+// wall, and between their ends the door, drawn with the pen.
 function drawDoors(ctx, doors, TS, rng) {
   const k = TS / 32, weight = WALL.weight * k;
   // The side walls' inner faces, from the middle of the way (see drawWalls).
-  const face = TS / 2 - weight * WALL.inside;
+  const face = TS / 2 - weight * WALL.inside, P = pen(ctx, rng, k);
   ctx.save();
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
+  ctx.lineCap = "round";
   for (const { x, y, dx, dy, open } of doors) {
     // (A quarter of the square back from the middle, toward the room, so
     // near it but not into it.)
@@ -236,7 +325,6 @@ function drawDoors(ctx, doors, TS, rng) {
       ctx.closePath();
       ctx.fill();
     }
-    ctx.lineWidth = weight * 0.45;
     // Shut, across the way between the jambs' ends; open, swung on its hinge
     // at one jamb away from the room, lying along the side wall, touching it.
     let [x0, y0, x1, y1] = [-thick / 2, -tip, thick / 2, tip];
@@ -246,13 +334,7 @@ function drawDoors(ctx, doors, TS, rng) {
       const wall = face - weight * 0.2;
       [y0, y1] = side > 0 ? [wall - thick, wall] : [-wall, -wall + thick];
     }
-    ctx.beginPath();
-    ctx.moveTo(x0 + j(), y0 + j());
-    ctx.lineTo(x1 + j(), y0 + j());
-    ctx.lineTo(x1 + j(), y1 + j());
-    ctx.lineTo(x0 + j(), y1 + j());
-    ctx.closePath();
-    ctx.stroke();
+    P.shape([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], (weight * 0.48) / k);
     ctx.restore();
   }
   ctx.restore();
@@ -444,92 +526,71 @@ function drawRubble(ctx, level, TS, rng) {
     }
 }
 
-// Things in the rooms (`level.features`, each { type, x, y, ... } in squares):
-// pillars in ink, casting a shadow; furniture outlined in pen over the
-// paper, a little uneven as if drawn by hand.
+// Things in the rooms (`level.features`, each { type, x, y, ... } in squares),
+// drawn with the pen: pillars (posts on grid crossings, columns filling a
+// square) in ink, casting a shadow; furniture outlined over the paper.
 function drawFeatures(ctx, features, TS, rng) {
-  const k = TS / 32, j = () => rng.range(-0.5, 0.5) * k;
+  const k = TS / 32, P = pen(ctx, rng, k), OUT = 2.9, IN = 1.9;
+  const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.strokeStyle = INK;
-  // A box w by h about (cx, cy), turned by rot, as the current path.
-  const box = (cx, cy, w, h, rot = 0) => {
-    const c = Math.cos(rot), s = Math.sin(rot);
-    ctx.beginPath();
-    [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].forEach(([px, py], i) => {
-      const X = cx + px * c - py * s + j(), Y = cy + px * s + py * c + j();
-      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
-    });
-    ctx.closePath();
-  };
-  // A round about (cx, cy), a little lumpy.
-  const round = (cx, cy, r) => {
-    ctx.beginPath();
-    const m = 12, a0 = rng.range(0, Math.PI * 2);
-    for (let i = 0; i < m; i++) {
-      const a = a0 + (i / m) * Math.PI * 2, rr = r * rng.range(0.95, 1.05);
-      i ? ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
-    }
-    ctx.closePath();
-  };
-  // Paper inside, the current path inked.
-  const ink = (width) => {
-    ctx.fillStyle = PAPER;
-    ctx.fill();
-    ctx.lineWidth = width * k;
-    ctx.stroke();
-  };
   for (const f of features) {
     const x = f.x * TS, y = f.y * TS, w = (f.w ?? 0) * TS, h = (f.h ?? 0) * TS;
-    if (f.type === "pillar") {
-      const r = TS * 0.3, off = TS * 0.12, shape = (dx) => (f.shape === "round" ? round(x + dx, y + dx, r) : box(x + dx, y + dx, r * 1.75, r * 1.75));
-      shape(off);
-      ctx.fillStyle = SHADOW;
-      ctx.fill();
-      shape(0);
-      ctx.fillStyle = INK;
-      ctx.fill();
+    // Along a thing's head (hx, hy) and across it.
+    const turn = (al, ac) => [x + f.hx * al - f.hy * ac, y + f.hy * al + f.hx * ac];
+    if (f.type === "post" || f.type === "column") {
+      const r = TS * (f.type === "post" ? 0.21 : 0.36), off = TS * (f.type === "post" ? 0.09 : 0.13), tilt = rng.range(-0.05, 0.05);
+      const draw = (d, fill, width) => (f.shape === "round" ? P.round(x + d, y + d, r, width, fill) : P.box(x + d, y + d, r * 1.75, r * 1.75, tilt, width, fill));
+      draw(off, SHADOW, 0);
+      draw(0, INK, 1.6);
     } else if (f.type === "crate") {
-      box(x, y, w, h, f.rot);
-      ink(2);
-      // A board across it.
-      const c = Math.cos(f.rot), s = Math.sin(f.rot), a = w * 0.36;
-      ctx.beginPath();
-      ctx.moveTo(x - a * c + a * s, y - a * s - a * c);
-      ctx.lineTo(x + a * c - a * s, y + a * s + a * c);
-      ctx.lineWidth = 1.3 * k;
-      ctx.stroke();
+      // A box with a cross brace.
+      const s = f.s * TS, c = P.box(x, y, s, s, f.rot, OUT, PAPER), m = [x, y], i = c.map((p) => lerp(p, m, 0.16));
+      P.line(...i[0], ...i[2], IN);
+      P.line(...i[1], ...i[3], IN);
     } else if (f.type === "barrel") {
-      round(x, y, f.r * TS);
-      ink(2);
-      round(x, y, f.r * TS * 0.5);
-      ctx.lineWidth = 1.2 * k;
-      ctx.stroke();
-    } else if (f.type === "table" || f.type === "bench") {
-      box(x, y, w, h);
-      ink(f.type === "table" ? 2.2 : 1.7);
+      P.round(x, y, f.r * TS, OUT, PAPER);
+      P.round(x, y, f.r * TS * 0.48, IN);
+    } else if (f.type === "shelf") {
+      // A long shelf, split into bays, a few things on it.
+      const c = P.box(x, y, w, h, 0, OUT, PAPER), long = w > h, L = long ? w : h;
+      for (let i = 1; i < f.n; i++) {
+        const t = -L / 2 + (L * i) / f.n;
+        long ? P.line(x + t, y - h / 2, x + t, y + h / 2, IN) : P.line(x - w / 2, y + t, x + w / 2, y + t, IN);
+      }
+      for (let i = 0; i < f.n; i++) {
+        if (!rng.chance(0.6)) continue;
+        const t = -L / 2 + (L * (i + rng.range(0.3, 0.7))) / f.n, [px, py] = long ? [x + t, y] : [x, y + t];
+        rng.chance(0.5) ? P.round(px, py, TS * 0.09, 1.4) : P.box(px, py, TS * 0.17, TS * 0.17, rng.range(-0.3, 0.3), 1.4);
+      }
+    } else if (f.type === "table") {
+      P.box(x, y, w, h, rng.range(-0.02, 0.02), OUT, PAPER);
+    } else if (f.type === "bench") {
+      P.box(x, y, w, h, 0, IN + 0.5, PAPER);
+    } else if (f.type === "chair") {
+      // A seat, its back the heavier line, away from the table.
+      const s = f.s * TS;
+      P.box(x, y, s, s, rng.range(-0.08, 0.08), IN + 0.3, PAPER);
+      P.line(...turn(s / 2, -s / 2), ...turn(s / 2, s / 2), OUT);
     } else if (f.type === "bed") {
-      box(x, y, w, h);
-      ink(2);
-      // The pillow at its head, and the edge of the blanket.
-      const along = f.hx ? w : h, across = f.hx ? h : w, px = x + f.hx * (along / 2 - TS * 0.17), py = y + f.hy * (along / 2 - TS * 0.17);
-      f.hx ? box(px, py, TS * 0.2, across * 0.7) : box(px, py, across * 0.7, TS * 0.2);
-      ink(1.4);
-      const bx = x + f.hx * (along / 2 - TS * 0.42), by = y + f.hy * (along / 2 - TS * 0.42);
-      ctx.beginPath();
-      ctx.moveTo(bx - Math.abs(f.hy) * across / 2 + j(), by - Math.abs(f.hx) * across / 2 + j());
-      ctx.lineTo(bx + Math.abs(f.hy) * across / 2 + j(), by + Math.abs(f.hx) * across / 2 + j());
-      ctx.lineWidth = 1.3 * k;
-      ctx.stroke();
-    } else if (f.type === "coffin" || f.type === "altar") {
-      box(x, y, w, h);
-      ink(f.big ? 2.6 : 2.2);
-      // A lid (or the altar's top) inset.
-      const inset = TS * (f.big ? 0.16 : 0.11);
-      box(x, y, w - 2 * inset, h - 2 * inset);
-      ctx.lineWidth = 1.3 * k;
-      ctx.stroke();
+      // A frame, a pillow at the head, the edge of the blanket.
+      const L = f.hx ? w : h, Wd = f.hx ? h : w;
+      P.shape([turn(L / 2, -Wd / 2), turn(L / 2, Wd / 2), turn(-L / 2, Wd / 2), turn(-L / 2, -Wd / 2)], OUT, PAPER);
+      const p0 = L / 2 - TS * 0.07, p1 = L / 2 - TS * 0.3;
+      P.shape([turn(p0, -Wd * 0.33), turn(p0, Wd * 0.33), turn(p1, Wd * 0.33), turn(p1, -Wd * 0.33)], IN);
+      P.line(...turn(L / 2 - TS * 0.45, -Wd / 2), ...turn(L / 2 - TS * 0.45, Wd / 2), IN);
+    } else if (f.type === "coffin") {
+      // Wide at the shoulders, narrowing to head and foot; its lid inset.
+      const L = (f.hx ? w : h) / 2, Wd = (f.hx ? h : w) / 2;
+      const outline = (s) => [[L, -0.62], [L * 0.45, -1], [-L, -0.5], [-L, 0.5], [L * 0.45, 1], [L, 0.62]].map(([al, ac]) => turn(al * s, ac * Wd * s));
+      P.shape(outline(1), OUT, PAPER);
+      P.shape(outline(0.68), IN);
+    } else if (f.type === "sarcophagus" || f.type === "altar") {
+      P.box(x, y, w, h, 0, OUT + (f.type === "sarcophagus" ? 0.4 : 0), PAPER);
+      const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
+      P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
     }
   }
   ctx.restore();
