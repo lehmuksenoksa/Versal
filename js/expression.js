@@ -1,6 +1,6 @@
 // How the map is shown as it is explored. Colour comes from the light only:
-// where the player's candle falls, in flat bands (the last, faint, out to
-// the edge of sight), the paper floor and a rim of the rock's colour;
+// where the player's candle falls, in flat bands (full, dim and dark), the
+// paper floor and a rim of the rock's colour;
 // everywhere else, one colour of darkness. Ink shows the map: in sight, the
 // full ink (black walls, the floor grid and its shadow, the hatching);
 // beyond sight, fainter walls and lighter hatching. The hatching is one
@@ -25,12 +25,14 @@ export const EXPRESSION_DEFAULTS = {
   // Known walls and hatching this near the player (in tiles) keep the ink
   // in sight, seen or not (round a corner), softening over `nearSoft`.
   nearInk: 3, nearSoft: 1.5,
-  // The candle, in flat bands: full brightness out to `lightFull` of its
-  // reach, then `lightDim` out to the reach, then `lightFaint` out to the
-  // edge of sight (`sight`), the bands' edges ragged by `lightRag` tiles. It lights a rim of rock about `lightWall` tiles past a
-  // wall's face. The flame's size sets how wide the shadows' dim edges are.
-  // Flicker in brightness and in size, and warmth.
-  radius: 5, lightFull: 0.85, lightDim: 0.75, lightFaint: 0.2, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
+  // The candle, in flat bands counted in squares out from the player: full
+  // brightness for `lightFull` squares (the player's the first), then dim
+  // (`dimLevel`) for `lightDim` squares, then dark (`darkLevel`) for
+  // `lightDark`, the bands' edges ragged by `lightRag` tiles. It lights a rim
+  // of rock about `lightWall` tiles past a wall's face. The flame's size
+  // sets how wide the shadows' dim edges are. Flicker in brightness and in
+  // size, and warmth.
+  lightFull: 5, lightDim: 1, lightDark: 2, dimLevel: 0.75, darkLevel: 0.2, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
   // The colour of everything the candle doesn't light.
   darkColor: "#3b3936",
   // The ink in sight and beyond it: colour and strength of the floor
@@ -52,7 +54,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight` and
 // `sightFade` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightDim", "lightFaint", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -902,7 +904,7 @@ export class Expression {
   // is nearly sharp.
   castSight(px, py) {
     const { S, TS } = this, { target } = this.sightCanvas, g = target.getContext("2d"), far = S.sight + S.sightFade;
-    const path = this.walls.visible(px, py, (Math.max(far, S.radius) + 1) * TS);
+    const path = this.walls.visible(px, py, (Math.max(far, this.lightOut()) + 1) * TS);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, target.width, target.height);
     g.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
@@ -944,16 +946,16 @@ export class Expression {
   // the player stands: what the light reaches (seen from a few points across
   // the flame, and a rim of the rock past the wall faces it falls on), made
   // full or dim or nothing by a ragged threshold, so shadows and the rim
-  // have hand-drawn edges; and the bands, full out to `lightFull` of the
-  // radius, dim out to it and faint out to the edge of sight, their edges
+  // have hand-drawn edges; and the bands, full, dim and dark, their edges
   // ragged too (both ragged by noise
   // fixed to the map, so nothing wavers). Each frame, the bands grow and
   // shrink a little about the player, and the whole flickers in brightness.
   castLight(px, py, t) {
-    const { S, TS } = this, rad = S.radius * TS, rag = S.lightRag * TS;
+    const { S, TS } = this, rag = S.lightRag * TS;
+    // The bands' outer edges: full, dim and dark.
+    const rFull = (S.lightFull - 0.5) * TS, rad = rFull + S.lightDim * TS, out = this.lightOut() * TS;
     this.lightBox = null;
-    if (!(rad > 0)) return;
-    const out = S.lightFaint > 0 ? Math.max(rad, S.sight * TS) : rad; // the outermost band's edge
+    if (!(out > 0)) return;
     // Drawn on a square just big enough for the light round the player.
     const half = (out + rag) * (1 + S.flickerSize) + TS, res = Math.min(this.scale, 1024 / (2 * half));
     const size = Math.ceil(2 * half * res), box = { x: px - half, y: py - half, w: 2 * half, res };
@@ -987,7 +989,7 @@ export class Expression {
       // the threshold wandering with a fine noise; and the bands.
       const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data;
       const bandImg = new ImageData(size, size), bd = bandImg.data;
-      const dim = Math.round(255 * S.lightDim), faint = Math.round(255 * S.lightFaint), rFull = rad * S.lightFull;
+      const dim = Math.round(255 * S.dimLevel), faint = Math.round(255 * S.darkLevel);
       const nearEdge = (d) => Math.abs(d - rFull) < rag || Math.abs(d - rad) < rag || Math.abs(d - out) < rag;
       for (let y = 0; y < size; y++) {
         const my = box.y + (y + 0.5) / res;
@@ -1025,6 +1027,12 @@ export class Expression {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = "source-over";
     this.lightBox = box;
+  }
+
+  // How far the light reaches, in tiles from the player's middle.
+  lightOut() {
+    const S = this.S;
+    return S.lightFull - 0.5 + S.lightDim + S.lightDark;
   }
 
   // The light, onto `g` (its transform the world's).
@@ -1175,10 +1183,10 @@ export class Expression {
   // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
   // light it is in, if in sight.
   lightAt(x, y) {
-    const S = this.S, from = this.lightFrom, r = S.radius * this.TS;
-    if (!from || !(r > 0)) return 0;
+    const S = this.S, from = this.lightFrom, TS = this.TS, r = (S.lightFull - 0.5 + S.lightDim) * TS;
+    if (!from || !(this.lightOut() > 0)) return 0;
     const d = Math.hypot(x - from[0], y - from[1]);
-    return (d < S.lightFull * r ? 1 : d < r ? S.lightDim : S.lightFaint > 0 && d < S.sight * this.TS ? S.lightFaint : 0) * this.inSight(x, y);
+    return (d < (S.lightFull - 0.5) * TS ? 1 : d < r ? S.dimLevel : d < this.lightOut() * TS ? S.darkLevel : 0) * this.inSight(x, y);
   }
 
 
