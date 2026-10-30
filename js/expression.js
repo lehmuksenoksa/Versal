@@ -763,11 +763,12 @@ export class Expression {
 
     // Ground not yet seen. `u` runs from 0 where the cover starts to 1 where it
     // is solid: by distance from the known floor (with the ragged edge), or
-    // from where the hatching gives out.
+    // from where the hatching gives out. (Worked out as far as the strokes
+    // reaching into the area come from.)
     yield;
-    const u = new Float32Array(n).fill(1);
-    for (let y = area[1]; y < area[3]; y++)
-      for (let x = area[0]; x < area[2]; x++) {
+    const u = new Float32Array(n).fill(1), um = 2 * R + 2;
+    for (let y = Math.max(0, area[1] - um); y < Math.min(mh, area[3] + um); y++)
+      for (let x = Math.max(0, area[0] - um); x < Math.min(mw, area[2] + um); x++) {
         const j = y * mw + x;
         if (known[j]) { u[j] = -1; continue; }
         if (S.fadeBy === "hatching") { u[j] = (grey[j] - 0.4) / 0.6; continue; }
