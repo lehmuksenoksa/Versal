@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bonfire Stones</title>
+<title>Bonfire Flames</title>
 <style>
   /* Layout: two wrapping grids of animated cards, bonfires then torches. */
   :root {
@@ -43,8 +43,8 @@
 </head>
 <body>
 <header>
-  <h1>Bonfire stones</h1>
-  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. The big bonfire's flame over four rings of stones, each packed with no gaps and the stones varied in size.</p>
+  <h1>Bonfire flames</h1>
+  <p>Each card shows the symbol at game size (the default zoom) and close up, lit by its own light in the game's bands. On the S2 stones: the big bonfire's flame, and flames made of fire icons dancing.</p>
   <div class="bar">
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
@@ -223,22 +223,83 @@ function heap(P, rng, x, y, TS) {
 }
 const bigFlame = (g, x, y, TS, t) => { rising(g, x, y + TS * 0.18, TS, t, { n: 5, w: 0.2, h: 0.8, spread: 0.11 }); sparks(g, x, y - TS * 0.4, TS, t, { n: 8, rise: 1.4 }); };
 
+// A flame like a drawn fire icon, standing on (x, y): a round bulb `b`
+// across, its main tip `h` up leaning `lean`, a second tongue `h2` up on
+// one `side`, a notch between; a paper tongue cut out of the bulb. (In
+// squares; `jit` puts the hand off a little.)
+function icon(g, x, y, TS, p, { fill = INK, heart = PAPER, outline = 0, jit = () => 0 } = {}) {
+  const S = p.side, b = p.b * TS, h = p.h * TS, h2 = p.h2 * TS, L = p.lean * TS, K = 0.5523 * b;
+  const X = (u) => x + u * S, Y = (v) => y - b + v;
+  const pt = (u, v) => [X(u) + jit(), Y(v) + jit()];
+  g.beginPath();
+  g.moveTo(...pt(L * S, -h));
+  // (Down the plain side to the bulb, round its bottom, up the tongue's side.)
+  g.bezierCurveTo(...pt(-L * S * 0.4 - b * 0.1, -h * 0.66), ...pt(-b * 1.05, -h * 0.38), X(-b), Y(0));
+  g.bezierCurveTo(X(-b), Y(K), X(-K), Y(b), X(0), Y(b));
+  g.bezierCurveTo(X(K), Y(b), X(b), Y(K), X(b), Y(0));
+  g.bezierCurveTo(...pt(b * 1.08, -b * 0.5), ...pt(b * 1.0 + p.l2 * TS * 0.5, -h2 * 0.65), ...pt(b * 0.78 + p.l2 * TS, -h2));
+  g.bezierCurveTo(...pt(b * 0.6, -h2 * 0.7), ...pt(b * 0.32, -h * 0.32), ...pt(b * 0.28, -h * 0.4));
+  g.bezierCurveTo(...pt(b * 0.25, -h * 0.6), ...pt(-L * S * 0.2 + b * 0.25, -h * 0.85), ...pt(L * S, -h));
+  g.closePath();
+  // (A paper edge round it, so it reads against the stones and logs.)
+  if (!outline) { g.lineWidth = 3 * TS / 32; g.strokeStyle = PAPER; g.lineJoin = "round"; g.stroke(); }
+  g.fillStyle = fill;
+  g.fill();
+  if (outline) { g.lineWidth = outline * TS / 32; g.strokeStyle = INK; g.lineJoin = "round"; g.stroke(); }
+  // The heart: a tongue rising inside the bulb from near its bottom.
+  if (p.ih > 0) {
+    tongue(g, X(p.ix * TS), Y(b * 0.72), b * 0.85, p.ih * TS, p.il * TS * S, jit);
+    g.fillStyle = heart;
+    g.fill();
+  }
+}
+
+// How an icon flame dances at time t: its tips sway and reach, the bulb
+// breathes, the heart flickers. `f`: its own speed and phase.
+function dance(t, f, size = 1) {
+  const w = (m, o = 0) => Math.sin(t * f.sp * m + f.ph + o);
+  return {
+    side: f.side ?? 1,
+    b: size * (0.25 + 0.012 * w(1.7)),
+    h: size * (0.9 + 0.11 * w(1) + 0.05 * w(2.6, 1)),
+    lean: size * (0.1 + 0.07 * w(0.55) + 0.03 * w(1.9, 2)),
+    h2: size * (0.5 + 0.08 * w(1.3, 2) + 0.04 * w(3.1)),
+    l2: size * (0.05 * w(0.8, 1)),
+    ih: size * (0.24 + 0.07 * w(2.2, 3)),
+    ix: size * 0.02 * w(0.9, 4),
+    il: size * 0.05 * w(1.4, 5),
+  };
+}
+
+// A few icon flames together, back to front: [dx, size, side, speed, phase].
+function dancers(g, x, y, TS, t, set, o = {}) {
+  for (const [dx, size, side, sp, ph, dy = 0] of set) icon(g, x + dx * TS, y + dy * TS, TS, dance(t, { sp, ph, side }, size), o);
+}
+
+// Each tick a new drawing, as a hand-animated fire on twos: the dance at
+// random moments, the lines a little off.
+function onTwos(g, x, y, TS, t, set, o = {}) {
+  const tick = Math.floor(t * 8), rng = new RNG(31 + tick * 7);
+  const jit = () => rng.range(-0.5, 0.5) * TS / 32;
+  for (const [dx, size, side, sp, ph, dy = 0] of set) icon(g, x + dx * TS, y + dy * TS, TS, dance(rng.range(0, 60), { sp, ph, side }, size), { ...o, jit });
+}
+
+const S2 = (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); };
+const TRIO = [[-0.14, 0.62, -1, 4.3, 1.1, -0.02], [0.15, 0.68, 1, 3.7, 2.6, -0.02], [0, 1, 1, 3.1, 0]];
+
 const FIRES = [
-  { id: "S1", name: "Round stones", note: "Pen-drawn rounds of mixed sizes, packed so each touches the next.",
-    base: (P, rng, x, y, TS, g) => { for (const [cx, cy, r] of ring(rng, x, y, TS)) P.round(cx, cy, r, IN, PAPER); heap(P, rng, x, y, TS); } },
-  { id: "S2", name: "Rubble stones", note: "Lumpy stones like the cave rubble, heavy outlined, mixed sizes, packed tight.",
-    base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); } },
-  { id: "S3", name: "Laid stones", note: "Lumpy stones longer along the ring, as if laid end to end; mixed lengths.",
-    base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS, { min: 0.09, max: 0.17, squeeze: 0.85 }).map(([a, b, r, an]) => [a, b, r * 0.8, an]), TS, { stretch: 1.6 }); heap(P, rng, x, y, TS); } },
-  { id: "S4", name: "Big and small", note: "A few big rubble stones, small ones wedged in the gaps between them.",
-    base: (P, rng, x, y, TS, g) => {
-      const big = ring(rng, x, y, TS, { min: 0.09, max: 0.16, squeeze: 0.75 });
-      const small = big.map(([ax, ay, ar, aa], i) => { const [bx, by, br] = big[(i + 1) % big.length], mx = (ax + bx) / 2, my = (ay + by) / 2, d = Math.hypot(mx - x, my - y); return [x + (mx - x) * (d + TS * 0.08) / d, y + (my - y) * (d + TS * 0.08) / d, TS * rng.range(0.04, 0.06), 0]; });
-      lumps(g, rng, small, TS, { width: 2 });
-      lumps(g, rng, big, TS);
-      heap(P, rng, x, y, TS);
-    } },
-].map((v) => ({ ...v, flame: bigFlame }));
+  { id: "F", name: "Big bonfire (as before)", note: "For comparison: the warm tongues you picked, on the S2 stones.", flame: bigFlame },
+  { id: "D1", name: "One icon, dancing", note: "A single inked fire icon: its tips sway and reach, the bulb breathes, the paper heart flickers.",
+    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, [[0, 1.05, 1, 3.1, 0]]) },
+  { id: "D2", name: "Three icons, dancing", note: "A big icon with two smaller ones behind it, leaning out, each dancing to its own beat.",
+    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, TRIO) },
+  { id: "D3", name: "Three icons, on twos", note: "The same three, but redrawn eight times a second, each drawing a little different, like a hand-animated cartoon.",
+    flame: (g, x, y, TS, t) => onTwos(g, x, y + TS * 0.16, TS, t, TRIO) },
+  { id: "D4", name: "Three icons, warm", note: "D2 in fire colours with an ink outline and a yellow heart, like the big bonfire.",
+    flame: (g, x, y, TS, t) => dancers(g, x, y + TS * 0.16, TS, t, TRIO, { fill: FIRE, heart: FIRE_IN, outline: 1.6 }) },
+  { id: "D5", name: "Ring of small icons", note: "Five small icons dancing round the heap, with sparks: a wider, busier fire.",
+    flame: (g, x, y, TS, t) => { dancers(g, x, y + TS * 0.16, TS, t, [[-0.17, 0.5, -1, 4.6, 0.4, -0.06], [0.17, 0.5, 1, 4.1, 1.9, -0.06], [-0.09, 0.62, -1, 3.6, 3.1], [0.1, 0.62, 1, 3.3, 4.4], [0, 0.8, 1, 2.9, 5.2, 0.03]]); sparks(g, x, y - TS * 0.4, TS, t, { n: 6, rise: 1.3 }); } },
+].map((v) => ({ ...v, base: S2 }));
 
 const TORCHES = [];
 
