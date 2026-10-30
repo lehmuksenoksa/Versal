@@ -54,8 +54,8 @@ export const EXPRESSION_DEFAULTS = {
   // The rock outside the rooms, where lit: the paper toned toward a colour.
   rockColor: "#8f8a80", rockTone: 0.85,
 };
-// Settings that only change what is laid down each frame; `sight` and
-// `sightFade` also change what is seen, and the rest mean redrawing the ink.
+// Settings that only change what is laid down each frame; `sight`,
+// `sightFade` and `flame` also change what is seen, and the rest mean redrawing the ink.
 export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
@@ -217,7 +217,7 @@ export class Expression {
     Object.assign(this.S, changes);
     this.sightFrom = this.lightFrom = null;
     const keys = Object.keys(changes);
-    if (this.player && keys.some((k) => k === "sight" || k === "sightFade")) {
+    if (this.player && keys.some((k) => k === "sight" || k === "sightFade" || k === "flame")) {
       this.learn(this.player.x, this.player.y);
       return true;
     }
@@ -251,7 +251,7 @@ export class Expression {
   learn(tx, ty) {
     const { mw, mh, floor, seen, S, TS } = this, px = (tx + 0.5) * TS, py = (ty + 0.5) * TS, far = S.sight + S.sightFade;
     this.player = { x: tx, y: ty };
-    const path = this.walls.visible(px, py, (far + 1) * TS);
+    const path = this.viewFrom(px, py, (far + 1) * TS);
     // Only the square the view can reach is looked at.
     const m = Math.ceil((far + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
     const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
@@ -299,7 +299,7 @@ export class Expression {
           this.changed = unite(this.changed, [x, y, x + 1, y + 1]);
         }
       }
-    const key = `${tx},${ty},${far}`;
+    const key = `${tx},${ty},${far},${S.flame}`;
     if (!this.viewpoints) this.viewpoints = new Map();
     if (!this.viewpoints.has(key)) {
       const v = { path, px, py, far };
@@ -309,6 +309,15 @@ export class Expression {
     this.visNow = vis;
     this.sightRock(visRock, x0, y0, x1, y1);
     return grew;
+  }
+
+  // What can be seen from (px, py), out to `r`: from any of the flame's
+  // points, so what the light reaches is seen.
+  viewFrom(px, py, r) {
+    const f = this.S.flame * this.TS, path = new Path2D();
+    path.addPath(this.walls.visible(px, py, r));
+    if (f > 0) for (const [dx, dy] of [[f, 0], [-f, 0], [0, f], [0, -f]]) path.addPath(this.walls.visible(px + dx, py + dy, r));
+    return path;
   }
 
   // Add one view to `seenShape`: the floor seen from (px, py) out to `far`
@@ -906,7 +915,7 @@ export class Expression {
   // is nearly sharp.
   castSight(px, py) {
     const { S, TS } = this, { target } = this.sightCanvas, g = target.getContext("2d"), far = S.sight + S.sightFade;
-    const path = this.walls.visible(px, py, (Math.max(far, this.lightOut()) + 1) * TS);
+    const path = this.viewFrom(px, py, (Math.max(far, this.lightOut()) + 1) * TS);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, target.width, target.height);
     g.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
