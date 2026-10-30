@@ -33,6 +33,29 @@ const POSES = {
   breathe(t) {
     return { sy: 1 + Math.sin(t * 2.2) * 0.035, sx: 1 - Math.sin(t * 2.2) * 0.015 };
   },
+  // Aggressive goblins lunge at the player (along dx, dy) within their
+  // square: a quick hop out, a squash as they land, a slower step back.
+  lunge(t, ph, dx, dy) {
+    const k = (t / 0.62 + ph) % 1, out = 0.28;
+    const reach = k < out ? 1 - Math.pow(1 - k / out, 3) : 1 - ease((k - out) / (1 - out));
+    const h = k < out ? Math.sin((Math.PI * k) / out) : 0, land = Math.exp(-(((k - out) / 0.06) ** 2));
+    return { ox: dx * 0.22 * reach, oy: dy * 0.22 * reach - h * 0.12, sx: 1 + 0.2 * land - 0.04 * h, sy: 1 - 0.24 * land + 0.1 * h, rot: dx * 0.18 * reach, shadow: h };
+  },
+  // Sleepers lie still, slumped a little, breathing slowly.
+  sleep(t, ph) {
+    const b = 0.5 + 0.5 * Math.sin(t * 1.4 + ph * 6);
+    return { sy: 0.9 - 0.07 * b, sx: 1.04 + 0.03 * b, rot: ph > 0.5 ? 0.16 : -0.16 };
+  },
+};
+
+// The noises goblins make, written above them as they happen: when they
+// move, while aggressive, while asleep. Each with its words, how far off
+// (in tiles) it is heard out of sight, and how long it shows (seconds).
+const SOUNDS = {
+  move: { words: ["scuttle", "scrabble", "skitter", "scritch", "pitter-pat", "scuff"], range: 7, dur: 1.1 },
+  growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 10, dur: 1.2 },
+  alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 12, dur: 1.4 },
+  snore: { words: ["zzz", "zz", "zzZ", "z"], range: 5, dur: 1.8 },
 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
@@ -50,6 +73,9 @@ export class Renderer {
     this.cam = { x: 0, y: 0, snap: true };
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     this.glyphMetrics = new Map();
+    // Noises showing, and when each pack was last heard moving.
+    this.sounds = [];
+    this.packHeard = new Map();
     this.settings = { ...EXPRESSION_DEFAULTS };
     this.zoom = ZOOM.start;
     this.resize();
@@ -72,6 +98,8 @@ export class Renderer {
     this.world.sight = this.settings.sight;
     this.world.updateFov();
     this.views.clear();
+    this.sounds = [];
+    this.packHeard.clear();
     this.exp = null; // a new map starts unseen
     this.cam.snap = true;
     this.buildMap();
@@ -145,6 +173,15 @@ export class Renderer {
         v.y = e.actor.y;
         v.t0 = now;
         v.dur = e.actor === this.world.player ? 120 : 150;
+        // A pack on the move is heard now and then (not every goblin, every
+        // step).
+        if (e.actor.kind === "goblin") {
+          const pack = e.actor.leader.id;
+          if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < 0.6) {
+            this.packHeard.set(pack, now);
+            this.hear(e.actor, "move", now);
+          }
+        }
         // What the player sees from the new tile; the drawing is redone once
         // the step is over.
         if (e.actor === this.world.player && this.exp?.learn(e.actor.x, e.actor.y)) this.redraw(v.dur + 30);
@@ -154,6 +191,74 @@ export class Renderer {
         this.redraw(30);
       }
     }
+  }
+
+  // A noise from actor `a`, if the player sees it or is near enough to hear
+  // it: written above it, fainter the further off it is when out of sight.
+  hear(a, kind, now) {
+    const S = SOUNDS[kind], p = this.world.player, TS = this.TS;
+    const d = Math.hypot(a.x - p.x, a.y - p.y), seen = this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS);
+    if (!seen && d > S.range) return;
+    const v = this.view(a), j = (r) => (Math.random() - 0.5) * 2 * r;
+    this.sounds.push({
+      text: S.words[Math.floor(Math.random() * S.words.length)], kind, t0: now, dur: S.dur * 1000,
+      x: (v.x + 0.5 + j(0.25)) * TS, y: (v.y + 0.1) * TS, rot: j(0.18),
+      alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / S.range),
+    });
+    if (this.sounds.length > 60) this.sounds.shift();
+  }
+
+  // Noises from the goblins' states: a growl as one turns aggressive and now
+  // and then while it is; a snore now and then while asleep.
+  listen(now) {
+    for (const a of this.world.actors) {
+      if (a.kind !== "goblin") continue;
+      const v = this.view(a);
+      if (v.state !== a.state) {
+        // (One shout from a pack as it turns, not one from each.)
+        if (v.state !== undefined && a.state === "aggressive" && now - (this.packHeard.get(-a.leader.id) ?? -1e9) > 1000) {
+          this.packHeard.set(-a.leader.id, now);
+          this.hear(a, "alarm", now);
+        }
+        v.state = a.state;
+        v.nextSound = now + (a.state === "sleeping" ? 1500 + Math.random() * 3500 : 1500 + Math.random() * 2500);
+      }
+      if (now < v.nextSound) continue;
+      if (a.state === "aggressive") {
+        this.hear(a, "growl", now);
+        v.nextSound = now + 1300 + Math.random() * 2400;
+      } else if (a.state === "sleeping") {
+        this.hear(a, "snore", now);
+        v.nextSound = now + 2500 + Math.random() * 3000;
+      } else v.nextSound = Infinity;
+    }
+  }
+
+  // The noises, rising and fading: small heavy lettering, slanted, in ink
+  // with a paper halo; snores drifting off to the side.
+  drawSounds(ctx, now) {
+    const TS = this.TS;
+    this.sounds = this.sounds.filter((s) => now - s.t0 < s.dur);
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.lineJoin = "round";
+    for (const s of this.sounds) {
+      const k = (now - s.t0) / s.dur, size = TS * (s.kind === "alarm" ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
+      const a = s.alpha * Math.min(1, k / 0.08) * (k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45);
+      ctx.save();
+      ctx.translate(s.x + (s.kind === "snore" ? k * TS * 0.35 : 0), s.y - k * TS * (s.kind === "snore" ? 0.6 : 0.45));
+      ctx.rotate(s.rot);
+      ctx.globalAlpha = Math.max(0, a);
+      ctx.font = `italic 800 ${size}px ${LETTERING.font}`;
+      ctx.lineWidth = size * 0.26;
+      ctx.strokeStyle = PAPER;
+      ctx.strokeText(s.text, 0, 0);
+      ctx.fillStyle = INK;
+      ctx.fillText(s.text, 0, 0);
+      ctx.restore();
+    }
+    ctx.restore();
   }
 
   screenToTile(px, py) {
@@ -209,6 +314,9 @@ export class Renderer {
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
       if (v.alpha > 0.02) this.drawActor(ctx, a, v, now, t, motion);
     }
+    // What can be heard, seen or not.
+    this.listen(now);
+    this.drawSounds(ctx, now);
   }
 
   metrics(ch, font) {
@@ -251,13 +359,22 @@ export class Renderer {
   }
 
   pose(a, v, now, t, motion) {
-    const goblin = a.kind === "goblin";
-    const p = { ox: 0, oy: 0, sx: 1, sy: 1, rot: 0, shadow: 0, ...(goblin ? POSES.hop(t, v.phase) : POSES.breathe(t)) };
+    const goblin = a.kind === "goblin", pl = this.world.player;
+    let idle = POSES.breathe(t);
+    if (goblin && a.state === "aggressive") {
+      const dx = pl.x - a.x, dy = pl.y - a.y, d = Math.hypot(dx, dy) || 1;
+      idle = POSES.lunge(t, v.phase / 6.28, dx / d, dy / d);
+    } else if (goblin && a.state === "sleeping") idle = POSES.sleep(t, v.phase / 6.28);
+    else if (goblin) idle = POSES.hop(t, v.phase);
+    const p = { ox: 0, oy: 0, sx: 1, sy: 1, rot: 0, shadow: 0, ...idle };
+    p.ox *= motion;
     p.oy *= motion;
+    p.rot *= motion;
     p.sx = 1 + (p.sx - 1) * motion;
     p.sy = 1 + (p.sy - 1) * motion;
 
-    if (goblin && motion > 0.5) {
+    // (Only the milling dart about.)
+    if (goblin && a.state === "neutral" && motion > 0.5) {
       const d = v.dart, [range, minT, maxT] = DART;
       if (now > d.next) {
         d.tx = (Math.random() - 0.5) * 2 * range;

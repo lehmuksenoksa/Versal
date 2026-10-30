@@ -13,6 +13,11 @@ and some goblins.
   with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).
 - The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
+  Some packs sleep (slumped, breathing slowly); a pack that sees the player close by turns
+  aggressive and lunges at them from where it stands, calming once they are out of sight a while.
+- Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
+  move, "grr" when aggressive, "zzz" asleep. They show out of sight too, within hearing, fainter
+  with distance.
 - The player sees what lies in their line of sight, cast against the walls: sharp where walls block
   the view, fading out with distance. What is in sight is drawn in black ink; what is remembered is
   drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,
