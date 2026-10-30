@@ -64,6 +64,7 @@ export function renderMap(level, TS, scale, seed, {
   if (grid) {
     drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
     if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
+    if (level.features) drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7));
   }
   ctx.restore();
 
@@ -441,6 +442,97 @@ function drawRubble(ctx, level, TS, rng) {
         ctx.fillRect(gx - r / 2, gy - r / 2, r, r);
       }
     }
+}
+
+// Things in the rooms (`level.features`, each { type, x, y, ... } in squares):
+// pillars in ink, casting a shadow; furniture outlined in pen over the
+// paper, a little uneven as if drawn by hand.
+function drawFeatures(ctx, features, TS, rng) {
+  const k = TS / 32, j = () => rng.range(-0.5, 0.5) * k;
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = INK;
+  // A box w by h about (cx, cy), turned by rot, as the current path.
+  const box = (cx, cy, w, h, rot = 0) => {
+    const c = Math.cos(rot), s = Math.sin(rot);
+    ctx.beginPath();
+    [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]].forEach(([px, py], i) => {
+      const X = cx + px * c - py * s + j(), Y = cy + px * s + py * c + j();
+      i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y);
+    });
+    ctx.closePath();
+  };
+  // A round about (cx, cy), a little lumpy.
+  const round = (cx, cy, r) => {
+    ctx.beginPath();
+    const m = 12, a0 = rng.range(0, Math.PI * 2);
+    for (let i = 0; i < m; i++) {
+      const a = a0 + (i / m) * Math.PI * 2, rr = r * rng.range(0.95, 1.05);
+      i ? ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+  };
+  // Paper inside, the current path inked.
+  const ink = (width) => {
+    ctx.fillStyle = PAPER;
+    ctx.fill();
+    ctx.lineWidth = width * k;
+    ctx.stroke();
+  };
+  for (const f of features) {
+    const x = f.x * TS, y = f.y * TS, w = (f.w ?? 0) * TS, h = (f.h ?? 0) * TS;
+    if (f.type === "pillar") {
+      const r = TS * 0.3, off = TS * 0.12, shape = (dx) => (f.shape === "round" ? round(x + dx, y + dx, r) : box(x + dx, y + dx, r * 1.75, r * 1.75));
+      shape(off);
+      ctx.fillStyle = SHADOW;
+      ctx.fill();
+      shape(0);
+      ctx.fillStyle = INK;
+      ctx.fill();
+    } else if (f.type === "crate") {
+      box(x, y, w, h, f.rot);
+      ink(2);
+      // A board across it.
+      const c = Math.cos(f.rot), s = Math.sin(f.rot), a = w * 0.36;
+      ctx.beginPath();
+      ctx.moveTo(x - a * c + a * s, y - a * s - a * c);
+      ctx.lineTo(x + a * c - a * s, y + a * s + a * c);
+      ctx.lineWidth = 1.3 * k;
+      ctx.stroke();
+    } else if (f.type === "barrel") {
+      round(x, y, f.r * TS);
+      ink(2);
+      round(x, y, f.r * TS * 0.5);
+      ctx.lineWidth = 1.2 * k;
+      ctx.stroke();
+    } else if (f.type === "table" || f.type === "bench") {
+      box(x, y, w, h);
+      ink(f.type === "table" ? 2.2 : 1.7);
+    } else if (f.type === "bed") {
+      box(x, y, w, h);
+      ink(2);
+      // The pillow at its head, and the edge of the blanket.
+      const along = f.hx ? w : h, across = f.hx ? h : w, px = x + f.hx * (along / 2 - TS * 0.17), py = y + f.hy * (along / 2 - TS * 0.17);
+      f.hx ? box(px, py, TS * 0.2, across * 0.7) : box(px, py, across * 0.7, TS * 0.2);
+      ink(1.4);
+      const bx = x + f.hx * (along / 2 - TS * 0.42), by = y + f.hy * (along / 2 - TS * 0.42);
+      ctx.beginPath();
+      ctx.moveTo(bx - Math.abs(f.hy) * across / 2 + j(), by - Math.abs(f.hx) * across / 2 + j());
+      ctx.lineTo(bx + Math.abs(f.hy) * across / 2 + j(), by + Math.abs(f.hx) * across / 2 + j());
+      ctx.lineWidth = 1.3 * k;
+      ctx.stroke();
+    } else if (f.type === "coffin" || f.type === "altar") {
+      box(x, y, w, h);
+      ink(f.big ? 2.6 : 2.2);
+      // A lid (or the altar's top) inset.
+      const inset = TS * (f.big ? 0.16 : 0.11);
+      box(x, y, w - 2 * inset, h - 2 * inset);
+      ctx.lineWidth = 1.3 * k;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 function drawRoomKeys(ctx, level, TS) {
