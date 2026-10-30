@@ -61,11 +61,8 @@ export function renderMap(level, TS, scale, seed, {
   }
   const gridRng = rng.fork();
   const caveTile = (x, y) => x >= 0 && y >= 0 && x < W && y < H && level.cave[y * W + x] === 1;
-  // (No grid line across a doorway, where the door is drawn.)
-  const doorways = new Set((level.doors ?? []).map(({ x, y, dx, dy }) => [x, y, x + dx, y + dy].join()));
-  const shut = (ax, ay, bx, by) => doorways.has([ax, ay, bx, by].join()) || doorways.has([bx, by, ax, ay].join());
   if (grid) {
-    drawGrid(ctx, W, H, TS, gridRng, open, caveTile, shut);
+    drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
     if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
   }
   ctx.restore();
@@ -205,34 +202,42 @@ export function wallLine(ctx, a, b, TS, rng) {
 }
 
 // Doors (each { x, y, dx, dy }: in the tile at x, y, opening that way into a
-// room): on the room's wall line (which lies a little out into the rock), a
-// stub of wall standing out from each side of the way in, and between them a
-// pen outline of the door, a little uneven as if drawn by hand.
+// room): across the middle of that square, a short jamb of wall standing out
+// from each side wall, and between their ends a pen outline of the door; a
+// little uneven, as if drawn by hand.
 function drawDoors(ctx, doors, TS, rng) {
-  const k = TS / 32, weight = WALL.weight * k, shift = weight * (0.5 - WALL.inside);
+  const k = TS / 32, weight = WALL.weight * k;
+  // The side walls' inner faces, from the middle of the way (see drawWalls).
+  const face = TS / 2 - weight * WALL.inside;
   ctx.save();
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
   for (const { x, y, dx, dy } of doors) {
-    const cx = (x + 0.5 + dx * 0.5) * TS - dx * shift, cy = (y + 0.5 + dy * 0.5) * TS - dy * shift;
-    const thick = TS * rng.range(0.32, 0.38), stub = TS * rng.range(0.15, 0.2), len = TS - 2 * stub + weight * 0.3;
-    // The stubs: from inside each side wall out into the way in.
-    const ux = -dy, uy = dx;
-    for (const side of [1, -1]) {
-      const from = TS / 2 + weight * 0.3, to = TS / 2 - stub;
-      wallStroke(ctx, [cx + ux * side * from, cy + uy * side * from], [cx + ux * side * to, cy + uy * side * to], thick * 0.95, WALL.bow * k, rng);
-    }
-    ctx.lineWidth = weight * 0.5;
+    const cx = (x + 0.5) * TS, cy = (y + 0.5) * TS, thick = TS * rng.range(0.28, 0.33);
+    const j = () => rng.range(-0.6, 0.6) * k;
     ctx.save();
     ctx.translate(cx, cy);
+    // (Across the way is the local y, along it the local x.)
     ctx.rotate(Math.atan2(dy, dx) + rng.range(-0.04, 0.04));
-    const j = () => rng.range(-0.6, 0.6) * k;
+    let tip = face;
+    for (const side of [1, -1]) {
+      const out = TS * rng.range(0.1, 0.14), w = thick * rng.range(1.05, 1.2), from = side * (face + weight * 0.4), to = side * (face - out);
+      tip = Math.min(tip, face - out);
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + j(), from);
+      ctx.lineTo(w / 2 + j(), from);
+      ctx.lineTo(w / 2 + j(), to + j());
+      ctx.lineTo(-w / 2 + j(), to + j());
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.lineWidth = weight * 0.45;
     ctx.beginPath();
-    ctx.moveTo(-thick / 2 + j(), -len / 2 + j());
-    ctx.lineTo(thick / 2 + j(), -len / 2 + j());
-    ctx.lineTo(thick / 2 + j(), len / 2 + j());
-    ctx.lineTo(-thick / 2 + j(), len / 2 + j());
+    ctx.moveTo(-thick / 2 + j(), -tip + j());
+    ctx.lineTo(thick / 2 + j(), -tip + j());
+    ctx.lineTo(thick / 2 + j(), tip + j());
+    ctx.lineTo(-thick / 2 + j(), tip + j());
     ctx.closePath();
     ctx.stroke();
     ctx.restore();
@@ -324,12 +329,11 @@ function drawShadow(ctx, level, TS, floor) {
   ctx.restore();
 }
 
-// The floor grid (not across the edges `shut(ax, ay, bx, by)`), one thin pen
-// stroke per tile edge: each slightly tilted and
+// The floor grid, one thin pen stroke per tile edge: each slightly tilted and
 // bowed, often stopping short of a crossing, now and then broken mid-way. On
 // a cave's floor (`cave(x, y)`) it is a rougher guide: dashes and gaps of
 // uneven lengths (now and then a dot), wandering more, its weight varying.
-function drawGrid(ctx, W, H, TS, rng, open, cave = () => false, shut = () => false) {
+function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
   const k = TS / 32;
   ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
   ctx.lineCap = "round";
@@ -362,8 +366,8 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false, shut = () => fal
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (!open(x, y)) continue;
-      if (open(x + 1, y) && !shut(x, y, x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x + 1, y));
-      if (open(x, y + 1) && !shut(x, y, x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x, y + 1));
+      if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x + 1, y));
+      if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x, y + 1));
     }
   ctx.setLineDash([]);
 }
