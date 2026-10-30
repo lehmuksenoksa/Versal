@@ -233,16 +233,31 @@ function tryAreas(S, rng) {
   const connect = (a, b) => {
     let x = a.cx, y = a.cy;
     const across = rng.chance(0.5);
+    // Where a cavern passage heads: points along a bend from a to b (one bow
+    // to the side, at least two squares, and each point jittered), then b.
+    const len = Math.hypot(b.cx - a.cx, b.cy - a.cy), px = -(b.cy - a.cy) / (len || 1), py = (b.cx - a.cx) / (len || 1);
+    const bow = (rng.chance(0.5) ? 1 : -1) * Math.max(2, rng.range(0.1, 0.35) * len), ways = [];
+    for (let i = 1, m = Math.max(2, Math.round(len / 4)); i < m; i++) {
+      const t = i / m, off = bow * Math.sin(Math.PI * t) + rng.range(-1.5, 1.5);
+      ways.push([clamp(Math.round(a.cx + (b.cx - a.cx) * t + px * off), 2, W - 3), clamp(Math.round(a.cy + (b.cy - a.cy) * t + py * off), 2, H - 3)]);
+    }
+    ways.push([b.cx, b.cy]);
     for (let step = 0; step < 4 * (W + H) && (x !== b.cx || y !== b.cy); step++) {
       const t = typeAt(x, y);
+      // (Points nearly reached, or already passed along the way, are done.)
+      while (ways.length > 1 && (Math.hypot(ways[0][0] - x, ways[0][1] - y) < 2 || (ways[0][0] - x) * (b.cx - a.cx) + (ways[0][1] - y) * (b.cy - a.cy) < 0)) ways.shift();
       let dx = Math.sign(b.cx - x), dy = Math.sign(b.cy - y);
       if (t === CAVERN) {
-        const r = rng.next();
+        // Toward the next point, across or down in proportion to how far
+        // each way it is (so slanting stretches slant), now and then aside.
+        const [wx, wy] = ways[0], ax = Math.abs(wx - x), ay = Math.abs(wy - y);
+        dx = Math.sign(wx - x);
+        dy = Math.sign(wy - y);
         if (dx && dy) {
-          if (r < 0.5) dy = 0;
+          if (rng.next() < ax / (ax + ay)) dy = 0;
           else dx = 0;
         }
-        if (rng.chance(0.25)) [dx, dy] = dx ? [0, rng.chance(0.5) ? 1 : -1] : [rng.chance(0.5) ? 1 : -1, 0];
+        if (rng.chance(0.12)) [dx, dy] = dx ? [0, rng.chance(0.5) ? 1 : -1] : [rng.chance(0.5) ? 1 : -1, 0];
       } else if (across ? dx : !dy) dy = 0;
       else dx = 0;
       x = clamp(x + dx, 1, W - 2);
