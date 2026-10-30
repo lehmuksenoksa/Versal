@@ -54,11 +54,11 @@ Move with the arrow keys, numpad, `hjkl`/`yubn` or `wasd`; walk into a goblin to
 shut door to open it. Press `c` to close a door next to you, `e` to search for secret doors, `f` to
 put the lamp out (sneak) or light it, and `.` or space to wait a turn.
 
-With a finger (or the mouse), tap to step once toward it, the way by its angle from the player
+With a finger (or the mouse), tap to step once toward it (as the finger lifts), the way by its angle from the player
 (straight up, down and across taking wider wedges than the diagonals); hold to keep walking,
 steered by the finger and sliding round walls, until a goblin comes into sight. On touch screens a
 strip of buttons along the bottom searches (or waits), puts out or lights the lamp, and closes a
-door. Zoom with the mouse wheel or
+door. Pinch with two fingers to zoom. Zoom with the mouse wheel or
 `+`/`-` (`0` resets to 48%). `window.versal` exposes the world and renderer
 in the browser console.
 

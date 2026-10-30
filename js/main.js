@@ -97,20 +97,48 @@ function endHold() {
   hold = null;
 }
 
+// (A tap steps as the finger lifts, so that a second finger coming down,
+// a pinch to zoom, takes no step. Two fingers zoom by how far apart they
+// are; the view stays on the player, as with the wheel.)
+const fingers = new Map();
+let pinch = null;
+const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+
 canvas.addEventListener("pointerdown", (e) => {
-  if (!world || !e.isPrimary || e.button > 0) return;
+  if (!world || e.button > 0) return;
   e.preventDefault();
   canvas.setPointerCapture?.(e.pointerId);
+  fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   endHold();
-  const d = dirTo(e.clientX, e.clientY);
-  if (d) stepToward(d, false);
-  hold = { x: e.clientX, y: e.clientY, seen: goblinsInSight() };
-  hold.timer = setTimeout(walk, HOLD.delay);
+  if (fingers.size === 2) {
+    pinch = { from: Math.max(1, spread()), zoom: renderer.zoom };
+    return;
+  }
+  if (fingers.size > 2 || pinch) return;
+  hold = { x: e.clientX, y: e.clientY, seen: goblinsInSight(), tap: true };
+  hold.timer = setTimeout(() => {
+    if (!hold) return;
+    hold.tap = false;
+    walk();
+  }, HOLD.delay);
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (hold && e.isPrimary) Object.assign(hold, { x: e.clientX, y: e.clientY });
+  const f = fingers.get(e.pointerId);
+  if (!f) return;
+  Object.assign(f, { x: e.clientX, y: e.clientY });
+  if (pinch && fingers.size === 2) renderer.setZoom(pinch.zoom * (spread() / pinch.from));
+  else if (hold) Object.assign(hold, { x: e.clientX, y: e.clientY });
 });
-for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) canvas.addEventListener(type, endHold);
+const lift = (e) => {
+  if (!fingers.delete(e.pointerId)) return;
+  if (hold?.tap && e.type === "pointerup") {
+    const d = dirTo(hold.x, hold.y);
+    if (d) stepToward(d, false);
+  }
+  endHold();
+  if (!fingers.size) pinch = null;
+};
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) canvas.addEventListener(type, lift);
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // The action strip (touch screens): search (or wait), the lamp, closing a
