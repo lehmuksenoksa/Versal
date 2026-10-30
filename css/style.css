@@ -7,6 +7,10 @@ html, body { height: 100%; margin: 0; }
 body { background: #000; overflow: hidden; }
 #view { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
+/* The letters' layer over the map (low power). */
+#over { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#over[hidden] { display: none; }
+
 /* The actions, for touch screens: a small strip of inked paper buttons. */
 #actions {
   position: fixed; left: 50%; transform: translateX(-50%);

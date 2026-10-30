@@ -99,6 +99,9 @@ export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
+    // (The layer over the map for the letters in low power.)
+    this.over = document.getElementById("over");
+    this.octx = this.over?.getContext("2d");
     this.views = new Map();
     this.cam = { x: 0, y: 0, snap: true };
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -186,6 +189,12 @@ export class Renderer {
     this.vh = Math.max(1, r.height);
     this.canvas.width = Math.round(this.vw * this.dpr);
     this.canvas.height = Math.round(this.vh * this.dpr);
+    this.hiDpr = Math.min(2, window.devicePixelRatio || 1);
+    if (this.over) {
+      this.over.hidden = !this.low;
+      this.over.width = this.low ? Math.round(this.vw * this.hiDpr) : 1;
+      this.over.height = this.low ? Math.round(this.vh * this.hiDpr) : 1;
+    }
     const ts = this.vw < 560 ? 28 : this.vw < 1000 ? 34 : 40;
     if (ts !== this.TS) {
       this.TS = ts;
@@ -443,6 +452,16 @@ export class Renderer {
       ctx.globalCompositeOperation = "source-over";
       ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
     }
+    // (In low power the letters, flames and words go on a layer of their
+    // own over the map, as sharp as the screen.)
+    let lc = ctx;
+    if (this.low && this.over) {
+      lc = this.octx;
+      lc.setTransform(1, 0, 0, 1, 0, 0);
+      lc.clearRect(0, 0, this.over.width, this.over.height);
+      const hs = this.hiDpr * this.zoom;
+      lc.setTransform(hs, 0, 0, hs, -cx * hs, -cy * hs);
+    }
     // Then the letters.
     // Campfires burning, while in sight (fading in and out as goblins do).
     this.fires ??= new Map();
@@ -451,7 +470,7 @@ export class Renderer {
       const x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
       this.fires.set(l, a);
-      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(ctx, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a);
+      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(lc, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a);
     });
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
@@ -459,17 +478,17 @@ export class Renderer {
       const target = a === w.player || this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS) ? 1 : 0;
       if (v.alpha === undefined) v.alpha = target;
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
-      if (v.alpha > 0.02) this.drawActor(ctx, a, v, now, t, motion);
+      if (v.alpha > 0.02) this.drawActor(lc, a, v, now, t, motion);
     }
     // Goblins struck down, tipping over and fading.
     this.ghosts = this.ghosts.filter((g) => now - g.t0 < 700);
     for (const g of this.ghosts) {
       const k = (now - g.t0) / 700;
-      this.drawGlyph(ctx, g.glyph, (g.x + 0.5) * TS, (g.y + 0.5 + 0.15 * k) * TS, LETTERING.monster, { rot: g.tilt * 1.4 * ease(k), sx: 1, sy: 1 - 0.3 * k, alpha: 1 - k, lit: this.exp.lightAt((g.x + 0.5) * TS, (g.y + 0.5) * TS) });
+      this.drawGlyph(lc, g.glyph, (g.x + 0.5) * TS, (g.y + 0.5 + 0.15 * k) * TS, LETTERING.monster, { rot: g.tilt * 1.4 * ease(k), sx: 1, sy: 1 - 0.3 * k, alpha: 1 - k, lit: this.exp.lightAt((g.x + 0.5) * TS, (g.y + 0.5) * TS) });
     }
     // What can be heard, seen or not.
     this.listen(now);
-    this.drawSounds(ctx, now);
+    this.drawSounds(lc, now);
   }
 
   metrics(ch, font) {
