@@ -98,10 +98,11 @@
     <legend>Dungeon rooms</legend>
     <label for="decor">How furnished <output id="decor-v"></output><input id="decor" type="range" min="0" max="1" step="0.05"></label>
     <label for="recesses">Rows of shallow recesses in the walls <output id="recesses-v"></output><input id="recesses" type="range" min="0" max="1" step="0.05"></label>
+    <label for="supports">Columns holding up big rooms <output id="supports-v"></output><input id="supports" type="range" min="0" max="1" step="0.05"></label>
     <label for="plain">Plain, how likely <output id="plain-v"></output><input id="plain" type="range" min="0" max="5" step="0.1"></label>
     <label for="store">Storeroom: crates and barrels <output id="store-v"></output><input id="store" type="range" min="0" max="5" step="0.1"></label>
     <label for="gallery">Gallery: pillars along the walls <output id="gallery-v"></output><input id="gallery" type="range" min="0" max="5" step="0.1"></label>
-    <label for="hall">Pillared hall <output id="hall-v"></output><input id="hall" type="range" min="0" max="5" step="0.1"></label>
+    <label for="hall">Hall of posts <output id="hall-v"></output><input id="hall" type="range" min="0" max="5" step="0.1"></label>
     <label for="crypt">Crypt: niches with coffins <output id="crypt-v"></output><input id="crypt" type="range" min="0" max="5" step="0.1"></label>
     <label for="jail">Jail: cells with doors <output id="jail-v"></output><input id="jail" type="range" min="0" max="5" step="0.1"></label>
     <label for="barracks">Barracks: beds <output id="barracks-v"></output><input id="barracks" type="range" min="0" max="5" step="0.1"></label>
@@ -145,7 +146,7 @@ const TINT = { dungeon: "61, 106, 158", cavern: "78, 138, 74", collapsed: "184, 
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
-  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct, openDoors: pct, decor: pct, recesses: pct,
+  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct, openDoors: pct, decor: pct, recesses: pct, supports: pct,
   caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
   collapse: pct, rubble: pct, caveRubble: pct, zoom: pct,
 };

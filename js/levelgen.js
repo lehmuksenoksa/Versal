@@ -35,9 +35,10 @@ export const LEVELGEN_DEFAULTS = {
   // largest size in squares; cavern passages' width in squares.
   caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
   // Dungeon rooms: how likely each kind is (where it fits); how furnished
-  // they are; how often a room has recesses in its walls.
+  // they are; how often a room has recesses in its walls; how often a big
+  // room has columns holding it up.
   plain: 3, store: 1, gallery: 1, hall: 0.7, crypt: 0.7, jail: 0.7, barracks: 0.7, dining: 0.7, shrine: 0.5,
-  decor: 0.6, recesses: 0.4,
+  decor: 0.6, recesses: 0.4, supports: 0.7,
   // In collapsed regions: the share of built rooms fallen in; and how much
   // rubble lies about. On cave floors, the rubble and grit (more along the
   // walls).
@@ -371,7 +372,7 @@ function tryAreas(S, rng) {
   const fits = {
     plain: () => true, store: () => true, crypt: () => true,
     gallery: (r) => lo(r) >= 4 && hi(r) >= 6 && hi(r) % 2 === 0,
-    hall: (r) => (lo(r) >= 4 && r.w % 2 === 0 && r.h % 2 === 0) || lo(r) >= 7,
+    hall: (r) => lo(r) >= 4 && r.w % 2 === 0 && r.h % 2 === 0,
     jail: (r) => hi(r) >= 5,
     barracks: (r) => lo(r) >= 4 && hi(r) >= 5,
     dining: (r) => lo(r) >= 3 && hi(r) >= 4,
@@ -439,6 +440,17 @@ function tryAreas(S, rng) {
     const at = (a, b) => (across ? [r.x + a, r.y + b] : [r.x + b, r.y + a]);
     const A = across ? r.w : r.h, B = across ? r.h : r.w;
     const longSides = SIDES.filter((sd) => (sd.into[0] === 0) === across);
+    // Columns holding up a big room (seven squares or more each way, not
+    // already pillared), before anything else goes in: a few, set evenly
+    // about its middle, four a third of the way in from the walls (and two
+    // more in the middle of a long one), all or none.
+    if (lo(r) >= 7 && kind !== "hall" && kind !== "gallery" && rng.chance(S.supports)) {
+      const ia = Math.max(2, Math.round(A * 0.28)), ib = Math.max(2, Math.round(B * 0.28));
+      const as = [ia, A - 1 - ia], bs = [...new Set([ib, B - 1 - ib])];
+      if (A % 2 === 1 && A >= 2 * B - 1 && A >= 11) as.push((A - 1) / 2);
+      const sq = as.flatMap((a) => bs.map((b) => at(a, b)));
+      if (sq.every((p) => free(...p))) for (const p of sq) column(...p);
+    }
     if (kind === "store") {
       // Shelves along a wall or two (the longest free stretch of each, up to
       // four squares), and things in the corners.
@@ -466,28 +478,18 @@ function tryAreas(S, rng) {
       for (let a = 2; a <= A - 2; a += 2) for (const b of [1, B - 1]) post(...at(a, b));
       if (rng.chance(S.decor * 0.5)) corners(rng.int(1, 2));
     } else if (kind === "hall") {
-      // An even room is filled with posts: on every other crossing right
-      // across it, and half posts on the walls in step with them (where the
-      // wall is whole). A big room otherwise has columns holding it up, a
-      // few, set evenly about its middle: four, a third of the way in from
-      // the walls (and two more in the middle of a long one), all or none.
-      if (r.w % 2 === 0 && r.h % 2 === 0 && lo(r) >= 4) {
-        for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) post(x, y);
-        r.halfPosts = true;
-        for (const sd of SIDES)
-          for (let u = 2; u < sd.len(r); u += 2) {
-            // (The crossing between squares u - 1 and u of the wall.)
-            if (!solid(r, sd, u - 1, u, 0, 0)) continue;
-            const [ax, ay] = mid(r, sd, u - 1, -1), [bx, by] = mid(r, sd, u, -1);
-            features.push({ type: "post", x: (ax + bx) / 2 - sd.into[0] * 0.5, y: (ay + by) / 2 - sd.into[1] * 0.5, shape });
-          }
-      } else {
-        const ia = Math.max(2, Math.round(A * 0.28)), ib = Math.max(2, Math.round(B * 0.28));
-        const as = [ia, A - 1 - ia], bs = [...new Set([ib, B - 1 - ib])];
-        if (A % 2 === 1 && A >= 2 * B - 1 && A >= 11) as.push((A - 1) / 2);
-        const sq = as.flatMap((a) => bs.map((b) => at(a, b)));
-        if (sq.every((p) => free(...p))) for (const p of sq) column(...p);
-      }
+      // Filled with posts (the room being even each way): on every other
+      // crossing right across it, and half posts on the walls in step with
+      // them (where the wall is whole).
+      for (let y = r.y + 2; y <= r.y + r.h - 2; y += 2) for (let x = r.x + 2; x <= r.x + r.w - 2; x += 2) post(x, y);
+      r.halfPosts = true;
+      for (const sd of SIDES)
+        for (let u = 2; u < sd.len(r); u += 2) {
+          // (The crossing between squares u - 1 and u of the wall.)
+          if (!solid(r, sd, u - 1, u, 0, 0)) continue;
+          const [ax, ay] = mid(r, sd, u - 1, -1), [bx, by] = mid(r, sd, u, -1);
+          features.push({ type: "post", x: (ax + bx) / 2 - sd.into[0] * 0.5, y: (ay + by) / 2 - sd.into[1] * 0.5, shape });
+        }
     } else if (kind === "crypt") {
       // Niches two deep cut every other square round the walls, each with a
       // coffin; a sarcophagus in the middle of a bigger crypt.
