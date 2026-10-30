@@ -27,8 +27,9 @@ export const LEVELGEN_DEFAULTS = {
   // largest size in squares; cavern passages' width in squares.
   caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
   // In collapsed regions: the share of built rooms fallen in; and how much
-  // rubble lies about.
-  collapse: 0.6, rubble: 0.5,
+  // rubble lies about. On cave floors, the rubble and grit (more along the
+  // walls).
+  collapse: 0.6, rubble: 0.5, caveRubble: 0.5,
 };
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -272,6 +273,15 @@ function tryAreas(S, rng) {
     const near = rooms.filter((r) => r !== a).sort((p, q) => dist(a, p) - dist(a, q));
     connect(a, near[rng.int(1, Math.min(2, near.length - 1))]);
   }
+  // Rubble and grit strewn on cave floors, more along the walls.
+  for (let y = 1; y < H - 1; y++)
+    for (let x = 1; x < W - 1; x++) {
+      const j = idx(x, y);
+      if (tiles[j] !== T.FLOOR || !cave[j]) continue;
+      let wall = false;
+      for (let dy = -1; dy <= 1 && !wall; dy++) for (let dx = -1; dx <= 1 && !wall; dx++) wall = !floorAt(x + dx, y + dy);
+      if (rng.chance(S.caveRubble * (wall ? 0.8 : 0.3))) rubble[j] = Math.max(rubble[j], wall ? rng.int(1, 3) : 1);
+    }
   // No rubble where the floor isn't.
   for (let j = 0; j < n; j++) if (tiles[j] !== T.FLOOR) rubble[j] = 0;
 

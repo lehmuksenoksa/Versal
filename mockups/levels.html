@@ -98,6 +98,7 @@
     <label for="formations">Rock formations in big caves <output id="formations-v"></output><input id="formations" type="range" min="0" max="2" step="0.1"></label>
     <label for="formationSize">Formations up to <output id="formationSize-v"></output><input id="formationSize" type="range" min="1" max="10" step="1"></label>
     <label for="passage">Passages about as wide as <output id="passage-v"></output><input id="passage" type="range" min="1" max="5" step="0.25"></label>
+    <label for="caveRubble">Rubble on cave floors <output id="caveRubble-v"></output><input id="caveRubble" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -129,7 +130,7 @@ const fmt = {
   regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
   w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`,
   caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
-  collapse: pct, rubble: pct, zoom: pct,
+  collapse: pct, rubble: pct, caveRubble: pct, zoom: pct,
 };
 const $ = (id) => document.getElementById(id);
 const canvas = $("view"), ctx = canvas.getContext("2d");
