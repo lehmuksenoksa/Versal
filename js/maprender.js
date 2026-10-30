@@ -215,8 +215,9 @@ function drawDoors(ctx, doors, TS, rng) {
   ctx.fillStyle = INK;
   ctx.lineJoin = "round";
   for (const { x, y, dx, dy } of doors) {
-    // (An eighth of the square back from the middle, toward the room.)
-    const cx = (x + 0.5 + dx * 0.12) * TS, cy = (y + 0.5 + dy * 0.12) * TS, thick = TS * rng.range(0.28, 0.33);
+    // (A quarter of the square back from the middle, toward the room, so
+    // near it but not into it.)
+    const cx = (x + 0.5 + dx * 0.25) * TS, cy = (y + 0.5 + dy * 0.25) * TS, thick = TS * rng.range(0.28, 0.33);
     const j = () => rng.range(-0.6, 0.6) * k;
     ctx.save();
     ctx.translate(cx, cy);
