@@ -86,6 +86,8 @@
     <label for="dimLevel">As bright as <output id="dimLevel-v"></output><input id="dimLevel" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightDark">Then dark for <output id="lightDark-v"></output><input id="lightDark" type="range" min="0" max="8" step="0.5"></label>
     <label for="darkLevel">As bright as <output id="darkLevel-v"></output><input id="darkLevel" type="range" min="0" max="1" step="0.05"></label>
+    <label for="lightFill">Drawn as <select id="lightFill"><option value="tones">Flat tones</option><option value="strokes">Strokes: paper, the dim band hatched, the dark band cross-hatched</option></select></label>
+    <label for="lightEdge">Inked edge where the light changes <output id="lightEdge-v"></output><input id="lightEdge" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightRag">Ragged edges of the bands <output id="lightRag-v"></output><input id="lightRag" type="range" min="0" max="1.5" step="0.05"></label>
     <label for="lightWall">Lights a rim of rock <output id="lightWall-v"></output><input id="lightWall" type="range" min="0" max="1.5" step="0.05"></label>
     <label for="flame">Size of the flame (sets how wide the shadows' dim edges are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
@@ -189,7 +191,7 @@ const fmt = {
   sight: tiles, sightFade: (v) => (+v ? tiles(v) : "nothing: a sharp edge"), blockSoft: (v) => (+v ? tiles(v) : "nothing: a sharp edge"),
   nearInk: (v) => (+v ? `${v} tiles of the player, seen or not` : "only what is in sight"), nearSoft: tiles,
   reveal: (v) => (+v ? `${v} s` : "instantly"),
-  lightFull: (v) => `${v} squares out, the player's included`, lightDim: (v) => `${v} squares`, lightDark: (v) => `${v} squares`, dimLevel: pct, darkLevel: pct, lightRag: (v) => (+v ? `${v} tiles` : "none: circles"),
+  lightFull: (v) => `${v} squares out, the player's included`, lightDim: (v) => `${v} squares`, lightDark: (v) => `${v} squares`, dimLevel: pct, darkLevel: pct, lightEdge: (v) => (+v ? pct(v) : "none"), lightRag: (v) => (+v ? `${v} tiles` : "none: circles"),
   lightWall: (v) => (+v ? `${v} tiles past the wall's face` : "none"), flame: (v) => (+v ? `${v} tiles: wider dim edges` : "a point: hard shadows"),
   flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct,
   memWeight: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,

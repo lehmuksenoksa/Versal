@@ -28,11 +28,13 @@ export const EXPRESSION_DEFAULTS = {
   // The candle, in flat bands counted in squares out from the player: full
   // brightness for `lightFull` squares (the player's the first), then dim
   // (`dimLevel`) for `lightDim` squares, then dark (`darkLevel`) for
-  // `lightDark`, the bands' edges ragged by `lightRag` tiles. It lights a rim
-  // of rock about `lightWall` tiles past a wall's face. The flame's size
-  // sets how wide the shadows' dim edges are. Flicker in brightness and in
-  // size, and warmth.
-  lightFull: 5, lightDim: 1, lightDark: 2, dimLevel: 0.75, darkLevel: 0.2, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
+  // `lightDark`, the bands' edges ragged by `lightRag` tiles. The bands drawn
+  // as `lightFill` "tones" or "strokes" (hatched), with an inked line where
+  // the light changes as strong as `lightEdge`. It lights a rim of rock
+  // about `lightWall` tiles past a wall's face. The flame's size sets how
+  // wide the shadows' dim edges are. Flicker in brightness and in size, and
+  // warmth.
+  lightFull: 5, lightDim: 1, lightDark: 2, dimLevel: 0.75, darkLevel: 0.2, lightFill: "tones", lightEdge: 0, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
   // The colour of everything the candle doesn't light.
   darkColor: "#3b3936",
   // The ink in sight and beyond it: colour and strength of the floor
@@ -54,7 +56,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight` and
 // `sightFade` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -942,28 +944,30 @@ export class Expression {
     eg.globalAlpha = 1;
   }
 
-  // The candle, drawn in flat tones like the rest of the map. For each place
-  // the player stands: what the light reaches (seen from a few points across
+  // The candle, drawn flat like the rest of the map. For each place the
+  // player stands: what the light reaches (seen from a few points across
   // the flame, and a rim of the rock past the wall faces it falls on), made
   // full or dim or nothing by a ragged threshold, so shadows and the rim
   // have hand-drawn edges; and the bands, full, dim and dark, their edges
-  // ragged too (both ragged by noise
-  // fixed to the map, so nothing wavers). Each frame, the bands grow and
-  // shrink a little about the player, and the whole flickers in brightness.
+  // ragged too (both ragged by noise fixed to the map, so nothing wavers).
+  // The bands in flat tones, or (`lightFill` "strokes") all paper with the
+  // dim and dark bands hatched; and perhaps an inked line where the light
+  // changes (`lightEdge`). Each frame, the whole flickers in brightness and
+  // (unless it is inked, as the ink stays put) grows and shrinks a little
+  // about the player.
   castLight(px, py, t) {
     const { S, TS } = this, rag = S.lightRag * TS;
     // The bands' outer edges: full, dim and dark.
     const rFull = (S.lightFull - 0.5) * TS, rad = rFull + S.lightDim * TS, out = this.lightOut() * TS;
     this.lightBox = null;
     if (!(out > 0)) return;
+    const strokes = S.lightFill === "strokes", inked = strokes || S.lightEdge > 0;
     // Drawn on a square just big enough for the light round the player.
     const half = (out + rag) * (1 + S.flickerSize) + TS, res = Math.min(this.scale, 1024 / (2 * half));
     const size = Math.ceil(2 * half * res), box = { x: px - half, y: py - half, w: 2 * half, res };
     const toBox = (g) => g.setTransform(res, 0, 0, res, -box.x * res, -box.y * res);
     if (!this.lightReach || this.lightReach.width !== size) {
-      this.lightReach = blank(size, size);
-      this.lightBands = blank(size, size);
-      this.lightCanvas = blank(size, size);
+      for (const k of ["lightReach", "lightCanvas", "lightInk", "lightTmp", "lightMask"]) this[k] = blank(size, size);
       this.lightFrom = null;
     }
     if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py) {
@@ -985,48 +989,138 @@ export class Expression {
         for (let i = 1; i <= depths; i++) g.fill(p.beyond((S.lightWall * TS * i) / depths));
       }
       g.globalCompositeOperation = "source-over";
-      // Made flat: full where most of it reaches, dim at the edges of that,
-      // the threshold wandering with a fine noise; and the bands.
-      const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data;
-      const bandImg = new ImageData(size, size), bd = bandImg.data;
-      const dim = Math.round(255 * S.dimLevel), faint = Math.round(255 * S.darkLevel);
+      // Each point's band (3 full, 2 dim, 1 dark, 0 none): the least of what
+      // reaches it (full where most of the light does, dim at the edges of
+      // that, the threshold wandering with a fine noise) and its band by
+      // distance. As tones, or all paper if hatched.
+      const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data, level = new Uint8Array(size * size);
+      const tone = strokes ? [0, 255, 255, 255] : [0, Math.round(255 * S.darkLevel), Math.round(255 * S.dimLevel), 255];
       const nearEdge = (d) => Math.abs(d - rFull) < rag || Math.abs(d - rad) < rag || Math.abs(d - out) < rag;
       for (let y = 0; y < size; y++) {
         const my = box.y + (y + 0.5) / res;
         for (let x = 0; x < size; x++) {
-          const i = (y * size + x) * 4, mx = box.x + (x + 0.5) / res;
+          const p = y * size + x, i = p * 4, mx = box.x + (x + 0.5) / res;
           const v = Math.max(rd[i], rd[i + 1]) / 255;
           let n = -1;
           const noiseAt = () => (n < 0 ? (n = this.fine(mx, my)) : n);
-          rd[i + 3] = v >= 0.97 ? 255 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 255 : v > 0.08 + 0.2 * noiseAt() ? dim : 0;
-          const d = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
-          if (d > out + rag) continue;
-          const e = nearEdge(d) ? d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1) : d;
-          bd[i + 3] = e < rFull ? 255 : e < rad ? dim : e < out ? faint : 0;
+          const reached = v >= 0.97 ? 3 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 3 : v > 0.08 + 0.2 * noiseAt() ? 2 : 0;
+          let band = 0;
+          if (reached) {
+            const d = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
+            if (d < out + rag) {
+              const e = nearEdge(d) ? d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1) : d;
+              band = e < rFull ? 3 : e < rad ? 2 : e < out ? 1 : 0;
+            }
+          }
+          level[p] = Math.min(reached, band);
+          rd[i + 3] = tone[level[p]];
         }
       }
       g.putImageData(reachImg, 0, 0);
-      this.lightBands.getContext("2d").putImageData(bandImg, 0, 0);
+      this.inkLight(level, box, size, toBox);
       this.lightFrom = [px, py];
     }
     const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
     const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
-    // The size flickers too, on a wave of its own: the bands grow and shrink
-    // a little about the player.
+    // The size flickers too, on a wave of its own.
     const swell = (Math.sin(t * 5.1) + 0.5 * Math.sin(t * 8.9 + 0.7) + 0.3 * Math.sin(t * 13.3 + 2)) / 1.8;
-    const k = 1 + S.flickerSize * swell, cx = (px - box.x) * res, cy = (py - box.y) * res;
-    const light = this.lightCanvas, g = light.getContext("2d");
+    const k = inked ? 1 : 1 + S.flickerSize * swell, cx = (px - box.x) * res, cy = (py - box.y) * res;
+    const g = this.lightCanvas.getContext("2d");
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, size, size);
     g.globalAlpha = bright;
-    g.drawImage(this.lightReach, 0, 0);
-    g.globalAlpha = 1;
-    g.globalCompositeOperation = "destination-in";
     g.setTransform(k, 0, 0, k, cx * (1 - k), cy * (1 - k));
-    g.drawImage(this.lightBands, 0, 0);
+    g.drawImage(this.lightReach, 0, 0);
     g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = "source-over";
+    g.globalAlpha = 1;
     this.lightBox = box;
+  }
+
+  // The light's ink, if it has any (onto `lightInk`, from the bands in
+  // `level`): hatched, strokes one way over the dim and dark bands and
+  // crossed the other way over the dark (on the floor, fixed to the map);
+  // and a line, its width wandering, on the floor where the band changes.
+  inkLight(level, box, size, toBox) {
+    const { S, TS, mw } = this, res = box.res, ig = this.lightInk.getContext("2d");
+    ig.setTransform(1, 0, 0, 1, 0, 0);
+    ig.clearRect(0, 0, size, size);
+    this.lightInked = S.lightFill === "strokes" || S.lightEdge > 0;
+    const mg = this.lightMask.getContext("2d"), tmp = this.lightTmp, tg = tmp.getContext("2d");
+    const maskOf = (keep) => {
+      const im = new ImageData(size, size);
+      for (let p = 0; p < size * size; p++) if (keep(level[p])) im.data[p * 4 + 3] = 255;
+      mg.putImageData(im, 0, 0);
+    };
+    if (S.lightFill === "strokes") {
+      // Strokes in each tile from its own random numbers, so they stay put.
+      const tileRng = (tx, ty, salt) => {
+        let a = (Math.imul(tx, 73856093) ^ Math.imul(ty, 19349663) ^ Math.imul(salt, 83492791)) >>> 0;
+        return () => {
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      };
+      const tx0 = Math.floor(box.x / TS), ty0 = Math.floor(box.y / TS), tx1 = Math.ceil((box.x + box.w) / TS), ty1 = Math.ceil((box.y + box.w) / TS);
+      for (const [cross, keep] of [[false, (l) => l === 1 || l === 2], [true, (l) => l === 1]]) {
+        tg.setTransform(1, 0, 0, 1, 0, 0);
+        tg.clearRect(0, 0, size, size);
+        toBox(tg);
+        tg.save();
+        tg.clip(this.floorPath, "evenodd");
+        tg.strokeStyle = S.seeHatchC;
+        tg.lineCap = "round";
+        tg.globalAlpha = 0.85;
+        for (let ty = ty0; ty < ty1; ty++)
+          for (let tx = tx0; tx < tx1; tx++) {
+            const r = tileRng(tx, ty, this.seed ^ (cross ? 0x5a : 0xa5));
+            for (let k = 0; k < 5; k++) {
+              const x = (tx + r()) * TS, y = (ty + r()) * TS, a = (cross ? 0.85 : -0.8) + (r() - 0.5) * 0.3;
+              const len = (0.35 + 0.3 * r()) * TS, bow = (r() - 0.5) * 0.12 * TS, c = Math.cos(a), sn = Math.sin(a);
+              tg.lineWidth = TS * (0.04 + 0.03 * r());
+              tg.beginPath();
+              tg.moveTo(x - (c * len) / 2, y - (sn * len) / 2);
+              tg.quadraticCurveTo(x - sn * bow, y + c * bow, x + (c * len) / 2, y + (sn * len) / 2);
+              tg.stroke();
+            }
+          }
+        tg.restore();
+        maskOf(keep);
+        tg.setTransform(1, 0, 0, 1, 0, 0);
+        tg.globalCompositeOperation = "destination-in";
+        tg.drawImage(this.lightMask, 0, 0);
+        tg.globalCompositeOperation = "source-over";
+        ig.drawImage(tmp, 0, 0);
+      }
+    }
+    if (S.lightEdge > 0) {
+      const im = new ImageData(size, size), d = im.data, ink = [1, 3, 5].map((i) => parseInt(S.seeWallC.slice(i, i + 2), 16));
+      for (let y = 0; y < size - 1; y++) {
+        const my = box.y + (y + 0.5) / res, fy = Math.floor((my * R) / TS);
+        for (let x = 0; x < size - 1; x++) {
+          const p = y * size + x, l = level[p];
+          if (l === level[p + 1] && l === level[p + size]) continue;
+          const mx = box.x + (x + 0.5) / res, fx = Math.floor((mx * R) / TS);
+          if (fx < 0 || fy < 0 || fx >= mw || fy >= this.mh || !this.floor[fy * mw + fx]) continue;
+          const rr = TS * 0.03 * res * (1.5 - this.fine(mx, my)), ri = Math.ceil(rr);
+          for (let dy = -ri; dy <= ri; dy++)
+            for (let dx = -ri; dx <= ri; dx++) {
+              const qx = x + dx, qy = y + dy;
+              if (dx * dx + dy * dy > rr * rr || qx < 0 || qy < 0 || qx >= size || qy >= size) continue;
+              const q = (qy * size + qx) * 4;
+              d[q] = ink[0];
+              d[q + 1] = ink[1];
+              d[q + 2] = ink[2];
+              d[q + 3] = 255;
+            }
+        }
+      }
+      mg.putImageData(im, 0, 0);
+      ig.globalAlpha = Math.min(1, S.lightEdge);
+      ig.drawImage(this.lightMask, 0, 0);
+      ig.globalAlpha = 1;
+    }
   }
 
   // How far the light reaches, in tiles from the player's middle.
@@ -1114,6 +1208,11 @@ export class Expression {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(c, 0, 0, box.w, box.h, box.x0, box.y0, box.w, box.h);
       g.setTransform(T);
+      // The light's own ink.
+      if (this.lightInked) {
+        const b = this.lightBox;
+        g.drawImage(this.lightInk, b.x, b.y, b.w, b.w);
+      }
     }
     // Where the ink in sight goes: the eased sight, and all round the player
     // out to `nearInk`.
