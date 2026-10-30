@@ -3,8 +3,6 @@
 export const T = {
   ROCK: 0,
   FLOOR: 1,
-  // A pillar filling a square: drawn on the floor, but in the way.
-  PILLAR: 2,
 };
 
 export const isOpen = (t) => t !== T.ROCK;

@@ -527,8 +527,9 @@ function drawRubble(ctx, level, TS, rng) {
 }
 
 // Things in the rooms (`level.features`, each { type, x, y, ... } in squares),
-// drawn with the pen: pillars (posts on grid crossings, columns filling a
-// square) in ink, casting a shadow; furniture outlined over the paper.
+// drawn with the pen: posts (pillars on grid crossings, or half of one on a
+// wall's line, the wall drawn over its back) in ink, casting a shadow;
+// furniture outlined over the paper.
 function drawFeatures(ctx, features, TS, rng) {
   const k = TS / 32, P = pen(ctx, rng, k), OUT = 2.9, IN = 1.9;
   const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
@@ -540,8 +541,8 @@ function drawFeatures(ctx, features, TS, rng) {
     const x = f.x * TS, y = f.y * TS, w = (f.w ?? 0) * TS, h = (f.h ?? 0) * TS;
     // Along a thing's head (hx, hy) and across it.
     const turn = (al, ac) => [x + f.hx * al - f.hy * ac, y + f.hy * al + f.hx * ac];
-    if (f.type === "post" || f.type === "column") {
-      const r = TS * (f.type === "post" ? 0.21 : 0.36), off = TS * (f.type === "post" ? 0.09 : 0.13), tilt = rng.range(-0.05, 0.05);
+    if (f.type === "post") {
+      const r = TS * 0.21, off = TS * 0.09, tilt = rng.range(-0.05, 0.05);
       const draw = (d, fill, width) => (f.shape === "round" ? P.round(x + d, y + d, r, width, fill) : P.box(x + d, y + d, r * 1.75, r * 1.75, tilt, width, fill));
       draw(off, SHADOW, 0);
       draw(0, INK, 1.6);
