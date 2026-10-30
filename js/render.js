@@ -49,10 +49,11 @@ const POSES = {
 };
 
 // The noises goblins make, written above them as they happen: when they
-// move, while aggressive, while asleep. Each with its words, how far off
+// move, chattering while milling about, while aggressive, while asleep. Each with its words, how far off
 // (in tiles) it is heard out of sight, and how long it shows (seconds).
 const SOUNDS = {
   move: { words: ["scuttle", "scrabble", "skitter", "scritch", "pitter-pat", "scuff"], range: 7, dur: 1.1 },
+  chatter: { words: ["mutter", "chitter", "snik", "heh", "skrrt", "nyik", "hrm"], range: 8, dur: 1.2 },
   growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 10, dur: 1.2 },
   alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 12, dur: 1.4 },
   snore: { words: ["zzz", "zz", "zzZ", "z"], range: 5, dur: 1.8 },
@@ -208,8 +209,9 @@ export class Renderer {
     if (this.sounds.length > 60) this.sounds.shift();
   }
 
-  // Noises from the goblins' states: a growl as one turns aggressive and now
-  // and then while it is; a snore now and then while asleep.
+  // Noises from the goblins' states: chatter now and then while milling
+  // about; a growl as one turns aggressive and now and then while it is; a
+  // snore now and then while asleep.
   listen(now) {
     for (const a of this.world.actors) {
       if (a.kind !== "goblin") continue;
@@ -221,7 +223,7 @@ export class Renderer {
           this.hear(a, "alarm", now);
         }
         v.state = a.state;
-        v.nextSound = now + (a.state === "sleeping" ? 1500 + Math.random() * 3500 : 1500 + Math.random() * 2500);
+        v.nextSound = now + 1500 + Math.random() * (a.state === "neutral" ? 6000 : a.state === "sleeping" ? 3500 : 2500);
       }
       if (now < v.nextSound) continue;
       if (a.state === "aggressive") {
@@ -230,7 +232,10 @@ export class Renderer {
       } else if (a.state === "sleeping") {
         this.hear(a, "snore", now);
         v.nextSound = now + 2500 + Math.random() * 3000;
-      } else v.nextSound = Infinity;
+      } else {
+        this.hear(a, "chatter", now);
+        v.nextSound = now + 5000 + Math.random() * 8000;
+      }
     }
   }
 
