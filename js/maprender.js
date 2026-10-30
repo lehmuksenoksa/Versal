@@ -9,7 +9,7 @@ import { hatchRock, hatchSettings, distanceTransform } from "./hatching.js";
 
 export const INK = "#1b1815";
 export const PAPER = "#f7f2e6";
-const SHADOW = "rgba(70, 62, 55, 0.3)";
+const SHADOW_RGB = "rgb(70, 62, 55)", SHADOW_ALPHA = 0.3, SHADOW = `rgba(70, 62, 55, ${SHADOW_ALPHA})`;
 
 // Wall and grid settings chosen in the hatching mockup, in pixels at 32 px
 // tiles (scaled to the actual tile size when drawn).
@@ -62,7 +62,7 @@ export function renderMap(level, TS, scale, seed, {
   if (withFloor) {
     ctx.fillStyle = PAPER;
     if (fill) ctx.fill(floor, "evenodd");
-    if (shadow) drawShadow(ctx, level, TS, floor);
+    if (shadow) drawShadow(ctx, level, TS, floor, seed);
   }
   const gridRng = rng.fork();
   const caveTile = (x, y) => x >= 0 && y >= 0 && x < W && y < H && level.cave[y * W + x] === 1;
@@ -250,6 +250,11 @@ function pen(ctx, rng, k, mode = "paper") {
   const j = (a = 0.5) => rng.range(-a, a) * k;
   const paint = (fill) => {
     if (fill === SHADOW && mode !== "paper") return;
+    // (For drawShadow: the shapes laid out solid, unstroked.)
+    if (mode === "cast" || mode === "body") {
+      ctx.fill();
+      return;
+    }
     const cut = mode === "erase" || (mode === "ink" && fill === PAPER);
     ctx.save();
     if (cut) ctx.globalCompositeOperation = "destination-out";
@@ -257,7 +262,7 @@ function pen(ctx, rng, k, mode = "paper") {
     ctx.fill();
     ctx.restore();
   };
-  const inked = mode !== "erase";
+  const inked = mode === "paper" || mode === "ink";
   const line = (ax, ay, bx, by, width) => {
     const L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L, nx = -uy, ny = ux;
     const o0 = rng.range(-0.2, 1.1) * k, o1 = rng.range(-0.2, 1.1) * k, bow = rng.range(-1, 1) * Math.min(1.2 * k, L * 0.05);
@@ -433,15 +438,40 @@ export function drawPaper(ctx, w, h, rng) {
 
 // The rock, shifted down and right, painted grey onto the
 // floor (the caller has clipped to it): light falls from the top left.
-function drawShadow(ctx, level, TS, floor) {
+// The things in the rooms and the bigger stones of rubble cast shadows too,
+// shorter (posts, standing tall, as long as the walls'), each cut away under
+// the thing itself. All of it is laid out solid first and toned once, so
+// shadows falling on shadows don't darken.
+function drawShadow(ctx, level, TS, floor, seed) {
   const off = TS * 0.22;
   const solid = new Path2D();
   solid.rect(-TS, -TS, (level.w + 2) * TS, (level.h + 2) * TS);
   solid.addPath(floor);
+  const c = document.createElement("canvas");
+  c.width = ctx.canvas.width;
+  c.height = ctx.canvas.height;
+  const g = c.getContext("2d");
+  g.setTransform(ctx.getTransform());
+  g.fillStyle = "#000";
+  g.save();
+  g.translate(off, off);
+  g.fill(solid, "evenodd");
+  g.restore();
+  const things = (mode) => {
+    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode);
+    if (level.rubble) drawRubble(g, level, TS, new RNG(seed ^ 0x2bb1e), mode);
+  };
+  things("cast");
+  g.globalCompositeOperation = "destination-out";
+  things("body");
+  g.globalCompositeOperation = "source-in";
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = SHADOW_RGB;
+  g.fillRect(0, 0, c.width, c.height);
   ctx.save();
-  ctx.translate(off, off);
-  ctx.fillStyle = SHADOW;
-  ctx.fill(solid, "evenodd");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = SHADOW_ALPHA;
+  ctx.drawImage(c, 0, 0);
   ctx.restore();
 }
 
@@ -491,7 +521,9 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
 // Rubble on the floor (`level.rubble`, 0 to 3 a tile): a few small stones
 // outlined in pen, more filled in, and grit; no stone over another (each
 // placed where it touches none drawn yet), no grit on an outlined stone.
-function drawRubble(ctx, level, TS, rng) {
+// (`mode` "cast" lays out the outlined stones' shadows, "body" the stones
+// themselves, solid, for drawShadow; the same random numbers are taken.)
+function drawRubble(ctx, level, TS, rng, mode = "ink") {
   const k = TS / 32, { w: W, h: H } = level;
   ctx.strokeStyle = INK;
   ctx.fillStyle = INK;
@@ -536,12 +568,14 @@ function drawRubble(ctx, level, TS, rng) {
         const at = spot(x, y, r, 1.5 * k);
         if (!at) continue;
         here.push([...at, r, outlined]);
-        pebble(at[0], at[1], r);
-        outlined ? ctx.stroke() : ctx.fill();
+        const o = mode === "cast" ? TS * 0.08 : 0;
+        pebble(at[0] + o, at[1] + o, r);
+        if (mode === "ink") outlined ? ctx.stroke() : ctx.fill();
+        else if (outlined) ctx.fill();
       }
       for (let d = amount * 4; d > 0; d--) {
         const r = rng.range(0.8, 1.8) * k, gx = (x + rng.next()) * TS, gy = (y + rng.next()) * TS;
-        if (near(x, y).some(([qx, qy, qr, outlined]) => outlined && Math.hypot(gx - qx, gy - qy) < qr * 1.3 + r)) continue;
+        if (mode !== "ink" || near(x, y).some(([qx, qy, qr, outlined]) => outlined && Math.hypot(gx - qx, gy - qy) < qr * 1.3 + r)) continue;
         ctx.fillRect(gx - r / 2, gy - r / 2, r, r);
       }
     }
@@ -549,8 +583,8 @@ function drawRubble(ctx, level, TS, rng) {
 
 // Things in the rooms (`level.features`, each { type, x, y, ... } in squares),
 // drawn with the pen: posts (pillars on grid crossings, or half of one on a
-// wall's line, the wall drawn over its back) in ink, casting a shadow;
-// furniture outlined over the paper.
+// wall's line, the wall drawn over its back) in ink; furniture outlined over
+// the paper. (Their shadows are drawn with the walls': see drawShadow.)
 function drawFeatures(ctx, features, TS, rng, mode = "paper") {
   const k = TS / 32, P = pen(ctx, rng, k, mode), OUT = 2.9, IN = 1.9;
   const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
@@ -559,13 +593,21 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper") {
   ctx.lineCap = "round";
   ctx.strokeStyle = INK;
   for (const f of features) {
+    // (Laying out shadows: moved down and right, posts as far as the walls'.)
+    ctx.save();
+    if (mode === "cast") ctx.translate(...Array(2).fill(TS * (f.type === "post" ? 0.2 : 0.11)));
+    drawFeature(f);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  function drawFeature(f) {
     const x = f.x * TS, y = f.y * TS, w = (f.w ?? 0) * TS, h = (f.h ?? 0) * TS;
     // Along a thing's head (hx, hy) and across it.
     const turn = (al, ac) => [x + f.hx * al - f.hy * ac, y + f.hy * al + f.hx * ac];
     if (f.type === "post") {
-      const r = TS * 0.21, off = TS * 0.09, tilt = rng.range(-0.05, 0.05);
+      const r = TS * 0.21, tilt = rng.range(-0.05, 0.05);
       const draw = (d, fill, width) => (f.shape === "round" ? P.round(x + d, y + d, r, width, fill) : P.box(x + d, y + d, r * 1.75, r * 1.75, tilt, width, fill));
-      draw(off, SHADOW, 0);
       draw(0, INK, 1.6);
     } else if (f.type === "crate") {
       // A box with a cross brace.
@@ -615,7 +657,6 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper") {
       P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
     }
   }
-  ctx.restore();
 }
 
 function drawRoomKeys(ctx, level, TS) {

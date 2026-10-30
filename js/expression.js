@@ -186,6 +186,18 @@ export class Expression {
     this.floor = new Uint8Array(mw * mh);
     for (let j = 0; j < mw * mh; j++) this.floor[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
     this.walls = new Walls(drawn.loops, TS * 2);
+    // The light is cast against the walls and the posts (which don't block
+    // sight): the light's shadows of them, slivers fanning out.
+    this.lightWalls = new Walls(drawn.loops, TS * 2);
+    for (const f of level.features ?? []) {
+      if (f.type !== "post") continue;
+      const n = f.shape === "round" ? 6 : 4, r = TS * (f.shape === "round" ? 0.21 : 0.26), a0 = n === 4 ? Math.PI / 4 : 0;
+      const at = (i) => [f.x * TS + r * Math.cos(a0 + (i * 2 * Math.PI) / n), f.y * TS + r * Math.sin(a0 + (i * 2 * Math.PI) / n)];
+      for (let i = 0; i < n; i++) {
+        const [x0, y0] = at(i), [x1, y1] = at(i + 1);
+        this.lightWalls.add({ x0, y0, x1, y1 });
+      }
+    }
     // Shut doors stop sight and light: a wall across the way where each is.
     this.doorWalls = new Map();
     for (const d of level.doors ?? []) this.doorChanged(d, true);
@@ -974,13 +986,17 @@ export class Expression {
   doorChanged(d, quiet = false) {
     const TS = this.TS, key = d.y * this.W + d.x;
     const old = this.doorWalls.get(key);
-    if (old) this.walls.remove(old);
+    if (old) {
+      this.walls.remove(old);
+      this.lightWalls.remove(old);
+    }
     this.doorWalls.delete(key);
     if (!d.open) {
       // (On the door's line, reaching a little into the walls either side.)
       const cx = (d.x + 0.5 + d.dx * 0.25) * TS, cy = (d.y + 0.5 + d.dy * 0.25) * TS, h = TS * 0.6;
       const s = { x0: cx + d.dy * h, y0: cy - d.dx * h, x1: cx - d.dy * h, y1: cy + d.dx * h };
       this.walls.add(s);
+      this.lightWalls.add(s);
       this.doorWalls.set(key, s);
     }
     if (quiet) return;
@@ -1117,7 +1133,7 @@ export class Expression {
       // flame's points see it (each adding 51); in green, the share of the
       // depths past the walls' faces the rim reaches, from the flame's
       // middle (opaque fills, added).
-      const f = S.flame * TS, depths = 5, p = this.walls.visible(px, py, half);
+      const f = S.flame * TS, depths = 5, p = this.lightWalls.visible(px, py, half);
       const pts = f > 0 ? [[f, 0], [-f, 0], [0, f], [0, -f]] : [];
       const g = this.lightReach.getContext("2d", { willReadFrequently: true });
       g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1126,7 +1142,7 @@ export class Expression {
       g.globalCompositeOperation = "lighter";
       g.fillStyle = `rgb(${f > 0 ? 51 : 255}, 0, 0)`;
       g.fill(p);
-      for (const [dx, dy] of pts) g.fill(this.walls.visible(px + dx, py + dy, half));
+      for (const [dx, dy] of pts) g.fill(this.lightWalls.visible(px + dx, py + dy, half));
       if (S.lightWall > 0) {
         g.fillStyle = `rgb(0, 51, 0)`;
         for (let i = 1; i <= depths; i++) g.fill(p.beyond((S.lightWall * TS * i) / depths));
