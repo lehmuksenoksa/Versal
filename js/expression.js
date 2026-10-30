@@ -49,8 +49,9 @@ export const EXPRESSION_DEFAULTS = {
   // The hatching from black to white: strokes kept, their width, length and
   // ink in mid grey (each going on to nothing at white, but ink).
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
-  // Unexplored ground: its colour, how it fades in, and from where.
-  outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
+  // Unexplored ground: its colour, how it fades in, and from where; and for
+  // hexes, how far apart they are (in squares).
+  outColor: "#000000", fadeStyle: "hexes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75, hexSize: 1.5,
   // The rock outside the rooms, where lit: the paper toned toward a colour.
   rockColor: "#8f8a80", rockTone: 0.85,
 };
@@ -91,6 +92,17 @@ const blank = (w, h) => {
   c.height = h;
   return c;
 };
+
+// Random numbers for a cell (x, y) of some grid, the same each time.
+function cellRng(x, y, salt) {
+  let a = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(salt, 83492791)) >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 // Smooth value noise over the map, 0 to 1, varying over `cell` map units.
 function valueNoise(rng, w, h, cell) {
@@ -798,7 +810,44 @@ export class Expression {
         const x = ((j % mw) + 0.5) * (TS / R), y = (((j / mw) | 0) + 0.5) * (TS / R);
         return smooth((u[j] - 0.5 + (this.fine(x, y) - 0.5) * 0.5) / 0.1);
       });
-    else {
+    else if (S.fadeStyle === "hexes") {
+      // Hexes fixed to the map, each as big as the cover is solid at its
+      // middle (touching, and solid behind, at the far end), a little uneven
+      // as if drawn by hand.
+      coverWith((j) => smooth((u[j] - 1.25) / 0.25));
+      cg.setTransform(scale, 0, 0, scale, 0, 0);
+      cg.fillStyle = cg.strokeStyle = S.outColor;
+      const uXY = (x, y) => u[cell(x, y)] ?? 1;
+      const hs = S.hexSize * TS, rh = hs / Math.sqrt(3), hy = (hs * Math.sqrt(3)) / 2;
+      cg.beginPath();
+      for (let r = Math.floor(sy0 / hy) - 1; r <= Math.ceil(sy1 / hy) + 1; r++) {
+        const off = r & 1 ? hs / 2 : 0;
+        for (let c = Math.floor((sx0 - off) / hs) - 1; c <= Math.ceil((sx1 - off) / hs) + 1; c++) {
+          const rng = cellRng(c, r, this.seed ^ 0x4e7);
+          const cx = c * hs + off + (rng() - 0.5) * 0.08 * hs, cy = r * hy + (rng() - 0.5) * 0.08 * hs, turn = (rng() - 0.5) * 0.12;
+          const k = Math.min(1.12, 1.12 * uXY(cx, cy));
+          if (!(k > 0.08) || !nearArea(cx, cy)) continue;
+          // Six corners, and each side bowed a little in or out.
+          const pts = [];
+          for (let i = 0; i < 6; i++) {
+            const a = Math.PI / 2 + (i * Math.PI) / 3 + turn, rr = rh * k * (0.92 + 0.16 * rng());
+            pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+          }
+          cg.moveTo(...pts[0]);
+          for (let i = 0; i < 6; i++) {
+            const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % 6], bow = (rng() - 0.5) * 0.12 * rh * k;
+            const mx = (x0 + x1) / 2 - cx, my = (y0 + y1) / 2 - cy, ml = Math.hypot(mx, my) || 1;
+            cg.quadraticCurveTo(cx + mx + (mx / ml) * bow, cy + my + (my / ml) * bow, x1, y1);
+          }
+          cg.closePath();
+        }
+      }
+      cg.fill();
+      // (Corners softened, as a pen draws them.)
+      cg.lineJoin = "round";
+      cg.lineWidth = TS * 0.05;
+      cg.stroke();
+    } else {
       // Solid only toward the far end; before that, the hatching's strokes
       // (all of them) thickening, or dots coming in denser and bigger.
       coverWith((j) => smooth((u[j] - 0.55) / 0.45));
@@ -1081,15 +1130,6 @@ export class Expression {
     };
     if (S.lightFill === "strokes") {
       // Strokes in each tile from its own random numbers, so they stay put.
-      const tileRng = (tx, ty, salt) => {
-        let a = (Math.imul(tx, 73856093) ^ Math.imul(ty, 19349663) ^ Math.imul(salt, 83492791)) >>> 0;
-        return () => {
-          a = (a + 0x6d2b79f5) | 0;
-          let t = Math.imul(a ^ (a >>> 15), 1 | a);
-          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
-      };
       const tx0 = Math.floor(box.x / TS), ty0 = Math.floor(box.y / TS), tx1 = Math.ceil((box.x + box.w) / TS), ty1 = Math.ceil((box.y + box.w) / TS);
       for (const [cross, keep] of [[false, (l) => l === 1 || l === 2], [true, (l) => l === 1]]) {
         tg.setTransform(1, 0, 0, 1, 0, 0);
@@ -1102,7 +1142,7 @@ export class Expression {
         tg.globalAlpha = 0.85;
         for (let ty = ty0; ty < ty1; ty++)
           for (let tx = tx0; tx < tx1; tx++) {
-            const r = tileRng(tx, ty, this.seed ^ (cross ? 0x5a : 0xa5));
+            const r = cellRng(tx, ty, this.seed ^ (cross ? 0x5a : 0xa5));
             for (let k = 0; k < 5; k++) {
               const x = (tx + r()) * TS, y = (ty + r()) * TS, a = (cross ? 0.85 : -0.8) + (r() - 0.5) * 0.3;
               const len = (0.35 + 0.3 * r()) * TS, bow = (r() - 0.5) * 0.12 * TS, c = Math.cos(a), sn = Math.sin(a);

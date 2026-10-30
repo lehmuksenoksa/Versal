@@ -156,7 +156,9 @@
       <option value="gradient">A smooth gradient</option>
       <option value="edge">A ragged edge</option>
       <option value="strokes">The hatching thickening into black</option>
-      <option value="stipple">Stippling, denser and denser</option></select></label>
+      <option value="stipple">Stippling, denser and denser</option>
+      <option value="hexes">Hexes, shrinking toward explored ground</option></select></label>
+    <label for="hexSize" data-style="hexes">Hexes apart <output id="hexSize-v"></output><input id="hexSize" type="range" min="0.5" max="3" step="0.1"></label>
     <label for="fadeBy">Measured <select id="fadeBy"><option value="distance">By distance from known floor</option><option value="hatching">From where the hatching gives out</option></select></label>
     <label for="fadeStart" data-fade="distance">Starting <output id="fadeStart-v"></output><input id="fadeStart" type="range" min="0" max="8" step="0.25"></label>
     <label for="fadeWidth" data-fade="distance">Over <output id="fadeWidth-v"></output><input id="fadeWidth" type="range" min="0" max="8" step="0.25"></label>
@@ -197,7 +199,7 @@ const fmt = {
   memWeight: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct,
-  fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: tiles, rockTone: pct, zoom: pct,
+  fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: tiles, hexSize: (v) => `${v} squares`, rockTone: pct, zoom: pct,
 };
 const keys = Object.keys(DEFAULTS);
 const $ = (id) => document.getElementById(id);
@@ -284,6 +286,7 @@ function moveTo(x, y, slide) {
 function showFor() {
   for (const el of document.querySelectorAll("[data-for]")) el.hidden = el.dataset.for !== S.depth;
   for (const el of document.querySelectorAll("[data-fade]")) el.hidden = el.dataset.fade !== S.fadeBy;
+  for (const el of document.querySelectorAll("[data-style]")) el.hidden = el.dataset.style !== S.fadeStyle;
 }
 function show(s) {
   for (const k of keys) {
