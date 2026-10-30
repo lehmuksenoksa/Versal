@@ -63,7 +63,7 @@ export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal
 const R = 8; // mask pixels per tile
 // Lights in the level (campfires): their bands, in squares from the
 // light, like the candle's; and how far off the player sees what they light.
-const LAMPS = { fire: { full: 2.5, dim: 1.5, dark: 2 } };
+const LAMPS = { fire: { full: 3.5, dim: 2, dark: 2 } };
 // Lit places (rooms, stretches of corridor): lit throughout, the light
 // pouring out of them in bands as the player's, in squares past their edge.
 const LIT = { dim: 1, dark: 2 };

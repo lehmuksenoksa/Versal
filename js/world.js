@@ -57,7 +57,7 @@ export class World {
     this.lit = new Uint8Array(level.w * level.h);
     const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     for (const l of level.lights ?? [])
-      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 4, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
+      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 5.5, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
     // (A lit place, and the open squares next to it, its light's dim band.)
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
