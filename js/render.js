@@ -193,8 +193,7 @@ export class Renderer {
     ctx.fillRect(0, 0, mw, mh);
     ctx.restore();
 
-    // The map as explored, the letters, then darkness and candlelight over
-    // them (goblins in the dark are darkened too).
+    // The map as explored (light and darkness included), then the letters.
     const view = { x: cx, y: cy, w: vw, h: vh };
     this.exp.update(now, dt, px, py);
     this.exp.drawMap(ctx, view, now);
@@ -206,7 +205,6 @@ export class Renderer {
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
       if (v.alpha > 0.02) this.drawActor(ctx, a, v, now, t, motion);
     }
-    this.exp.drawLight(ctx, view);
   }
 
   metrics(ch, font) {
@@ -234,9 +232,10 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
-    // A paper-coloured halo keeps the letter legible over grid and hatching.
+    // A paper-coloured halo keeps the letter legible over grid and hatching
+    // (only as far as the light shows the paper).
     ctx.lineWidth = size * LETTERING.halo;
-    ctx.strokeStyle = "rgba(247, 242, 230, 0.9)";
+    ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * (p.lit ?? 1)})`;
     ctx.strokeText(ch, 0, -m.desc);
     // A little extra weight, to stand up to the heavy map lines.
     ctx.lineWidth = size * LETTERING.bold;
@@ -294,7 +293,7 @@ export class Renderer {
     ctx.stroke();
     ctx.restore();
     const style = a === this.world.player ? LETTERING.player : LETTERING.monster;
-    this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha });
+    this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
   }
 }
 

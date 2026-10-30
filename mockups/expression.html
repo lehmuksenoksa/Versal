@@ -74,6 +74,8 @@
     <label for="sight">Clear out to <output id="sight-v"></output><input id="sight" type="range" min="2" max="16" step="0.5"></label>
     <label for="sightFade">Then fading out with distance over <output id="sightFade-v"></output><input id="sightFade" type="range" min="0" max="6" step="0.25"></label>
     <label for="blockSoft">Where walls block the view, the edge softens over <output id="blockSoft-v"></output><input id="blockSoft" type="range" min="0" max="1" step="0.05"></label>
+    <label for="nearInk">Known walls and hatching keep the ink in sight within <output id="nearInk-v"></output><input id="nearInk" type="range" min="0" max="8" step="0.25"></label>
+    <label for="nearSoft">Softening over <output id="nearSoft-v"></output><input id="nearSoft" type="range" min="0" max="4" step="0.25"></label>
     <label for="reveal">Changes ease in over <output id="reveal-v"></output><input id="reveal" type="range" min="0" max="1.5" step="0.05"></label>
   </fieldset>
 
@@ -89,20 +91,17 @@
   </fieldset>
 
   <fieldset>
-    <legend>Darkness, outside the candlelight</legend>
+    <legend>Darkness, where the candle doesn't reach</legend>
     <label for="darkColor">Colour <input id="darkColor" type="color"></label>
     <div class="buttons swatches" data-target="darkColor">
-      <button type="button" class="plain" data-c="#16181d">Cool</button>
-      <button type="button" class="plain" data-c="#1b1b1b">Neutral</button>
-      <button type="button" class="plain" data-c="#28180a">Brown</button>
+      <button type="button" class="plain" data-c="#3b3936">Grey</button>
+      <button type="button" class="plain" data-c="#2c2f36">Cool</button>
+      <button type="button" class="plain" data-c="#3a2f25">Brown</button>
     </div>
-    <label for="dark">Ground in sight darkens by <output id="dark-v"></output><input id="dark" type="range" min="0" max="0.95" step="0.05"></label>
-    <label for="memShade">Remembered ground darker still, by <output id="memShade-v"></output><input id="memShade" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
-    <legend>In sight</legend>
-    <label for="seeFloorMix">Floor colour, from paper to the rock's <output id="seeFloorMix-v"></output><input id="seeFloorMix" type="range" min="0" max="1" step="0.05"></label>
+    <legend>Ink in sight</legend>
     <label for="seeMarkC">Floor markings (grid and numbers) <input id="seeMarkC" type="color"></label>
     <label for="seeMark">Their strength <output id="seeMark-v"></output><input id="seeMark" type="range" min="0" max="1" step="0.05"></label>
     <label for="seeWallC">Walls <input id="seeWallC" type="color"></label>
@@ -112,9 +111,8 @@
   </fieldset>
 
   <fieldset>
-    <legend>Remembered, out of sight</legend>
+    <legend>Ink beyond sight</legend>
     <label for="memWeight">Hatching as heavy as <output id="memWeight-v"></output><input id="memWeight" type="range" min="0" max="1" step="0.05"></label>
-    <label for="memFloorMix">Floor colour, from paper to the rock's <output id="memFloorMix-v"></output><input id="memFloorMix" type="range" min="0" max="1" step="0.05"></label>
     <label for="memMarkC">Floor markings (grid and numbers) <input id="memMarkC" type="color"></label>
     <label for="memMark">Their strength <output id="memMark-v"></output><input id="memMark" type="range" min="0" max="1" step="0.05"></label>
     <label for="memWallC">Walls <input id="memWallC" type="color"></label>
@@ -159,10 +157,9 @@
   </fieldset>
 
   <fieldset>
-    <legend>Rock outside the rooms</legend>
+    <legend>Rock outside the rooms, where lit</legend>
     <label for="rockColor">Colour <input id="rockColor" type="color"></label>
     <label for="rockTone">Strength <output id="rockTone-v"></output><input id="rockTone" type="range" min="0" max="1" step="0.05"></label>
-    <label for="rockBy">Toned <select id="rockBy"><option value="flat">Evenly</option><option value="depth">Darker near the walls, with the hatching</option></select></label>
   </fieldset>
 
   <fieldset>
@@ -186,10 +183,11 @@ const pct = (v) => `${Math.round(v * 100)}%`;
 const tiles = (v) => `${v} tiles`;
 const fmt = {
   sight: tiles, sightFade: (v) => (+v ? tiles(v) : "nothing: a sharp edge"), blockSoft: (v) => (+v ? tiles(v) : "nothing: a sharp edge"),
+  nearInk: (v) => (+v ? `${v} tiles of the player, seen or not` : "only what is in sight"), nearSoft: tiles,
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, lightWall: (v) => `${v} tiles past the wall's face`, flame: (v) => (+v ? `${v} tiles: softer shadows` : "a point: hard shadows"),
-  flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct, dark: pct, memShade: pct,
-  memWeight: pct, seeFloorMix: pct, memFloorMix: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
+  flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct,
+  memWeight: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
   keepGrey: pct, wBlack: pct, wGrey: pct, lenGrey: pct, inkGrey: pct,
   fadeStart: (v) => `${v} tiles from known floor`, fadeWidth: tiles, rockTone: pct, zoom: pct,
@@ -264,7 +262,6 @@ function frame(now) {
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#a3261b";
   ctx.fillText("@", px, py + TS * 0.03);
-  M.exp.drawLight(ctx, view);
 }
 
 // Moving the player: they slide to the new tile; what they see from there

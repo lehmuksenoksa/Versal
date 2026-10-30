@@ -1,12 +1,14 @@
-// How the map is shown as it is explored: one hatching for all the rock (the
-// map hatched as solid stone, inked by a depth map from the known walls),
-// what is in sight drawn over what is remembered, ground never seen covered
-// in black, and the player's candle with darkness outside it.
+// How the map is shown as it is explored. Colour comes from the light only:
+// where the player's candle falls, the paper floor and the rock's colour;
+// everywhere else, one colour of darkness. Ink shows the map: in sight, the
+// full ink (black walls, the floor grid and its shadow, the hatching);
+// beyond sight, fainter walls and lighter hatching. The hatching is one
+// pattern for all the rock (the map hatched as solid stone), inked by a
+// depth map from the known walls. Ground never seen fades into black fog.
 //
-// The slow part, the drawing of the known map in its in-sight and remembered
-// looks and the cover over unseen ground, is redone only when more ground is
-// known (`rebuild`). Sight, light and darkness are laid over it each frame
-// (`update`, `drawMap`, `drawLight`). The settings were chosen in the
+// The slow part, the ink and the fog, is redrawn only when more ground is
+// known (`rebuild`); the light, the darkness and which ink shows are laid
+// down each frame (`update`, `drawMap`). The settings were chosen in the
 // expression mockup (mockups/expression.html), which uses this module too.
 
 import { renderMap, drawPaper } from "./maprender.js";
@@ -19,18 +21,20 @@ export const EXPRESSION_DEFAULTS = {
   // `sightFade`; where walls block the view the edge softens over
   // `blockSoft`. Changes ease in over `reveal` seconds.
   sight: 8, sightFade: 2.5, blockSoft: 0.1, reveal: 0.4,
+  // Known walls and hatching this near the player (in tiles) keep the ink
+  // in sight, seen or not (round a corner), softening over `nearSoft`.
+  nearInk: 3, nearSoft: 1.5,
   // The candle: its reach, full brightness out to `lightFull` of it, how far
   // it lights the rock past a wall's face, the flame's size (how soft its
   // shadows are), flicker in brightness and in size, and warmth.
   radius: 5, lightFull: 0.6, lightWall: 1.5, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
-  // Darkness outside the candlelight: its colour, how much ground in sight
-  // darkens, and how much more remembered ground does.
-  darkColor: "#16181d", dark: 0.75, memShade: 0.3,
-  // The in-sight and remembered looks: floor tint (from paper to the rock's
-  // tone), and colour and strength of the floor markings, walls and
-  // hatching; remembered hatching is inked from a weaker depth map.
-  seeFloorMix: 0.15, seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memWeight: 0.35, memFloorMix: 0.55, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
+  // The colour of everything the candle doesn't light.
+  darkColor: "#3b3936",
+  // The ink in sight and beyond it: colour and strength of the floor
+  // markings, walls and hatching; the hatching beyond sight is inked from a
+  // weaker depth map.
+  seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
+  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.7, memHatchC: "#6b5f52", memHatch: 1,
   // The depth map: how it is made, black up to `full` tiles from the known
   // walls and white from `reach`, its ragged edge, and (for some ways of
   // making it) how openings soften it.
@@ -40,13 +44,12 @@ export const EXPRESSION_DEFAULTS = {
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
   // Unexplored ground: its colour, how it fades in, and from where.
   outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75,
-  // The rock outside the rooms, toned toward a colour.
-  rockColor: "#8f8a80", rockTone: 0.85, rockBy: "flat",
+  // The rock outside the rooms, where lit: the paper toned toward a colour.
+  rockColor: "#8f8a80", rockTone: 0.85,
 };
-// Settings that only change how sight and light are laid over the drawing;
-// `sight` and `sightFade` also change what is seen, and the rest mean
-// redrawing it.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "radius", "lightFull", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "dark", "memShade"]);
+// Settings that only change what is laid down each frame; `sight` and
+// `sightFade` also change what is seen, and the rest mean redrawing the ink.
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -139,9 +142,9 @@ export class Expression {
     this.scale = Math.min(scale, Math.sqrt(DRAWING_PIXELS / area));
     this.sightScale = Math.min(scale, Math.sqrt(SIGHT_PIXELS / area));
     const layer = (o) => renderMap(level, TS, this.scale, seed, { hatch: false, paper: false, floor: false, grid: false, walls: false, keys: false, ...o });
-    const drawn = layer({ floor: true });
-    this.floorLayer = drawn.canvas;
-    this.floorPlain = layer({ floor: true, shadow: false }).canvas; // remembered floor: no shadow
+    const drawn = layer({ floor: true, shadow: false });
+    this.floorLayer = drawn.canvas; // (for its shape)
+    this.shadowLayer = layer({ floor: true, fill: false }).canvas;
     this.markLayer = layer({ grid: true, keys: true }).canvas;
     this.wallLayer = layer({ walls: true }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
@@ -149,6 +152,7 @@ export class Expression {
     const pg = this.paper.getContext("2d");
     pg.scale(this.scale, this.scale);
     drawPaper(pg, W * TS, H * TS, new RNG(seed));
+    this.floorPath = drawn.floor;
     const c = blank(mw, mh), g = c.getContext("2d", { willReadFrequently: true });
     g.scale(R / TS, R / TS);
     g.fill(drawn.floor, "evenodd");
@@ -171,7 +175,7 @@ export class Expression {
     this.stat = this.prev = null;
     this.job = null;
     this.bufs = this.hi = this.scratch = this.tints = null; // (made at the new size when drawn)
-    this.darkDirty = true;
+    this.paint();
     // The exact shape of all that has been seen, at full resolution, recast
     // from every place it was seen from (see learn).
     this.seenShape = blank(cw, ch);
@@ -179,6 +183,26 @@ export class Expression {
     if (this.player) {
       this.learn(this.player.x, this.player.y);
       this.rebuild();
+    }
+  }
+
+  // What the light shows: the paper floor, and the rock toned toward its
+  // colour.
+  paint() {
+    const S = this.S;
+    if (!this.lit || this.lit.width !== this.paper.width || this.lit.height !== this.paper.height) this.lit = blank(this.paper.width, this.paper.height);
+    const g = this.lit.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.drawImage(this.paper, 0, 0);
+    if (S.rockTone > 0) {
+      g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+      g.globalCompositeOperation = "multiply";
+      g.globalAlpha = S.rockTone;
+      g.fillStyle = S.rockColor;
+      g.fill(this.rock, "evenodd");
+      g.globalAlpha = 1;
+      g.globalCompositeOperation = "source-over";
     }
   }
 
@@ -196,9 +220,9 @@ export class Expression {
     const redraw = keys.some((k) => !LIVE_SETTINGS.has(k));
     if (redraw) {
       this.outOfDate();
-      if (keys.some((k) => /C$|rockColor|rockTone/.test(k))) this.tints = null;
+      if (keys.some((k) => /C$/.test(k))) this.tints = null;
     }
-    this.darkDirty = true;
+    if (keys.some((k) => k === "rockColor" || k === "rockTone")) this.paint();
     return redraw;
   }
 
@@ -627,24 +651,15 @@ export class Expression {
       g.restore();
     }
     yield;
-    // The paper toned like the rock.
-    const stone = "#" + PAPER_RGB.map((p, i) => {
-      const r = parseInt(S.rockColor.slice(1 + 2 * i, 3 + 2 * i), 16);
-      return Math.round(p * (1 - S.rockTone + (S.rockTone * r) / 255)).toString(16).padStart(2, "0");
-    }).join("");
-    const rockTone = S.rockTone > 0 ? this.picture(S.rockColor, (j) => S.rockTone * (S.rockBy === "depth" ? 1 - grey[j] : 1), area) : null;
-
-    // A look: paper, the rock toned, the hatching (drawn straight on, in the
-    // look's ink, strokes inked from the depth map; for the remembered look
-    // with its darkness scaled by `memWeight`, so fewer, thinner, shorter
-    // strokes keep closer to the walls), then the floor (painted over it),
-    // tinted toward the rock's colour, its markings and its walls.
+    // The ink, in sight ("see") or beyond it ("mem"), on clear: the hatching
+    // (strokes inked from the depth map; beyond sight with its darkness
+    // scaled by `memWeight`, so fewer, thinner, shorter strokes keep closer
+    // to the walls), cleared off floor that has been seen; then, in sight,
+    // the floor's shadow; and the floor markings and walls.
     const look = function* (pre, c) {
       const g = c.getContext("2d");
       clip(g);
-      g.drawImage(this.paper, 0, 0);
-      if (rockTone) this.lay(g, rockTone, null, null, 1, null, "multiply");
-      yield;
+      g.clearRect(rx, ry, rw, rh);
       const weight = pre === "mem" ? S.memWeight : 1, strength = S[pre + "Hatch"];
       if (strength > 0) {
         g.setTransform(scale, 0, 0, scale, 0, 0);
@@ -671,11 +686,8 @@ export class Expression {
         g.globalAlpha = 1;
       }
       yield;
-      this.lay(g, this.tinted(this.floorLayer, stone), glimpsedHi, null, 1, null, "source-over", true);
-      this.lay(g, pre === "mem" ? this.floorPlain : this.floorLayer, maskHi, null, 1, null, "source-over", true);
-      yield;
-      if (S.rockTone > 0 && S[pre + "FloorMix"] > 0)
-        this.lay(g, this.picture(S.rockColor, (j) => (floor[j] ? S.rockTone * S[pre + "FloorMix"] * drawnAs(seen[j]) : 0), area), null, null, 1, shape, "multiply");
+      this.lay(g, this.floorLayer, glimpsedHi, null, 1, null, "destination-out", true);
+      if (pre === "see") this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
       yield;
       // The markings and walls together, cut to the floor's mask once.
       const w = this.scratch, wg = w.getContext("2d");
@@ -828,28 +840,7 @@ export class Expression {
     }
     if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
     if (now < this.easeUntil) this.easeSight(dt);
-    if (this.darkDirty) this.castDark();
     this.castLight(px, py, now / 1000);
-  }
-
-  // The darkness outside the candlelight, over the whole map: the remembered
-  // amount everywhere, cut back to the in-sight amount where sight reaches.
-  // It changes only as sight does, not every frame.
-  castDark() {
-    const S = this.S, { eased } = this.sightCanvas;
-    if (!this.darkCanvas || this.darkCanvas.width !== eased.width || this.darkCanvas.height !== eased.height) this.darkCanvas = blank(eased.width, eased.height);
-    const g = this.darkCanvas.getContext("2d"), memDark = S.dark + (1 - S.dark) * S.memShade;
-    g.globalCompositeOperation = "source-over";
-    g.clearRect(0, 0, eased.width, eased.height);
-    g.globalAlpha = memDark;
-    g.fillStyle = S.darkColor;
-    g.fillRect(0, 0, eased.width, eased.height);
-    g.globalAlpha = memDark > 0 ? 1 - S.dark / memDark : 0;
-    g.globalCompositeOperation = "destination-out";
-    g.drawImage(eased, 0, 0);
-    g.globalCompositeOperation = "source-over";
-    g.globalAlpha = 1;
-    this.darkDirty = false;
   }
 
   // What is in sight from (px, py): the floor the player can see and the
@@ -894,7 +885,6 @@ export class Expression {
     eg.drawImage(target, 0, 0);
     eg.globalCompositeOperation = "source-over";
     eg.globalAlpha = 1;
-    this.darkDirty = true;
   }
 
   // The candle: a flame of some size, so each wall casts a shadow that is
@@ -997,7 +987,7 @@ export class Expression {
   }
 
   // The map, onto `ctx` (its transform the world's), as drawn (see compose);
-  // a new drawing cross-fades in.
+  // new ink cross-fades in.
   drawMap(ctx, view, now) {
     if (!this.stat) return;
     const k = clamp01((now - this.stat.t) / Math.max(1, this.S.reveal * 1000));
@@ -1006,9 +996,9 @@ export class Expression {
       this.compose(ctx, this.stat, view);
       return;
     }
-    // Fading in: the old drawing in full, then the new one, put together
-    // whole first and laid over it (fading it in layer by layer would let
-    // the looks show through the cover halfway).
+    // Fading in: all of it with the old ink, then all of it with the new,
+    // put together whole first and laid over it (fading in layer by layer
+    // would let things show through halfway).
     this.compose(ctx, this.prev, view);
     const c = ctx.canvas;
     if (!this.fadeCanvas || this.fadeCanvas.width !== c.width || this.fadeCanvas.height !== c.height) this.fadeCanvas = blank(c.width, c.height);
@@ -1024,92 +1014,74 @@ export class Expression {
     ctx.setTransform(T);
   }
 
-  // One drawing, onto `g` (its transform the world's): the remembered look,
-  // the in-sight look through the eased sight, and the cover.
+  // Everything, onto `g` (its transform the world's), with the ink in `st`:
+  // the darkness; what the light shows, through the light; the ink beyond
+  // sight outside the eased sight, and the ink in sight within it; the fog;
+  // and the light's warmth.
   compose(g, st, view) {
-    const T = g.getTransform(), w = this.work(g), wg = w.getContext("2d");
+    const S = this.S, T = g.getTransform(), w = this.work(g), wg = w.getContext("2d"), ss = this.sightScale;
+    const mw = this.W * this.TS, mh = this.H * this.TS;
     g.imageSmoothingEnabled = wg.imageSmoothingEnabled = true;
-    this.region(g, st.mem, this.scale, view);
-    wg.setTransform(1, 0, 0, 1, 0, 0);
-    wg.globalCompositeOperation = "source-over";
-    wg.clearRect(0, 0, w.width, w.height);
-    wg.setTransform(T);
-    this.region(wg, st.see, this.scale, view);
-    wg.globalCompositeOperation = "destination-in";
-    this.region(wg, this.sightCanvas.eased, this.sightScale, view);
-    wg.globalCompositeOperation = "source-over";
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.drawImage(w, 0, 0);
-    g.setTransform(T);
-    this.region(g, st.cover, this.scale, view);
-  }
-
-
-  // Darkness outside the candlelight (see castDark), taken away where the
-  // light falls, and a warm tint within it; multiplied, so ink stays black.
-  // Only the light's square is put together each frame; the rest is the
-  // darkness as it stands.
-  drawLight(ctx, view) {
-    if (!this.darkCanvas) return;
-    const S = this.S, T = ctx.getTransform(), ss = this.sightScale, cw = ctx.canvas.width, ch = ctx.canvas.height;
-    const mw = this.W * this.TS, mh = this.H * this.TS, memDark = S.dark + (1 - S.dark) * S.memShade;
-    // The light's square, in whole screen pixels (so nothing shows at its
-    // edges), and that in map units.
-    const b = this.lightBox;
-    let box = null;
-    if (b) {
-      const x0 = Math.max(0, Math.floor(T.a * b.x + T.e)), y0 = Math.max(0, Math.floor(T.d * b.y + T.f));
-      const x1 = Math.min(cw, Math.ceil(T.a * (b.x + b.w) + T.e)), y1 = Math.min(ch, Math.ceil(T.d * (b.y + b.w) + T.f));
-      if (x1 > x0 && y1 > y0) box = { x0, y0, w: x1 - x0, h: y1 - y0, view: { x: (x0 - T.e) / T.a, y: (y0 - T.f) / T.d, w: (x1 - x0) / T.a, h: (y1 - y0) / T.d } };
-    }
-    // Outside the light: the darkness as it is, multiplied over the map, and
-    // the remembered amount over the desk round it.
-    const clipOut = (inner) => {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.beginPath();
-      ctx.rect(0, 0, cw, ch);
-      if (box) ctx.rect(box.x0, box.y0, box.w, box.h);
-      ctx.clip("evenodd");
-      ctx.setTransform(T);
-      if (inner) {
-        ctx.beginPath();
-        ctx.rect(view.x, view.y, view.w, view.h);
-        ctx.rect(0, 0, mw, mh);
-        ctx.clip("evenodd");
-      }
-      ctx.globalCompositeOperation = "multiply";
-      ctx.imageSmoothingEnabled = true;
-    };
-    clipOut(false);
-    this.region(ctx, this.darkCanvas, ss, view);
-    ctx.restore();
-    clipOut(true);
-    ctx.globalAlpha = memDark;
-    ctx.fillStyle = S.darkColor;
-    ctx.fillRect(view.x, view.y, view.w, view.h);
-    ctx.restore();
-    if (!box) return;
-    // In the light's square: the darkness with the light taken out, and a
-    // warm tint where it falls.
-    if (!this.boxCanvas) this.boxCanvas = blank(1, 1);
-    const c = this.boxCanvas;
-    if (c.width < box.w || c.height < box.h) { c.width = Math.max(c.width, box.w); c.height = Math.max(c.height, box.h); }
-    const g = c.getContext("2d");
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = "source-over";
-    g.clearRect(0, 0, c.width, c.height);
-    g.setTransform(T.a, 0, 0, T.d, T.e - box.x0, T.f - box.y0);
-    g.imageSmoothingEnabled = true;
-    g.globalAlpha = memDark;
+    const x0 = Math.max(0, view.x), y0 = Math.max(0, view.y), x1 = Math.min(mw, view.x + view.w), y1 = Math.min(mh, view.y + view.h);
+    if (!(x1 > x0 && y1 > y0)) return;
     g.fillStyle = S.darkColor;
-    g.fillRect(box.view.x, box.view.y, box.view.w, box.view.h);
-    g.globalAlpha = 1;
-    g.clearRect(Math.max(0, box.view.x), Math.max(0, box.view.y), Math.min(mw, box.view.x + box.view.w) - Math.max(0, box.view.x), Math.min(mh, box.view.y + box.view.h) - Math.max(0, box.view.y));
-    this.region(g, this.darkCanvas, ss, box.view);
-    g.globalCompositeOperation = "destination-out";
-    this.drawLightBox(g);
-    if (S.warmth > 0) {
+    g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    const box = this.screenBox(T, g.canvas);
+    if (box) {
+      // The lit picture, through the light.
+      const c = this.boxCanvas || (this.boxCanvas = blank(1, 1)), bg = c.getContext("2d");
+      if (c.width < box.w || c.height < box.h) { c.width = Math.max(c.width, box.w); c.height = Math.max(c.height, box.h); }
+      bg.setTransform(1, 0, 0, 1, 0, 0);
+      bg.globalCompositeOperation = "source-over";
+      bg.clearRect(0, 0, c.width, c.height);
+      bg.setTransform(T.a, 0, 0, T.d, T.e - box.x0, T.f - box.y0);
+      bg.imageSmoothingEnabled = true;
+      this.region(bg, this.lit, this.scale, box.view);
+      bg.globalCompositeOperation = "destination-in";
+      this.drawLightBox(bg);
+      bg.globalCompositeOperation = "source-over";
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(c, 0, 0, box.w, box.h, box.x0, box.y0, box.w, box.h);
+      g.setTransform(T);
+    }
+    // Where the ink in sight goes: the eased sight, and all round the player
+    // out to `nearInk`.
+    const mc = this.inkMask || (this.inkMask = blank(1, 1));
+    if (mc.width !== w.width || mc.height !== w.height) { mc.width = w.width; mc.height = w.height; }
+    const mg = mc.getContext("2d");
+    mg.setTransform(1, 0, 0, 1, 0, 0);
+    mg.clearRect(0, 0, mc.width, mc.height);
+    mg.setTransform(T);
+    mg.imageSmoothingEnabled = true;
+    this.region(mg, this.sightCanvas.eased, ss, view);
+    if (this.sightFrom && S.nearInk + S.nearSoft > 0) {
+      const [px, py] = this.sightFrom, r0 = S.nearInk * this.TS, r1 = (S.nearInk + S.nearSoft) * this.TS;
+      const grad = mg.createRadialGradient(px, py, 0, px, py, r1);
+      grad.addColorStop(0, "#000");
+      for (let i = 0; i <= 6; i++) grad.addColorStop((r0 + ((r1 - r0) * i) / 6) / r1, `rgba(0, 0, 0, ${smooth(1 - i / 6)})`);
+      mg.globalCompositeOperation = "lighten";
+      mg.fillStyle = grad;
+      mg.fillRect(px - r1, py - r1, 2 * r1, 2 * r1);
+      mg.globalCompositeOperation = "source-over";
+    }
+    // The two inks, each where it belongs.
+    for (const [ink, op] of [[st.mem, "destination-out"], [st.see, "destination-in"]]) {
+      wg.setTransform(1, 0, 0, 1, 0, 0);
+      wg.globalCompositeOperation = "source-over";
+      wg.clearRect(0, 0, w.width, w.height);
+      wg.setTransform(T);
+      this.region(wg, ink, this.scale, view);
+      wg.globalCompositeOperation = op;
+      wg.setTransform(1, 0, 0, 1, 0, 0);
+      wg.drawImage(mc, 0, 0);
+      wg.globalCompositeOperation = "source-over";
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(w, 0, 0);
+      g.setTransform(T);
+    }
+    this.region(g, st.cover, this.scale, view);
+    // The warmth where the light falls.
+    if (box && S.warmth > 0) {
       const warm = this.warmCanvas || (this.warmCanvas = blank(1, 1)), lc = this.lightCanvas;
       if (warm.width !== lc.width || warm.height !== lc.height) { warm.width = lc.width; warm.height = lc.height; }
       const hg = warm.getContext("2d");
@@ -1119,15 +1091,32 @@ export class Expression {
       hg.globalCompositeOperation = "source-in";
       hg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
       hg.fillRect(0, 0, warm.width, warm.height);
-      g.globalCompositeOperation = "source-over";
+      const b = this.lightBox;
+      g.globalCompositeOperation = "multiply";
       g.drawImage(warm, b.x, b.y, b.w, b.w);
+      g.globalCompositeOperation = "source-over";
     }
-    g.globalCompositeOperation = "source-over";
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalCompositeOperation = "multiply";
-    ctx.drawImage(c, 0, 0, box.w, box.h, box.x0, box.y0, box.w, box.h);
-    ctx.restore();
   }
+
+  // The light's square on a canvas with transform `T`, in whole pixels (so
+  // nothing shows at its edges), and that in map units; null if none.
+  screenBox(T, canvas) {
+    const b = this.lightBox;
+    if (!b) return null;
+    const x0 = Math.max(0, Math.floor(T.a * b.x + T.e)), y0 = Math.max(0, Math.floor(T.d * b.y + T.f));
+    const x1 = Math.min(canvas.width, Math.ceil(T.a * (b.x + b.w) + T.e)), y1 = Math.min(canvas.height, Math.ceil(T.d * (b.y + b.w) + T.f));
+    if (!(x1 > x0 && y1 > y0)) return null;
+    return { x0, y0, w: x1 - x0, h: y1 - y0, view: { x: (x0 - T.e) / T.a, y: (y0 - T.f) / T.d, w: (x1 - x0) / T.a, h: (y1 - y0) / T.d } };
+  }
+
+  // How lit the map point (x, y) is, 0 to 1, roughly: by its distance from
+  // the light, if in sight.
+  lightAt(x, y) {
+    const S = this.S, from = this.lightFrom, r = S.radius * this.TS;
+    if (!from || !(r > 0)) return 0;
+    const d = Math.hypot(x - from[0], y - from[1]);
+    return smooth(1 - (d - S.lightFull * r) / Math.max(1, (1 - S.lightFull) * r)) * this.inSight(x, y);
+  }
+
 
 }
