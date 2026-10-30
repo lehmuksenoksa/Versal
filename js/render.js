@@ -52,11 +52,11 @@ const POSES = {
 // move, chattering while milling about, while aggressive, while asleep. Each with its words, how far off
 // (in tiles) it is heard out of sight, and how long it shows (seconds).
 const SOUNDS = {
-  move: { words: ["scuttle", "scrabble", "skitter", "scritch", "pitter-pat", "scuff"], range: 7, dur: 1.1 },
-  chatter: { words: ["mutter", "chitter", "snik", "heh", "skrrt", "nyik", "hrm"], range: 8, dur: 1.2 },
-  growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 10, dur: 1.2 },
-  alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 12, dur: 1.4 },
-  snore: { words: ["zzz", "zz", "zzZ", "z"], range: 5, dur: 1.8 },
+  move: { words: ["scuttle", "scrabble", "skitter", "scritch", "pitter-pat", "scuff"], range: 12, dur: 1.1 },
+  chatter: { words: ["mutter", "chitter", "snik", "heh", "skrrt", "nyik", "hrm"], range: 14, dur: 1.2 },
+  growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 16, dur: 1.2 },
+  alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 20, dur: 1.4 },
+  snore: { words: ["zzz", "zz", "zzZ", "z"], range: 8, dur: 1.8 },
 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
