@@ -51,7 +51,7 @@ export const EXPRESSION_DEFAULTS = {
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,
   // Unexplored ground: its colour, how it fades in, and from where; and for
   // hexes, how far apart they are (in squares).
-  outColor: "#000000", fadeStyle: "cave", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75, hexSize: 1.5,
+  outColor: "#000000", fadeStyle: "strokes", fadeBy: "distance", fadeStart: 2.75, fadeWidth: 3.75, hexSize: 1.5,
   // The rock outside the rooms, where lit: the paper toned toward a colour.
   rockColor: "#8f8a80", rockTone: 0.85,
 };
