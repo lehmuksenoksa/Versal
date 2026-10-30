@@ -1164,8 +1164,13 @@ export class Expression {
       for (const c of [g, lg]) {
         c.save();
         c.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
-        c.clip(this.lampView.beyond(S.lightWall * TS));
         c.imageSmoothingEnabled = true;
+        c.save();
+        c.clip(this.lampView);
+        c.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
+        c.restore();
+        c.clip(this.lampView.beyond(S.lightWall * TS));
+        c.clip(this.rock, "evenodd");
         c.drawImage(this.lampSight, 0, 0, this.W * TS, this.H * TS);
         c.restore();
       }
@@ -1176,6 +1181,7 @@ export class Expression {
       for (const l of this.lampsSeen ?? []) g.rect(l.x0 * TS, l.y0 * TS, (l.x1 - l.x0) * TS, (l.y1 - l.y0) * TS);
       g.clip();
       g.clip(this.lampView.beyond(S.reach * TS));
+      g.clip(this.rock, "evenodd");
       g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
       g.restore();
     }
@@ -1480,12 +1486,12 @@ export class Expression {
         g.drawImage(this.lightInk, b.x, b.y, b.w, b.w);
       }
     }
-    // The lit picture through the level's lights, where in sight (they
-    // flicker a little), warmed: only round the lights near the player, the
+    // The lit picture through the level's lights, where in sight (fires
+    // flickering a little), warmed: only round the lights near the player, the
     // only ones that can be in sight.
     const lamp = this.lampCanvas && this.lampBox(T, g.canvas);
     if (lamp) {
-      const t = performance.now() / 1000, flick = 1 - 0.08 * (1 + Math.sin(t * 6.1) * 0.6 + Math.sin(t * 10.3 + 1) * 0.4) / 2;
+      const t = performance.now() / 1000;
       wg.setTransform(1, 0, 0, 1, 0, 0);
       wg.globalCompositeOperation = "source-over";
       wg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
@@ -1525,11 +1531,24 @@ export class Expression {
       this.region(wg, this.sightCanvas.eased, ss, lamp.view);
       this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
       this.region(wg, this.seenShape, this.scale, lamp.view);
+      // A fire's light flickers, each its own way: dimming most toward its
+      // edge, as if it swelled and shrank. (Lit places are steady.)
+      wg.globalCompositeOperation = "destination-out";
+      wg.setTransform(T);
+      for (const l of this.lampsSeen) {
+        if (!l.fire) continue;
+        const { x, y, out, full, ph } = l.fire, TS = this.TS;
+        const k = clamp01(0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7));
+        const grad = wg.createRadialGradient(x * TS, y * TS, 0, x * TS, y * TS, out * TS);
+        grad.addColorStop(0, `rgba(0, 0, 0, ${0.06 * k})`);
+        grad.addColorStop(full / out, `rgba(0, 0, 0, ${0.14 * k})`);
+        grad.addColorStop(1, `rgba(0, 0, 0, ${0.6 * k})`);
+        wg.fillStyle = grad;
+        wg.fillRect((x - out) * TS, (y - out) * TS, 2 * out * TS, 2 * out * TS);
+      }
       wg.restore();
       g.setTransform(1, 0, 0, 1, 0, 0);
-      g.globalAlpha = flick;
       g.drawImage(w, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
-      g.globalAlpha = 1;
       g.setTransform(T);
     }
     // Where the ink in sight goes: the eased sight, and all round the player
@@ -1642,18 +1661,23 @@ export class Expression {
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
     // Lights the map points round (x, y) (squares) in line of sight within
     // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly.
+    // (Past the walls in view only into the rock, not past shut doors.)
     const shine = (x, y, out, dist, band) => {
-      const rim = this.lightWalls.visible(x * TS, y * TS, (out + 0.5) * TS).beyond(S.lightWall * TS);
+      const view = this.lightWalls.visible(x * TS, y * TS, (out + 0.5) * TS), rim = view.beyond(S.lightWall * TS);
       const m = Math.ceil((out + 1) * R), cx = Math.floor(x * R), cy = Math.floor(y * R);
       const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
       const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
       g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
+      g.fillStyle = "#f00";
       g.fill(rim);
+      g.fillStyle = "#0f0";
+      g.fill(view);
       const a = g.getImageData(0, 0, bw, bh).data;
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
-          if (a[((y - y0) * bw + (x - x0)) * 4 + 3] < 128) continue;
-          const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R), j = y * mw + x;
+          const b = ((y - y0) * bw + (x - x0)) * 4, j = y * mw + x;
+          if (a[b + 3] < 128 || (a[b + 1] < 128 && this.floor[j])) continue;
+          const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R);
           mark(x, y, j, band(dist(mx, my) + rag(mx, my)));
         }
     };
@@ -1661,7 +1685,7 @@ export class Expression {
       const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
       cells = new Set();
       shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells] });
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4 } });
     }
     const out = LIT.dim + LIT.dark;
     for (const p of places) {
