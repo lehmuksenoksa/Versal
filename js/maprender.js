@@ -60,7 +60,11 @@ export function renderMap(level, TS, scale, seed, {
     if (shadow) drawShadow(ctx, level, TS, floor);
   }
   const gridRng = rng.fork();
-  if (grid) drawGrid(ctx, W, H, TS, gridRng, open);
+  const caveTile = (x, y) => x >= 0 && y >= 0 && x < W && y < H && level.cave[y * W + x] === 1;
+  if (grid) {
+    drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
+    if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
+  }
   ctx.restore();
 
   if (walls) drawWalls(ctx, loops, TS, rng);
@@ -279,12 +283,14 @@ function drawShadow(ctx, level, TS, floor) {
 }
 
 // The floor grid, one thin pen stroke per tile edge: each slightly tilted and
-// bowed, often stopping short of a crossing, now and then broken mid-way.
-function drawGrid(ctx, W, H, TS, rng, open) {
-  const k = TS / 32, wob = GRID.wobble * k, brk = GRID.breaks;
+// bowed, often stopping short of a crossing, now and then broken mid-way. On
+// a cave's floor (`cave(x, y)`) it is looser: more wobble and more breaks.
+function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
+  const k = TS / 32;
   ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
   ctx.lineCap = "round";
-  const edge = (x0, y0, x1, y1) => {
+  const edge = (x0, y0, x1, y1, loose) => {
+    const wob = GRID.wobble * k * (loose ? 3 : 1), brk = loose ? 0.6 : GRID.breaks;
     const ux = (x1 - x0) / TS, uy = (y1 - y0) / TS, nx = -uy, ny = ux;
     const a = rng.chance(brk) ? rng.range(1, 3.5) * k : -0.4;
     const b = TS - (rng.chance(brk) ? rng.range(1, 3.5) * k : -0.4);
@@ -306,8 +312,38 @@ function drawGrid(ctx, W, H, TS, rng, open) {
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (!open(x, y)) continue;
-      if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS);
-      if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS);
+      if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x + 1, y));
+      if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x, y + 1));
+    }
+}
+
+// Rubble on the floor (`level.rubble`, 0 to 3 a tile): a few small stones
+// outlined in pen, and grit.
+function drawRubble(ctx, level, TS, rng) {
+  const k = TS / 32, { w: W, h: H } = level;
+  ctx.strokeStyle = INK;
+  ctx.fillStyle = INK;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 1.3 * k;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const amount = level.rubble[y * W + x];
+      if (!amount) continue;
+      for (let s = amount * 2 + rng.int(0, 2); s > 0; s--) {
+        const cx = (x + rng.range(0.12, 0.88)) * TS, cy = (y + rng.range(0.12, 0.88)) * TS, r = TS * rng.range(0.05, 0.13);
+        const m = rng.int(5, 7), a0 = rng.range(0, Math.PI * 2);
+        ctx.beginPath();
+        for (let i = 0; i < m; i++) {
+          const a = a0 + (i / m) * Math.PI * 2 + rng.range(-0.3, 0.3), rr = r * rng.range(0.7, 1.2);
+          i ? ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+      for (let d = amount * 4; d > 0; d--) {
+        const r = rng.range(0.6, 1.4) * k;
+        ctx.fillRect((x + rng.next()) * TS - r / 2, (y + rng.next()) * TS - r / 2, r, r);
+      }
     }
 }
 

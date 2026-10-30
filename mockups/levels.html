@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Level Areas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: the whole level on the left (scrolling if it is bigger than the
+     window), the generator's options on the right (below on narrow screens).
+     One look on purpose: a map page on a desk, as in the game. */
+  @font-face { font-family: "IM Fell English"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
+  :root {
+    --desk: #2b221c;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --dungeon: #3d6a9e;
+    --cavern: #4e8a4a;
+    --collapsed: #b8702e;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--desk); color: var(--ink); font: 14px/1.4 var(--body); display: grid; grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+  [hidden] { display: none !important; }
+  #stage { height: 100vh; height: 100dvh; overflow: auto; position: sticky; top: 0; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: 16px; }
+  #view { display: block; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); }
+  aside {
+    min-height: 100vh; background: var(--paper); border-left: 1px solid var(--rule);
+    padding-block: 14px 24px; padding-left: 16px; padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: normal; text-wrap: balance; }
+  aside > p { margin: 0; color: var(--muted); font-size: 13px; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: 14px var(--body); padding: 5px 12px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
+  button.plain { color: var(--ink); background: #fffdf7; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  fieldset { border: 1px solid var(--rule); padding: 8px 10px 10px; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  legend { font-size: 15px; padding: 0 4px; }
+  label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--muted); }
+  output { color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  select { font: 14px var(--body); padding: 3px 4px; border: 1px solid var(--rule); background: #fffdf7; color: var(--ink); }
+  textarea { width: 100%; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--rule); background: #fffdf7; padding: 6px; }
+  #status { min-height: 2.8em; font-variant-numeric: tabular-nums; }
+  .key { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--muted); }
+  .key span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--ink); }
+  .key .dungeon::before { background: var(--dungeon); }
+  .key .cavern::before { background: var(--cavern); }
+  .key .collapsed::before { background: var(--collapsed); }
+  @media (max-width: 760px) {
+    body { grid-template-columns: minmax(0, 1fr); }
+    #stage { height: 60vh; height: 60dvh; z-index: 1; padding-block: 8px; padding-left: max(8px, env(safe-area-inset-left, 0px)); padding-right: max(8px, env(safe-area-inset-right, 0px)); }
+    aside { border-left: 0; border-top: 1px solid var(--rule); min-height: 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="view" aria-label="A whole generated level"></canvas></div>
+<aside>
+  <h1>Level areas</h1>
+  <p>A whole level, fully lit. It is split into regions, each a dungeon (built rooms, straight corridors), cavern (misshapen caves with rock formations, winding passages) or collapsed (both mixed, rooms half fallen in, rubble). Corridors change as they cross from one region into the next.</p>
+  <p id="status"></p>
+  <div class="buttons">
+    <button id="newmap" type="button">New level</button>
+    <button id="copy" class="plain" type="button">Copy settings</button>
+    <button id="reset" class="plain" type="button">Defaults</button>
+  </div>
+  <div id="export-box" hidden>
+    <label for="export">Settings, ready to paste <span id="copy-status"></span></label>
+    <textarea id="export" readonly rows="3"></textarea>
+  </div>
+
+  <fieldset>
+    <legend>Regions</legend>
+    <label for="regions">How many <output id="regions-v"></output><input id="regions" type="range" min="1" max="8" step="1"></label>
+    <label for="dungeon">Dungeon, how likely <output id="dungeon-v"></output><input id="dungeon" type="range" min="0" max="3" step="0.1"></label>
+    <label for="cavern">Cavern, how likely <output id="cavern-v"></output><input id="cavern" type="range" min="0" max="3" step="0.1"></label>
+    <label for="collapsed">Collapsed, how likely <output id="collapsed-v"></output><input id="collapsed" type="range" min="0" max="3" step="0.1"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Level</legend>
+    <label for="w">Width <output id="w-v"></output><input id="w" type="range" min="40" max="160" step="4"></label>
+    <label for="h">Height <output id="h-v"></output><input id="h" type="range" min="28" max="112" step="4"></label>
+    <label for="density">Rooms <output id="density-v"></output><input id="density" type="range" min="0.1" max="1" step="0.05"></label>
+    <label for="loops">Extra corridors, making loops <output id="loops-v"></output><input id="loops" type="range" min="0" max="1" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Caverns</legend>
+    <label for="caveSize">Cave size <output id="caveSize-v"></output><input id="caveSize" type="range" min="0.6" max="2" step="0.1"></label>
+    <label for="formations">Rock formations in big caves <output id="formations-v"></output><input id="formations" type="range" min="0" max="2" step="0.1"></label>
+    <label for="formationSize">Formations up to <output id="formationSize-v"></output><input id="formationSize" type="range" min="1" max="10" step="1"></label>
+    <label for="passage">Passages about as wide as <output id="passage-v"></output><input id="passage" type="range" min="1" max="5" step="0.25"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Collapsed</legend>
+    <label for="collapse">Built rooms fallen in <output id="collapse-v"></output><input id="collapse" type="range" min="0" max="1" step="0.05"></label>
+    <label for="rubble">Rubble <output id="rubble-v"></output><input id="rubble" type="range" min="0" max="1" step="0.05"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>View</legend>
+    <label for="show">Show <select id="show"><option value="map">The map</option><option value="regions">The map, regions tinted</option></select></label>
+    <div class="key" aria-label="Region colours"><span class="dungeon">Dungeon</span><span class="cavern">Cavern</span><span class="collapsed">Collapsed</span></div>
+    <label for="zoom">Zoom <output id="zoom-v"></output><input id="zoom" type="range" min="0.25" max="1.25" step="0.05"></label>
+  </fieldset>
+</aside>
+
+<script type="module">
+import { generateAreas, LEVELGEN_DEFAULTS, AREAS } from "../js/levelgen.js";
+import { renderMap } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+
+// This page tunes how levels are generated by areas (js/levelgen.js): a whole
+// level, drawn as the game draws its map, remade as the options change.
+const TS = 32; // map units per square (the drawing's own scale)
+const DEFAULTS = { ...LEVELGEN_DEFAULTS, show: "map", zoom: 0.5 };
+const TINT = { dungeon: "61, 106, 158", cavern: "78, 138, 74", collapsed: "184, 112, 46" };
+const pct = (v) => `${Math.round(v * 100)}%`;
+const fmt = {
+  regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
+  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`,
+  caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
+  collapse: pct, rubble: pct, zoom: pct,
+};
+const $ = (id) => document.getElementById(id);
+const canvas = $("view"), ctx = canvas.getContext("2d");
+let S = { ...DEFAULTS }, seed = (Math.random() * 2 ** 32) >>> 0, level = null, map = null;
+const settings = () => Object.fromEntries(Object.keys(LEVELGEN_DEFAULTS).map((k) => [k, S[k]]));
+
+// Generate the level for this seed, and draw it.
+function build() {
+  const t0 = performance.now();
+  try {
+    level = generateAreas(new RNG(seed), settings());
+  } catch (e) {
+    $("status").textContent = `No level could be made with these options (${e.message}). Try more space or fewer rooms.`;
+    return;
+  }
+  const t1 = performance.now(), scale = (window.devicePixelRatio || 1) * S.zoom;
+  map = renderMap(level, TS, scale, seed).canvas;
+  const t2 = performance.now();
+  canvas.width = map.width;
+  canvas.height = map.height;
+  canvas.style.width = `${Math.round(level.w * TS * S.zoom)}px`;
+  canvas.style.height = `${Math.round(level.h * TS * S.zoom)}px`;
+  paint();
+  const count = (f) => level.rooms.filter(f).length;
+  const kinds = level.regions.map((r) => AREAS[r.type]);
+  $("status").textContent = `${level.rooms.length} rooms: ${count((r) => !r.cave && !r.collapsed)} built, ${count((r) => r.collapsed)} fallen in, ${count((r) => r.cave)} caves. Regions: ${kinds.join(", ")}. Made in ${Math.round(t1 - t0)} ms, drawn in ${Math.round(t2 - t1)} ms.`;
+}
+
+// The drawing, and the regions tinted over it if asked.
+function paint() {
+  if (!map) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(map, 0, 0);
+  if (S.show !== "regions") return;
+  const k = map.width / level.w;
+  for (let y = 0; y < level.h; y++)
+    for (let x = 0; x < level.w; x++) {
+      ctx.fillStyle = `rgba(${TINT[AREAS[level.area[y * level.w + x]]]}, 0.28)`;
+      ctx.fillRect(Math.floor(x * k), Math.floor(y * k), Math.ceil(k), Math.ceil(k));
+    }
+}
+
+let pending = 0;
+const rebuildSoon = () => {
+  clearTimeout(pending);
+  pending = setTimeout(build, 200);
+};
+
+function showValues() {
+  for (const k of Object.keys(DEFAULTS)) {
+    const el = $(k);
+    if (!el) continue;
+    el.value = S[k];
+    const out = $(`${k}-v`);
+    if (out) out.textContent = fmt[k] ? fmt[k](S[k]) : S[k];
+  }
+}
+
+for (const k of Object.keys(DEFAULTS)) {
+  const el = $(k);
+  if (!el) continue;
+  el.addEventListener("input", () => {
+    S[k] = el.type === "range" ? +el.value : el.value;
+    showValues();
+    if (k === "show") paint();
+    else rebuildSoon();
+  });
+}
+$("newmap").addEventListener("click", () => {
+  seed = (Math.random() * 2 ** 32) >>> 0;
+  build();
+});
+$("reset").addEventListener("click", () => {
+  S = { ...DEFAULTS };
+  showValues();
+  build();
+});
+$("copy").addEventListener("click", async () => {
+  const text = JSON.stringify(settings());
+  $("export-box").hidden = false;
+  $("export").value = text;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("copy-status").textContent = "(copied)";
+  } catch {
+    $("export").select();
+    $("copy-status").textContent = "(select and copy)";
+  }
+});
+
+showValues();
+build();
+</script>
+</body>
+</html>

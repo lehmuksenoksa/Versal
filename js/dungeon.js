@@ -101,7 +101,7 @@ function tryGenerate(W, H, rng) {
 
 // A cave: a noisy ellipse inside the room's box, smoothed by a cellular
 // automaton pass and trimmed to the part connected to its centre.
-function carveCave(r, rng, setFloor) {
+export function carveCave(r, rng, setFloor) {
   const { x: X, y: Y, w, h } = r;
   let open = new Uint8Array(w * h);
   const at = (g, x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : g[y * w + x]);
