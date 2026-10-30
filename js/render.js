@@ -8,7 +8,7 @@ import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 export { EXPRESSION_DEFAULTS };
 
 const DESK = "#2b221c";
-export const ZOOM = { start: 0.75, min: 0.4, max: 2, step: 1.25 };
+export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
 // mockup (mockups/glyphs.html). Sizes are in tiles; bold and halo are
