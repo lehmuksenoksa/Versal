@@ -90,6 +90,7 @@
     <label for="h">Height <output id="h-v"></output><input id="h" type="range" min="28" max="112" step="4"></label>
     <label for="density">Rooms <output id="density-v"></output><input id="density" type="range" min="0.1" max="1" step="0.05"></label>
     <label for="loops">Extra corridors, making loops <output id="loops-v"></output><input id="loops" type="range" min="0" max="1" step="0.05"></label>
+    <label for="doors">Doors in built rooms' doorways <output id="doors-v"></output><input id="doors" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -128,7 +129,7 @@ const TINT = { dungeon: "61, 106, 158", cavern: "78, 138, 74", collapsed: "184, 
 const pct = (v) => `${Math.round(v * 100)}%`;
 const fmt = {
   regions: (v) => (+v === 1 ? "one, the whole level" : `${v}`), dungeon: (v) => `${v}`, cavern: (v) => `${v}`, collapsed: (v) => `${v}`,
-  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`,
+  w: (v) => `${v} squares`, h: (v) => `${v} squares`, density: (v) => `${v} for each 100 squares`, loops: (v) => `${v} for each room`, doors: pct,
   caveSize: pct, formations: (v) => (+v ? `${v} for each 30 squares of cave` : "none"), formationSize: (v) => `${v} squares`, passage: (v) => `${v} squares`,
   collapse: pct, rubble: pct, caveRubble: pct, zoom: pct,
 };
@@ -156,7 +157,7 @@ function build() {
   paint();
   const count = (f) => level.rooms.filter(f).length;
   const kinds = level.regions.map((r) => AREAS[r.type]);
-  $("status").textContent = `${level.rooms.length} rooms: ${count((r) => !r.cave && !r.collapsed)} built, ${count((r) => r.collapsed)} fallen in, ${count((r) => r.cave)} caves. Regions: ${kinds.join(", ")}. Made in ${Math.round(t1 - t0)} ms, drawn in ${Math.round(t2 - t1)} ms.`;
+  $("status").textContent = `${level.rooms.length} rooms: ${count((r) => !r.cave && !r.collapsed)} built, ${count((r) => r.collapsed)} fallen in, ${count((r) => r.cave)} caves; ${level.doors.length} doors. Regions: ${kinds.join(", ")}. Made in ${Math.round(t1 - t0)} ms, drawn in ${Math.round(t2 - t1)} ms.`;
 }
 
 // The drawing, and the regions tinted over it if asked.

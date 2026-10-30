@@ -8,8 +8,9 @@
 // A corridor changes as it crosses from one region into another.
 // The level has the shape the game and the map drawing expect (see
 // dungeon.js), and also `area` (each tile's region type, an index into
-// AREAS), `rubble` (0 to 3 for each tile) and `regions` (their seed points
-// and types).
+// AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy }: a
+// door in the tile at x, y, the room it opens into that way) and `regions`
+// (their seed points and types).
 
 import { T, carveCave } from "./dungeon.js";
 
@@ -21,8 +22,9 @@ export const LEVELGEN_DEFAULTS = {
   w: 96, h: 64,
   // How many regions, and how likely each type is.
   regions: 3, dungeon: 2, cavern: 2, collapsed: 1,
-  // Rooms per 100 squares of level; extra corridors (making loops) per room.
-  density: 0.4, loops: 0.2,
+  // Rooms per 100 squares of level; extra corridors (making loops) per room;
+  // the share of doorways into built rooms that have a door.
+  density: 0.4, loops: 0.2, doors: 0.8,
   // Caves' size; rock formations per 30 squares of a big cave, and their
   // largest size in squares; cavern passages' width in squares.
   caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
@@ -300,10 +302,26 @@ function tryAreas(S, rng) {
   // No rubble where the floor isn't.
   for (let j = 0; j < n; j++) if (tiles[j] !== T.FLOOR) rubble[j] = 0;
 
+  // Doors: where a way in to a built room is one square wide, walled on
+  // both sides (just outside the room, the way in going into it).
+  const doors = [];
+  for (const r of rooms) {
+    if (r.cave) continue;
+    const ways = [];
+    for (let x = r.x; x < r.x + r.w; x++) ways.push([x, r.y - 1, 0, 1], [x, r.y + r.h, 0, -1]);
+    for (let y = r.y; y < r.y + r.h; y++) ways.push([r.x - 1, y, 1, 0], [r.x + r.w, y, -1, 0]);
+    for (const [x, y, dx, dy] of ways) {
+      if (!floorAt(x, y) || !floorAt(x + dx, y + dy)) continue;
+      // Walled to either side, along the wall.
+      if (floorAt(x + dy, y + dx) || floorAt(x - dy, y - dx)) continue;
+      if (rng.chance(S.doors)) doors.push({ x, y, dx, dy });
+    }
+  }
+
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
   const startRoom = rng.pick(rooms);
   return {
-    w: W, h: H, tiles, cave, rooms, area, rubble, regions,
+    w: W, h: H, tiles, cave, rooms, area, rubble, doors, regions,
     start: { x: startRoom.cx, y: startRoom.cy },
     startRoom,
     idx, get,

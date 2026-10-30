@@ -61,13 +61,19 @@ export function renderMap(level, TS, scale, seed, {
   }
   const gridRng = rng.fork();
   const caveTile = (x, y) => x >= 0 && y >= 0 && x < W && y < H && level.cave[y * W + x] === 1;
+  // (No grid line across a doorway, where the door is drawn.)
+  const doorways = new Set((level.doors ?? []).map(({ x, y, dx, dy }) => [x, y, x + dx, y + dy].join()));
+  const shut = (ax, ay, bx, by) => doorways.has([ax, ay, bx, by].join()) || doorways.has([bx, by, ax, ay].join());
   if (grid) {
-    drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
+    drawGrid(ctx, W, H, TS, gridRng, open, caveTile, shut);
     if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
   }
   ctx.restore();
 
-  if (walls) drawWalls(ctx, loops, TS, rng);
+  if (walls) {
+    drawWalls(ctx, loops, TS, rng);
+    if (level.doors) drawDoors(ctx, level.doors, TS, new RNG(seed ^ 0xd00));
+  }
   if (keys) drawRoomKeys(ctx, level, TS);
 
   return { canvas, ctx, floor, loops, strokes: hatch.record };
@@ -198,6 +204,34 @@ export function wallLine(ctx, a, b, TS, rng) {
   wallStroke(ctx, a, b, WALL.weight * k, WALL.bow * k, rng);
 }
 
+// Doors (each { x, y, dx, dy }: in the tile at x, y, opening that way into a
+// room): a pen outline set across the way in, on the room's wall line (which
+// lies a little out into the rock), a little uneven as if drawn by hand.
+function drawDoors(ctx, doors, TS, rng) {
+  const k = TS / 32, weight = WALL.weight * k, shift = weight * (0.5 - WALL.inside);
+  ctx.save();
+  ctx.strokeStyle = INK;
+  ctx.lineJoin = "round";
+  ctx.lineWidth = weight * 0.5;
+  for (const { x, y, dx, dy } of doors) {
+    const cx = (x + 0.5 + dx * 0.5) * TS - dx * shift, cy = (y + 0.5 + dy * 0.5) * TS - dy * shift;
+    const len = TS * rng.range(0.94, 1.02), thick = TS * rng.range(0.32, 0.38);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.atan2(dy, dx) + rng.range(-0.04, 0.04));
+    const j = () => rng.range(-0.6, 0.6) * k;
+    ctx.beginPath();
+    ctx.moveTo(-thick / 2 + j(), -len / 2 + j());
+    ctx.lineTo(thick / 2 + j(), -len / 2 + j());
+    ctx.lineTo(thick / 2 + j(), len / 2 + j());
+    ctx.lineTo(-thick / 2 + j(), len / 2 + j());
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 function wallStroke(ctx, [x0, y0], [x1, y1], weight, bowAmp, rng) {
   const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
   const n = Math.max(3, Math.round(len / 3));
@@ -282,11 +316,12 @@ function drawShadow(ctx, level, TS, floor) {
   ctx.restore();
 }
 
-// The floor grid, one thin pen stroke per tile edge: each slightly tilted and
+// The floor grid (not across the edges `shut(ax, ay, bx, by)`), one thin pen
+// stroke per tile edge: each slightly tilted and
 // bowed, often stopping short of a crossing, now and then broken mid-way. On
 // a cave's floor (`cave(x, y)`) it is a rougher guide: dashes and gaps of
 // uneven lengths (now and then a dot), wandering more, its weight varying.
-function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
+function drawGrid(ctx, W, H, TS, rng, open, cave = () => false, shut = () => false) {
   const k = TS / 32;
   ctx.strokeStyle = "rgba(27, 24, 21, 0.75)";
   ctx.lineCap = "round";
@@ -319,8 +354,8 @@ function drawGrid(ctx, W, H, TS, rng, open, cave = () => false) {
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (!open(x, y)) continue;
-      if (open(x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x + 1, y));
-      if (open(x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x, y + 1));
+      if (open(x + 1, y) && !shut(x, y, x + 1, y)) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x + 1, y));
+      if (open(x, y + 1) && !shut(x, y, x, y + 1)) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS, cave(x, y) || cave(x, y + 1));
     }
   ctx.setLineDash([]);
 }
