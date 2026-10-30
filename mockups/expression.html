@@ -84,6 +84,7 @@
     <label for="radius">Reaches <output id="radius-v"></output><input id="radius" type="range" min="0" max="16" step="0.5"></label>
     <label for="lightFull">Full brightness out to <output id="lightFull-v"></output><input id="lightFull" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightDim">Then dim, as bright as <output id="lightDim-v"></output><input id="lightDim" type="range" min="0" max="1" step="0.05"></label>
+    <label for="lightFaint">Then faint, out to the edge of sight, as bright as <output id="lightFaint-v"></output><input id="lightFaint" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightRag">Ragged edges of the bands <output id="lightRag-v"></output><input id="lightRag" type="range" min="0" max="1.5" step="0.05"></label>
     <label for="lightWall">Lights a rim of rock <output id="lightWall-v"></output><input id="lightWall" type="range" min="0" max="1.5" step="0.05"></label>
     <label for="flame">Size of the flame (sets how wide the shadows' dim edges are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
@@ -100,7 +101,6 @@
       <button type="button" class="plain" data-c="#2c2f36">Cool</button>
       <button type="button" class="plain" data-c="#3a2f25">Brown</button>
     </div>
-    <label for="dimFloor">Floor in sight, unlit: the paper as strong as <output id="dimFloor-v"></output><input id="dimFloor" type="range" min="0" max="1" step="0.05"></label>
   </fieldset>
 
   <fieldset>
@@ -189,7 +189,7 @@ const fmt = {
   nearInk: (v) => (+v ? `${v} tiles of the player, seen or not` : "only what is in sight"), nearSoft: tiles,
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   radius: (v) => (+v ? tiles(v) : "no candle"), lightFull: (v) => `${pct(v)} of the way`, lightDim: pct, lightRag: (v) => (+v ? `${v} tiles` : "none: circles"),
-  lightWall: (v) => (+v ? `${v} tiles past the wall's face` : "none"), flame: (v) => (+v ? `${v} tiles: wider dim edges` : "a point: hard shadows"), dimFloor: pct,
+  lightWall: (v) => (+v ? `${v} tiles past the wall's face` : "none"), flame: (v) => (+v ? `${v} tiles: wider dim edges` : "a point: hard shadows"), lightFaint: (v) => (+v ? pct(v) : "none: dark beyond the candle"),
   flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct,
   memWeight: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,

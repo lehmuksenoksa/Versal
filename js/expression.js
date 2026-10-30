@@ -1,7 +1,7 @@
 // How the map is shown as it is explored. Colour comes from the light only:
-// where the player's candle falls, in flat bands, the paper floor and a rim
-// of the rock's colour; everywhere else, one colour of darkness, with the
-// floor in sight showing the paper dimly. Ink shows the map: in sight, the
+// where the player's candle falls, in flat bands (the last, faint, out to
+// the edge of sight), the paper floor and a rim of the rock's colour;
+// everywhere else, one colour of darkness. Ink shows the map: in sight, the
 // full ink (black walls, the floor grid and its shadow, the hatching);
 // beyond sight, fainter walls and lighter hatching. The hatching is one
 // pattern for all the rock (the map hatched as solid stone), inked by a
@@ -26,14 +26,13 @@ export const EXPRESSION_DEFAULTS = {
   // in sight, seen or not (round a corner), softening over `nearSoft`.
   nearInk: 3, nearSoft: 1.5,
   // The candle, in flat bands: full brightness out to `lightFull` of its
-  // reach, then `lightDim` out to the reach, the bands' edges ragged by
-  // `lightRag` tiles. It lights a rim of rock about `lightWall` tiles past a
+  // reach, then `lightDim` out to the reach, then `lightFaint` out to the
+  // edge of sight (`sight`), the bands' edges ragged by `lightRag` tiles. It lights a rim of rock about `lightWall` tiles past a
   // wall's face. The flame's size sets how wide the shadows' dim edges are.
   // Flicker in brightness and in size, and warmth.
-  radius: 5, lightFull: 0.6, lightDim: 0.55, lightRag: 0.3, lightWall: 0.6, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
-  // The colour of everything the candle doesn't light; floor in sight but
-  // not lit, the paper this strong over it.
-  darkColor: "#3b3936", dimFloor: 0.2,
+  radius: 5, lightFull: 0.6, lightDim: 0.55, lightFaint: 0.2, lightRag: 0.3, lightWall: 0.6, flame: 0.3, flicker: 0.4, flickerSize: 0.04, warmth: 0.7,
+  // The colour of everything the candle doesn't light.
+  darkColor: "#3b3936",
   // The ink in sight and beyond it: colour and strength of the floor
   // markings, walls and hatching; the hatching beyond sight is inked from a
   // weaker depth map.
@@ -53,7 +52,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight` and
 // `sightFade` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightDim", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "radius", "lightFull", "lightDim", "lightFaint", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -171,7 +170,7 @@ export class Expression {
     this.rock.addPath(drawn.floor);
     const sw = Math.ceil(W * TS * this.sightScale), sh = Math.ceil(H * TS * this.sightScale);
     this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh) };
-    this.lightReach = this.floorPaper = null;
+    this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
     this.stat = this.prev = null;
     this.job = null;
@@ -196,14 +195,6 @@ export class Expression {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = "source-over";
     g.drawImage(this.paper, 0, 0);
-    // (And the paper on the floor alone, for the floor in sight but unlit.)
-    if (!this.floorPaper || this.floorPaper.width !== this.paper.width || this.floorPaper.height !== this.paper.height) {
-      this.floorPaper = blank(this.paper.width, this.paper.height);
-      const fg = this.floorPaper.getContext("2d");
-      fg.drawImage(this.paper, 0, 0);
-      fg.globalCompositeOperation = "destination-in";
-      fg.drawImage(this.floorLayer, 0, 0);
-    }
     if (S.rockTone > 0) {
       g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
       g.globalCompositeOperation = "multiply";
@@ -748,12 +739,7 @@ export class Expression {
       }
       yield;
       this.lay(g, this.floorLayer, glimpsedHi, null, 1, null, "destination-out", true);
-      // In sight, under it all, the seen floor's paper, dimly (shown through
-      // the sight like the ink; paper over the lit paper changes nothing).
-      if (pre === "see") {
-        this.lay(g, this.floorPaper, maskHi, null, S.dimFloor, null, "destination-over", true);
-        this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
-      }
+      if (pre === "see") this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
       yield;
       // The markings and walls together, cut to the floor's mask once.
       const w = this.scratch, wg = w.getContext("2d");
@@ -959,15 +945,17 @@ export class Expression {
   // the flame, and a rim of the rock past the wall faces it falls on), made
   // full or dim or nothing by a ragged threshold, so shadows and the rim
   // have hand-drawn edges; and the bands, full out to `lightFull` of the
-  // radius and dim out to it, their edges ragged too (both ragged by noise
+  // radius, dim out to it and faint out to the edge of sight, their edges
+  // ragged too (both ragged by noise
   // fixed to the map, so nothing wavers). Each frame, the bands grow and
   // shrink a little about the player, and the whole flickers in brightness.
   castLight(px, py, t) {
     const { S, TS } = this, rad = S.radius * TS, rag = S.lightRag * TS;
     this.lightBox = null;
     if (!(rad > 0)) return;
+    const out = S.lightFaint > 0 ? Math.max(rad, S.sight * TS) : rad; // the outermost band's edge
     // Drawn on a square just big enough for the light round the player.
-    const half = (rad + rag) * (1 + S.flickerSize) + TS, res = Math.min(this.scale, 640 / (2 * half));
+    const half = (out + rag) * (1 + S.flickerSize) + TS, res = Math.min(this.scale, 1024 / (2 * half));
     const size = Math.ceil(2 * half * res), box = { x: px - half, y: py - half, w: 2 * half, res };
     const toBox = (g) => g.setTransform(res, 0, 0, res, -box.x * res, -box.y * res);
     if (!this.lightReach || this.lightReach.width !== size) {
@@ -977,41 +965,42 @@ export class Expression {
       this.lightFrom = null;
     }
     if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py) {
-      // How much of the light reaches each point: the share of the flame's
-      // points that see it, and of the depths past the walls' faces.
-      const f = S.flame * TS, reach = half;
+      // How much of the light reaches each point: in red, the share of the
+      // flame's points that see it; in green, the share of the depths past
+      // the walls' faces, from the flame's middle (opaque fills, added).
+      const f = S.flame * TS, reach = half, depths = 5;
       const pts = f > 0 ? [[0, 0], [f, 0], [-f, 0], [0, f], [0, -f]] : [[0, 0]];
-      const depths = S.lightWall > 0 ? 6 : 1;
       const g = this.lightReach.getContext("2d", { willReadFrequently: true });
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, size, size);
       toBox(g);
-      g.fillStyle = "#000";
       g.globalCompositeOperation = "lighter";
-      g.globalAlpha = 1 / (pts.length * depths);
-      for (const [dx, dy] of pts) {
-        const p = this.walls.visible(px + dx, py + dy, reach);
-        for (let i = 1; i <= depths; i++) g.fill(depths > 1 ? p.beyond((S.lightWall * TS * i) / depths) : p);
+      g.fillStyle = `rgb(${Math.ceil(255 / pts.length)}, 0, 0)`;
+      for (const [dx, dy] of pts) g.fill(this.walls.visible(px + dx, py + dy, reach));
+      if (S.lightWall > 0) {
+        const p = this.walls.visible(px, py, reach);
+        g.fillStyle = `rgb(0, ${Math.ceil(255 / depths)}, 0)`;
+        for (let i = 1; i <= depths; i++) g.fill(p.beyond((S.lightWall * TS * i) / depths));
       }
-      g.globalAlpha = 1;
       g.globalCompositeOperation = "source-over";
       // Made flat: full where most of it reaches, dim at the edges of that,
       // the threshold wandering with a fine noise; and the bands.
       const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data;
       const bandImg = new ImageData(size, size), bd = bandImg.data;
-      const dim = Math.round(255 * S.lightDim), rFull = rad * S.lightFull;
+      const dim = Math.round(255 * S.lightDim), faint = Math.round(255 * S.lightFaint), rFull = rad * S.lightFull;
+      const nearEdge = (d) => Math.abs(d - rFull) < rag || Math.abs(d - rad) < rag || Math.abs(d - out) < rag;
       for (let y = 0; y < size; y++) {
         const my = box.y + (y + 0.5) / res;
         for (let x = 0; x < size; x++) {
           const i = (y * size + x) * 4, mx = box.x + (x + 0.5) / res;
-          const v = rd[i + 3] / 255;
+          const v = Math.max(rd[i], rd[i + 1]) / 255;
           let n = -1;
           const noiseAt = () => (n < 0 ? (n = this.fine(mx, my)) : n);
           rd[i + 3] = v >= 0.97 ? 255 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 255 : v > 0.08 + 0.2 * noiseAt() ? dim : 0;
-          const d = Math.hypot(mx - px, my - py);
-          if (d > rad + rag) continue;
-          const e = d < rFull - rag || (d > rFull + rag && d < rad - rag) ? d : d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1);
-          bd[i + 3] = e < rFull ? 255 : e < rad ? dim : 0;
+          const d = Math.sqrt((mx - px) ** 2 + (my - py) ** 2);
+          if (d > out + rag) continue;
+          const e = nearEdge(d) ? d + rag * (2 * (0.65 * noiseAt() + 0.35 * this.noise(mx, my)) - 1) : d;
+          bd[i + 3] = e < rFull ? 255 : e < rad ? dim : e < out ? faint : 0;
         }
       }
       g.putImageData(reachImg, 0, 0);
@@ -1189,7 +1178,7 @@ export class Expression {
     const S = this.S, from = this.lightFrom, r = S.radius * this.TS;
     if (!from || !(r > 0)) return 0;
     const d = Math.hypot(x - from[0], y - from[1]);
-    return (d < S.lightFull * r ? 1 : d < r ? S.lightDim : 0) * this.inSight(x, y);
+    return (d < S.lightFull * r ? 1 : d < r ? S.lightDim : S.lightFaint > 0 && d < S.sight * this.TS ? S.lightFaint : 0) * this.inSight(x, y);
   }
 
 
