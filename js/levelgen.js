@@ -9,7 +9,7 @@
 // The level has the shape the game and the map drawing expect (see
 // dungeon.js), and also `area` (each tile's region type, an index into
 // AREAS), `rubble` (0 to 3 for each tile), `doors` (each { x, y, dx, dy }: a
-// door in the tile at x, y, the room it opens into that way) and `regions`
+// door in the tile at x, y, the dungeon room it opens into that way) and `regions`
 // (their seed points and types).
 
 import { T, carveCave } from "./dungeon.js";
@@ -23,7 +23,7 @@ export const LEVELGEN_DEFAULTS = {
   // How many regions, and how likely each type is.
   regions: 3, dungeon: 2, cavern: 2, collapsed: 1,
   // Rooms per 100 squares of level; extra corridors (making loops) per room;
-  // the share of doorways into built rooms that have a door.
+  // the share of doorways into clean dungeon rooms that have a door.
   density: 0.4, loops: 0.2, doors: 0.8,
   // Caves' size; rock formations per 30 squares of a big cave, and their
   // largest size in squares; cavern passages' width in squares.
@@ -302,11 +302,14 @@ function tryAreas(S, rng) {
   // No rubble where the floor isn't.
   for (let j = 0; j < n; j++) if (tiles[j] !== T.FLOOR) rubble[j] = 0;
 
-  // Doors: where a way in to a built room is one square wide, walled on
-  // both sides (just outside the room, the way in going into it).
+  // Doors: only into clean dungeon rooms (built, in a dungeon region, not
+  // fallen in), where the way in is one square wide, walled on both sides
+  // (just outside the room, the way in going into it), and that square and
+  // the walls beside it are plain built ground: no rubble, nothing caved.
   const doors = [];
+  const plain = (x, y) => area[idx(x, y)] === DUNGEON && !cave[idx(x, y)] && !rubble[idx(x, y)];
   for (const r of rooms) {
-    if (r.cave) continue;
+    if (r.cave || r.collapsed || r.type !== DUNGEON) continue;
     const ways = [];
     for (let x = r.x; x < r.x + r.w; x++) ways.push([x, r.y - 1, 0, 1], [x, r.y + r.h, 0, -1]);
     for (let y = r.y; y < r.y + r.h; y++) ways.push([r.x - 1, y, 1, 0], [r.x + r.w, y, -1, 0]);
@@ -314,6 +317,7 @@ function tryAreas(S, rng) {
       if (!floorAt(x, y) || !floorAt(x + dx, y + dy)) continue;
       // Walled to either side, along the wall.
       if (floorAt(x + dy, y + dx) || floorAt(x - dy, y - dx)) continue;
+      if (!plain(x, y) || !plain(x + dy, y + dx) || !plain(x - dy, y - dx)) continue;
       if (rng.chance(S.doors)) doors.push({ x, y, dx, dy });
     }
   }
