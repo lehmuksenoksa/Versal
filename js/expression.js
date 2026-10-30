@@ -31,10 +31,9 @@ export const EXPRESSION_DEFAULTS = {
   // `lightDark`, the bands' edges ragged by `lightRag` tiles. The bands drawn
   // as `lightFill` "tones" or "strokes" (hatched), with an inked line where
   // the light changes as strong as `lightEdge`. It lights a rim of rock
-  // about `lightWall` tiles past a wall's face. The flame's size sets how
-  // wide the shadows' dim edges are. Flicker in brightness and in size, and
-  // warmth.
-  lightFull: 5, lightDim: 1, lightDark: 2, dimLevel: 0.75, darkLevel: 0.2, lightFill: "tones", lightEdge: 0, lightRag: 0.2, lightWall: 0.6, flame: 0.25, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
+  // about `lightWall` tiles past a wall's face. Flicker in brightness and in
+  // size, and warmth.
+  lightFull: 5, lightDim: 1, lightDark: 2, dimLevel: 0.75, darkLevel: 0.2, lightFill: "tones", lightEdge: 0, lightRag: 0.2, lightWall: 0.6, flicker: 0.4, flickerSize: 0.02, warmth: 0.7,
   // The colour of everything the candle doesn't light.
   darkColor: "#3b3936",
   // The ink in sight and beyond it: colour and strength of the floor
@@ -56,7 +55,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight` and
 // `sightFade` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -945,11 +944,11 @@ export class Expression {
   }
 
   // The candle, drawn flat like the rest of the map. For each place the
-  // player stands: what the light reaches (seen from a few points across
-  // the flame, and a rim of the rock past the wall faces it falls on), made
-  // full or dim or nothing by a ragged threshold, so shadows and the rim
-  // have hand-drawn edges; and the bands, full, dim and dark, their edges
-  // ragged too (both ragged by noise fixed to the map, so nothing wavers).
+  // player stands: what the light reaches (what is in view, its shadows'
+  // edges straight, and a rim of the rock past the wall faces it falls on,
+  // made full or dim or nothing by a ragged threshold); and the bands,
+  // full, dim and dark, their edges ragged (both ragged by noise fixed to
+  // the map, so nothing wavers).
   // The bands in flat tones, or (`lightFill` "strokes") all paper with the
   // dim and dark bands hatched; and perhaps an inked line where the light
   // changes (`lightEdge`). Each frame, the whole flickers in brightness and
@@ -971,26 +970,20 @@ export class Expression {
       this.lightFrom = null;
     }
     if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py) {
-      // How much of the light reaches each point: in red, the share of the
-      // flame's points that see it; in green, the share of the depths past
-      // the walls' faces, from the flame's middle (opaque fills, added).
-      const f = S.flame * TS, reach = half, depths = 5;
-      const pts = f > 0 ? [[0, 0], [f, 0], [-f, 0], [0, f], [0, -f]] : [[0, 0]];
+      // How much of the light reaches each point, from the player: all of
+      // what is in view, and past the walls' faces the share of the depths
+      // the rim reaches (opaque fills, added; the shadows' edges straight).
+      const depths = S.lightWall > 0 ? 5 : 1, p = this.walls.visible(px, py, half);
       const g = this.lightReach.getContext("2d", { willReadFrequently: true });
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, size, size);
       toBox(g);
       g.globalCompositeOperation = "lighter";
-      g.fillStyle = `rgb(${Math.ceil(255 / pts.length)}, 0, 0)`;
-      for (const [dx, dy] of pts) g.fill(this.walls.visible(px + dx, py + dy, reach));
-      if (S.lightWall > 0) {
-        const p = this.walls.visible(px, py, reach);
-        g.fillStyle = `rgb(0, ${Math.ceil(255 / depths)}, 0)`;
-        for (let i = 1; i <= depths; i++) g.fill(p.beyond((S.lightWall * TS * i) / depths));
-      }
+      g.fillStyle = `rgb(${Math.ceil(255 / depths)}, 0, 0)`;
+      for (let i = 1; i <= depths; i++) g.fill(S.lightWall > 0 ? p.beyond((S.lightWall * TS * i) / depths) : p);
       g.globalCompositeOperation = "source-over";
       // Each point's band (3 full, 2 dim, 1 dark, 0 none): the least of what
-      // reaches it (full where most of the light does, dim at the edges of
+      // reaches it (full where most of the rim does, dim at the edges of
       // that, the threshold wandering with a fine noise) and its band by
       // distance. As tones, or all paper if hatched.
       const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data, level = new Uint8Array(size * size);
@@ -1000,7 +993,7 @@ export class Expression {
         const my = box.y + (y + 0.5) / res;
         for (let x = 0; x < size; x++) {
           const p = y * size + x, i = p * 4, mx = box.x + (x + 0.5) / res;
-          const v = Math.max(rd[i], rd[i + 1]) / 255;
+          const v = rd[i] / 255;
           let n = -1;
           const noiseAt = () => (n < 0 ? (n = this.fine(mx, my)) : n);
           const reached = v >= 0.97 ? 3 : v <= 0.03 ? 0 : v > 0.25 + 0.45 * noiseAt() ? 3 : v > 0.08 + 0.2 * noiseAt() ? 2 : 0;

@@ -90,7 +90,6 @@
     <label for="lightEdge">Inked edge where the light changes <output id="lightEdge-v"></output><input id="lightEdge" type="range" min="0" max="1" step="0.05"></label>
     <label for="lightRag">Ragged edges of the bands <output id="lightRag-v"></output><input id="lightRag" type="range" min="0" max="1.5" step="0.05"></label>
     <label for="lightWall">Lights a rim of rock <output id="lightWall-v"></output><input id="lightWall" type="range" min="0" max="1.5" step="0.05"></label>
-    <label for="flame">Size of the flame (sets how wide the shadows' dim edges are) <output id="flame-v"></output><input id="flame" type="range" min="0" max="1" step="0.05"></label>
     <label for="flicker">Flicker in brightness <output id="flicker-v"></output><input id="flicker" type="range" min="0" max="1" step="0.05"></label>
     <label for="flickerSize">Flicker in size <output id="flickerSize-v"></output><input id="flickerSize" type="range" min="0" max="0.2" step="0.01"></label>
     <label for="warmth">Warmth <output id="warmth-v"></output><input id="warmth" type="range" min="0" max="1" step="0.05"></label>
@@ -192,7 +191,7 @@ const fmt = {
   nearInk: (v) => (+v ? `${v} tiles of the player, seen or not` : "only what is in sight"), nearSoft: tiles,
   reveal: (v) => (+v ? `${v} s` : "instantly"),
   lightFull: (v) => `${v} squares out, the player's included`, lightDim: (v) => `${v} squares`, lightDark: (v) => `${v} squares`, dimLevel: pct, darkLevel: pct, lightEdge: (v) => (+v ? pct(v) : "none"), lightRag: (v) => (+v ? `${v} tiles` : "none: circles"),
-  lightWall: (v) => (+v ? `${v} tiles past the wall's face` : "none"), flame: (v) => (+v ? `${v} tiles: wider dim edges` : "a point: hard shadows"),
+  lightWall: (v) => (+v ? `${v} tiles past the wall's face` : "none"),
   flicker: pct, flickerSize: (v) => (+v ? `${pct(v)} either way` : "none"), warmth: pct,
   memWeight: pct, seeMark: pct, seeWall: pct, seeHatch: pct, memMark: pct, memWall: pct, memHatch: pct,
   full: tiles, reach: tiles, ragged: pct, opening: tiles, taper: (v) => `${v} tiles before an opening`,
