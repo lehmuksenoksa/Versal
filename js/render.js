@@ -69,7 +69,9 @@ const SOUNDS = {
 };
 
 // The lamp out: sight close round the player, only the dark band of light.
-const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0.5, lightDim: 0, lightDark: 3, flicker: 0, flickerSize: 0, warmth: 0 };
+// (No full band at all: its ragged edge would light a speck round the
+// player.)
+const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: 3.5, flicker: 0, flickerSize: 0, warmth: 0 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
 // [range in tiles, min and max seconds between darts]
