@@ -566,7 +566,8 @@ export class GpuMap {
       uSeen: this.seenTexture(),
       uSight: this.sightTexture(now),
       uLampSight: this.texture("lampSight", E.sightCanvas.lamps, `${E.sightCasts}|${E.sightCanvas.lamps.width}`),
-      uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightFrom}|${E.lightReach?.width}`),
+      // (Cast anew when the player moves, and when a door opens or shuts.)
+      uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightCasts}|${E.lightReach?.width}`),
       uLamp: this.maskTexture("lamp", E.lampLevel ?? new Float32Array(mw * mh), E.lampLevel),
     };
     const p = this.compose;

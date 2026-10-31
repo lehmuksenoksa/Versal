@@ -1621,6 +1621,7 @@ export class Expression {
       g.putImageData(reachImg, 0, 0);
       this.inkLight(level, box, size, toBox);
       this.lightFrom = [px, py];
+      this.lightCasts = (this.lightCasts ?? 0) + 1;
     }
     const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
     const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
