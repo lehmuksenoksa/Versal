@@ -744,8 +744,11 @@ export class Expression {
       glimpsed[j] = floor[j] && seen[j] > 0.01 ? 1 : 0;
     }
     const { d2, sx, sy } = nearestSeeds(known, mw, mh);
+    // (`mark`, if set, is told as each part is done, for timing them.)
+    this.mark?.("known floor");
     yield;
     const grey = yield* this.depthSteps(known, d2, sx, sy);
+    this.mark?.("depth map");
     // The set to draw into may still be fading out: wait for it.
     while (this.prev === buf) yield;
     // The area to redraw, in mask pixels: what is out of date, out to as far
@@ -814,6 +817,7 @@ export class Expression {
     const glimpsedMask = blank(mw, mh), gi = new ImageData(mw, mh);
     for (let j = 0; j < n; j++) if (floor[j]) gi.data[j * 4 + 3] = Math.round(255 * clearOf(seen[j]));
     glimpsedMask.getContext("2d").putImageData(gi, 0, 0);
+    this.mark?.("walls' and floor's masks");
     const [shape, maskHi, glimpsedHi] = this.hi;
     for (const [c, from] of [[shape, null], [maskHi, mask], [glimpsedHi, glimpsedMask]]) {
       const g = c.getContext("2d");
@@ -837,6 +841,7 @@ export class Expression {
       }
       g.restore();
     }
+    this.mark?.("masks at full size");
     yield;
     // The ink, in sight ("see") or beyond it ("mem"), on clear: the hatching
     // (strokes inked from the depth map; beyond sight with its darkness
@@ -872,6 +877,7 @@ export class Expression {
         }
         g.globalAlpha = 1;
       }
+      this.mark?.("hatching strokes");
       yield;
       this.lay(g, this.floorLayer, glimpsedHi, null, 1, null, "destination-out", true);
       if (pre === "see") this.lay(g, this.shadowLayer, maskHi, null, 1, null, "source-over", true);
@@ -892,6 +898,7 @@ export class Expression {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(w, 0, 0);
       g.restore();
+      this.mark?.("floor, walls and markings");
     }.bind(this);
 
     // Ground not yet seen. `u` runs from 0 where the cover starts to 1 where it
@@ -909,6 +916,11 @@ export class Expression {
         const kr = Math.max(0.1, 1 + S.ragged * (2 * this.noise(mx, my) - 1));
         u[j] = (Math.sqrt(d2[j]) / R - S.fadeStart * kr) / Math.max(0.01, S.fadeWidth * kr);
       }
+    this.mark?.("cover: how far");
+    // (Kept, all of it, for drawing the cover some other way.)
+    if (!this.coverU) this.coverU = new Float32Array(n).fill(1);
+    for (let y = Math.max(0, area[1] - um); y < Math.min(mh, area[3] + um); y++)
+      for (let x = Math.max(0, area[0] - um); x < Math.min(mw, area[2] + um); x++) this.coverU[y * mw + x] = u[y * mw + x];
     const cg = buf.cover.getContext("2d");
     clip(cg);
     cg.clearRect(rx, ry, rw, rh);
@@ -1031,6 +1043,7 @@ export class Expression {
       }
     }
     cg.restore();
+    this.mark?.("cover: drawn");
     yield;
     yield* look("see", buf.see);
     yield* look("mem", buf.mem);

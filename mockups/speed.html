@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speed Tests</title>
+<style>
+  /* Layout: controls, then the two drawings side by side, then the timings. */
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  h2 { margin: 26px 0 6px; font-size: 19px; font-weight: normal; }
+  p { margin: 0 0 10px; max-width: 78ch; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 12px 0; font-size: 14px; color: var(--muted); }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  button { font: 15px var(--body); padding: 6px 14px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  input[type="number"] { width: 6em; font: 15px var(--body); padding: 3px 6px; border: 1px solid var(--rule); background: #fffdf7; }
+  input[type="range"] { width: 130px; accent-color: var(--accent); }
+  .pair { display: flex; flex-wrap: wrap; gap: 14px; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; }
+  figure canvas { display: block; max-width: 100%; height: auto; background: #000; }
+  figcaption { padding: 6px 2px 0; font-size: 17px; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+  table { border-collapse: collapse; background: var(--paper); border: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+  th, td { padding: 5px 12px; border-bottom: 1px solid var(--rule); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-weight: normal; color: var(--muted); font-size: 13px; }
+  #status { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Speed tests</h1>
+  <p>The same level drawn two ways, side by side: the game's canvas drawing as it is now, and the GPU drawing, which composites the map in one WebGL2 pass a frame and draws the hatching from a picture of every stroke made once (no stroke is inked again as the map is explored). Walk to explore a little; the timings below compare the two.</p>
+</header>
+
+<div class="bar">
+  <label>Level <input id="seed" type="number" value="1" min="1"></label>
+  <label>Zoom <input id="zoom" type="range" min="0.4" max="0.7" step="0.05" value="0.5"><output id="zoom-v"></output></label>
+  <button id="load" type="button">Load</button>
+  <button id="walk" type="button" disabled>Walk 8 steps</button>
+  <label><input id="lamp" type="checkbox"> Lamp out</label>
+  <label><input id="flicker" type="checkbox" checked> Flicker</label>
+  <span id="status"></span>
+</div>
+
+<div class="pair">
+  <figure><canvas id="now" width="600" height="440"></canvas><figcaption>Now <span>canvas, strokes inked as the map changes</span></figcaption></figure>
+  <figure><canvas id="gpu" width="600" height="440"></canvas><figcaption>GPU <span>one WebGL2 pass a frame; strokes laid once</span></figcaption></figure>
+</div>
+
+<h2>Timings</h2>
+<p>Milliseconds on this device. A step is seeing from the new square and redrawing the ink; a frame is putting the picture together (for the GPU, waiting for it to finish). The GPU's step leaves out the strokes; its frame does them.</p>
+<table>
+  <thead><tr><th></th><th>Now</th><th>GPU</th></tr></thead>
+  <tbody id="times"></tbody>
+</table>
+<p style="margin-top:14px">Where a step's time goes (average, ms). For the GPU, the hatching and the cover's strokes are left to it, so they cost nothing here; what it does with them is in its frame.</p>
+<table>
+  <thead><tr><th></th><th>Now</th><th>GPU</th></tr></thead>
+  <tbody id="parts"></tbody>
+</table>
+
+<h2>Stroke stamps</h2>
+<p>The hatching in sight for the whole level, as the map stands now, drawn with the pen (each stroke's outline filled, as the game does) and with stamps (a tapered stroke drawn once at a few thicknesses and bends, then placed stretched and turned where each stroke goes). Close up round the player.</p>
+<div class="bar"><button id="stamp" type="button" disabled>Draw both</button> <label><input id="all" type="checkbox" checked> Every stroke on the level, at its blackest</label></div>
+<div class="pair">
+  <figure><canvas id="pen" width="600" height="300"></canvas><figcaption>Pen <span id="pen-t"></span></figcaption></figure>
+  <figure><canvas id="stamped" width="600" height="300"></canvas><figcaption>Stamps <span id="stamp-t"></span></figcaption></figure>
+</div>
+
+<h2>Off the main thread</h2>
+<p>The same pen hatching inked in a Web Worker on an off-screen canvas: how long it takes in all, and how long the game itself would stand still for it (sending the depth map, and drawing the picture that comes back).</p>
+<div class="bar"><button id="worker" type="button" disabled>Run in a worker</button> <span id="worker-t"></span></div>
+
+<h2>The light's flicker</h2>
+<p>The lamp flickers every frame, so the map has to be put together every frame even when nothing else changes. How long a frame takes, flickering and not; for the canvas drawing, still means the map as last put together could simply be shown again. On the GPU the flicker is two numbers handed to the one pass.</p>
+<div class="bar"><button id="flick" type="button" disabled>Measure</button></div>
+<table><thead><tr><th></th><th>Now</th><th>GPU</th></tr></thead><tbody id="flick-t"></tbody></table>
+
+<script type="module">
+import { World } from "../js/world.js";
+import { Expression, EXPRESSION_DEFAULTS } from "../js/expression.js";
+import { GpuView } from "./gpu-view.js";
+import { strokesToInk, hatchPaths, makeStamps, hatchStamps } from "./stamps.js";
+
+const $ = (id) => document.getElementById(id);
+const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: 3.5, flicker: 0, flickerSize: 0, warmth: 0 };
+const TS = 40;
+let A = null, B = null, gpu = null, world = null, times = {}, frames = { now: [], gpu: [] }, parts = { A: {}, B: {} };
+// Each step's parts, timed: the seeing, then each part of the redraw as
+// Expression marks it done.
+function timeParts(E, into) {
+  let last = performance.now();
+  E.mark = (label) => {
+    const t = performance.now();
+    into[label] = (into[label] ?? 0) + t - last;
+    last = t;
+  };
+  return () => (last = performance.now());
+}
+
+const ms = (f) => { const t = performance.now(); f(); return performance.now() - t; };
+const show = () => {
+  const row = (name, a, b) => `<tr><td>${name}</td><td>${a}</td><td>${b}</td></tr>`;
+  const f = (v) => (v == null ? "–" : v.toFixed(1));
+  const avg = (l) => (l.length ? l.reduce((s, v) => s + v, 0) / l.length : null);
+  $("times").innerHTML = [
+    row("Load: the drawing made", f(times.loadA), f(times.loadB)),
+    row("Load: the strokes laid (GPU)", "–", f(times.strokes)),
+    row("Step (average)", f(avg(times.stepA ?? [])), f(avg(times.stepB ?? []))),
+    row("Frame (average of the last 60)", f(avg(frames.now)), f(avg(frames.gpu))),
+  ].join("");
+  const steps = Math.max(1, (times.stepA ?? []).length), names = [...new Set([...Object.keys(parts.A), ...Object.keys(parts.B)])];
+  $("parts").innerHTML = names.map((k) => row(k, f((parts.A[k] ?? 0) / steps), f((parts.B[k] ?? 0) / steps))).join("");
+};
+
+function settings() {
+  const s = { ...EXPRESSION_DEFAULTS };
+  if ($("lamp").checked) Object.assign(s, SNEAK);
+  if (!$("flicker").checked) Object.assign(s, { flicker: 0, flickerSize: 0 });
+  return s;
+}
+
+async function load() {
+  $("status").textContent = "Loading…";
+  $("walk").disabled = true;
+  await new Promise((r) => setTimeout(r, 30));
+  world = new World(+$("seed").value);
+  for (const g of world.actors) if (g !== world.player) g.state = "sleeping";
+  const L = world.level, scale = +$("zoom").value, p = world.player;
+  times = {};
+  frames = { now: [], gpu: [] };
+  parts = { A: {}, B: {} };
+  times.loadA = ms(() => {
+    A = new Expression(L, world.seed, TS, settings());
+    A.player = { x: p.x, y: p.y };
+    A.setScale(scale);
+  });
+  let strokes;
+  times.loadB = ms(() => {
+    B = new Expression(L, world.seed, TS, settings());
+    strokes = B.solid;
+    B.solid = [];
+    B.player = { x: p.x, y: p.y };
+    B.setScale(scale);
+  });
+  try {
+    if (new URLSearchParams(location.search).has("nogpu")) throw new Error("left out");
+    gpu = new GpuView($("gpu"), B, strokes);
+    times.strokes = gpu.strokeMs;
+  } catch (e) {
+    $("status").textContent = `GPU drawing failed: ${e.message}`;
+    console.error(e);
+    gpu = null;
+  }
+  times.stepA = [];
+  times.stepB = [];
+  $("walk").disabled = false;
+  window.__strokes = strokes;
+  for (const id of ["stamp", "worker", "flick"]) $(id).disabled = false;
+  if (gpu) $("status").textContent = `${strokes.length} strokes.`;
+  show();
+}
+
+// Eight steps along the level, each seen and redrawn by both.
+async function walk() {
+  const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  let d = 0;
+  for (let i = 0; i < 8; i++) {
+    for (let k = 0; k < 4 && !world.isFree(world.player.x + dirs[d][0], world.player.y + dirs[d][1]); k++) d = (d + 1) % 4;
+    if (!world.playerMove(...dirs[d])) continue;
+    const { x, y } = world.player;
+    for (const [E, into, list] of [[A, parts.A, times.stepA], [B, parts.B, times.stepB]]) {
+      timeParts(E, into);
+      list.push(ms(() => {
+        E.learn(x, y);
+        E.mark("seeing (learn)");
+        E.rebuild();
+      }));
+      E.mark = null;
+    }
+    show();
+    await new Promise((r) => setTimeout(r, 120));
+  }
+}
+
+let last = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!A || !world) return;
+  const dt = Math.min(0.1, (now - (last || now)) / 1000), t = now / 1000;
+  last = now;
+  const p = world.player, px = (p.x + 0.5) * TS, py = (p.y + 0.5) * TS, sc = +$("zoom").value;
+  const c = $("now"), vw = c.width / sc, vh = c.height / sc, cam = [px - vw / 2, py - vh / 2];
+  frames.now.push(ms(() => {
+    A.update(now, dt, px, py);
+    const g = c.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = A.S.outColor;
+    g.fillRect(0, 0, c.width, c.height);
+    g.setTransform(sc, 0, 0, sc, -cam[0] * sc, -cam[1] * sc);
+    A.drawMap(g, { x: cam[0], y: cam[1], w: vw, h: vh }, now);
+  }));
+  if (gpu) frames.gpu.push(ms(() => {
+    B.update(now, dt, px, py, false);
+    if (!B.sightFrom || B.sightFrom[0] !== px || B.sightFrom[1] !== py) B.castSight(px, py);
+    B.sightVersion = now < B.easeUntil ? now : B.easeUntil;
+    if (now < B.easeUntil) B.easeSight(dt);
+    if (!B.lightFrom || B.lightFrom[0] !== px || B.lightFrom[1] !== py) B.castLight(px, py, t);
+    gpu.draw(cam, sc, { x: px, y: py }, t);
+    gpu.gl.finish();
+  }));
+  for (const k of ["now", "gpu"]) if (frames[k].length > 60) frames[k].shift();
+  if (Math.floor(now / 500) !== Math.floor((now - dt * 1000) / 500)) show();
+}
+
+// Stamps against the pen: the whole level's hatching in sight, each way, at
+// the drawing's resolution; shown close up round the player.
+function stampTest() {
+  const strokes = window.__strokes, E = A, S = E.S, scale = E.scale, w = E.paper.width, h = E.paper.height;
+  // (Every stroke on the level, at its blackest: as if all of it were known
+  // and close to walls; the most there could ever be to ink.)
+  const ink = strokesToInk(strokes, $("all").checked ? new Float32Array(E.mw * E.mh) : E.grey, E.mw, E.mh, TS, S);
+  const make = () => { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); g.setTransform(scale, 0, 0, scale, 0, 0); return [c, g]; };
+  const [pc, pg] = make(), [sc, sg] = make();
+  const penMs = ms(() => hatchPaths(pg, ink, S.seeHatchC));
+  let stamps;
+  const makeMs = ms(() => (stamps = makeStamps(scale, S.seeHatchC)));
+  const stampMs = ms(() => hatchStamps(sg, ink, stamps, scale));
+  const p = world.player, cx = (p.x + 0.5) * TS * scale, cy = (p.y + 0.5) * TS * scale;
+  for (const [id, src] of [["pen", pc], ["stamped", sc]]) {
+    const g = $(id).getContext("2d");
+    g.fillStyle = "#f7f2e6";
+    g.fillRect(0, 0, 600, 300);
+    g.drawImage(src, cx - 300, cy - 150, 600, 300, 0, 0, 600, 300);
+  }
+  $("pen-t").textContent = `${ink.length} strokes in ${penMs.toFixed(0)} ms`;
+  $("stamp-t").textContent = `${stampMs.toFixed(0)} ms (the stamps made once, ${makeMs.toFixed(0)} ms)`;
+}
+
+// The pen hatching in a worker: all of it, and how long the main thread is
+// held.
+let worker = null;
+async function workerTest() {
+  const E = A, S = E.S;
+  $("worker-t").textContent = "…";
+  if (!worker) {
+    worker = new Worker("./hatch-worker.js", { type: "module" });
+    const sent = performance.now();
+    worker.postMessage({ strokes: window.__strokes });
+    await new Promise((r) => (worker.onmessage = r));
+    worker.startMs = performance.now() - sent;
+  }
+  const t0 = performance.now();
+  let held = ms(() => worker.postMessage({ grey: $("all").checked ? new Float32Array(E.mw * E.mh) : E.grey, mw: E.mw, mh: E.mh, TS, S: { keepGrey: S.keepGrey, lenGrey: S.lenGrey, inkGrey: S.inkGrey, wBlack: S.wBlack, wGrey: S.wGrey }, w: E.paper.width, h: E.paper.height, scale: E.scale, colour: S.seeHatchC }));
+  const { data } = await new Promise((r) => (worker.onmessage = r));
+  const c = document.createElement("canvas");
+  c.width = E.paper.width;
+  c.height = E.paper.height;
+  held += ms(() => c.getContext("2d").drawImage(data.picture, 0, 0));
+  $("worker-t").textContent = `In all ${(performance.now() - t0).toFixed(0)} ms (the inking ${data.ms.toFixed(0)} ms); the main thread held ${held.toFixed(1)} ms. Sending the strokes once at the start: ${worker.startMs.toFixed(0)} ms.`;
+}
+
+// Frames flickering and not, each way.
+async function flickTest() {
+  const avg = (l) => l.reduce((a, b) => a + b, 0) / l.length;
+  const run = async (flicker) => {
+    for (const E of [A, B]) Object.assign(E.S, flicker ? { flicker: EXPRESSION_DEFAULTS.flicker, flickerSize: EXPRESSION_DEFAULTS.flickerSize } : { flicker: 0, flickerSize: 0 });
+    frames = { now: [], gpu: [] };
+    await new Promise((r) => setTimeout(r, 1500));
+    return [avg(frames.now), avg(frames.gpu)];
+  };
+  const [a1, b1] = await run(true), [a0, b0] = await run(false);
+  // (Showing the map as last put together, as low power does between.)
+  const c = $("now"), copy = document.createElement("canvas");
+  copy.width = c.width;
+  copy.height = c.height;
+  const blit = ms(() => { for (let i = 0; i < 20; i++) c.getContext("2d").drawImage(copy, 0, 0); }) / 20;
+  const f = (v) => v.toFixed(1);
+  $("flick-t").innerHTML = `<tr><td>A frame, flickering</td><td>${f(a1)}</td><td>${f(b1)}</td></tr><tr><td>A frame, still</td><td>${f(a0)}</td><td>${f(b0)}</td></tr><tr><td>Showing the last picture again</td><td>${f(blit)}</td><td>–</td></tr>`;
+  if ($("flicker").checked) for (const E of [A, B]) Object.assign(E.S, { flicker: EXPRESSION_DEFAULTS.flicker, flickerSize: EXPRESSION_DEFAULTS.flickerSize });
+}
+
+$("stamp").addEventListener("click", stampTest);
+$("worker").addEventListener("click", workerTest);
+$("flick").addEventListener("click", flickTest);
+$("zoom-v").textContent = $("zoom").value;
+$("zoom").addEventListener("input", () => ($("zoom-v").textContent = $("zoom").value));
+$("load").addEventListener("click", load);
+$("walk").addEventListener("click", walk);
+for (const id of ["lamp", "flicker"]) $(id).addEventListener("change", load);
+requestAnimationFrame(frame);
+load();
+</script>
+</body>
+</html>
