@@ -85,6 +85,8 @@ const PAPER_RGB = [247, 242, 230];
 // The most pixels in one of the full-map drawings, and in the sight and
 // light over them (lower, as they change every frame).
 const DRAWING_PIXELS = 8e6, SIGHT_PIXELS = 3e6;
+// (In low power, phones: the drawings smaller still, to spare their memory.)
+const LOW_DRAWING_PIXELS = 5e6;
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
@@ -180,10 +182,11 @@ export class Expression {
   // slice at a time.
   setScale(scale, around = null) {
     const { level, W, H, TS, seed, mw, mh } = this, area = W * TS * H * TS;
-    this.scale = Math.min(scale, Math.sqrt(DRAWING_PIXELS / area));
+    this.scale = Math.min(scale, Math.sqrt((this.low ? LOW_DRAWING_PIXELS : DRAWING_PIXELS) / area));
     // (In low power, `low`, the sight a little coarser: it is soft anyway.)
     this.sightScale = Math.min(scale * (this.low ? 0.6 : 1), Math.sqrt(SIGHT_PIXELS / area));
     const layer = (o) => renderMap(level, TS, this.scale, seed, { hatch: false, paper: false, floor: false, grid: false, walls: false, keys: false, ...o });
+    this.drawings = (this.drawings ?? 0) + 1;
     const drawn = layer({ floor: true, shadow: false });
     this.floorLayer = drawn.canvas; // (for its shape)
     this.shadowLayer = layer({ floor: true, fill: false }).canvas;

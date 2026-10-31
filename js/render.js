@@ -211,8 +211,9 @@ export class Renderer {
     const r = this.canvas.getBoundingClientRect();
     // (`dpr`: the map's drawings' pixels to a screen pixel; `screenDpr`, the
     // screen's canvases', as sharp as the screen when the GPU draws.)
-    this.dpr = Math.min(this.low ? 1 : 2, window.devicePixelRatio || 1);
+    // (On the GPU, low power or not, the map is drawn as sharp as the screen.)
     this.hiDpr = Math.min(2, window.devicePixelRatio || 1);
+    this.dpr = this.gl ? this.hiDpr : Math.min(this.low ? 1 : 2, window.devicePixelRatio || 1);
     this.screenDpr = this.gl ? this.hiDpr : this.dpr;
     this.vw = Math.max(1, r.width);
     this.vh = Math.max(1, r.height);

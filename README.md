@@ -33,7 +33,8 @@ and some goblins.
   the GPU even in software. `?perf` shows a readout of what draws the map and how long frames,
   steps and redraws take.
 - Low power, for phones: on touch screens (or if frames run slow, or with `?quality=low`; never with
-  `?quality=high`) the game draws the map at one device pixel per screen pixel (the letters, flames and words on a
+  `?quality=high`). On the GPU the map is still drawn as sharp as the screen (its drawings capped at
+  5 million pixels when zoomed in close). With canvases, the game draws the map at one device pixel per screen pixel (the letters, flames and words on a
   layer over it as sharp as the screen) and puts the map together
   again only twelve times a second while the view stands still.
 - Secret doors: some dungeon doors look like plain wall until found. Each turn the player may spot

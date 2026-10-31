@@ -454,21 +454,26 @@ export class GpuMap {
 
   // The layers that never change, packed into one picture (see PACK_FS);
   // again when the doors are drawn again, or the drawings remade.
+  // (Once each drawing of them is sent, the canvases they came from are let
+  // go: nothing else needs them when the GPU draws.) With the floor's.
   layersTexture() {
-    const E = this.exp, w = E.paper.width, h = E.paper.height;
+    const E = this.exp, w = E.paper.width, h = E.paper.height, set = E.drawings;
     if (!this.layersPic || this.layersPic.w !== w || this.layersPic.h !== h) this.layersPic = this.pic(w, h);
-    const v = `${E.shadowLayer.width}|${E.doorsDrawn}|${w}`;
+    if (this.layersPic.set !== set) {
+      for (const [name, c] of [["shadow", E.shadowLayer], ["mark", E.markLayer], ["wall", E.wallLayer], ["floor", E.floorLayer]]) {
+        this.texture(name, c, set);
+        c.width = c.height = 1;
+      }
+      this.layersPic.set = set;
+      this.layersPic.v = null;
+    }
+    const v = `${set}|${E.doorsDrawn}`;
     if (this.layersPic.v !== v) {
-      const tex = {
-        uShadow: this.texture("shadow", E.shadowLayer, E.shadowLayer),
-        uMark: this.texture("mark", E.markLayer, E.markLayer),
-        uWall: this.texture("wall", E.wallLayer, E.wallLayer),
-        uDoor: this.texture("door", E.doorLayer, E.doorsDrawn),
-      };
+      const tex = { uShadow: this.tex.shadow, uMark: this.tex.mark, uWall: this.tex.wall, uDoor: this.texture("door", E.doorLayer, `${set}|${E.doorsDrawn}`) };
       this.pass(this.packProg, this.layersPic, tex);
       this.layersPic.v = v;
     }
-    return this.layersPic.t;
+    return [this.layersPic.t, this.tex.floor];
   }
 
   // The shape of what has been seen: only what has changed in it sent.
@@ -539,7 +544,7 @@ export class GpuMap {
     // light when cast anew, the lamps when relit.)
     const T = {
       uLit: this.texture("lit", E.lit, `${E.lit.width}x${E.lit.height}|${E.painted}`),
-      uLayers: this.layersTexture(), uFloor: this.texture("floor", E.floorLayer, E.floorLayer),
+      ...(([uLayers, uFloor]) => ({ uLayers, uFloor }))(this.layersTexture()),
       uMasks: masks, uHatch: hatch, uPMasks: pMasks, uPHatch: pHatch,
       uSeen: this.seenTexture(),
       uSight: this.sightTexture(now),
