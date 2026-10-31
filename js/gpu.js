@@ -132,7 +132,7 @@ vec4 overA(vec4 d, vec4 s) {
 // cleared off floor glimpsed (masks.g); then the cover (masks.b, and its
 // strokes in h.b).
 vec3 inked(vec3 c, float m, vec4 mk, vec3 h, vec4 L, float shapeRock, float floorA) {
-  float mask = mk.r * shapeRock, clear = floorA * mk.g * shapeRock;
+  float mask = mk.r * shapeRock, clear = floorA * mk.g * min(1.0, shapeRock * 4.0);
   vec4 se = overA(overA(overA(vec4(uShadowC, L.r), vec4(uSeeMarkC, L.g * uSeeMark)), vec4(uSeeWallC, L.b * uSeeWall)), vec4(uSeeWallC, L.a * uSeeWall));
   vec4 me = overA(overA(vec4(uMemMarkC, L.g * uMemMark), vec4(uMemWallC, L.b * uMemWall)), vec4(uMemWallC, L.a * uMemWall));
   se.a *= mask;

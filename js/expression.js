@@ -203,10 +203,10 @@ function behindWall(floor, open, mw, mh, fx, fy, x, y) {
   return false;
 }
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-// How floor seen `v` well (0 to 1) is drawn: barely glimpsed, it stays rock;
-// seen a little better, its hatching fades away; seen better still, the
-// floor itself, its markings and walls come in.
-const clearOf = (v) => smooth((v - 0.1) / 0.35);
+// How floor seen `v` well (0 to 1) is drawn: seen at all, its hatching is
+// cleared (floor seen is never hatched); seen better, the floor itself, its
+// markings and walls come in.
+const clearOf = (v) => smooth((v - 0.002) / 0.018);
 const drawnAs = (v) => smooth((v - 0.4) / 0.6);
 // Out of date everywhere (see rebuildSteps); and the union of two areas
 // [x0, y0, x1, y1] (or either being ALL, or null for none).
