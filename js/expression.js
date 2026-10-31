@@ -1392,68 +1392,26 @@ export class Expression {
 
   // The rooms any of whose floor is in sight now: all of each is drawn as in
   // sight, its walls and their hatching inked black, as far as it is known
-  // (`roomInk`, at mask resolution). Rooms here are the open floor: each
-  // square in some three by three of floor, those touching one room
-  // (corridors and passages, narrower, are part of none; caves' chambers
-  // are rooms of their own, apart where only a passage joins them). What
-  // room each bit of the map is part of: a room's floor, and the rock whose
-  // nearest floor is a room's, as far out as the hatching reaches (worked
-  // out once).
+  // (`roomInk`, at mask resolution). Rooms as the level has them (its
+  // `roomOf`: corridors and passages part of none). What room each bit of
+  // the map is part of: a room's floor, and the rock whose nearest floor is
+  // a room's, as far out as the hatching reaches (worked out once).
   roomsInSight() {
-    const { mw, mh, level: L, S } = this, vis = this.visNow;
+    const { mw, mh, level: L, S } = this, vis = this.visNow, roomOf = L.roomOf;
+    if (!roomOf) return;
     if (!this.cellRoom) {
-      const W = L.w, H = L.h, floorAt = (x, y) => x >= 0 && y >= 0 && x < W && y < H && L.tiles[y * W + x] === T.FLOOR;
-      const open = new Uint8Array(W * H);
-      for (let y = 1; y < H - 1; y++)
-        for (let x = 1; x < W - 1; x++) {
-          let all = true;
-          for (let dy = -1; dy <= 1 && all; dy++) for (let dx = -1; dx <= 1 && all; dx++) all = floorAt(x + dx, y + dy);
-          if (all) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) open[(y + dy) * W + x + dx] = 1;
-        }
-      const squareRoom = new Int16Array(W * H).fill(-1);
-      let rooms = 0;
-      for (let i = 0; i < W * H; i++) {
-        if (!open[i] || squareRoom[i] >= 0) continue;
-        const q = [i];
-        squareRoom[i] = rooms;
-        while (q.length) {
-          const j = q.pop(), x = j % W, y = (j - x) / W;
-          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-            const nx = x + dx, ny = y + dy, n = ny * W + nx;
-            if (nx < 0 || ny < 0 || nx >= W || ny >= H || !open[n] || squareRoom[n] >= 0) continue;
-            squareRoom[n] = rooms;
-            q.push(n);
-          }
-        }
-        rooms++;
-      }
-      // (Then out two squares into the floor round them: a cave's ragged
-      // edge, round columns, the mouths of corridors.)
-      for (let pass = 0; pass < 2; pass++) {
-        const was = squareRoom.slice();
-        for (let y = 0; y < H; y++)
-          for (let x = 0; x < W; x++) {
-            if (was[y * W + x] >= 0 || !floorAt(x, y)) continue;
-            for (let k = 0; k < 9; k++) {
-              const nx = x + (k % 3) - 1, ny = y + ((k / 3) | 0) - 1, r = nx >= 0 && ny >= 0 && nx < W && ny < H ? was[ny * W + nx] : -1;
-              if (r >= 0) { squareRoom[y * W + x] = r; break; }
-            }
-          }
-      }
-      this.roomCount = rooms;
       if (!this.nearFloor) this.nearFloor = nearestSeeds(this.floor, mw, mh);
       const near = this.nearFloor, reach = (S.reach * (1 + S.ragged) * R) ** 2;
       this.cellRoom = new Int16Array(mw * mh).fill(-1);
       for (let j = 0; j < mw * mh; j++) {
         if (near.sx[j] < 0 || near.d2[j] > reach) continue;
-        this.cellRoom[j] = squareRoom[Math.floor(near.sy[j] / R) * L.w + Math.floor(near.sx[j] / R)];
+        this.cellRoom[j] = roomOf[Math.floor(near.sy[j] / R) * L.w + Math.floor(near.sx[j] / R)];
       }
-      this.squareRoom = squareRoom;
     }
     const inSight = new Set();
     for (let y = 0; y < L.h; y++)
       for (let x = 0; x < L.w; x++) {
-        const i = this.squareRoom[y * L.w + x];
+        const i = roomOf[y * L.w + x];
         if (i >= 0 && !inSight.has(i) && vis[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] > 0.5) inSight.add(i);
       }
     const key = [...inSight].join();

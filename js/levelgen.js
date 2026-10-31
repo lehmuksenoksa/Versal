@@ -17,7 +17,9 @@
 // { x, y, dx, dy, w }: in the wall that way from the square x, y, w squares
 // wide), `lights` (campfires, each { x, y, kind } in squares), `lit` (the
 // squares of lit rooms and corridors), `blocks` (squares in the way though
-// floor: campfires), each room's `kind`,
+// floor: campfires), `roomOf` and `wallOf` (which room, an index into
+// `rooms`, each square's floor and each bit of rock bordering it is part
+// of; -1 for none: corridors, passages), each room's `kind`,
 // and `regions` (their seed points and types).
 // Columns are rock, a square each.
 
@@ -164,11 +166,15 @@ function tryAreas(S, rng) {
   };
 
   const fine = valueNoise(rng, W, H, 2.5);
-  for (const r of rooms) {
+  // (Each square carved for a room is that room's: `roomOf`, the room's
+  // index, -1 for none.)
+  const roomOf = new Int16Array(n).fill(-1);
+  for (const [ri, r] of rooms.entries()) {
     if (r.cave) {
       carveCave(r, rng, (x, y) => {
         tiles[idx(x, y)] = T.FLOOR;
         cave[idx(x, y)] = 1;
+        roomOf[idx(x, y)] = ri;
       });
       // Rock formations in a big cave: small clumps of rock (walled like the
       // cave) where the floor all round is open, kept only if the cave's
@@ -199,7 +205,11 @@ function tryAreas(S, rng) {
         f++;
       }
     } else {
-      for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) tiles[idx(x, y)] = T.FLOOR;
+      for (let y = r.y; y < r.y + r.h; y++)
+        for (let x = r.x; x < r.x + r.w; x++) {
+          tiles[idx(x, y)] = T.FLOOR;
+          roomOf[idx(x, y)] = ri;
+        }
       if (!r.collapsed) continue;
       // Fallen in from a corner or a side: a ragged blob of rock (its edge,
       // and the walls about it, ragged like a cave's), leaving the middle;
@@ -673,8 +683,21 @@ function tryAreas(S, rng) {
     lit[idx(d.x, d.y)] = 0;
     secrets.push({ x: d.x, y: d.y, dx: d.dx, dy: d.dy });
   }
+  // Which room each square is part of: its floor (`roomOf`; corridors and
+  // passages, none: -1), and the rock bordering it, its walls, columns and
+  // formations among them (`wallOf`: the room of the floor next to it).
+  const wallOf = new Int16Array(n).fill(-1);
+  for (let j = 0; j < n; j++) if (tiles[j] !== T.FLOOR) roomOf[j] = -1;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      if (tiles[idx(x, y)] === T.FLOOR) continue;
+      for (let k = 0; k < 9 && wallOf[idx(x, y)] < 0; k++) {
+        const nx = x + (k % 3) - 1, ny = y + ((k / 3) | 0) - 1;
+        if (nx >= 0 && ny >= 0 && nx < W && ny < H) wallOf[idx(x, y)] = roomOf[idx(nx, ny)];
+      }
+    }
   return {
-    w: W, h: H, tiles, cave, rooms, area, rubble, doors, secrets, features, posts, recesses, lights, lit, blocks, regions,
+    w: W, h: H, tiles, cave, rooms, roomOf, wallOf, area, rubble, doors, secrets, features, posts, recesses, lights, lit, blocks, regions,
     start: { x: startRoom.cx, y: startRoom.cy },
     startRoom,
     idx, get,
