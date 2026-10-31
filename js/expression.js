@@ -1366,6 +1366,24 @@ export class Expression {
     g.fill(path);
     g.restore();
     g.filter = "none";
+    // The pillars stand in the way of the sight, so aren't in it themselves:
+    // each in sight as well as the ground round it is seen.
+    const vis = this.visNow, { mw, mh } = this;
+    if (vis)
+      for (const f of this.level.features ?? []) {
+        if (f.type !== "post" || Math.hypot(f.x * TS - px, f.y * TS - py) > (far + 1) * TS) continue;
+        let a = 0;
+        for (let i = 0; i < 8; i++) {
+          const mx = Math.floor((f.x + 0.4 * Math.cos((i * Math.PI) / 4)) * R), my = Math.floor((f.y + 0.4 * Math.sin((i * Math.PI) / 4)) * R);
+          if (mx >= 0 && my >= 0 && mx < mw && my < mh) a = Math.max(a, vis[my * mw + mx]);
+        }
+        if (!(a > 0)) continue;
+        g.fillStyle = `rgba(0, 0, 0, ${a})`;
+        g.beginPath();
+        for (const [x, y] of postOutline(f, TS)) g.lineTo(f.x * TS + (x - f.x * TS) * 1.4, f.y * TS + (y - f.y * TS) * 1.4);
+        g.closePath();
+        g.fill();
+      }
     // And what lights light, far off, in view from the player's square (and
     // the rock they light past the walls in view).
     // (Kept apart too, `lamps`: where their light is seen, for showing it only
