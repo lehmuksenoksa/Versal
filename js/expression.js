@@ -251,6 +251,7 @@ export class Expression {
   // colour.
   paint() {
     const S = this.S;
+    this.painted = (this.painted ?? 0) + 1;
     if (!this.lit || this.lit.width !== this.paper.width || this.lit.height !== this.paper.height) this.lit = blank(this.paper.width, this.paper.height);
     const g = this.lit.getContext("2d");
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1157,6 +1158,14 @@ export class Expression {
           break;
         }
       } while (performance.now() - t0 < 8);
+    }
+    // (Drawn on the GPU, `gpu`: the light only cast anew when it moves, its
+    // flicker done there.)
+    if (this.gpu) {
+      if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
+      if (now < this.easeUntil) this.easeSight(dt);
+      if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py || !this.lightBox) this.castLight(px, py, now / 1000);
+      return;
     }
     // (The sight's easing and the light only for a frame the map is drawn
     // in, `drawn`; the time between is made up.)

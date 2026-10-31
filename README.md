@@ -25,6 +25,10 @@ and some goblins.
 - The player whacks a goblin by walking into it (goblins take a hit or two), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
   round them, only the dark band of light, and goblins much less likely to notice or wake.
+- The map is drawn on the GPU (WebGL2) where there is one: the hatching inked there from every
+  stroke's shape, sent once, and each frame put together in one pass. Without one (or with only a
+  software one, or with `?render=canvas`) it is drawn with canvases as before; `?render=gpu` uses
+  the GPU even in software.
 - Low power, for phones: on touch screens (or if frames run slow, or with `?quality=low`; never with
   `?quality=high`) the game draws the map at one device pixel per screen pixel (the letters, flames and words on a
   layer over it as sharp as the screen) and puts the map together
@@ -79,7 +83,9 @@ in the browser console.
 | `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |
-| `js/render.js` | Per-frame drawing: camera and zoom, the map (via `js/expression.js`), glyph poses and tweens. |
+| `js/gpu.js` | The map drawn on the GPU (WebGL2): one pass a frame putting together what `js/expression.js` prepares, the hatching inked there from every stroke's shape (sent once), the flicker a few numbers. |
+| `js/render.js` | Per-frame drawing: camera and zoom, the map (on the GPU via `js/gpu.js`, or with canvases via `js/expression.js`), glyph poses and tweens. |
+| `mockups/speed.html` | The same level drawn on the GPU and with canvases side by side, with timings; also stroke stamps, a worker, the flicker. |
 | `js/main.js` | Input and the main loop. |
 
 ## Fonts

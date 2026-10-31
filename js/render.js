@@ -5,6 +5,7 @@
 import { INK, PAPER } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire } from "./fire.js";
+import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
 
@@ -104,6 +105,10 @@ const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 // on average over a couple of seconds; or as `?quality=low` (`high`: never).
 const LOW = { mapFps: 12, movingFps: 30, slowMs: 50 };
 const QUALITY = new URLSearchParams(location.search).get("quality");
+// The map drawn on the GPU (gpu.js) where WebGL2 is to be had on a real GPU
+// (`?render=gpu`: even in software), unless `?render=canvas`; otherwise with
+// canvases, as Expression draws it.
+const RENDER = new URLSearchParams(location.search).get("render");
 
 export class Renderer {
   constructor(canvas) {
@@ -112,6 +117,19 @@ export class Renderer {
     // (The layer over the map for the letters in low power.)
     this.over = document.getElementById("over");
     this.octx = this.over?.getContext("2d");
+    // (The GPU's canvas under the letters', for the map, if it can be had.)
+    this.mapCanvas = document.getElementById("map");
+    this.gl = RENDER !== "canvas" && this.mapCanvas ? gpuContext(this.mapCanvas, RENDER === "gpu") : null;
+    if (this.mapCanvas) this.mapCanvas.hidden = !this.gl;
+    this.mapCanvas?.addEventListener("webglcontextlost", (e) => {
+      // (Lost: drawn with canvases from here on.)
+      e.preventDefault();
+      this.gl = this.gpuMap = null;
+      this.mapCanvas.hidden = true;
+      this.exp = null;
+      this.resize();
+      if (this.world) this.buildMap();
+    });
     this.views = new Map();
     this.cam = { x: 0, y: 0, snap: true };
     this.reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -194,16 +212,24 @@ export class Renderer {
 
   resize() {
     const r = this.canvas.getBoundingClientRect();
+    // (`dpr`: the map's drawings' pixels to a screen pixel; `screenDpr`, the
+    // screen's canvases', as sharp as the screen when the GPU draws.)
     this.dpr = Math.min(this.low ? 1 : 2, window.devicePixelRatio || 1);
+    this.hiDpr = Math.min(2, window.devicePixelRatio || 1);
+    this.screenDpr = this.gl ? this.hiDpr : this.dpr;
     this.vw = Math.max(1, r.width);
     this.vh = Math.max(1, r.height);
-    this.canvas.width = Math.round(this.vw * this.dpr);
-    this.canvas.height = Math.round(this.vh * this.dpr);
-    this.hiDpr = Math.min(2, window.devicePixelRatio || 1);
+    this.canvas.width = Math.round(this.vw * this.screenDpr);
+    this.canvas.height = Math.round(this.vh * this.screenDpr);
+    if (this.gl) {
+      this.mapCanvas.width = this.canvas.width;
+      this.mapCanvas.height = this.canvas.height;
+    }
     if (this.over) {
-      this.over.hidden = !this.low;
-      this.over.width = this.low ? Math.round(this.vw * this.hiDpr) : 1;
-      this.over.height = this.low ? Math.round(this.vh * this.hiDpr) : 1;
+      const on = this.low && !this.gl;
+      this.over.hidden = !on;
+      this.over.width = on ? Math.round(this.vw * this.hiDpr) : 1;
+      this.over.height = on ? Math.round(this.vh * this.hiDpr) : 1;
     }
     const ts = this.vw < 560 ? 28 : this.vw < 1000 ? 34 : 40;
     if (ts !== this.TS) {
@@ -219,6 +245,14 @@ export class Renderer {
     if (!this.exp || this.exp.level !== w.level || this.exp.TS !== this.TS) {
       this.exp = new Expression(w.level, w.seed, this.TS, this.settings);
       this.exp.player = { x: w.player.x, y: w.player.y };
+      // (On the GPU, the strokes are inked there: the Expression draws none.)
+      this.gpuMap = null;
+      if (this.gl) {
+        const strokes = this.exp.solid;
+        this.exp.solid = [];
+        this.exp.gpu = true;
+        this.gpuMap = new GpuMap(this.gl, this.exp, strokes);
+      }
     }
     this.exp.low = this.low;
     this.exp.setScale(this.dpr * this.zoom); // learns what is seen and draws
@@ -396,7 +430,7 @@ export class Renderer {
     this.lastNow = now;
     const motion = this.reduced ? 0.35 : 1;
     // The view in map units, and map units to device pixels.
-    const vw = this.vw / this.zoom, vh = this.vh / this.zoom, sc = this.dpr * this.zoom;
+    const vw = this.vw / this.zoom, vh = this.vh / this.zoom, sc = this.screenDpr * this.zoom;
 
     // Camera follows the player's drawn position.
     const pv = this.view(w.player);
@@ -415,15 +449,22 @@ export class Renderer {
     let cx = Math.round(this.cam.x * sc) / sc, cy = Math.round(this.cam.y * sc) / sc;
 
     // (In low power, the map as last put together, and the view where it was
-    // then, until it is time.)
+    // then, until it is time. On the GPU, the map each frame: sight and light
+    // cast from the player's square, the light following the letter.)
     const key = `${cx},${cy},${sc},${this.canvas.width},${this.canvas.height}`;
-    const fresh = !this.low || !this.mapCache || now - this.mapAt >= 1000 / (key !== this.mapKey ? LOW.movingFps : LOW.mapFps);
+    const gpu = this.gl && this.gpuMap;
+    const fresh = gpu || !this.low || !this.mapCache || now - this.mapAt >= 1000 / (key !== this.mapKey ? LOW.movingFps : LOW.mapFps);
     if (!fresh) [cx, cy] = this.mapCam;
     this.drawnCam = [cx, cy];
     const view = { x: cx, y: cy, w: vw, h: vh };
-    if (this.low) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
+    if (this.low || gpu) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
     else this.exp.update(now, dt, px, py);
-    if (fresh) {
+    if (gpu) {
+      this.gpuMap.draw([cx, cy], sc, { x: px, y: py }, now);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
+    } else if (fresh) {
       // Beyond the map, the darkness of ground not yet seen; the map fading
       // into it at its edges, so no edge shows.
       const out = this.settings.outColor;
@@ -466,7 +507,7 @@ export class Renderer {
     // (In low power the letters, flames and words go on a layer of their
     // own over the map, as sharp as the screen.)
     let lc = ctx;
-    if (this.low && this.over) {
+    if (this.low && this.over && !gpu) {
       lc = this.octx;
       lc.setTransform(1, 0, 0, 1, 0, 0);
       lc.clearRect(0, 0, this.over.width, this.over.height);
