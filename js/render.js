@@ -109,6 +109,8 @@ const QUALITY = new URLSearchParams(location.search).get("quality");
 // (`?render=gpu`: even in software), unless `?render=canvas`; otherwise with
 // canvases, as Expression draws it.
 const RENDER = new URLSearchParams(location.search).get("render");
+// A readout of how long things take (`?perf`).
+const PERF = new URLSearchParams(location.search).has("perf");
 
 export class Renderer {
   constructor(canvas) {
@@ -302,7 +304,11 @@ export class Renderer {
         }
         // What the player sees from the new tile; the drawing is redone once
         // the step is over.
-        if (e.actor === this.world.player && this.exp?.learn(e.actor.x, e.actor.y)) this.redraw(v.dur + 30);
+        if (e.actor === this.world.player) {
+          const t = performance.now(), grew = this.exp?.learn(e.actor.x, e.actor.y);
+          this.learnMs = performance.now() - t;
+          if (grew) this.redraw(v.dur + 30);
+        }
       } else if (e.type === "door" && this.exp) {
         // A door opened or shut: drawn so, and what can be seen found again.
         this.exp.doorChanged(e.door);
@@ -423,7 +429,9 @@ export class Renderer {
   frame(now) {
     const w = this.world;
     if (!w || !this.exp) return;
+    const t0 = performance.now();
     this.consume(now);
+    const t1 = performance.now();
     const ctx = this.ctx, TS = this.TS, L = w.level, t = now / 1000;
     const dt = Math.min(0.1, (now - (this.lastNow || now)) / 1000);
     this.watchSpeed(now - (this.lastNow || now));
@@ -459,6 +467,7 @@ export class Renderer {
     const view = { x: cx, y: cy, w: vw, h: vh };
     if (this.low || gpu) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
     else this.exp.update(now, dt, px, py);
+    const t2 = performance.now();
     if (gpu) {
       this.gpuMap.draw([cx, cy], sc, { x: px, y: py }, now);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -541,6 +550,33 @@ export class Renderer {
     // What can be heard, seen or not.
     this.listen(now);
     this.drawSounds(lc, now);
+    if (PERF) this.perfFrame(now, t0, t1, t2, performance.now());
+  }
+
+  // The readout (`?perf`): what draws the map, how big its drawings are, and
+  // how long a frame's parts take (averaged over half a second), a step's
+  // seeing, the last redraw of the ink, and sending pictures to the GPU.
+  perfFrame(now, t0, t1, t2, t3) {
+    const P = (this.perfData ??= { n: 0, frame: 0, consume: 0, update: 0, map: 0, gap: 0, since: now, last: now, sent: 0, sentPx: 0 });
+    P.n++;
+    P.consume += t1 - t0;
+    P.update += t2 - t1;
+    P.map += t3 - t2;
+    P.gap += now - P.last;
+    P.last = now;
+    if (now - P.since < 500) return;
+    const el = document.getElementById("perf") ?? Object.assign(document.body.appendChild(document.createElement("pre")), { id: "perf" });
+    const E = this.exp, g = this.gpuMap, f = (v) => (v / P.n).toFixed(1);
+    const sent = g ? g.sentMs - P.sent : 0, sentPx = g ? g.sentPx - P.sentPx : 0;
+    el.textContent = [
+      `${this.gl ? `GPU (${this.gl.rendererName ?? "?"})` : "canvas"}${this.low ? ", low power" : ""}`,
+      `screen ${this.canvas.width}×${this.canvas.height}, map drawings ${E.paper?.width}×${E.paper?.height}`,
+      `${(1000 / (P.gap / P.n)).toFixed(0)} fps; a frame ${f(P.consume + P.update + P.map)} ms: events ${f(P.consume)}, update ${f(P.update)}, map and letters ${f(P.map)}`,
+      `last step's seeing ${(this.learnMs ?? 0).toFixed(0)} ms; last redraw ${E.lastRedraw ? `${E.lastRedraw.ms.toFixed(0)} ms over ${E.lastRedraw.frames} frames` : "–"}`,
+      g ? `sent to the GPU ${(sent / ((now - P.since) / 1000)).toFixed(1)} ms/s (${(sentPx / 1e6 / ((now - P.since) / 1000)).toFixed(1)} Mpx/s)` : "",
+    ].join("\n");
+    if (g) { P.sent = g.sentMs; P.sentPx = g.sentPx; }
+    Object.assign(P, { n: 0, consume: 0, update: 0, map: 0, gap: 0, since: now });
   }
 
   metrics(ch, font) {

@@ -31,3 +31,6 @@ body { background: #000; overflow: hidden; }
 }
 #actions button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4); }
 #actions button:disabled { opacity: 0.45; }
+
+/* The performance readout (?perf). */
+#perf { position: fixed; top: 8px; left: 8px; z-index: 2; margin: 0; padding: 6px 8px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #f7f2e6; background: rgba(0, 0, 0, 0.6); pointer-events: none; white-space: pre; }

@@ -28,7 +28,8 @@ and some goblins.
 - The map is drawn on the GPU (WebGL2) where there is one: the hatching inked there from every
   stroke's shape, sent once, and each frame put together in one pass. Without one (or with only a
   software one, or with `?render=canvas`) it is drawn with canvases as before; `?render=gpu` uses
-  the GPU even in software.
+  the GPU even in software. `?perf` shows a readout of what draws the map and how long frames,
+  steps and redraws take.
 - Low power, for phones: on touch screens (or if frames run slow, or with `?quality=low`; never with
   `?quality=high`) the game draws the map at one device pixel per screen pixel (the letters, flames and words on a
   layer over it as sharp as the screen) and puts the map together

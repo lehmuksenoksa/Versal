@@ -61,6 +61,11 @@ export const EXPRESSION_DEFAULTS = {
 export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
+// The rectangle ([x, y, w, h]) round two.
+const joinRect = (a, b) => {
+  const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
+  return [x, y, Math.max(a[0] + a[2], b[0] + b[2]) - x, Math.max(a[1] + a[3], b[1] + b[3]) - y];
+};
 // Lights in the level (campfires): their bands, in squares from the
 // light, like the candle's; and how far off the player sees what they light.
 const LAMPS = { fire: { full: 3.5, dim: 2, dark: 2 } };
@@ -436,6 +441,12 @@ export class Expression {
       g.restore();
     };
     const g = this.seenShape.getContext("2d");
+    // (What of it has changed since asked, `seenChanged`: [x, y, w, h] in its
+    // pixels, for sending on just that.)
+    const reach = ((lamps ? Math.max(far, LAMP_SEE + 1) : far) + WALL_BAND + 1) * TS * this.scale;
+    const box = [Math.max(0, Math.floor(px * this.scale - reach)), Math.max(0, Math.floor(py * this.scale - reach))];
+    box.push(Math.min(this.seenShape.width, Math.ceil(px * this.scale + reach)) - box[0], Math.min(this.seenShape.height, Math.ceil(py * this.scale + reach)) - box[1]);
+    this.seenChanged = this.seenChanged ? joinRect(this.seenChanged, box) : box;
     g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     g.save();
     g.beginPath();
@@ -1048,6 +1059,9 @@ export class Expression {
     yield;
     yield* look("see", buf.see);
     yield* look("mem", buf.mem);
+    // (Where it was redrawn, [x, y, w, h] in canvas pixels: for sending on
+    // just that.)
+    buf.drawn = this.area;
     this.area = null;
     buf.stale = null;
     buf.t = performance.now();
@@ -1153,17 +1167,24 @@ export class Expression {
       const t0 = performance.now();
       do {
         if (this.job.next().done) {
+          // (How long the redraw took in all, and over how many frames.)
+          this.lastRedraw = { ms: (this.jobMs ?? 0) + performance.now() - t0, frames: (this.jobFrames ?? 0) + 1 };
+          this.jobMs = this.jobFrames = 0;
           this.job = this.again ? this.rebuildSteps() : null;
           this.again = false;
           break;
         }
       } while (performance.now() - t0 < 8);
+      if (this.job) {
+        this.jobMs = (this.jobMs ?? 0) + performance.now() - t0;
+        this.jobFrames = (this.jobFrames ?? 0) + 1;
+      }
     }
     // (Drawn on the GPU, `gpu`: the light only cast anew when it moves, its
     // flicker done there.)
+    // (Its easing too: the GPU blends from what was in sight to what is.)
     if (this.gpu) {
       if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
-      if (now < this.easeUntil) this.easeSight(dt);
       if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py || !this.lightBox) this.castLight(px, py, now / 1000);
       return;
     }
@@ -1239,6 +1260,7 @@ export class Expression {
       g.restore();
     }
     this.sightFrom = [px, py];
+    this.sightCasts = (this.sightCasts ?? 0) + 1;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
   }
 
