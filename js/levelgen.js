@@ -368,6 +368,7 @@ function tryAreas(S, rng) {
   const hollow = (r, sd, u, v) => {
     const [x, y] = sd.at(r, u, v);
     tiles[idx(x, y)] = T.FLOOR;
+    roomOf[idx(x, y)] = rooms.indexOf(r);
   };
   // The middle of a side's square (u and v may be fractions).
   const mid = (r, sd, u, v) => {
@@ -688,6 +689,7 @@ function tryAreas(S, rng) {
   // formations among them (`wallOf`: the room of the floor next to it).
   const wallOf = new Int16Array(n).fill(-1);
   for (let j = 0; j < n; j++) if (tiles[j] !== T.FLOOR) roomOf[j] = -1;
+  for (const d of doors) roomOf[idx(d.x, d.y)] = -1;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (tiles[idx(x, y)] === T.FLOOR) continue;

@@ -26,6 +26,10 @@ export const EXPRESSION_DEFAULTS = {
   // Known walls and hatching this near the player (in tiles) keep the ink
   // in sight, seen or not (round a corner), softening over `nearSoft`.
   nearInk: 3, nearSoft: 1.5,
+  // Rooms inked as in sight beyond what is seen: the one the player is in
+  // ("own"), each any of whose floor is seen ("seen"), or none ("off");
+  // how far toward the ink in sight, 0 to 1.
+  roomInk: "off", roomInkLevel: 1,
   // The candle, in flat bands counted in squares out from the player: full
   // brightness for `lightFull` squares (the player's the first), then dim
   // (`dimLevel`) for `lightDim` squares, then dark (`darkLevel`) for
@@ -58,7 +62,7 @@ export const EXPRESSION_DEFAULTS = {
 };
 // Settings that only change what is laid down each frame; `sight`,
 // `sightFade` and `flame` also change what is seen, and the rest mean redrawing the ink.
-export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
+export const LIVE_SETTINGS = new Set(["sight", "sightFade", "blockSoft", "reveal", "nearInk", "nearSoft", "roomInk", "roomInkLevel", "lightFull", "lightDim", "lightDark", "dimLevel", "darkLevel", "lightFill", "lightEdge", "lightRag", "lightWall", "flame", "flicker", "flickerSize", "warmth", "darkColor", "rockColor", "rockTone"]);
 
 const R = 8; // mask pixels per tile
 // The rectangle ([x, y, w, h]) round two.
@@ -291,6 +295,10 @@ export class Expression {
     Object.assign(this.S, changes);
     this.sightFrom = this.lightFrom = null;
     const keys = Object.keys(changes);
+    if (keys.some((k) => k === "roomInk" || k === "roomInkLevel")) {
+      this.roomsSeenKey = null;
+      if (this.visNow) this.roomsInSight();
+    }
     if (this.player && keys.some((k) => k === "sight" || k === "sightFade" || k === "flame")) {
       this.learn(this.player.x, this.player.y);
       return true;
@@ -1378,7 +1386,7 @@ export class Expression {
       g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
       g.restore();
     }
-    // And the rooms in sight, all of them, walls and hatching too.
+    // And the room the player is in, its walls and hatching (roomsInSight).
     if (this.roomInk) {
       g.save();
       g.imageSmoothingEnabled = true;
@@ -1390,12 +1398,16 @@ export class Expression {
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
   }
 
-  // The rooms any of whose floor is in sight now: all of each is drawn as in
-  // sight, its walls and their hatching inked black, as far as it is known
-  // (`roomInk`, at mask resolution). Rooms as the level has them (its
-  // `roomOf`: corridors and passages part of none). What room each bit of
-  // the map is part of: a room's floor, and the rock whose nearest floor is
-  // a room's, as far out as the hatching reaches (worked out once).
+  // The room the player is in (`roomInk` "own"), or every room any of whose
+  // floor is in sight ("seen"), or none ("off"): its walls and their
+  // hatching inked as in sight as far as they are known, `roomInkLevel` of
+  // the way from the remembered look to the seen, the floor left as it is
+  // (its grid only where seen); the edge where the room's rock meets other
+  // rock softened over a square or so (`roomInk`, at mask resolution).
+  // Rooms as the level has them (its `roomOf`: corridors and passages part
+  // of none). What room each bit of the map is part of: a room's floor, and
+  // the rock whose nearest floor is a room's (or a recess in its wall), as
+  // far out as the hatching reaches (worked out once).
   roomsInSight() {
     const { mw, mh, level: L, S } = this, vis = this.visNow, roomOf = L.roomOf;
     if (!roomOf) return;
@@ -1405,21 +1417,60 @@ export class Expression {
       this.cellRoom = new Int16Array(mw * mh).fill(-1);
       for (let j = 0; j < mw * mh; j++) {
         if (near.sx[j] < 0 || near.d2[j] > reach) continue;
-        this.cellRoom[j] = roomOf[Math.floor(near.sy[j] / R) * L.w + Math.floor(near.sx[j] / R)];
+        const k = Math.floor(near.sy[j] / R) * L.w + Math.floor(near.sx[j] / R);
+        this.cellRoom[j] = roomOf[k] >= 0 || L.tiles[k] === T.FLOOR ? roomOf[k] : L.wallOf?.[k] ?? -1;
       }
     }
-    const inSight = new Set();
-    for (let y = 0; y < L.h; y++)
-      for (let x = 0; x < L.w; x++) {
-        const i = roomOf[y * L.w + x];
-        if (i >= 0 && !inSight.has(i) && vis[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] > 0.5) inSight.add(i);
-      }
-    const key = [...inSight].join();
+    const inSight = new Set(), how = S.roomInk ?? "own";
+    if (how === "own") {
+      const p = this.player, i = p ? roomOf[p.y * L.w + p.x] : -1;
+      if (i >= 0) inSight.add(i);
+    } else if (how === "seen")
+      for (let y = 0; y < L.h; y++)
+        for (let x = 0; x < L.w; x++) {
+          const i = roomOf[y * L.w + x];
+          if (i >= 0 && !inSight.has(i) && vis[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] > 0.5) inSight.add(i);
+        }
+    const level = clamp01(S.roomInkLevel ?? 1), key = `${[...inSight].join()}|${level}`;
     if (key === this.roomsSeenKey) return;
     this.roomsSeenKey = key;
+    if (!inSight.size || level <= 0) {
+      this.roomInk = null;
+      return;
+    }
+    // (The room's ground, blurred twice over half a square each way, then
+    // cut away from its floor but for the floor's edge, under the walls.)
+    let a = new Float32Array(mw * mh), b = new Float32Array(mw * mh);
+    for (let j = 0; j < mw * mh; j++) if (inSight.has(this.cellRoom[j])) a[j] = 1;
+    const r = R >> 1, n = 2 * r + 1;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let y = 0; y < mh; y++) {
+        let sum = 0;
+        const o = y * mw;
+        for (let x = -r; x < mw + r; x++) {
+          if (x + r < mw) sum += a[o + x + r];
+          if (x - r - 1 >= 0) sum -= a[o + x - r - 1];
+          if (x >= 0 && x < mw) b[o + x] = sum / n;
+        }
+      }
+      for (let x = 0; x < mw; x++) {
+        let sum = 0;
+        for (let y = -r; y < mh + r; y++) {
+          if (y + r < mh) sum += b[(y + r) * mw + x];
+          if (y - r - 1 >= 0) sum -= b[(y - r - 1) * mw + x];
+          if (y >= 0 && y < mh) a[y * mw + x] = sum / n;
+        }
+      }
+    }
+    const fl = this.floor, edge = (x, y) => x <= 0 || y <= 0 || x >= mw - 1 || y >= mh - 1 || !fl[y * mw + x - 1] || !fl[y * mw + x + 1] || !fl[(y - 1) * mw + x] || !fl[(y + 1) * mw + x];
     if (!this.roomInk) this.roomInk = blank(mw, mh);
     const img = new ImageData(mw, mh);
-    for (let j = 0; j < mw * mh; j++) if (inSight.has(this.cellRoom[j])) img.data[j * 4 + 3] = 255;
+    for (let y = 0; y < mh; y++)
+      for (let x = 0; x < mw; x++) {
+        const j = y * mw + x;
+        if (fl[j] && !edge(x, y)) continue;
+        img.data[j * 4 + 3] = Math.round(255 * level * Math.min(1, a[j]));
+      }
     this.roomInk.getContext("2d").putImageData(img, 0, 0);
   }
 
