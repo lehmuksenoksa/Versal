@@ -239,6 +239,7 @@ export class Renderer {
   // The GPU drawing failed (`err`): drawn with canvases from here on.
   gpuFailed(err) {
     console.error("Drawing on the GPU failed; drawing with canvases.", err);
+    if (PERF) window.versalError?.(`The GPU failed (${err?.message ?? err}); drawing with canvases.`);
     this.gpuError = err?.message ?? String(err);
     this.gl = this.gpuMap = null;
     if (this.mapCanvas) this.mapCanvas.hidden = true;

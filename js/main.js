@@ -162,6 +162,7 @@ function updateActions() {
 window.addEventListener("resize", () => renderer.resize());
 bindZoom(renderer, canvas);
 
+const shown = new Set();
 function loop(now) {
   // (A frame that fails doesn't stop the ones after it.)
   try {
@@ -169,6 +170,9 @@ function loop(now) {
     updateActions();
   } catch (err) {
     console.error(err);
+    // (Shown on the page, once each.)
+    const msg = `${err?.stack || err}`;
+    if (!shown.has(msg)) { shown.add(msg); window.versalError?.(msg); }
   }
   requestAnimationFrame(loop);
 }
@@ -186,5 +190,6 @@ window.versal = { get world() { return world; }, renderer };
   }
   world = new World();
   renderer.setWorld(world);
+  document.body.dataset.started = "1";
   requestAnimationFrame(loop);
 })();

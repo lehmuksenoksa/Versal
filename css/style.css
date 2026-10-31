@@ -34,3 +34,6 @@ body { background: #000; overflow: hidden; }
 
 /* The performance readout (?perf). */
 #perf { position: fixed; top: 8px; left: 8px; z-index: 2; margin: 0; padding: 6px 8px; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #f7f2e6; background: rgba(0, 0, 0, 0.6); pointer-events: none; white-space: pre; }
+
+/* Errors, shown on the page. */
+#errors { position: fixed; left: 8px; right: 8px; top: 8px; z-index: 3; margin: 0; padding: 8px; max-height: 60vh; overflow: auto; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #ffd9d0; background: rgba(90, 10, 0, 0.85); white-space: pre-wrap; word-break: break-word; }

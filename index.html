@@ -15,6 +15,28 @@
   <button id="act-lamp" type="button">Lamp out</button>
   <button id="act-close" type="button" disabled>Close door</button>
 </nav>
+<script>
+// Anything that goes wrong, shown on the page (a phone has no console to
+// look in): a file that fails to load, an error, a promise refused; and if
+// the game hasn't started in a while, that too.
+(() => {
+  const show = (msg) => {
+    let el = document.getElementById("errors");
+    if (!el) {
+      el = Object.assign(document.createElement("pre"), { id: "errors" });
+      document.body.appendChild(el);
+    }
+    el.textContent += `${msg}\n`;
+  };
+  addEventListener("error", (e) => {
+    const t = e.target;
+    show(t && t !== window && (t.src || t.href) ? `Could not load ${t.src || t.href}` : `${e.message} (${(e.filename || "").split("/").pop()}:${e.lineno}:${e.colno})`);
+  }, true);
+  addEventListener("unhandledrejection", (e) => show(`${e.reason?.stack || e.reason}`));
+  window.versalError = show;
+  setTimeout(() => { if (!document.body.dataset.started) show("The game hasn't started (no error caught)."); }, 15000);
+})();
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
