@@ -80,8 +80,19 @@ const QUAD_VS = `#version 300 es
 in vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
+// Where the floor's hatching is cleared: the floor, as far as it has been
+// glimpsed (worked out once a redraw, so the frame's pass reads one picture).
+const CLEAR_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uFloor, uGlimpse; uniform vec2 uSize;
+out vec4 o;
+void main() {
+  vec2 uv = gl_FragCoord.xy / uSize;
+  o = vec4(0.0, 0.0, 0.0, texture(uFloor, uv).a * texture(uGlimpse, uv).a);
+}`;
+
 // The sight as it was, eased toward the sight now by `k` (into a texture of
-// its own, as a new sight is cast).
+// its own: as a new sight is cast, and each frame while it eases).
 const EASE_FS = `#version 300 es
 precision highp float;
 uniform sampler2D uFrom, uTo; uniform float uK; uniform vec2 uSize;
@@ -93,9 +104,9 @@ void main() {
 
 const COMPOSE_FS = `#version 300 es
 precision highp float; precision highp int;
-uniform sampler2D uLit, uSee, uMem, uCover, uHatch, uPSee, uPMem, uPCover, uPHatch, uGlimpse, uFloor, uSeen, uSight, uSightTo, uLampSight, uLight, uLamp;
+uniform sampler2D uLit, uSee, uMem, uCover, uHatch, uPSee, uPMem, uPCover, uPHatch, uClear, uSeen, uSight, uLampSight, uLight, uLamp;
 uniform vec2 uCam, uCanvas, uPaper, uMask, uSightSize, uMap, uSightFrom;
-uniform float uSc, uScale, uTS, uSightScale, uFade, uFadeK, uSightK;
+uniform float uSc, uScale, uTS, uSightScale, uFade, uFadeK;
 uniform vec4 uLightBox; uniform vec2 uLightC, uLightShift; uniform float uLightK, uBright, uLightSize, uLightOn;
 uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC;
 uniform float uWarmth, uLampWarmth, uNearInk, uNearSoft;
@@ -107,9 +118,8 @@ vec3 over(vec3 c, vec3 s, float a) { return mix(c, s, clamp(a, 0.0, 1.0)); }
 
 // The inks (one set of them: as now, or as before a redraw while the new
 // fades in) over c: beyond sight, in sight (m), and the cover.
-vec3 inked(vec3 c, vec2 p, float m, float clear, sampler2D see, sampler2D mem, sampler2D cover, sampler2D hatchPic) {
-  vec3 h = paperAt(hatchPic, p).rgb;
-  vec4 me = paperAt(mem, p), se = paperAt(see, p);
+// (Given as read from its pictures: hatching h, mem and see inks, cover.)
+vec3 inked(vec3 c, float m, float clear, vec3 h, vec4 me, vec4 se, float cv) {
   // (The hatching under the rest of each ink, cleared off seen floor.)
   float hm = h.g * (1.0 - clear), hs = h.r * (1.0 - clear);
   float am = me.a + hm * (1.0 - me.a), as = se.a + hs * (1.0 - se.a);
@@ -117,7 +127,7 @@ vec3 inked(vec3 c, vec2 p, float m, float clear, sampler2D see, sampler2D mem, s
   vec3 cs = as > 0.0 ? (se.rgb * se.a + uSeeHatchC * hs * (1.0 - se.a)) / as : se.rgb;
   c = over(c, cm, am * (1.0 - m));
   c = over(c, cs, as * m);
-  float cov = 1.0 - (1.0 - paperAt(cover, p).a) * (1.0 - h.b);
+  float cov = 1.0 - (1.0 - cv) * (1.0 - h.b);
   return over(c, uOut, cov);
 }
 
@@ -136,7 +146,7 @@ void main() {
   // The level's lights: each fire flickering its own way about it; warmed
   // twice over but where the player's light warms it once.
   vec2 sp = p * uSightScale / uSightSize;
-  float sight = mix(texture(uSight, sp).a, texture(uSightTo, sp).a, uSightK), seen = paperAt(uSeen, p).a;
+  float sight = texture(uSight, sp).a, seen = paperAt(uSeen, p).a;
   vec2 lq = p; float dim = 1.0;
   for (int i = 0; i < 8; i++) {
     if (i >= uFireN) break;
@@ -152,9 +162,10 @@ void main() {
   // Where the ink in sight goes; the inks, the old fading out under the new.
   float m = sight;
   if (uNearInk + uNearSoft > 0.0) m = max(m, smoothstep((uNearInk + uNearSoft) * uTS, uNearInk * uTS, distance(p, uSightFrom)));
-  float clear = paperAt(uFloor, p).a * paperAt(uGlimpse, p).a;
-  vec3 now = inked(c, p, m, clear, uSee, uMem, uCover, uHatch);
-  c = uFade > 0.5 ? mix(inked(c, p, m, clear, uPSee, uPMem, uPCover, uPHatch), now, uFadeK) : now;
+  float clear = paperAt(uClear, p).a;
+  vec3 now = inked(c, m, clear, paperAt(uHatch, p).rgb, paperAt(uMem, p), paperAt(uSee, p), paperAt(uCover, p).a);
+  if (uFade > 0.5) c = mix(inked(c, m, clear, paperAt(uPHatch, p).rgb, paperAt(uPMem, p), paperAt(uPSee, p), paperAt(uPCover, p).a), now, uFadeK);
+  else c = now;
   // The warmth of the player's light; and the map fading into the darkness
   // at its edges.
   c *= 1.0 - uWarmth * 0.35 * lp * (1.0 - uWarm);
@@ -202,6 +213,7 @@ export class GpuMap {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     this.compose = program(gl, QUAD_VS, COMPOSE_FS);
     this.ease = program(gl, QUAD_VS, EASE_FS);
+    this.clearProg = program(gl, QUAD_VS, CLEAR_FS);
     // (Time spent sending pictures to the GPU, for the performance readout.)
     this.sentMs = 0;
     this.sentPx = 0;
@@ -391,6 +403,53 @@ export class GpuMap {
     return [this.texture(`see${k}`, buf.see, v, undefined, r), this.texture(`mem${k}`, buf.mem, v, undefined, r), this.texture(`cover${k}`, buf.cover, v, undefined, r), h.t];
   }
 
+  // A picture on the GPU to draw into, `w` by `h`: its texture and frame.
+  pic(w, h) {
+    const gl = this.gl, t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR);
+    for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { t, fb, w, h };
+  }
+
+  // Draw with program `p` into picture `into` from `textures` ({ name:
+  // texture }), with `floats` ({ name: value }) set.
+  pass(p, into, textures, floats = {}) {
+    const gl = this.gl;
+    gl.useProgram(p);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, into.fb);
+    gl.viewport(0, 0, into.w, into.h);
+    let unit = 0;
+    for (const [name, tex] of Object.entries(textures)) {
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.uniform1i(gl.getUniformLocation(p, name), unit++);
+    }
+    for (const [name, v] of Object.entries(floats)) gl.uniform1f(gl.getUniformLocation(p, name), v);
+    gl.uniform2f(gl.getUniformLocation(p, "uSize"), into.w, into.h);
+    this.quadDraw(p);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  // Where the floor's hatching is cleared, worked out again when the
+  // floor's glimpsing has been redrawn.
+  clearTexture(st) {
+    const E = this.exp, w = E.paper.width, h = E.paper.height;
+    if (!this.clearPic || this.clearPic.w !== w || this.clearPic.h !== h) this.clearPic = this.pic(w, h);
+    const glimpse = this.texture("glimpse", E.hi[2], st.t, undefined, st.drawn), floor = this.texture("floor", E.floorLayer, E.floorLayer);
+    const v = `${st.t}|${w}|${E.floorLayer.width}`;
+    if (this.clearPic.v !== v) {
+      this.pass(this.clearProg, this.clearPic, { uFloor: floor, uGlimpse: glimpse });
+      this.clearPic.v = v;
+    }
+    return this.clearPic.t;
+  }
+
   // The shape of what has been seen: only what has changed in it sent.
   seenTexture() {
     const E = this.exp, c = E.seenShape, fresh = this.sources.seen !== c;
@@ -400,52 +459,35 @@ export class GpuMap {
     return t;
   }
 
-  // The sight, easing in as the canvas drawing's does: as it was when cast
-  // anew (a picture kept on the GPU) toward as it is now, by `sightK`.
-  sightTextures(now) {
-    const gl = this.gl, E = this.exp, S = E.S, target = E.sightCanvas.target, w = target.width, h = target.height;
+  // The sight, easing in as the canvas drawing's does: from what showed as
+  // it was cast anew (a picture kept on the GPU) toward what is in sight
+  // now, into a picture of the sight as it shows.
+  sightTexture(now) {
+    const E = this.exp, S = E.S, target = E.sightCanvas.target, w = target.width, h = target.height;
     if (!this.sightPics || this.sightPics.w !== w || this.sightPics.h !== h) {
-      const pic = () => {
-        const t = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR);
-        for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
-        const fb = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        return { t, fb };
-      };
-      this.sightPics = { w, h, from: pic(), spare: pic(), cast: null, at: 0 };
+      this.sightPics = { w, h, from: this.pic(w, h), spare: this.pic(w, h), eased: this.pic(w, h), cast: null, at: 0, k: 1 };
       this.versions.sightTo = null;
     }
-    const P = this.sightPics, tau = Math.max(1, S.reveal * 350);
+    const P = this.sightPics, tau = Math.max(1, S.reveal * 350), kAt = (t) => 1 - Math.exp(-(t - P.at) / tau);
     if (P.cast !== E.sightCasts) {
       // A new sight: what shows now becomes where it eases from.
       if (P.cast !== null && this.tex.sightTo) {
-        gl.useProgram(this.ease);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, P.spare.fb);
-        gl.viewport(0, 0, w, h);
-        for (const [unit, name, tex] of [[0, "uFrom", P.from.t], [1, "uTo", this.tex.sightTo]]) {
-          gl.activeTexture(gl.TEXTURE0 + unit);
-          gl.bindTexture(gl.TEXTURE_2D, tex);
-          gl.uniform1i(gl.getUniformLocation(this.ease, name), unit);
-        }
-        gl.uniform1f(gl.getUniformLocation(this.ease, "uK"), 1 - Math.exp(-(now - P.at) / tau));
-        gl.uniform2f(gl.getUniformLocation(this.ease, "uSize"), w, h);
-        this.quadDraw(this.ease);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        this.pass(this.ease, P.spare, { uFrom: P.from.t, uTo: this.tex.sightTo }, { uK: kAt(now) });
         [P.from, P.spare] = [P.spare, P.from];
       }
       this.texture("sightTo", target, E.sightCasts);
       // (The first sight shows at once.)
-      if (P.cast === null) P.at = -1e9;
-      else P.at = now;
+      P.at = P.cast === null ? -1e9 : now;
       P.cast = E.sightCasts;
+      P.k = -1;
     }
-    this.sightK = 1 - Math.exp(-(now - P.at) / tau);
-    return { uSight: P.from.t, uSightTo: this.tex.sightTo };
+    // (Eased again each frame until it is all but there.)
+    const k = kAt(now);
+    if (P.k < 0.999) {
+      this.pass(this.ease, P.eased, { uFrom: P.from.t, uTo: this.tex.sightTo }, { uK: k });
+      P.k = k;
+    }
+    return P.eased.t;
   }
 
   // The one quad, drawn with program `p`.
@@ -477,9 +519,9 @@ export class GpuMap {
     const T = {
       uLit: this.texture("lit", E.lit, `${E.lit.width}x${E.lit.height}|${E.painted}`),
       uSee: see, uMem: mem, uCover: cover, uHatch: hatch, uPSee: pSee, uPMem: pMem, uPCover: pCover, uPHatch: pHatch,
-      uGlimpse: this.texture("glimpse", E.hi[2], st.t, undefined, st.drawn), uFloor: this.texture("floor", E.floorLayer, E.floorLayer),
+      uClear: this.clearTexture(st),
       uSeen: this.seenTexture(),
-      ...this.sightTextures(now),
+      uSight: this.sightTexture(now),
       uLampSight: this.texture("lampSight", E.sightCanvas.lamps, `${E.sightCasts}|${E.sightCanvas.lamps.width}`),
       uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightFrom}|${E.lightReach?.width}`),
       uLamp: this.maskTexture("lamp", E.lampLevel ?? new Float32Array(mw * mh), E.lampLevel),
@@ -499,7 +541,7 @@ export class GpuMap {
     u("uPaper", E.paper.width, E.paper.height); u("uMask", mw, mh); u("uScale", E.scale); u("uTS", TS); u("uMap", E.W * TS, E.H * TS);
     u("uSightScale", E.sightScale); u("uSightSize", E.sightCanvas.eased.width, E.sightCanvas.eased.height);
     u("uSightFrom", ...(E.sightFrom ?? [-1e9, -1e9]));
-    u("uFade", prev ? 1 : 0); u("uFadeK", fadeK); u("uSightK", this.sightK);
+    u("uFade", prev ? 1 : 0); u("uFadeK", fadeK);
     // The light's flicker, as castLight's: brightness and size.
     const box = E.lightBox;
     u("uLightOn", box && E.lightReach ? 1 : 0);

@@ -163,8 +163,13 @@ window.addEventListener("resize", () => renderer.resize());
 bindZoom(renderer, canvas);
 
 function loop(now) {
-  renderer.frame(now);
-  updateActions();
+  // (A frame that fails doesn't stop the ones after it.)
+  try {
+    renderer.frame(now);
+    updateActions();
+  } catch (err) {
+    console.error(err);
+  }
   requestAnimationFrame(loop);
 }
 

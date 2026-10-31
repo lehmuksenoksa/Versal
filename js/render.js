@@ -124,13 +124,8 @@ export class Renderer {
     this.gl = RENDER !== "canvas" && this.mapCanvas ? gpuContext(this.mapCanvas, RENDER === "gpu") : null;
     if (this.mapCanvas) this.mapCanvas.hidden = !this.gl;
     this.mapCanvas?.addEventListener("webglcontextlost", (e) => {
-      // (Lost: drawn with canvases from here on.)
       e.preventDefault();
-      this.gl = this.gpuMap = null;
-      this.mapCanvas.hidden = true;
-      this.exp = null;
-      this.resize();
-      if (this.world) this.buildMap();
+      this.gpuFailed(new Error("GPU context lost"));
     });
     this.views = new Map();
     this.cam = { x: 0, y: 0, snap: true };
@@ -241,6 +236,17 @@ export class Renderer {
     }
   }
 
+  // The GPU drawing failed (`err`): drawn with canvases from here on.
+  gpuFailed(err) {
+    console.error("Drawing on the GPU failed; drawing with canvases.", err);
+    this.gpuError = err?.message ?? String(err);
+    this.gl = this.gpuMap = null;
+    if (this.mapCanvas) this.mapCanvas.hidden = true;
+    this.exp = null;
+    this.resize();
+    if (this.world) this.buildMap();
+  }
+
   // The map's drawing for this level, tile size and zoom.
   buildMap() {
     const w = this.world;
@@ -250,10 +256,14 @@ export class Renderer {
       // (On the GPU, the strokes are inked there: the Expression draws none.)
       this.gpuMap = null;
       if (this.gl) {
-        const strokes = this.exp.solid;
-        this.exp.solid = [];
-        this.exp.gpu = true;
-        this.gpuMap = new GpuMap(this.gl, this.exp, strokes);
+        try {
+          const strokes = this.exp.solid;
+          this.gpuMap = new GpuMap(this.gl, this.exp, strokes);
+          this.exp.solid = [];
+          this.exp.gpu = true;
+        } catch (err) {
+          return this.gpuFailed(err);
+        }
       }
     }
     this.exp.low = this.low;
@@ -469,7 +479,17 @@ export class Renderer {
     else this.exp.update(now, dt, px, py);
     const t2 = performance.now();
     if (gpu) {
-      this.gpuMap.draw([cx, cy], sc, { x: px, y: py }, now);
+      try {
+        this.gpuMap.draw([cx, cy], sc, { x: px, y: py }, now);
+        // (A first frame drawn: check it went through.)
+        if (!this.gpuChecked) {
+          const e = this.gl.getError();
+          if (e) throw new Error(`WebGL error ${e}`);
+          this.gpuChecked = true;
+        }
+      } catch (err) {
+        return this.gpuFailed(err);
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
@@ -569,7 +589,7 @@ export class Renderer {
     const E = this.exp, g = this.gpuMap, f = (v) => (v / P.n).toFixed(1);
     const sent = g ? g.sentMs - P.sent : 0, sentPx = g ? g.sentPx - P.sentPx : 0;
     el.textContent = [
-      `${this.gl ? `GPU (${this.gl.rendererName ?? "?"})` : "canvas"}${this.low ? ", low power" : ""}`,
+      `${this.gl ? `GPU (${this.gl.rendererName ?? "?"})` : `canvas${this.gpuError ? ` (the GPU failed: ${this.gpuError})` : ""}`}${this.low ? ", low power" : ""}`,
       `screen ${this.canvas.width}×${this.canvas.height}, map drawings ${E.paper?.width}×${E.paper?.height}`,
       `${(1000 / (P.gap / P.n)).toFixed(0)} fps; a frame ${f(P.consume + P.update + P.map)} ms: events ${f(P.consume)}, update ${f(P.update)}, map and letters ${f(P.map)}`,
       `last step's seeing ${(this.learnMs ?? 0).toFixed(0)} ms; last redraw ${E.lastRedraw ? `${E.lastRedraw.ms.toFixed(0)} ms over ${E.lastRedraw.frames} frames` : "–"}`,
