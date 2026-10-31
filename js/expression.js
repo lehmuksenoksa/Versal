@@ -94,6 +94,101 @@ const LOW_DRAWING_PIXELS = 5e6;
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
+// The depth map from the known walls (`depth` "walls"), on a window w x h
+// of the mask at (ox, oy): for each point, 0 (black: the heaviest
+// hatching) to 1 (white: none), into `grey` (indexed as the whole mask,
+// only the window's `area` written). The known walls are rock next to known
+// floor. Each bit of them is as deep as it is far along the known wall from
+// where that runs on into wall not yet known: nothing at that end, rising
+// to the full depth (`reach`) over `taper` squares; a wall known all round
+// is full depth. Each casts its depth out behind it (into the rock and
+// ground not known, as far as it reaches; onto the known floor beside it,
+// but no further), each point as deep as the deepest that reaches it; black
+// to `full` from the wall, fading out to its depth, the edge ragged by
+// `rag(x, y)` (about 1). Islands of rock in the floor (columns, formations:
+// `isle`) are black inside where any of their walls is known.
+function wallDepth(known, floor, isle, ox, oy, w, h, mw, S, rag, grey, area) {
+  const n = w * h, J = (i) => (((i / w) | 0) + oy) * mw + (i % w) + ox;
+  const nb = (i, f) => {
+    const x = i % w, y = (i / w) | 0;
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if ((dx || dy) && nx >= 0 && ny >= 0 && nx < w && ny < h && f(ny * w + nx, dx && dy)) return true;
+      }
+    return false;
+  };
+  // Walls (rock next to floor), and those known.
+  const face = new Uint8Array(n), kface = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    if (floor[J(i)]) continue;
+    if (nb(i, (k) => floor[J(k)])) face[i] = 1;
+    if (face[i] && nb(i, (k) => known[k])) kface[i] = 1;
+  }
+  // How far along the known wall each bit of it is from wall not known (in
+  // halves of a mask pixel: 2 a step along, 3 across), up to the taper.
+  const cap = Math.max(1, Math.round(S.taper * R * 2)), along = new Uint16Array(n).fill(65535), bucket = Array.from({ length: cap + 1 }, () => []);
+  for (let i = 0; i < n; i++)
+    if (kface[i] && nb(i, (k) => face[k] && !kface[k])) {
+      along[i] = 0;
+      bucket[0].push(i);
+    }
+  for (let d = 0; d < cap; d++)
+    for (const i of bucket[d]) {
+      if (along[i] !== d) continue;
+      nb(i, (k, diag) => {
+        const nd = d + (diag ? 3 : 2);
+        if (kface[k] && nd <= cap && nd < along[k]) {
+          along[k] = nd;
+          bucket[nd].push(k);
+        }
+        return false;
+      });
+    }
+  // Cast out: what is left of each wall's depth (halves of mask pixels, at
+  // most the depth at its most ragged), and the share of the full depth of
+  // the wall it came from.
+  const D = S.reach * (1 + S.ragged) * R, top = Math.ceil(D * 2), left = new Int16Array(n).fill(-1), share = new Float32Array(n);
+  const queue = Array.from({ length: top + 1 }, () => []);
+  for (let i = 0; i < n; i++) {
+    if (!kface[i]) continue;
+    const t = along[i] >= cap ? 1 : smooth(along[i] / cap), l = Math.round(t * top);
+    if (l <= 0) continue;
+    left[i] = l;
+    share[i] = t;
+    queue[l].push(i);
+  }
+  for (let l = top; l > 0; l--)
+    for (const i of queue[l]) {
+      if (left[i] !== l || (known[i] && !kface[i])) continue;
+      nb(i, (k, diag) => {
+        const nl = l - (diag ? 3 : 2);
+        if (nl > left[k]) {
+          left[k] = nl;
+          share[k] = share[i];
+          if (nl > 0) queue[nl].push(k);
+        }
+        return false;
+      });
+    }
+  const [ax0, ay0, ax1, ay1] = area, full = Math.min(S.full, S.reach - 0.05);
+  for (let y = ay0; y < ay1; y++)
+    for (let x = ax0; x < ax1; x++) {
+      const i = (y - oy) * w + (x - ox), j = y * mw + x;
+      if (left[i] < 0) {
+        grey[j] = 1;
+        continue;
+      }
+      if (isle[j] && !floor[j]) {
+        grey[j] = 0;
+        continue;
+      }
+      // (How far it is from its wall, and how deep that wall is here.)
+      const k = rag(x, y), t = share[i], d = (t * top - left[i]) / 2 / R, r = S.reach * k * t, f = full * k * t;
+      grey[j] = r <= 0.01 ? 1 : smooth((d - f) / Math.max(0.01, r - f));
+    }
+}
+
 // Is mask pixel (x, y) behind a wall, seen from known floor at (fx, fy):
 // rock itself (on `floor`), or rock on the way from the one to the other,
 // past what stands on the floor (`open`: floor, pillars, columns)? Floor
@@ -578,7 +673,9 @@ export class Expression {
       }
     yield;
 
-    if (S.depth === "distance") {
+    if (S.depth === "walls") {
+      wallDepth(isKnown, floor, this.openGround(), 0, 0, mw, mh, mw, S, (x, y) => rag(y * mw + x), grey, [0, 0, mw, mh]);
+    } else if (S.depth === "distance") {
       // Distance from the known floor; white past openings. Each point looks
       // back to its nearest known floor: rock on the way is a wall it is
       // behind, all floor an opening (behindWall). Softened (lighter only),
@@ -680,7 +777,7 @@ export class Expression {
         grey[j] = 1 - (1 - smooth((Math.sqrt(dWall[j]) / R - f) / (r - f))) * smooth(t);
       }
     }
-    if (S.depth !== "distance") {
+    if (S.depth !== "distance" && S.depth !== "walls") {
       // Past the edge of the known floor, floor not yet seen is an opening:
       // no hatching there, however near a known wall's end (so none spills
       // onto a room's floor just past what is seen). Each point looks one
@@ -813,6 +910,25 @@ export class Expression {
     const { d2, sx, sy } = nearestSeeds(known, ow, oh);
     this.mark?.("known floor");
     yield;
+    if (S.depth === "walls") {
+      // The depth map from the known walls (wallDepth); the cover by distance
+      // from the known floor.
+      const rag = (x, y) => Math.max(0.1, 1 + S.ragged * (2 * this.noise((x + 0.5) * (TS / R), (y + 0.5) * (TS / R)) - 1));
+      wallDepth(known, floor, this.openGround(), ox, oy, ow, oh, mw, S, rag, this.grey, area);
+      const [ax0, ay0, ax1, ay1] = area;
+      for (let y = ay0; y < ay1; y++)
+        for (let x = ax0; x < ax1; x++) {
+          const j = y * mw + x, i = (y - oy) * ow + (x - ox);
+          if (known[i]) {
+            this.coverU[j] = -1;
+            continue;
+          }
+          const k = rag(x, y);
+          this.coverU[j] = (Math.sqrt(d2[i]) / R - S.fadeStart * k) / Math.max(0.01, S.fadeWidth * k);
+        }
+      this.mark?.("depth map");
+      yield;
+    } else {
     // The depth map (by distance from the known floor, as depthSteps does).
     const behind = new Float32Array(on).fill(1), open = this.openGround();
     for (let i = 0; i < on; i++) {
@@ -838,6 +954,7 @@ export class Expression {
       }
     this.mark?.("depth map");
     yield;
+    }
     // How well the walls and floor are drawn: the floor as well as it was
     // seen, and the floor within WALL_SPREAD of that for its walls; the rock
     // within WALL_BAND of the floor going with its nearest floor.
