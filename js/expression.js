@@ -241,7 +241,7 @@ export class Expression {
     if (!around) this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
-    this.tints = this.nearFloor = null;
+    this.tints = this.nearFloor = this.cellRoom = this.roomsSeenKey = null;
     if (!around) {
       this.stat = this.prev = null;
       this.job = null;
@@ -413,6 +413,7 @@ export class Expression {
       this.addShape(v);
     }
     this.visNow = vis;
+    this.roomsInSight();
     // (The lights that light anything in sight now: a few points round each.)
     this.lampsSeen = (this.lamps ?? []).filter((l) => lamps && l.cells.some((j) => vis[j] > 0.01));
     this.sightRock(visRock, rx0, ry0, rx1, ry1);
@@ -1377,9 +1378,54 @@ export class Expression {
       g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
       g.restore();
     }
+    // And the rooms in sight, all of them, walls and hatching too.
+    if (this.roomInk) {
+      g.save();
+      g.imageSmoothingEnabled = true;
+      g.drawImage(this.roomInk, 0, 0, this.W * TS, this.H * TS);
+      g.restore();
+    }
     this.sightFrom = [px, py];
     this.sightCasts = (this.sightCasts ?? 0) + 1;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
+  }
+
+  // The rooms any of whose floor is in sight now: all of each is drawn as in
+  // sight, its walls and their hatching inked black, as far as it is known
+  // (`roomInk`, at mask resolution). What room each bit of the map is part
+  // of: a room's floor, and the rock whose nearest floor is a room's, as far
+  // out as the hatching reaches (worked out once).
+  roomsInSight() {
+    const { mw, mh, level: L, S } = this, vis = this.visNow;
+    if (!this.cellRoom) {
+      const squareRoom = new Int16Array(L.w * L.h).fill(-1);
+      L.rooms.forEach((r, i) => {
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (L.tiles[y * L.w + x] === T.FLOOR) squareRoom[y * L.w + x] = i;
+      });
+      if (!this.nearFloor) this.nearFloor = nearestSeeds(this.floor, mw, mh);
+      const near = this.nearFloor, reach = (S.reach * (1 + S.ragged) * R) ** 2;
+      this.cellRoom = new Int16Array(mw * mh).fill(-1);
+      for (let j = 0; j < mw * mh; j++) {
+        if (near.sx[j] < 0 || near.d2[j] > reach) continue;
+        this.cellRoom[j] = squareRoom[Math.floor(near.sy[j] / R) * L.w + Math.floor(near.sx[j] / R)];
+      }
+      this.squareRoom = squareRoom;
+    }
+    const inSight = new Set();
+    L.rooms.forEach((r, i) => {
+      for (let y = r.y; y < r.y + r.h && !inSight.has(i); y++)
+        for (let x = r.x; x < r.x + r.w; x++) {
+          if (this.squareRoom[y * L.w + x] !== i) continue;
+          if (vis[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] > 0.5) { inSight.add(i); break; }
+        }
+    });
+    const key = [...inSight].join();
+    if (key === this.roomsSeenKey) return;
+    this.roomsSeenKey = key;
+    if (!this.roomInk) this.roomInk = blank(mw, mh);
+    const img = new ImageData(mw, mh);
+    for (let j = 0; j < mw * mh; j++) if (inSight.has(this.cellRoom[j])) img.data[j * 4 + 3] = 255;
+    this.roomInk.getContext("2d").putImageData(img, 0, 0);
   }
 
   // Ease the sight laid over the map toward what is in sight now.
