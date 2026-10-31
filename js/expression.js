@@ -235,6 +235,7 @@ export class Expression {
       this.stat = this.prev = null;
       this.job = null;
       this.bufs = this.hi = this.scratch = null; // (made at the new size when drawn)
+      this.gpuAll = true;
     }
     this.paint();
     // The exact shape of all that has been seen, at full resolution, recast
@@ -720,7 +721,12 @@ export class Expression {
   rebuild() {
     this.job = this.again = null;
     this.prev = null; // (no waiting for a fade)
-    run(this.rebuildSteps());
+    run(this.steps());
+  }
+
+  // The work of redrawing: as canvases, or for the GPU (`gpu`).
+  steps() {
+    return this.gpu ? this.gpuSteps() : this.rebuildSteps();
   }
 
   // Redo the drawing a slice at a time over the coming frames (see update),
@@ -728,7 +734,104 @@ export class Expression {
   // more after.
   rebuildSoon() {
     if (this.job) this.again = true;
-    else this.job = this.rebuildSteps();
+    else this.job = this.steps();
+  }
+
+  // The work of redrawing for the GPU, in slices: not drawings but, at mask
+  // resolution, what they are drawn from (gpu.js draws them). The depth map
+  // (`grey`) and the cover's distances (`coverU`), for the hatching; and in
+  // `inkMask`, four to a pixel: how well the walls and floor are drawn there
+  // (as the canvas drawing's mask), how well the floor is glimpsed (where its
+  // hatching is cleared), and how dark the cover's fill is. Only round what
+  // has changed: everything a change can reach (`area`), worked out from
+  // what that in turn depends on, as far again round it (`outer`). Each
+  // redraw is a new state ({ t, k }, k each of two in turn) that fades in
+  // over the last.
+  *gpuSteps() {
+    const { mw, mh, floor, seen, S, TS } = this, n = mw * mh;
+    const changed = this.gpuAll || !this.grey ? ALL : this.changed;
+    this.changed = null;
+    this.gpuAll = false;
+    if (!this.grey) {
+      this.grey = new Float32Array(n).fill(1);
+      this.coverU = new Float32Array(n).fill(1);
+      this.inkMask = new Float32Array(n * 4);
+    }
+    const done = () => {
+      this.prev = this.stat;
+      this.stat = { t: performance.now(), k: this.stat ? this.stat.k ^ 1 : 0 };
+    };
+    if (!changed) return done();
+    const reach = Math.ceil(R * (2 + Math.max(S.reach * (1 + S.ragged), S.opening, (S.fadeStart + S.fadeWidth) * (1 + S.ragged))));
+    const grow = (r, m) => [Math.max(0, r[0] - m), Math.max(0, r[1] - m), Math.min(mw, r[2] + m), Math.min(mh, r[3] + m)];
+    const area = changed === ALL ? [0, 0, mw, mh] : grow(changed, reach);
+    const blurR = Math.round(S.opening * R * 0.6);
+    const outer = changed === ALL ? area : grow(area, reach + 2 * blurR);
+    const [ox, oy] = outer, ow = outer[2] - ox, oh = outer[3] - oy, on = ow * oh;
+    const at = (i) => (oy + ((i / ow) | 0)) * mw + ox + (i % ow);
+    // Known floor (seen at least half well), and the nearest of it.
+    const known = new Uint8Array(on);
+    for (let i = 0; i < on; i++) {
+      const j = at(i);
+      known[i] = floor[j] && seen[j] >= 0.5 ? 1 : 0;
+    }
+    const { d2, sx, sy } = nearestSeeds(known, ow, oh);
+    this.mark?.("known floor");
+    yield;
+    // The depth map (by distance from the known floor, as depthSteps does).
+    const behind = new Float32Array(on).fill(1);
+    for (let i = 0; i < on; i++) {
+      if (known[i] || sx[i] < 0) continue;
+      const x = i % ow, y = (i / ow) | 0, dx = x - sx[i], dy = y - sy[i], l = Math.hypot(dx, dy) || 1;
+      const nx = sx[i] + Math.round(dx / l) + ox, ny = sy[i] + Math.round(dy / l) + oy;
+      if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && floor[ny * mw + nx]) behind[i] = 0;
+    }
+    const soft = behind.slice();
+    blur(soft, ow, oh, blurR);
+    // (The ragged edges' noise, each point's once.)
+    const full = Math.min(S.full, S.reach - 0.05), [ax0, ay0, ax1, ay1] = area;
+    for (let y = ay0; y < ay1; y++)
+      for (let x = ax0; x < ax1; x++) {
+        const j = y * mw + x, i = (y - oy) * ow + (x - ox);
+        if (known[i]) {
+          this.grey[j] = 0;
+          this.coverU[j] = -1;
+          continue;
+        }
+        const nz = this.noise((x + 0.5) * (TS / R), (y + 0.5) * (TS / R)), d = Math.sqrt(d2[i]) / R;
+        const k = Math.max(0.1, 1 + S.ragged * (2 * nz - 1)), f = full * k, r = S.reach * k;
+        this.grey[j] = 1 - (1 - smooth((d - f) / (r - f))) * Math.min(behind[i], soft[i]);
+        this.coverU[j] = (d - S.fadeStart * k) / Math.max(0.01, S.fadeWidth * k);
+      }
+    this.mark?.("depth map");
+    yield;
+    // How well the walls and floor are drawn: the floor as well as it was
+    // seen, and the floor within WALL_SPREAD of that for its walls; the rock
+    // within WALL_BAND of the floor going with its nearest floor.
+    const seenW = new Float32Array(on);
+    for (let i = 0; i < on; i++) seenW[i] = seen[at(i)];
+    for (let pass = 0; pass < Math.round(WALL_SPREAD * R); pass++) {
+      const from = seenW.slice();
+      for (let y = 1; y < oh - 1; y++)
+        for (let x = 1; x < ow - 1; x++) {
+          const i = y * ow + x;
+          if (!floor[at(i)]) continue;
+          const v = Math.max(from[i - 1], from[i + 1], from[i - ow], from[i + ow], from[i - ow - 1], from[i - ow + 1], from[i + ow - 1], from[i + ow + 1]);
+          if (v > seenW[i]) seenW[i] = v;
+        }
+    }
+    if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
+    const near = this.nearFloor, band = (WALL_BAND * R) ** 2;
+    const seenAt = (x, y) => (x >= ox && y >= oy && x < outer[2] && y < outer[3] ? seenW[(y - oy) * ow + (x - ox)] : seen[y * mw + x]);
+    for (let y = ay0; y < ay1; y++)
+      for (let x = ax0; x < ax1; x++) {
+        const j = y * mw + x, u = this.coverU[j];
+        this.inkMask[j * 4] = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenAt(near.sx[j], near.sy[j]) : 0);
+        this.inkMask[j * 4 + 1] = floor[j] ? clearOf(seen[j]) : 0;
+        this.inkMask[j * 4 + 2] = u < 0 ? 0 : smooth((u - 0.55) / 0.45);
+      }
+    this.mark?.("walls' and floor's masks");
+    done();
   }
 
   // The work of redrawing, in slices. The looks and cover are kept in two
@@ -1096,6 +1199,7 @@ export class Expression {
     g.clearRect(0, 0, this.doorLayer.width, this.doorLayer.height);
     g.setTransform(this.scale, 0, 0, this.scale, 0, 0);
     drawDoors(g, this.level.doors ?? [], this.TS, this.seed);
+    this.doorsDrawn = (this.doorsDrawn ?? 0) + 1;
   }
 
   // Door `d` has opened or shut: the wall across its way is taken away or
@@ -1170,7 +1274,7 @@ export class Expression {
           // (How long the redraw took in all, and over how many frames.)
           this.lastRedraw = { ms: (this.jobMs ?? 0) + performance.now() - t0, frames: (this.jobFrames ?? 0) + 1 };
           this.jobMs = this.jobFrames = 0;
-          this.job = this.again ? this.rebuildSteps() : null;
+          this.job = this.again ? this.steps() : null;
           this.again = false;
           break;
         }

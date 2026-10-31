@@ -80,15 +80,16 @@ const QUAD_VS = `#version 300 es
 in vec2 aPos;
 void main() { gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
-// Where the floor's hatching is cleared: the floor, as far as it has been
-// glimpsed (worked out once a redraw, so the frame's pass reads one picture).
-const CLEAR_FS = `#version 300 es
+// The map's layers that never change, as one picture: the floor's shadow,
+// its markings, the walls and the doors (the doors' drawn again as they open
+// and shut), each how solid it is.
+const PACK_FS = `#version 300 es
 precision highp float;
-uniform sampler2D uFloor, uGlimpse; uniform vec2 uSize;
+uniform sampler2D uShadow, uMark, uWall, uDoor; uniform vec2 uSize;
 out vec4 o;
 void main() {
   vec2 uv = gl_FragCoord.xy / uSize;
-  o = vec4(0.0, 0.0, 0.0, texture(uFloor, uv).a * texture(uGlimpse, uv).a);
+  o = vec4(texture(uShadow, uv).a, texture(uMark, uv).a, texture(uWall, uv).a, texture(uDoor, uv).a);
 }`;
 
 // The sight as it was, eased toward the sight now by `k` (into a texture of
@@ -104,11 +105,12 @@ void main() {
 
 const COMPOSE_FS = `#version 300 es
 precision highp float; precision highp int;
-uniform sampler2D uLit, uSee, uMem, uCover, uHatch, uPSee, uPMem, uPCover, uPHatch, uClear, uSeen, uSight, uLampSight, uLight, uLamp;
+uniform sampler2D uLit, uLayers, uFloor, uMasks, uHatch, uPMasks, uPHatch, uSeen, uSight, uLampSight, uLight, uLamp;
 uniform vec2 uCam, uCanvas, uPaper, uMask, uSightSize, uMap, uSightFrom;
 uniform float uSc, uScale, uTS, uSightScale, uFade, uFadeK;
 uniform vec4 uLightBox; uniform vec2 uLightC, uLightShift; uniform float uLightK, uBright, uLightSize, uLightOn;
-uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC;
+uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC, uSeeMarkC, uSeeWallC, uMemMarkC, uMemWallC, uShadowC;
+uniform float uSeeMark, uSeeWall, uMemMark, uMemWall;
 uniform float uWarmth, uLampWarmth, uNearInk, uNearSoft;
 uniform vec4 uFires[8]; uniform float uFireK[8]; uniform float uFireDim[8]; uniform int uFireN;
 out vec4 o;
@@ -116,18 +118,31 @@ out vec4 o;
 vec4 paperAt(sampler2D t, vec2 p) { return texture(t, p * uScale / uPaper); }
 vec3 over(vec3 c, vec3 s, float a) { return mix(c, s, clamp(a, 0.0, 1.0)); }
 
-// The inks (one set of them: as now, or as before a redraw while the new
-// fades in) over c: beyond sight, in sight (m), and the cover.
-// (Given as read from its pictures: hatching h, mem and see inks, cover.)
-vec3 inked(vec3 c, float m, float clear, vec3 h, vec4 me, vec4 se, float cv) {
+// One colour over another, as a canvas lays them (straight alpha).
+vec4 overA(vec4 d, vec4 s) {
+  float a = s.a + d.a * (1.0 - s.a);
+  return vec4(a > 0.0 ? (s.rgb * s.a + d.rgb * d.a * (1.0 - s.a)) / a : d.rgb, a);
+}
+
+// The inks of one state (as now, or as before a redraw while the new fades
+// in) over c, as the canvas drawing lays them: in sight (m) the floor's
+// shadow and markings, the walls and doors, beyond it the same fainter,
+// each as well as the floor was seen there (masks.r; the shape of what was
+// seen, and all the rock, as \`shapeRock\`); under them the hatching (h),
+// cleared off floor glimpsed (masks.g); then the cover (masks.b, and its
+// strokes in h.b).
+vec3 inked(vec3 c, float m, vec4 mk, vec3 h, vec4 L, float shapeRock, float floorA) {
+  float mask = mk.r * shapeRock, clear = floorA * mk.g * shapeRock;
+  vec4 se = overA(overA(overA(vec4(uShadowC, L.r), vec4(uSeeMarkC, L.g * uSeeMark)), vec4(uSeeWallC, L.b * uSeeWall)), vec4(uSeeWallC, L.a * uSeeWall));
+  vec4 me = overA(overA(vec4(uMemMarkC, L.g * uMemMark), vec4(uMemWallC, L.b * uMemWall)), vec4(uMemWallC, L.a * uMemWall));
+  se.a *= mask;
+  me.a *= mask;
   // (The hatching under the rest of each ink, cleared off seen floor.)
   float hm = h.g * (1.0 - clear), hs = h.r * (1.0 - clear);
-  float am = me.a + hm * (1.0 - me.a), as = se.a + hs * (1.0 - se.a);
-  vec3 cm = am > 0.0 ? (me.rgb * me.a + uMemHatchC * hm * (1.0 - me.a)) / am : me.rgb;
-  vec3 cs = as > 0.0 ? (se.rgb * se.a + uSeeHatchC * hs * (1.0 - se.a)) / as : se.rgb;
-  c = over(c, cm, am * (1.0 - m));
-  c = over(c, cs, as * m);
-  float cov = 1.0 - (1.0 - cv) * (1.0 - h.b);
+  vec4 cm = overA(vec4(uMemHatchC, hm), me), cs = overA(vec4(uSeeHatchC, hs), se);
+  c = over(c, cm.rgb, cm.a * (1.0 - m));
+  c = over(c, cs.rgb, cs.a * m);
+  float cov = 1.0 - (1.0 - mk.b) * (1.0 - h.b);
   return over(c, uOut, cov);
 }
 
@@ -162,9 +177,11 @@ void main() {
   // Where the ink in sight goes; the inks, the old fading out under the new.
   float m = sight;
   if (uNearInk + uNearSoft > 0.0) m = max(m, smoothstep((uNearInk + uNearSoft) * uTS, uNearInk * uTS, distance(p, uSightFrom)));
-  float clear = paperAt(uClear, p).a;
-  vec3 now = inked(c, m, clear, paperAt(uHatch, p).rgb, paperAt(uMem, p), paperAt(uSee, p), paperAt(uCover, p).a);
-  if (uFade > 0.5) c = mix(inked(c, m, clear, paperAt(uPHatch, p).rgb, paperAt(uPMem, p), paperAt(uPSee, p), paperAt(uPCover, p).a), now, uFadeK);
+  float floorA = paperAt(uFloor, p).a, shapeRock = max(seen, 1.0 - floorA);
+  vec4 L = paperAt(uLayers, p);
+  vec2 mp = p * ${R}.0 / uTS / uMask;
+  vec3 now = inked(c, m, texture(uMasks, mp), paperAt(uHatch, p).rgb, L, shapeRock, floorA);
+  if (uFade > 0.5) c = mix(inked(c, m, texture(uPMasks, mp), paperAt(uPHatch, p).rgb, L, shapeRock, floorA), now, uFadeK);
   else c = now;
   // The warmth of the player's light; and the map fading into the darkness
   // at its edges.
@@ -213,7 +230,7 @@ export class GpuMap {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     this.compose = program(gl, QUAD_VS, COMPOSE_FS);
     this.ease = program(gl, QUAD_VS, EASE_FS);
-    this.clearProg = program(gl, QUAD_VS, CLEAR_FS);
+    this.packProg = program(gl, QUAD_VS, PACK_FS);
     // (Time spent sending pictures to the GPU, for the performance readout.)
     this.sentMs = 0;
     this.sentPx = 0;
@@ -390,17 +407,16 @@ export class GpuMap {
     return this.locs.get(key);
   }
 
-  // One set of the inks, as textures: `buf` one of the Expression's two
-  // sets of canvases (its strokes inked into a picture of their own).
-  inks(buf) {
-    const E = this.exp, k = E.bufs.indexOf(buf), v = buf.t, h = this.hatchPic(k);
-    if (h.inked !== v) {
+  // One state's inks, as textures (see Expression.gpuSteps): its masks,
+  // and its strokes inked into a picture of their own.
+  inks(state) {
+    const gl = this.gl, E = this.exp, k = state.k, h = this.hatchPic(k);
+    if (h.inked !== state.t) {
       this.inkStrokes(h);
-      h.inked = v;
+      h.inked = state.t;
     }
-    // (Only where it was last redrawn, if the textures were made from it.)
-    const r = buf.drawn;
-    return [this.texture(`see${k}`, buf.see, v, undefined, r), this.texture(`mem${k}`, buf.mem, v, undefined, r), this.texture(`cover${k}`, buf.cover, v, undefined, r), h.t];
+    const masks = this.texture(`masks${k}`, { w: E.mw, h: E.mh, data: E.inkMask, internal: gl.RGBA16F, format: gl.RGBA, type: gl.FLOAT }, state.t);
+    return [masks, h.t];
   }
 
   // A picture on the GPU to draw into, `w` by `h`: its texture and frame.
@@ -436,18 +452,23 @@ export class GpuMap {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  // Where the floor's hatching is cleared, worked out again when the
-  // floor's glimpsing has been redrawn.
-  clearTexture(st) {
+  // The layers that never change, packed into one picture (see PACK_FS);
+  // again when the doors are drawn again, or the drawings remade.
+  layersTexture() {
     const E = this.exp, w = E.paper.width, h = E.paper.height;
-    if (!this.clearPic || this.clearPic.w !== w || this.clearPic.h !== h) this.clearPic = this.pic(w, h);
-    const glimpse = this.texture("glimpse", E.hi[2], st.t, undefined, st.drawn), floor = this.texture("floor", E.floorLayer, E.floorLayer);
-    const v = `${st.t}|${w}|${E.floorLayer.width}`;
-    if (this.clearPic.v !== v) {
-      this.pass(this.clearProg, this.clearPic, { uFloor: floor, uGlimpse: glimpse });
-      this.clearPic.v = v;
+    if (!this.layersPic || this.layersPic.w !== w || this.layersPic.h !== h) this.layersPic = this.pic(w, h);
+    const v = `${E.shadowLayer.width}|${E.doorsDrawn}|${w}`;
+    if (this.layersPic.v !== v) {
+      const tex = {
+        uShadow: this.texture("shadow", E.shadowLayer, E.shadowLayer),
+        uMark: this.texture("mark", E.markLayer, E.markLayer),
+        uWall: this.texture("wall", E.wallLayer, E.wallLayer),
+        uDoor: this.texture("door", E.doorLayer, E.doorsDrawn),
+      };
+      this.pass(this.packProg, this.layersPic, tex);
+      this.layersPic.v = v;
     }
-    return this.clearPic.t;
+    return this.layersPic.t;
   }
 
   // The shape of what has been seen: only what has changed in it sent.
@@ -511,15 +532,15 @@ export class GpuMap {
     const fadeK = Math.max(0, Math.min(1, (now - st.t) / Math.max(1, S.reveal * 1000)));
     if (fadeK >= 1) E.prev = null;
     const prev = E.prev && E.prev.t ? E.prev : null;
-    const [see, mem, cover, hatch] = this.inks(st);
-    const [pSee, pMem, pCover, pHatch] = prev ? this.inks(prev) : [see, mem, cover, hatch];
+    const [masks, hatch] = this.inks(st);
+    const [pMasks, pHatch] = prev ? this.inks(prev) : [masks, hatch];
     // (What changed is sent again: the paper, the masks after a redraw, the
     // shape of what has been seen as it grows, the sight as it eases, the
     // light when cast anew, the lamps when relit.)
     const T = {
       uLit: this.texture("lit", E.lit, `${E.lit.width}x${E.lit.height}|${E.painted}`),
-      uSee: see, uMem: mem, uCover: cover, uHatch: hatch, uPSee: pSee, uPMem: pMem, uPCover: pCover, uPHatch: pHatch,
-      uClear: this.clearTexture(st),
+      uLayers: this.layersTexture(), uFloor: this.texture("floor", E.floorLayer, E.floorLayer),
+      uMasks: masks, uHatch: hatch, uPMasks: pMasks, uPHatch: pHatch,
       uSeen: this.seenTexture(),
       uSight: this.sightTexture(now),
       uLampSight: this.texture("lampSight", E.sightCanvas.lamps, `${E.sightCasts}|${E.sightCanvas.lamps.width}`),
@@ -560,6 +581,9 @@ export class GpuMap {
     u("uDark", ...hex(S.darkColor)); u("uOut", ...hex(S.outColor)); u("uWarm", 1, 196 / 255, 120 / 255);
     u("uWarmth", S.warmth); u("uLampWarmth", LAMP_WARMTH); u("uNearInk", S.nearInk); u("uNearSoft", S.nearSoft);
     u("uSeeHatchC", ...hex(S.seeHatchC)); u("uMemHatchC", ...hex(S.memHatchC));
+    u("uSeeMarkC", ...hex(S.seeMarkC)); u("uSeeWallC", ...hex(S.seeWallC)); u("uMemMarkC", ...hex(S.memMarkC)); u("uMemWallC", ...hex(S.memWallC));
+    u("uSeeMark", S.seeMark); u("uSeeWall", S.seeWall); u("uMemMark", S.memMark); u("uMemWall", S.memWall);
+    u("uShadowC", 70 / 255, 62 / 255, 55 / 255);
     // Each fire in sight flickering its own way (as compose's).
     const fires = (E.lampsSeen ?? []).filter((l) => l.fire).slice(0, 8);
     gl.uniform1i(this.loc(p, "uFireN"), fires.length);
