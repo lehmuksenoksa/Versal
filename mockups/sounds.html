@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fight Words</title>
+<style>
+  /* Layout: controls, then the two scenes side by side. */
+  @font-face { font-family: "Texturina"; font-weight: 100 900; src: url("../fonts/Texturina-Latin.woff2") format("woff2"); }
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  p { margin: 0 0 10px; max-width: 78ch; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 12px 0; font-size: 14px; color: var(--muted); }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  input[type="range"] { width: 120px; accent-color: var(--accent); }
+  select { font: 14px var(--body); padding: 2px 4px; border: 1px solid var(--rule); background: #fffdf7; }
+  output { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 3ch; }
+  .pair { display: flex; flex-wrap: wrap; gap: 14px; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; }
+  figure canvas { display: block; max-width: 100%; height: auto; }
+  figcaption { padding: 6px 2px 0; font-size: 17px; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fight words</h1>
+  <p>The same fight, on a loop, with the words as the game shows them now and as proposed. Goblins mutter and an alarm goes up; you whack (hitting and missing), they stab back, two fall; then it calms down. Proposed: while blows are flying the background noise steps back; the fighting words fly off from the action into open space, where they don't cover each other; hits pop out in the direction of the blow, misses sink, death cries jolt and sink.</p>
+</header>
+
+<div class="bar">
+  <label>Speed <input id="speed" type="range" min="0.25" max="1.5" step="0.05" value="1"><output id="speed-v"></output></label>
+  <label>Words last <input id="dur" type="range" min="0.6" max="2" step="0.1" value="1"><output id="dur-v"></output></label>
+  <label>Fly out <input id="dist" type="range" min="0.5" max="3.5" step="0.25" value="1.75"><output id="dist-v"></output> squares</label>
+  <label>Background noise in a fight <select id="ambient"><option value="faint" selected>small and faint</option><option value="hide">hidden</option><option value="show">as usual</option></select></label>
+</div>
+
+<div class="pair">
+  <figure><canvas id="now" width="480" height="380"></canvas><figcaption>Now</figcaption></figure>
+  <figure><canvas id="new" width="480" height="380"></canvas><figcaption>Proposed</figcaption></figure>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const TS = 40, W = 12, H = 9.5, INK = "#1b1815", PAPER = "#f7f2e6";
+const FONT = 'Texturina, Georgia, serif';
+const FIGHT = { fill: "#f4c02c", edge: INK, halo: 0.3, caps: true };
+const LOOK = { default: { fill: INK, edge: PAPER, halo: 0.26 }, fall: { fill: "#c3271a", edge: PAPER, halo: 0.26 }, attack: FIGHT, whack: FIGHT, miss: FIGHT };
+const AMBIENT = new Set(["move", "chatter", "growl", "snore"]);
+const BIG = new Set(["alarm", "whack", "attack", "fall"]);
+const DUR = { move: 1.1, chatter: 1.2, growl: 1.2, alarm: 1.4, snore: 1.8, attack: 1, whack: 1, miss: 0.9, fall: 1.2 };
+
+// The scene: the player and four goblins in a room.
+const ACTORS = { p: [5, 4.5], a: [6, 4.5], b: [6, 3.5], c: [4, 5.5], d: [8, 6.5] };
+// The fight, in seconds: [time, kind, who, word, at whom].
+const SCRIPT = [
+  [0.0, "chatter", "d", "heh"], [0.4, "move", "c", "scuttle"], [0.7, "chatter", "b", "snik"],
+  [1.0, "alarm", "b", "GRR!"], [1.3, "growl", "c", "grrr"],
+  [1.6, "whack", "a", "WHACK!", "p"], [1.85, "attack", "p", "stab!", "b"], [2.05, "growl", "d", "hsss"],
+  [2.2, "miss", "a", "whiff", "p"], [2.4, "attack", "p", "hack!", "a"], [2.55, "move", "d", "skitter"],
+  [2.7, "whack", "a", "thwack!", "p"], [2.8, "fall", "a", "urk!"], [2.95, "chatter", "c", "nyik"],
+  [3.1, "attack", "p", "jab!", "c"], [3.35, "miss", "b", "swish", "p"], [3.5, "growl", "c", "grrk"],
+  [3.7, "whack", "b", "bonk!", "p"], [3.8, "attack", "p", "chomp!", "c"], [4.0, "whack", "b", "THUD!", "p"],
+  [4.1, "fall", "b", "eek!"], [4.3, "move", "d", "scrabble"],
+  [5.4, "chatter", "c", "mutter"], [6.2, "chatter", "d", "hrm"], [7.0, "snore", "d", "zzz"],
+];
+const LOOP = 8.2;
+
+// The room, drawn once.
+function room() {
+  const c = document.createElement("canvas");
+  c.width = W * TS * 2;
+  c.height = H * TS * 2;
+  const g = c.getContext("2d");
+  g.scale(2, 2);
+  g.fillStyle = "#3b3936";
+  g.fillRect(0, 0, W * TS, H * TS);
+  g.fillStyle = "#f3e2c4";
+  g.fillRect(1 * TS, 1 * TS, 10 * TS, 7 * TS);
+  g.strokeStyle = "rgba(27, 24, 21, 0.4)";
+  g.lineWidth = 1;
+  for (let x = 2; x < 11; x++) { g.beginPath(); g.moveTo(x * TS, TS); g.lineTo(x * TS, 8 * TS); g.stroke(); }
+  for (let y = 2; y < 8; y++) { g.beginPath(); g.moveTo(TS, y * TS); g.lineTo(11 * TS, y * TS); g.stroke(); }
+  g.strokeStyle = INK;
+  g.lineWidth = 7;
+  g.lineJoin = "round";
+  g.strokeRect(1 * TS, 1 * TS, 10 * TS, 7 * TS);
+  return c;
+}
+const ROOM = room();
+
+const centre = (who) => [(ACTORS[who][0] + 0.5) * TS, (ACTORS[who][1] + 0.5) * TS];
+const easeOut = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+
+function word(g, s, x, y, size, rot, alpha) {
+  const L = LOOK[s.kind] ?? LOOK.default;
+  g.save();
+  g.translate(x, y);
+  g.rotate(rot);
+  g.globalAlpha = Math.max(0, Math.min(1, alpha));
+  g.font = `italic ${L.caps ? "small-caps " : ""}800 ${size}px ${FONT}`;
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.lineJoin = "round";
+  g.lineWidth = size * L.halo;
+  g.strokeStyle = L.edge;
+  g.strokeText(s.text, 0, 0);
+  g.fillStyle = L.fill;
+  g.fillText(s.text, 0, 0);
+  g.restore();
+}
+
+// The words now: above whoever made the noise (a goblin's attack, over the
+// goblin), rising and fading.
+function nowWords(g, list, t) {
+  for (const s of list) {
+    const k = (t - s.t0) / s.dur;
+    if (k < 0 || k > 1) continue;
+    const [x, y] = centre(s.kind === "attack" ? s.at : s.who), big = BIG.has(s.kind);
+    const size = TS * (big ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
+    const a = Math.min(1, k / 0.08) * (k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45);
+    word(g, s, x + s.jx * TS + (s.kind === "snore" ? k * TS * 0.35 : 0), y - 0.4 * TS - k * TS * (s.kind === "snore" ? 0.6 : 0.45), size, s.rot, a);
+  }
+}
+
+// The words proposed: each placed when it starts (see place), then moving as
+// its kind does.
+function newWords(g, list, t, fighting) {
+  const mode = $("ambient").value;
+  for (const s of list) {
+    const k = (t - s.t0) / s.dur;
+    if (k < 0 || k > 1) continue;
+    const quiet = AMBIENT.has(s.kind) && fighting(s.t0);
+    if (quiet && mode === "hide") continue;
+    let [x, y] = s.from, size = TS * (BIG.has(s.kind) ? 0.7 : 0.46), rot = s.rot, a = Math.min(1, k / 0.06) * (k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4);
+    if (s.kind === "whack" || s.kind === "attack") {
+      // Out in the blow's direction, popping big, then rising a little.
+      const e = easeOut(k / 0.35);
+      x += s.dir[0] * s.dist * e;
+      y += s.dir[1] * s.dist * e - k * TS * 0.25;
+      size *= 1 + 0.5 * Math.max(0, 1 - k / 0.15);
+    } else if (s.kind === "miss") {
+      // Sinking slowly, wobbling.
+      x += s.dir[0] * s.dist * 0.35 * easeOut(k) + Math.sin(k * 14) * TS * 0.06;
+      y += TS * 0.75 * easeOut(k);
+      size = TS * 0.42;
+    } else if (s.kind === "fall") {
+      // A jolt, then sinking.
+      const j = k < 0.2 ? Math.sin(k * 120) * TS * 0.06 : 0;
+      x += j + s.dir[0] * s.dist * 0.3 * easeOut(k / 0.3);
+      y += -TS * 0.3 * easeOut(k / 0.2) + TS * 0.8 * easeOut((k - 0.2) / 0.8);
+      size *= 1 + 0.25 * Math.max(0, 1 - k / 0.2);
+    } else if (s.kind === "alarm") {
+      x += s.dir[0] * s.dist * 0.5 * easeOut(k / 0.3);
+      y += s.dir[1] * s.dist * 0.5 * easeOut(k / 0.3) - k * TS * 0.3;
+      size *= 1 + 0.4 * Math.max(0, 1 - k / 0.15);
+    } else {
+      // Background: as now, smaller and fainter in a fight.
+      y -= k * TS * (s.kind === "snore" ? 0.6 : 0.45);
+      x += s.kind === "snore" ? k * TS * 0.35 : 0;
+      if (quiet && mode === "faint") { size *= 0.75; a *= 0.4; }
+    }
+    word(g, s, x, y, size, rot, a);
+  }
+}
+
+// Where a proposed word goes: from the action, out toward open space,
+// clear of the words already flying and of the player and goblins.
+function place(s, live) {
+  const [ax, ay] = centre(s.who), d = +$("dist").value * TS;
+  const to = s.at ? centre(s.at) : null;
+  // (The blow's direction: from who struck to who was struck.)
+  let base = to ? Math.atan2(ay - to[1], ax - to[0]) : -Math.PI / 2;
+  if (s.kind === "fall" || s.kind === "miss") base = Math.atan2(0.4, (ax - centre("p")[0]) || 1);
+  const start = to ? [ax, ay - TS * 0.2] : [ax, ay - TS * 0.45];
+  const ends = (ang) => [start[0] + Math.cos(ang) * d, start[1] + Math.sin(ang) * d - TS * 0.25];
+  const clash = ([x, y]) => {
+    let worst = 0;
+    for (const o of live) worst += Math.max(0, 1.6 * TS - Math.hypot(o.end[0] - x, (o.end[1] - y) * 2.2));
+    for (const who of Object.keys(ACTORS)) { const [cx, cy] = centre(who); worst += Math.max(0, 0.8 * TS - Math.hypot(cx - x, cy - y)) * 2; }
+    if (x < TS * 1.5 || x > (W - 1.5) * TS || y < TS || y > (H - 1) * TS) worst += 200;
+    return worst;
+  };
+  let best = base, bestCost = Infinity;
+  for (const off of [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.7, -1.7]) {
+    const c = clash(ends(base + off)) + Math.abs(off) * 8;
+    if (c < bestCost) { bestCost = c; best = base + off; }
+  }
+  s.from = start;
+  s.dir = [Math.cos(best), Math.sin(best)];
+  s.dist = d;
+  s.end = ends(best);
+}
+
+// The loop's words, laid out afresh each time round (as the sliders say).
+let loopStart = performance.now(), words = [];
+function layout() {
+  const k = +$("dur").value;
+  words = SCRIPT.map(([t, kind, who, text, at], i) => ({ t0: t, kind, who, text, at, dur: DUR[kind] * k, rot: Math.sin(i * 12.9) * 0.18, jx: Math.sin(i * 7.7) * 0.25 }));
+  const live = [];
+  for (const s of words) {
+    for (let i = live.length - 1; i >= 0; i--) if (live[i].t0 + live[i].dur < s.t0) live.splice(i, 1);
+    place(s, live);
+    if (!AMBIENT.has(s.kind)) live.push(s);
+  }
+}
+
+function actors(g, t) {
+  for (const who of Object.keys(ACTORS)) {
+    const [x, y] = centre(who), fell = { a: 2.8, b: 4.1 }[who];
+    let alpha = 1;
+    if (fell !== undefined && t > fell) alpha = Math.max(0, 1 - (t - fell) / 0.7);
+    if (alpha <= 0) continue;
+    g.save();
+    g.globalAlpha = alpha;
+    const p = who === "p";
+    g.font = `${p ? 800 : 600} ${TS * (p ? 0.9 : 1.05)}px ${FONT}`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.lineJoin = "round";
+    g.lineWidth = TS * 0.16;
+    g.strokeStyle = "rgba(247, 242, 230, 0.9)";
+    g.strokeText(p ? "@" : "g", x, y);
+    g.fillStyle = p ? "#a3261b" : INK;
+    g.fillText(p ? "@" : "g", x, y);
+    g.restore();
+  }
+}
+
+let last = 0, clock = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  clock += ((now - (last || now)) / 1000) * +$("speed").value;
+  last = now;
+  const t = clock % LOOP;
+  const blows = SCRIPT.filter(([, kind]) => kind === "whack" || kind === "attack" || kind === "miss" || kind === "alarm").map(([bt]) => bt);
+  const fighting = (at) => blows.some((bt) => bt <= at + 0.01 && at - bt < 2) || blows.some((bt) => bt > at && bt - at < 0.3);
+  for (const [id, draw] of [["now", nowWords], ["new", newWords]]) {
+    const g = $(id).getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.drawImage(ROOM, 0, 0, W * TS, H * TS);
+    actors(g, t);
+    draw(g, words, t, fighting);
+  }
+}
+
+for (const id of ["speed", "dur", "dist"]) {
+  const show = () => ($(`${id}-v`).textContent = $(id).value);
+  show();
+  $(id).addEventListener("input", () => { show(); layout(); });
+}
+$("ambient").addEventListener("change", layout);
+document.fonts.load('800 20px "Texturina"').finally(() => { layout(); requestAnimationFrame(frame); });
+</script>
+</body>
+</html>
