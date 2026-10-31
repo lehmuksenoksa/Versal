@@ -15,7 +15,7 @@
 import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds, STROKES_SEED } from "./hatching.js";
 import { RNG } from "./rng.js";
-import { Walls } from "./sightline.js";
+import { Walls, postOutline } from "./sightline.js";
 import { T } from "./dungeon.js";
 
 export const EXPRESSION_DEFAULTS = {
@@ -222,16 +222,15 @@ export class Expression {
     this.floor = new Uint8Array(mw * mh);
     for (let j = 0; j < mw * mh; j++) this.floor[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
     this.walls = new Walls(drawn.loops, TS * 2);
-    // The light is cast against the walls and the posts (which don't block
-    // sight): the light's shadows of them, slivers fanning out.
+    // Sight and light are cast against the walls and the posts (pillars):
+    // the shadows of them, slivers fanning out.
     this.lightWalls = new Walls(drawn.loops, TS * 2);
     for (const f of level.features ?? []) {
       if (f.type !== "post") continue;
-      const n = f.shape === "round" ? 6 : 4, r = TS * (f.shape === "round" ? 0.21 : 0.26), a0 = n === 4 ? Math.PI / 4 : 0;
-      const at = (i) => [f.x * TS + r * Math.cos(a0 + (i * 2 * Math.PI) / n), f.y * TS + r * Math.sin(a0 + (i * 2 * Math.PI) / n)];
-      for (let i = 0; i < n; i++) {
-        const [x0, y0] = at(i), [x1, y1] = at(i + 1);
-        this.lightWalls.add({ x0, y0, x1, y1 });
+      const pts = postOutline(f, TS);
+      for (let i = 0; i < pts.length; i++) {
+        const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length];
+        for (const w of [this.walls, this.lightWalls]) w.add({ x0, y0, x1, y1 });
       }
     }
     // Shut doors stop sight and light: a wall across the way where each is.
@@ -245,7 +244,7 @@ export class Expression {
     if (!around) this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
-    this.tints = this.nearFloor = this.cellRoom = this.roomsSeenKey = null;
+    this.tints = this.nearFloor = this.cellRoom = this.roomsSeenKey = this.floorIn = null;
     if (!around) {
       this.stat = this.prev = null;
       this.job = null;
@@ -1386,6 +1385,29 @@ export class Expression {
       g.drawImage(this.rockSight, 0, 0, this.W * TS, this.H * TS);
       g.restore();
     }
+    // And the walls and hatching near the player, out to `nearInk`, seen or
+    // not (round a corner); not the floor, its grid only where seen.
+    if (S.nearInk + S.nearSoft > 0) {
+      const tmp = this.sightCanvas.tmp, tg = tmp.getContext("2d"), r0 = S.nearInk * TS, r1 = (S.nearInk + S.nearSoft) * TS;
+      tg.setTransform(1, 0, 0, 1, 0, 0);
+      tg.globalCompositeOperation = "source-over";
+      tg.clearRect(0, 0, tmp.width, tmp.height);
+      tg.setTransform(this.sightScale, 0, 0, this.sightScale, 0, 0);
+      const ng = tg.createRadialGradient(px, py, 0, px, py, r1);
+      ng.addColorStop(0, "#000");
+      for (let i = 0; i <= 6; i++) ng.addColorStop((r0 + ((r1 - r0) * i) / 6) / r1, `rgba(0, 0, 0, ${smooth(1 - i / 6)})`);
+      tg.fillStyle = ng;
+      tg.fillRect(px - r1, py - r1, 2 * r1, 2 * r1);
+      tg.globalCompositeOperation = "destination-out";
+      tg.imageSmoothingEnabled = true;
+      tg.drawImage(this.floorInside(), 0, 0, this.W * TS, this.H * TS);
+      tg.globalCompositeOperation = "source-over";
+      tg.setTransform(1, 0, 0, 1, 0, 0);
+      g.save();
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(tmp, 0, 0);
+      g.restore();
+    }
     // And the room the player is in, its walls and hatching (roomsInSight).
     if (this.roomInk) {
       g.save();
@@ -1396,6 +1418,20 @@ export class Expression {
     this.sightFrom = [px, py];
     this.sightCasts = (this.sightCasts ?? 0) + 1;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
+  }
+
+  // The floor but its edge under the walls, at mask resolution (made once).
+  floorInside() {
+    if (this.floorIn) return this.floorIn;
+    const { mw, mh } = this, fl = this.floor, img = new ImageData(mw, mh);
+    for (let y = 1; y < mh - 1; y++)
+      for (let x = 1; x < mw - 1; x++) {
+        const j = y * mw + x;
+        if (fl[j] && fl[j - 1] && fl[j + 1] && fl[j - mw] && fl[j + mw]) img.data[j * 4 + 3] = 255;
+      }
+    this.floorIn = blank(mw, mh);
+    this.floorIn.getContext("2d").putImageData(img, 0, 0);
+    return this.floorIn;
   }
 
   // The room the player is in (`roomInk` "own"), or every room any of whose
@@ -1858,8 +1894,8 @@ export class Expression {
       g.drawImage(w, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
       g.setTransform(T);
     }
-    // Where the ink in sight goes: the eased sight, and all round the player
-    // out to `nearInk`.
+    // Where the ink in sight goes: the eased sight (which has the ground
+    // near the player in it, see castSight).
     const mc = this.inkMask || (this.inkMask = blank(1, 1));
     if (mc.width !== w.width || mc.height !== w.height) { mc.width = w.width; mc.height = w.height; }
     const mg = mc.getContext("2d");
@@ -1868,16 +1904,6 @@ export class Expression {
     mg.setTransform(T);
     mg.imageSmoothingEnabled = true;
     this.region(mg, this.sightCanvas.eased, ss, view);
-    if (this.sightFrom && S.nearInk + S.nearSoft > 0) {
-      const [px, py] = this.sightFrom, r0 = S.nearInk * this.TS, r1 = (S.nearInk + S.nearSoft) * this.TS;
-      const grad = mg.createRadialGradient(px, py, 0, px, py, r1);
-      grad.addColorStop(0, "#000");
-      for (let i = 0; i <= 6; i++) grad.addColorStop((r0 + ((r1 - r0) * i) / 6) / r1, `rgba(0, 0, 0, ${smooth(1 - i / 6)})`);
-      mg.globalCompositeOperation = "lighten";
-      mg.fillStyle = grad;
-      mg.fillRect(px - r1, py - r1, 2 * r1, 2 * r1);
-      mg.globalCompositeOperation = "source-over";
-    }
     // The two inks, each where it belongs.
     for (const [ink, op] of [[st.mem, "destination-out"], [st.see, "destination-in"]]) {
       wg.setTransform(1, 0, 0, 1, 0, 0);

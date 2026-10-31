@@ -3,6 +3,23 @@
 // (and just either side of it), stop at the first wall they meet, and the
 // hits, taken in angle order, outline what can be seen.
 
+// A pillar's outline (a feature of type "post", in squares), as corners
+// [x, y] times `scale`: a hexagon if round, else a square set square.
+export function postOutline(f, scale = 1) {
+  const n = f.shape === "round" ? 6 : 4, r = scale * (f.shape === "round" ? 0.21 : 0.26), a0 = n === 4 ? Math.PI / 4 : 0;
+  return Array.from({ length: n }, (_, i) => [f.x * scale + r * Math.cos(a0 + (i * 2 * Math.PI) / n), f.y * scale + r * Math.sin(a0 + (i * 2 * Math.PI) / n)]);
+}
+
+// Does the line from (ax, ay) to (bx, by) cross the outline `pts`?
+export function crossesOutline(ax, ay, bx, by, pts) {
+  const side = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);
+  for (let i = 0; i < pts.length; i++) {
+    const [cx, cy] = pts[i], [dx, dy] = pts[(i + 1) % pts.length];
+    if (side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) <= 0 && side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) <= 0) return true;
+  }
+  return false;
+}
+
 export class Walls {
   // loops: closed outlines of the floor, as arrays of {x, y} in map pixels.
   constructor(loops, bucket) {

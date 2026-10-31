@@ -14,6 +14,7 @@ import { RNG } from "./rng.js";
 import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
 import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
+import { postOutline, crossesOutline } from "./sightline.js";
 
 const GOBLIN = {
   // Moves a goblin makes for each of the player's.
@@ -51,6 +52,7 @@ export class World {
     // Pillars on grid crossings, which no step goes diagonally past; and the
     // doors, by their square.
     this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
+    this.pillars = (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) }));
     this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
     this.actors = [this.player];
@@ -79,15 +81,24 @@ export class World {
     this.updateFov();
   }
 
+  // What the player can see: squares in sight past the walls and shut doors
+  // (and the pillars: a square is hidden behind one when the line between
+  // the middles of the two squares crosses it, as the map draws it).
   updateFov() {
-    const { w, h } = this.level, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
+    const { w, h } = this.level, { x: px, y: py } = this.player, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
+    const reach = Math.max(this.sight, GOBLIN.lose) + 1;
+    const pillars = this.pillars.filter((p) => Math.abs(p.x - px - 0.5) <= reach && Math.abs(p.y - py - 0.5) <= reach);
+    const behind = (x, y) => pillars.some((p) => crossesOutline(px + 0.5, py + 0.5, x + 0.5, y + 0.5, p.pts));
     this.visible.fill(0);
-    computeFov(w, h, this.player.x, this.player.y, this.sight, opaque, (x, y) => {
+    computeFov(w, h, px, py, this.sight, opaque, (x, y) => {
+      if (behind(x, y)) return;
       this.visible[y * w + x] = 1;
       this.seen[y * w + x] = 1;
     });
     this.inView.fill(0);
-    computeFov(w, h, this.player.x, this.player.y, GOBLIN.lose, opaque, (x, y) => (this.inView[y * w + x] = 1));
+    computeFov(w, h, px, py, GOBLIN.lose, opaque, (x, y) => {
+      if (!behind(x, y)) this.inView[y * w + x] = 1;
+    });
   }
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }

@@ -106,12 +106,12 @@ void main() {
 const COMPOSE_FS = `#version 300 es
 precision highp float; precision highp int;
 uniform sampler2D uLit, uLayers, uFloor, uMasks, uHatch, uPMasks, uPHatch, uSeen, uSight, uLampSight, uLight, uLamp;
-uniform vec2 uCam, uCanvas, uPaper, uMask, uSightSize, uMap, uSightFrom;
+uniform vec2 uCam, uCanvas, uPaper, uMask, uSightSize, uMap;
 uniform float uSc, uScale, uTS, uSightScale, uFade, uFadeK;
 uniform vec4 uLightBox; uniform vec2 uLightC, uLightShift; uniform float uLightK, uBright, uLightSize, uLightOn;
 uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC, uSeeMarkC, uSeeWallC, uMemMarkC, uMemWallC, uShadowC;
 uniform float uSeeMark, uSeeWall, uMemMark, uMemWall;
-uniform float uWarmth, uLampWarmth, uNearInk, uNearSoft;
+uniform float uWarmth, uLampWarmth;
 uniform vec4 uFires[8]; uniform float uFireK[8]; uniform float uFireDim[8]; uniform int uFireN;
 out vec4 o;
 
@@ -176,7 +176,6 @@ void main() {
   }
   // Where the ink in sight goes; the inks, the old fading out under the new.
   float m = sight;
-  if (uNearInk + uNearSoft > 0.0) m = max(m, smoothstep((uNearInk + uNearSoft) * uTS, uNearInk * uTS, distance(p, uSightFrom)));
   float floorA = paperAt(uFloor, p).a, shapeRock = max(seen, 1.0 - floorA);
   vec4 L = paperAt(uLayers, p);
   vec2 mp = p * ${R}.0 / uTS / uMask;
@@ -584,7 +583,6 @@ export class GpuMap {
     u("uCam", ...cam); u("uSc", sc); u("uCanvas", cv.width, cv.height);
     u("uPaper", E.paper.width, E.paper.height); u("uMask", mw, mh); u("uScale", E.scale); u("uTS", TS); u("uMap", E.W * TS, E.H * TS);
     u("uSightScale", E.sightScale); u("uSightSize", E.sightCanvas.eased.width, E.sightCanvas.eased.height);
-    u("uSightFrom", ...(E.sightFrom ?? [-1e9, -1e9]));
     u("uFade", prev ? 1 : 0); u("uFadeK", fadeK);
     // The light's flicker, as castLight's: brightness and size.
     const box = E.lightBox;
@@ -602,7 +600,7 @@ export class GpuMap {
       u("uLightShift", light.x - lx, light.y - ly);
     }
     u("uDark", ...hex(S.darkColor)); u("uOut", ...hex(S.outColor)); u("uWarm", 1, 196 / 255, 120 / 255);
-    u("uWarmth", S.warmth); u("uLampWarmth", LAMP_WARMTH); u("uNearInk", S.nearInk); u("uNearSoft", S.nearSoft);
+    u("uWarmth", S.warmth); u("uLampWarmth", LAMP_WARMTH);
     u("uSeeHatchC", ...hex(S.seeHatchC)); u("uMemHatchC", ...hex(S.memHatchC));
     u("uSeeMarkC", ...hex(S.seeMarkC)); u("uSeeWallC", ...hex(S.seeWallC)); u("uMemMarkC", ...hex(S.memMarkC)); u("uMemWallC", ...hex(S.memWallC));
     u("uSeeMark", S.seeMark); u("uSeeWall", S.seeWall); u("uMemMark", S.memMark); u("uMemWall", S.memWall);

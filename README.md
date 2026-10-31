@@ -51,8 +51,10 @@ and some goblins.
   reads as one place (the floor grid only where seen). Rooms are as the level made them: each
   square's floor and the rock bordering it belong to a room (`roomOf`, `wallOf`), with its
   recesses, niches and cells; corridors, passages and doorways to none.
-- The player sees what lies in their line of sight, cast against the walls: sharp where walls block
-  the view, fading out with distance. What is in sight is drawn in black ink; what is remembered is
+- The player sees what lies in their line of sight, cast against the walls and pillars (what is
+  behind a pillar is hidden, goblins too): sharp where they block the view, fading out with distance.
+  Known walls and hatching within a few squares stay inked as in sight round a corner, but the
+  floor grid shows only where the player sees. What is in sight is drawn in black ink; what is remembered is
   drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,
   fading in through thickening strokes. They carry a candle whose flame casts shadows, sharp near a
   wall and softer away from it, with darkness outside its light.
