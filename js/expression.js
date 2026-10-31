@@ -93,6 +93,20 @@ const DRAWING_PIXELS = 8e6, SIGHT_PIXELS = 3e6;
 const LOW_DRAWING_PIXELS = 5e6;
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+// Is mask pixel (x, y) behind a wall, seen from known floor at (fx, fy):
+// rock itself (on `floor`), or rock on the way from the one to the other,
+// past what stands on the floor (`open`: floor, pillars, columns)? Floor
+// all the way is ground past an opening, never hatched as rock.
+function behindWall(floor, open, mw, mh, fx, fy, x, y) {
+  if (!floor[y * mw + x]) return true;
+  const n = Math.max(Math.abs(x - fx), Math.abs(y - fy));
+  for (let k = 1; k < n; k++) {
+    const px = Math.round(fx + ((x - fx) * k) / n), py = Math.round(fy + ((y - fy) * k) / n);
+    if (px < 0 || py < 0 || px >= mw || py >= mh || !open[py * mw + px]) return true;
+  }
+  return false;
+}
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 // How floor seen `v` well (0 to 1) is drawn: barely glimpsed, it stays rock;
 // seen a little better, its hatching fades away; seen better still, the
@@ -244,7 +258,7 @@ export class Expression {
     if (!around) this.sightCanvas = { target: blank(sw, sh), eased: blank(sw, sh), tmp: blank(sw, sh), lamps: blank(sw, sh) };
     this.lightReach = null;
     this.sightFrom = this.lightFrom = null;
-    this.tints = this.nearFloor = this.cellRoom = this.roomsSeenKey = this.floorIn = null;
+    this.tints = this.nearFloor = this.cellRoom = this.roomsSeenKey = this.floorIn = this.open = null;
     if (!around) {
       this.stat = this.prev = null;
       this.job = null;
@@ -566,15 +580,14 @@ export class Expression {
 
     if (S.depth === "distance") {
       // Distance from the known floor; white past openings. Each point looks
-      // one step from its nearest known floor toward itself: rock there is a
-      // wall, floor an opening. Softened (lighter only), so the hatching fades
-      // out quicker round the end of a wall beside an opening.
+      // back to its nearest known floor: rock on the way is a wall it is
+      // behind, all floor an opening (behindWall). Softened (lighter only),
+      // so the hatching fades out quicker round the end of a wall beside an
+      // opening.
       const behind = new Float32Array(n).fill(1);
       for (let j = 0; j < n; j++) {
         if (isKnown[j] || sx[j] < 0) continue;
-        const dx = (j % mw) - sx[j], dy = ((j / mw) | 0) - sy[j], l = Math.hypot(dx, dy) || 1;
-        const nx = sx[j] + Math.round(dx / l), ny = sy[j] + Math.round(dy / l);
-        if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && floor[ny * mw + nx]) behind[j] = 0;
+        if (!behindWall(floor, this.openGround(), mw, mh, sx[j], sy[j], j % mw, (j / mw) | 0)) behind[j] = 0;
       }
       const soft = behind.slice();
       blur(soft, mw, mh, Math.round(S.opening * R * 0.6));
@@ -801,12 +814,10 @@ export class Expression {
     this.mark?.("known floor");
     yield;
     // The depth map (by distance from the known floor, as depthSteps does).
-    const behind = new Float32Array(on).fill(1);
+    const behind = new Float32Array(on).fill(1), open = this.openGround();
     for (let i = 0; i < on; i++) {
       if (known[i] || sx[i] < 0) continue;
-      const x = i % ow, y = (i / ow) | 0, dx = x - sx[i], dy = y - sy[i], l = Math.hypot(dx, dy) || 1;
-      const nx = sx[i] + Math.round(dx / l) + ox, ny = sy[i] + Math.round(dy / l) + oy;
-      if (nx >= 0 && ny >= 0 && nx < mw && ny < mh && floor[ny * mw + nx]) behind[i] = 0;
+      if (!behindWall(floor, open, mw, mh, sx[i] + ox, sy[i] + oy, (i % ow) + ox, ((i / ow) | 0) + oy)) behind[i] = 0;
     }
     const soft = behind.slice();
     blur(soft, ow, oh, blurR);
@@ -1418,6 +1429,53 @@ export class Expression {
     this.sightFrom = [px, py];
     this.sightCasts = (this.sightCasts ?? 0) + 1;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
+  }
+
+  // The floor with what stands on it, at mask resolution (made once): the
+  // pillars, and islands of rock in it (columns filling a square, a cave's
+  // formations). What is behind one of those is not behind a wall
+  // (behindWall).
+  openGround() {
+    if (this.open) return this.open;
+    const { mw, mh, TS, level: L } = this, c = blank(mw, mh), g = c.getContext("2d", { willReadFrequently: true });
+    g.scale(R / TS, R / TS);
+    for (const f of L.features ?? []) {
+      if (f.type !== "post") continue;
+      const pts = postOutline(f, TS);
+      g.beginPath();
+      for (const [x, y] of pts) g.lineTo(x, y);
+      g.closePath();
+      g.fill();
+      g.lineWidth = TS / R;
+      g.stroke();
+    }
+    // (Islands: rock all round which, eight ways, is floor, a few squares at
+    // most; each square with a rim, for its ragged drawn edge.)
+    const W = L.w, H = L.h, done = new Uint8Array(W * H);
+    for (let j0 = 0; j0 < W * H; j0++) {
+      if (L.tiles[j0] || done[j0]) continue;
+      const part = [j0];
+      let island = true;
+      done[j0] = 1;
+      for (let k = 0; k < part.length && part.length <= 12; k++) {
+        const x = part[k] % W, y = (part[k] / W) | 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy, nj = ny * W + nx;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) island = false;
+            else if (!L.tiles[nj] && !done[nj]) {
+              done[nj] = 1;
+              part.push(nj);
+            }
+          }
+      }
+      if (!island || part.length > 12) continue;
+      for (const j of part) g.fillRect(((j % W) - 0.15) * TS, (((j / W) | 0) - 0.15) * TS, 1.3 * TS, 1.3 * TS);
+    }
+    const a = g.getImageData(0, 0, mw, mh).data;
+    this.open = this.floor.slice();
+    for (let j = 0; j < mw * mh; j++) if (a[j * 4 + 3] >= 64) this.open[j] = 1;
+    return this.open;
   }
 
   // The floor but its edge under the walls, at mask resolution (made once).
