@@ -395,8 +395,8 @@ export class GpuMap {
     // (None yet: none inked.)
     if (!this.vao) return gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.useProgram(p);
-    // (`coverU` changes in place, so it is sent each time.)
-    this.versions.u = null;
+    // (The depth map and `coverU` change in place, so they are sent each time.)
+    this.versions.grey = this.versions.u = null;
     const tex = { uGrey: this.maskTexture("grey", E.grey, E.grey), uU: this.maskTexture("u", E.coverU ?? new Float32Array(E.mw * E.mh).fill(1), E.grey), uTable: this.tex.table, uTable2: this.tex.table2 };
     let unit = 0;
     for (const [name, t] of Object.entries(tex)) {
