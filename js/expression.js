@@ -973,6 +973,7 @@ export class Expression {
     if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
     const near = this.nearFloor, band = (WALL_BAND * R) ** 2;
     const seenAt = (x, y) => (x >= ox && y >= oy && x < outer[2] && y < outer[3] ? seenW[(y - oy) * ow + (x - ox)] : seen[y * mw + x]);
+    const [ax0, ay0, ax1, ay1] = area;
     for (let y = ay0; y < ay1; y++)
       for (let x = ax0; x < ax1; x++) {
         const j = y * mw + x, u = this.coverU[j];
