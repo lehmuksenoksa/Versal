@@ -29,7 +29,7 @@ export const EXPRESSION_DEFAULTS = {
   // Rooms inked as in sight beyond what is seen: the one the player is in
   // ("own"), each any of whose floor is seen ("seen"), or none ("off");
   // how far toward the ink in sight, 0 to 1.
-  roomInk: "off", roomInkLevel: 1,
+  roomInk: "own", roomInkLevel: 0.5,
   // The candle, in flat bands counted in squares out from the player: full
   // brightness for `lightFull` squares (the player's the first), then dim
   // (`dimLevel`) for `lightDim` squares, then dark (`darkLevel`) for
@@ -46,7 +46,7 @@ export const EXPRESSION_DEFAULTS = {
   // markings, walls and hatching; the hatching beyond sight is inked from a
   // weaker depth map.
   seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.55, memHatchC: "#6b5f52", memHatch: 0.55,
+  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.75, memHatchC: "#6b5f52", memHatch: 0.75,
   // The depth map: how it is made, black up to `full` tiles from the known
   // walls and white from `reach`, its ragged edge, and (for some ways of
   // making it) how openings soften it.

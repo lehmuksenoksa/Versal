@@ -46,10 +46,11 @@ and some goblins.
   with distance. In a fight the words of the fighting fly off into open space, clear of each other
   and of the letters: hits pop out along the blow (yellow, in small capitals), misses sink, death
   cries (red) jolt and sink; the background noise isn't shown while blows are flying.
-- A room any of whose floor is in sight is drawn as in sight all over, as far as it is known: its
-  walls and their hatching inked black, not just what is in the line of sight. Rooms are as the level made them:
-  each square's floor and the rock bordering it belong to a room (`roomOf`, `wallOf`), corridors
-  and passages to none.
+- The room the player is in has its walls and their hatching inked halfway toward in sight where
+  they're out of view, as far as they are known, so a room broken up by columns or formations still
+  reads as one place (the floor grid only where seen). Rooms are as the level made them: each
+  square's floor and the rock bordering it belong to a room (`roomOf`, `wallOf`), with its
+  recesses, niches and cells; corridors, passages and doorways to none.
 - The player sees what lies in their line of sight, cast against the walls: sharp where walls block
   the view, fading out with distance. What is in sight is drawn in black ink; what is remembered is
   drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,
