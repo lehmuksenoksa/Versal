@@ -47,7 +47,9 @@ and some goblins.
   and of the letters: hits pop out along the blow (yellow, in small capitals), misses sink, death
   cries (red) jolt and sink; the background noise isn't shown while blows are flying.
 - A room any of whose floor is in sight is drawn as in sight all over, as far as it is known: its
-  walls and their hatching inked black, not just what is in the line of sight.
+  walls and their hatching inked black, not just what is in the line of sight. Rooms here are the
+  open floor (each square in a three by three of floor, and two squares round): corridors and
+  passages are part of none, and caves' chambers are rooms of their own.
 - The player sees what lies in their line of sight, cast against the walls: sharp where walls block
   the view, fading out with distance. What is in sight is drawn in black ink; what is remembered is
   drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,
