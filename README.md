@@ -43,7 +43,9 @@ and some goblins.
   much better chances. Once found it is an ordinary door. Goblins don't use them until then.
 - Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
   move, "grr" when aggressive, "zzz" asleep. They show out of sight too, within hearing, fainter
-  with distance.
+  with distance. In a fight the words of the fighting fly off into open space, clear of each other
+  and of the letters: hits pop out along the blow (yellow, in small capitals), misses sink, death
+  cries (red) jolt and sink; the background noise isn't shown while blows are flying.
 - The player sees what lies in their line of sight, cast against the walls: sharp where walls block
   the view, fading out with distance. What is in sight is drawn in black ink; what is remembered is
   drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,

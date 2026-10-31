@@ -85,6 +85,15 @@ const SOUND_LOOK = {
   attack: FIGHT, whack: FIGHT, miss: FIGHT,
 };
 
+// The fighting's words, which fly off from it (as far as `FLY.dist`
+// squares); the noises that are blows (a fight goes on for `FIGHT_MS` after
+// the last); and the background noises, not shown while it does.
+const FLYING = new Set(["whack", "attack", "miss", "fall", "alarm"]);
+const BLOWS = new Set(["whack", "attack", "miss", "alarm"]);
+const BACKGROUND = new Set(["move", "chatter", "growl", "snore"]);
+const FLY = { dist: 1.75 };
+const FIGHT_MS = 2000;
+
 // The lamp out: sight close round the player, only the dark band of light.
 // (No full band at all: its ragged edge would light a speck round the
 // player.)
@@ -359,15 +368,15 @@ export class Renderer {
         if (e.by && e.by !== this.world.player) this.hear(e.by, "door", now);
       } else if (e.type === "rattle") this.hear(e.actor, "rattle", now);
       else if (e.type === "attack") {
-        this.hear(e.actor, "attack", now);
+        this.hear(this.world.player, "attack", now, null, e.actor);
         this.view(e.actor).strikeT = now;
         this.view(this.world.player).hitT = now;
       } else if (e.type === "whack") {
         const v = this.view(e.target);
-        this.hear(e.target, e.hit ? "whack" : "miss", now);
+        this.hear(e.target, e.hit ? "whack" : "miss", now, null, this.world.player);
         if (e.hit) v.hitT = now;
         if (e.killed) {
-          this.hear(e.target, "fall", now);
+          this.hear(e.target, "fall", now, null, this.world.player);
           this.ghosts.push({ glyph: e.target.glyph, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
           this.views.delete(e.target.id);
         }
@@ -385,17 +394,60 @@ export class Renderer {
 
   // A noise from actor `a`, if the player sees it or is near enough to hear
   // it: written above it, fainter the further off it is when out of sight.
-  hear(a, kind, now, text = null) {
+  // The fighting's words (`by`: who struck `a`) fly off from it (see
+  // place); while blows are flying, the goblins' other noises aren't shown.
+  hear(a, kind, now, text = null, by = null) {
     const S = SOUNDS[kind], p = this.world.player, TS = this.TS;
+    if (BLOWS.has(kind)) this.lastBlow = now;
+    if (BACKGROUND.has(kind) && this.fighting(now)) return;
     const d = Math.hypot(a.x - p.x, a.y - p.y), seen = this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS);
     if (!seen && d > S.range) return;
     const v = this.view(a), j = (r) => (Math.random() - 0.5) * 2 * r;
-    this.sounds.push({
+    const s = {
       text: text ?? S.words[Math.floor(Math.random() * S.words.length)], kind, t0: now, dur: S.dur * 1000,
       x: (v.x + 0.5 + j(0.25)) * TS, y: (v.y + 0.1) * TS, rot: j(0.18),
       alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / S.range),
-    });
+    };
+    if (FLYING.has(kind)) this.place(s, v, by && this.view(by), now);
+    this.sounds.push(s);
     if (this.sounds.length > 60) this.sounds.shift();
+  }
+
+  // Blows flying (in the last `FIGHT_MS`)?
+  fighting(now) {
+    return now - (this.lastBlow ?? -1e9) < FIGHT_MS;
+  }
+
+  // Where a fighting word goes: from the one struck (`v`, as drawn), out in
+  // the blow's direction (from `by`), or for a miss or a fall down and away
+  // from the player, or up for an alarm; turned as far as needs be to keep
+  // clear of the words already flying, the letters, and the edge of the view.
+  place(s, v, by, now) {
+    const TS = this.TS, d = FLY.dist * TS, at = (u) => [(u.x + 0.5) * TS, (u.y + 0.5) * TS];
+    const [ax, ay] = at(v), pv = this.view(this.world.player), [px] = at(pv);
+    let base = by ? Math.atan2(ay - at(by)[1], ax - at(by)[0]) : -Math.PI / 2;
+    if (s.kind === "fall" || s.kind === "miss") base = Math.atan2(0.4, ax - px || 1);
+    const start = by ? [ax, ay - TS * 0.2] : [ax, ay - TS * 0.45];
+    const end = (ang) => [start[0] + Math.cos(ang) * d, start[1] + Math.sin(ang) * d - TS * 0.25];
+    const flying = this.sounds.filter((o) => o.end && now - o.t0 < o.dur);
+    const letters = [...this.world.actors].filter((u) => u === this.world.player || this.inSight((u.x + 0.5) * TS, (u.y + 0.5) * TS)).map((u) => at(this.view(u)));
+    const c = this.drawnCam ?? [-1e9, -1e9], vw = this.vw / this.zoom, vh = (this.vh - (this.inset ?? 0)) / this.zoom;
+    const clash = ([x, y]) => {
+      let cost = 0;
+      for (const o of flying) cost += Math.max(0, 1.6 * TS - Math.hypot(o.end[0] - x, (o.end[1] - y) * 2.2));
+      for (const [lx, ly] of letters) cost += Math.max(0, 0.8 * TS - Math.hypot(lx - x, ly - y)) * 2;
+      if (x < c[0] + TS || x > c[0] + vw - TS || y < c[1] + TS || y > c[1] + vh - TS) cost += 200;
+      return cost;
+    };
+    let best = base, bestCost = Infinity;
+    for (const off of [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.7, -1.7]) {
+      const cost = clash(end(base + off)) + Math.abs(off) * 8;
+      if (cost < bestCost) { bestCost = cost; best = base + off; }
+    }
+    s.from = start;
+    s.dir = [Math.cos(best), Math.sin(best)];
+    s.dist = d;
+    s.end = end(best);
   }
 
   // Noises from the goblins' states: chatter now and then while milling
@@ -437,12 +489,22 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
+    const fighting = this.fighting(now);
     for (const s of this.sounds) {
+      if (fighting && BACKGROUND.has(s.kind)) continue;
       const big = s.kind === "alarm" || s.kind === "whack" || s.kind === "attack" || s.kind === "fall";
-      const k = (now - s.t0) / s.dur, size = TS * (big ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
-      const a = s.alpha * Math.min(1, k / 0.08) * (k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45);
+      const k = (now - s.t0) / s.dur;
+      let size = TS * (big ? 0.66 : s.kind === "snore" ? 0.46 + 0.14 * k : s.kind === "growl" ? 0.54 : 0.46);
+      let a = s.alpha * Math.min(1, k / 0.08) * (k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45);
       ctx.save();
-      ctx.translate(s.x + (s.kind === "snore" ? k * TS * 0.35 : 0), s.y - k * TS * (s.kind === "snore" ? 0.6 : 0.45));
+      if (s.from) {
+        // A fighting word, as it flies: see flight.
+        const f = this.flight(s, k);
+        ctx.translate(f.x, f.y);
+        ctx.textBaseline = "middle";
+        size = f.size;
+        a = s.alpha * f.alpha;
+      } else ctx.translate(s.x + (s.kind === "snore" ? k * TS * 0.35 : 0), s.y - k * TS * (s.kind === "snore" ? 0.6 : 0.45));
       ctx.rotate(s.rot);
       ctx.globalAlpha = Math.max(0, a);
       const look = SOUND_LOOK[s.kind] ?? SOUND_LOOK.default;
@@ -455,6 +517,35 @@ export class Renderer {
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  // Where a fighting word is, `k` of the way through, how big and how
+  // solid: hits popping out big along the blow, then rising; misses sinking
+  // and wobbling; a death cry jolting, then sinking; an alarm popping out
+  // above.
+  flight(s, k) {
+    const TS = this.TS, out = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+    let [x, y] = s.from, size = TS * 0.7;
+    const alpha = Math.min(1, k / 0.06) * (k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4);
+    if (s.kind === "whack" || s.kind === "attack") {
+      const e = out(k / 0.35);
+      x += s.dir[0] * s.dist * e;
+      y += s.dir[1] * s.dist * e - k * TS * 0.25;
+      size *= 1 + 0.5 * Math.max(0, 1 - k / 0.15);
+    } else if (s.kind === "miss") {
+      x += s.dir[0] * s.dist * 0.35 * out(k) + Math.sin(k * 14) * TS * 0.06;
+      y += TS * 0.75 * out(k);
+      size = TS * 0.42;
+    } else if (s.kind === "fall") {
+      x += (k < 0.2 ? Math.sin(k * 120) * TS * 0.06 : 0) + s.dir[0] * s.dist * 0.3 * out(k / 0.3);
+      y += -TS * 0.3 * out(k / 0.2) + TS * 0.8 * out((k - 0.2) / 0.8);
+      size *= 1 + 0.25 * Math.max(0, 1 - k / 0.2);
+    } else {
+      x += s.dir[0] * s.dist * 0.5 * out(k / 0.3);
+      y += s.dir[1] * s.dist * 0.5 * out(k / 0.3) - k * TS * 0.3;
+      size *= 1 + 0.4 * Math.max(0, 1 - k / 0.15);
+    }
+    return { x, y, size, alpha };
   }
 
   // Where the player's square's middle is on the screen (CSS pixels), and a
