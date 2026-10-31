@@ -1390,13 +1390,13 @@ export class Expression {
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
   }
 
-  // The rooms any of whose floor is in sight now: all of each is drawn as in
-  // sight, its walls and their hatching inked black, as far as it is known
-  // (`roomInk`, at mask resolution). What room each bit of the map is part
+  // The rooms any of whose floor has been seen (in sight now or remembered):
+  // all of each is drawn as in sight, its walls and their hatching inked
+  // black, as far as it is known (`roomInk`, at mask resolution). What room each bit of the map is part
   // of: a room's floor, and the rock whose nearest floor is a room's, as far
   // out as the hatching reaches (worked out once).
   roomsInSight() {
-    const { mw, mh, level: L, S } = this, vis = this.visNow;
+    const { mw, mh, level: L, S, seen } = this;
     if (!this.cellRoom) {
       const squareRoom = new Int16Array(L.w * L.h).fill(-1);
       L.rooms.forEach((r, i) => {
@@ -1411,12 +1411,13 @@ export class Expression {
       }
       this.squareRoom = squareRoom;
     }
-    const inSight = new Set();
+    // (Once a room is known it stays so.)
+    const inSight = (this.roomsKnown ??= new Set());
     L.rooms.forEach((r, i) => {
       for (let y = r.y; y < r.y + r.h && !inSight.has(i); y++)
         for (let x = r.x; x < r.x + r.w; x++) {
           if (this.squareRoom[y * L.w + x] !== i) continue;
-          if (vis[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] > 0.5) { inSight.add(i); break; }
+          if (seen[(y * R + (R >> 1)) * mw + x * R + (R >> 1)] >= 0.5) { inSight.add(i); break; }
         }
     });
     const key = [...inSight].join();
