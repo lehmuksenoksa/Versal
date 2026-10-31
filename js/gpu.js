@@ -191,6 +191,52 @@ void main() {
   o = vec4(mix(uOut, c, keep), 1.0);
 }`;
 
+// Every stroke's shape as the GPU takes it (see the top): a strip along
+// each stroke's middle line (`verts`, five numbers a point: x, y, the
+// stroke, how far along it, which side; `index`, the triangles), and the
+// table of the strokes' middles, ranks and widths (`table`) and half
+// lengths and strip widths (`table2`), `rows` rows of TABLE_W. Plain
+// arrays, to be sent from a worker without copying.
+export function strokeBuffers(strokes) {
+  const pmax = Math.max(HATCH.pstart, HATCH.pmid, HATCH.pend), widest = 6;
+  const n = strokes.length, rows = Math.max(1, Math.ceil(n / TABLE_W));
+  const table = new Float32Array(TABLE_W * rows * 4), table2 = new Float32Array(TABLE_W * rows * 4);
+  let nv = 0, ni = 0;
+  for (const st of strokes) if (st.path.length >= 2) { nv += (st.path.length + 2) * 2; ni += (st.path.length + 1) * 6; }
+  const verts = new Float32Array(nv * 5), index = new Uint32Array(ni);
+  let vi = 0, ii = 0;
+  const dir = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
+  strokes.forEach((st, id) => {
+    const P = st.path;
+    if (P.length < 2) return;
+    const cum = [0];
+    for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+    // (Wide enough for it at its thickest, and a little for the edge.)
+    const L = cum.at(-1) || 1, half = L / 2, W = (pmax * st.scale * widest) / 2 + 2;
+    const [mx, my] = P[P.length >> 1];
+    table.set([mx, my, st.rank, st.scale], id * 4);
+    table2.set([half, W, 0, 0], id * 4);
+    const base = vi / 5;
+    // Along the middle line, and on past each end as far as the widest end.
+    const pts = P.map((q, i) => [q[0], q[1], (2 * cum[i]) / L - 1]);
+    const [sx, sy] = dir(P[1], P[0]), [ex, ey] = dir(P.at(-2), P.at(-1));
+    pts.unshift([P[0][0] + sx * W, P[0][1] + sy * W, -1 - W / half]);
+    pts.push([P.at(-1)[0] + ex * W, P.at(-1)[1] + ey * W, 1 + W / half]);
+    for (let i = 0; i < pts.length; i++) {
+      const [tx, ty] = dir(pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]);
+      const nx = -ty * W, ny = tx * W, [x, y, s] = pts[i];
+      verts.set([x + nx, y + ny, id, s, 1, x - nx, y - ny, id, s, -1], vi);
+      vi += 10;
+      if (i) {
+        const a = base + 2 * (i - 1);
+        index.set([a, a + 1, a + 2, a + 1, a + 3, a + 2], ii);
+        ii += 6;
+      }
+    }
+  });
+  return { verts: verts.subarray(0, vi), index: index.subarray(0, ii), table, table2, rows, count: n };
+}
+
 function program(gl, vs, fs) {
   const p = gl.createProgram();
   for (const [type, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
@@ -222,9 +268,9 @@ export function gpuContext(canvas, force = false) {
 }
 
 export class GpuMap {
-  // `exp`: an Expression whose strokes (`strokes`, its `solid`) were taken
-  // away before it was drawn.
-  constructor(gl, exp, strokes) {
+  // `exp`: an Expression drawing no strokes (made without them); they come
+  // later (setStrokes).
+  constructor(gl, exp) {
     this.gl = gl;
     this.exp = exp;
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -241,7 +287,7 @@ export class GpuMap {
     this.versions = {};
     this.sources = {};
     this.locs = new Map();
-    this.layStrokes(strokes);
+    this.hatchPics = [];
   }
 
   // A texture by name, made or remade from `src` (a canvas, or { w, h, data,
@@ -285,54 +331,19 @@ export class GpuMap {
     return this.texture(name, { w: mw, h: mh, data, internal: gl.R32F, format: gl.RED, type: gl.FLOAT }, version, gl.NEAREST);
   }
 
-  // Every stroke's shape, once, onto the GPU (see the top), with the table
-  // of the strokes' middles, ranks, widths and lengths.
-  layStrokes(strokes) {
+  // Every stroke's shape onto the GPU (see the top), with the table of the
+  // strokes' middles, ranks, widths and lengths: `b` as strokeBuffers makes
+  // them (in a worker, so the game needn't wait). Inked from then on.
+  setStrokes(b) {
     const gl = this.gl;
-    const pmax = Math.max(HATCH.pstart, HATCH.pmid, HATCH.pend), widest = 6;
-    const n = strokes.length, rows = Math.max(1, Math.ceil(n / TABLE_W));
-    const table = new Float32Array(TABLE_W * rows * 4), table2 = new Float32Array(TABLE_W * rows * 4);
-    let nv = 0, ni = 0;
-    for (const st of strokes) if (st.path.length >= 2) { nv += (st.path.length + 2) * 2; ni += (st.path.length + 1) * 6; }
-    const verts = new Float32Array(nv * 5), index = new Uint32Array(ni);
-    let vi = 0, ii = 0;
-    const dir = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
-    strokes.forEach((st, id) => {
-      const P = st.path;
-      if (P.length < 2) return;
-      const cum = [0];
-      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
-      // (Wide enough for it at its thickest, and a little for the edge.)
-      const L = cum.at(-1) || 1, half = L / 2, W = (pmax * st.scale * widest) / 2 + 2;
-      const [mx, my] = P[P.length >> 1];
-      table.set([mx, my, st.rank, st.scale], id * 4);
-      table2.set([half, W, 0, 0], id * 4);
-      const base = vi / 5;
-      // Along the middle line, and on past each end as far as the widest end.
-      const pts = P.map((q, i) => [q[0], q[1], (2 * cum[i]) / L - 1]);
-      const [sx, sy] = dir(P[1], P[0]), [ex, ey] = dir(P.at(-2), P.at(-1));
-      pts.unshift([P[0][0] + sx * W, P[0][1] + sy * W, -1 - W / half]);
-      pts.push([P.at(-1)[0] + ex * W, P.at(-1)[1] + ey * W, 1 + W / half]);
-      for (let i = 0; i < pts.length; i++) {
-        const [tx, ty] = dir(pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]);
-        const nx = -ty * W, ny = tx * W, [x, y, s] = pts[i];
-        verts.set([x + nx, y + ny, id, s, 1, x - nx, y - ny, id, s, -1], vi);
-        vi += 10;
-        if (i) {
-          const a = base + 2 * (i - 1);
-          index.set([a, a + 1, a + 2, a + 1, a + 3, a + 2], ii);
-          ii += 6;
-        }
-      }
-    });
-    const tableTex = (name, data) => this.texture(name, { w: TABLE_W, h: rows, data, internal: gl.RGBA32F, format: gl.RGBA, type: gl.FLOAT }, 1, gl.NEAREST);
-    tableTex("table", table);
-    tableTex("table2", table2);
-    const prog = (this.strokeProg = program(gl, STROKE_VS, STROKE_FS));
+    const tableTex = (name, data) => this.texture(name, { w: TABLE_W, h: b.rows, data, internal: gl.RGBA32F, format: gl.RGBA, type: gl.FLOAT }, 1, gl.NEAREST);
+    tableTex("table", b.table);
+    tableTex("table2", b.table2);
+    const prog = (this.strokeProg ??= program(gl, STROKE_VS, STROKE_FS));
     this.vao = gl.createVertexArray();
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, verts.subarray(0, vi), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, b.verts, gl.STATIC_DRAW);
     const at = (name, size, off) => {
       const l = gl.getAttribLocation(prog, name);
       gl.enableVertexAttribArray(l);
@@ -340,10 +351,15 @@ export class GpuMap {
     };
     at("aPos", 2, 0); at("aId", 1, 8); at("aS", 1, 12); at("aD", 1, 16);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index.subarray(0, ii), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, b.index, gl.STATIC_DRAW);
     gl.bindVertexArray(null);
-    this.indexCount = ii;
-    this.hatchPics = [];
+    this.indexCount = b.index.length;
+    // (Fading in: a new state, inked with them, over the last, without.)
+    const E = this.exp;
+    if (E.stat) {
+      E.prev = E.stat;
+      E.stat = { t: performance.now(), k: E.stat.k ^ 1 };
+    }
   }
 
   // The picture the strokes are inked into for ink set `k` (one for each of
@@ -372,11 +388,13 @@ export class GpuMap {
   // Overlapping strokes: the most of them.
   inkStrokes(h) {
     const gl = this.gl, E = this.exp, S = E.S, p = this.strokeProg;
-    gl.useProgram(p);
     gl.bindFramebuffer(gl.FRAMEBUFFER, h.fb);
     gl.viewport(0, 0, h.w, h.h);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    // (None yet: none inked.)
+    if (!this.vao) return gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(p);
     // (`coverU` changes in place, so it is sent each time.)
     this.versions.u = null;
     const tex = { uGrey: this.maskTexture("grey", E.grey, E.grey), uU: this.maskTexture("u", E.coverU ?? new Float32Array(E.mw * E.mh).fill(1), E.grey), uTable: this.tex.table, uTable2: this.tex.table2 };

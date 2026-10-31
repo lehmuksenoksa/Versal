@@ -28,7 +28,8 @@ and some goblins.
 - The map is drawn on the GPU (WebGL2) where there is one: the hatching inked there from every
   stroke's shape, sent once, and each frame put together in one pass. The walls, floor and its
   markings are sent once too; each step only small masks (how well each spot was seen, the depth
-  map, the cover) are worked out, round what changed, and sent. Without one (or with only a
+  map, the cover) are worked out, round what changed, and sent. The game starts before the
+  hatching's strokes are made: they are made in a worker (`js/strokes-worker.js`) and fade in. Without one (or with only a
   software one, or with `?render=canvas`) it is drawn with canvases as before; `?render=gpu` uses
   the GPU even in software. `?perf` shows a readout of what draws the map and how long frames,
   steps and redraws take.

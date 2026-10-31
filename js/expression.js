@@ -13,7 +13,7 @@
 // expression mockup (mockups/expression.html), which uses this module too.
 
 import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
-import { hatchSolid, inkRecorded, nearestSeeds } from "./hatching.js";
+import { hatchSolid, inkRecorded, nearestSeeds, STROKES_SEED } from "./hatching.js";
 import { RNG } from "./rng.js";
 import { Walls } from "./sightline.js";
 import { T } from "./dungeon.js";
@@ -157,20 +157,28 @@ function blur(a, w, h, r) {
 export class Expression {
   // The map hatched as solid rock, noise for ragged edges and stipple dots:
   // everything that depends only on the level and the tile size.
-  constructor(level, seed, TS, settings = {}) {
+  // (`strokes: false`: the strokes not made here; the GPU has them made
+  // elsewhere, see strokes-worker.js.)
+  constructor(level, seed, TS, settings = {}, { strokes = true } = {}) {
     const { w: W, h: H } = level;
     Object.assign(this, { level, seed, TS, W, H, mw: W * R, mh: H * R });
     this.S = { ...EXPRESSION_DEFAULTS, ...settings };
-    this.solid = hatchSolid(W * TS, H * TS, TS, new RNG(seed ^ 0x5011d));
+    this.solid = strokes ? hatchSolid(W * TS, H * TS, TS, new RNG(seed ^ STROKES_SEED)) : [];
     this.noise = valueNoise(new RNG(seed ^ 0x7a9), W * TS, H * TS, TS * 3.5);
     this.fine = valueNoise(new RNG(seed ^ 0xf1e), W * TS, H * TS, TS * 0.5);
-    // Stipple dots: scattered over the whole map, each with a rank (which
-    // comes in first) and a size.
-    const dr = new RNG(seed ^ 0xd07);
-    this.dots = Array.from({ length: W * H * 40 }, () => [dr.range(0, W * TS), dr.range(0, H * TS), dr.next(), dr.range(0.6, 1.4)]);
     this.seen = new Float32Array(this.mw * this.mh);
     this.visNow = new Float32Array(this.mw * this.mh);
     this.player = null;
+  }
+
+  // Stipple dots (for the cover's "dots"): scattered over the whole map, each
+  // with a rank (which comes in first) and a size. Made when first wanted.
+  stipple() {
+    if (!this.dots) {
+      const { W, H, TS } = this, dr = new RNG(this.seed ^ 0xd07);
+      this.dots = Array.from({ length: W * H * 40 }, () => [dr.range(0, W * TS), dr.range(0, H * TS), dr.next(), dr.range(0.6, 1.4)]);
+    }
+    return this.dots;
   }
 
   // Draw at `scale` device pixels per map unit (capped, to keep the full-map
@@ -238,7 +246,6 @@ export class Expression {
       this.stat = this.prev = null;
       this.job = null;
       this.bufs = this.hi = this.scratch = null; // (made at the new size when drawn)
-      this.gpuAll = true;
     }
     this.paint();
     // The exact shape of all that has been seen, at full resolution, recast
@@ -300,6 +307,7 @@ export class Expression {
   // Everything to be redrawn in full.
   outOfDate() {
     for (const buf of this.bufs ?? []) buf.stale = ALL;
+    this.gpuAll = true;
   }
 
   // Forget everything seen.
@@ -752,14 +760,17 @@ export class Expression {
   // over the last.
   *gpuSteps() {
     const { mw, mh, floor, seen, S, TS } = this, n = mw * mh;
-    const changed = this.gpuAll || !this.grey ? ALL : this.changed;
-    this.changed = null;
-    this.gpuAll = false;
+    // (At first all is unknown: no hatching, the cover all dark; only round
+    // what is seen has anything else to be worked out.)
     if (!this.grey) {
       this.grey = new Float32Array(n).fill(1);
       this.coverU = new Float32Array(n).fill(1);
       this.inkMask = new Float32Array(n * 4);
+      for (let j = 0; j < n; j++) this.inkMask[j * 4 + 2] = 1;
     }
+    const changed = this.gpuAll ? ALL : this.changed;
+    this.changed = null;
+    this.gpuAll = false;
     const done = () => {
       this.prev = this.stat;
       this.stat = { t: performance.now(), k: this.stat ? this.stat.k ^ 1 : 0 };
@@ -1149,7 +1160,7 @@ export class Expression {
         }
       else {
         cg.beginPath();
-        for (const [x, y, rank, size] of this.dots) {
+        for (const [x, y, rank, size] of this.stipple()) {
           if (!nearArea(x, y)) continue;
           const v = uXY(x, y);
           if (!(v > 0) || rank > v) continue;

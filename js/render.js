@@ -249,20 +249,51 @@ export class Renderer {
     if (this.world) this.buildMap();
   }
 
+  // The hatching's strokes for the GPU, made in a worker (or, if there can
+  // be none, here, once the game has started), then handed to the GPU map
+  // they were made for, if it is still the one.
+  makeStrokes() {
+    const { exp, gpuMap } = this, { W, H, TS, seed } = exp, id = (this.strokesAsked = (this.strokesAsked ?? 0) + 1);
+    const take = (b) => {
+      if (this.gpuMap !== gpuMap || id !== this.strokesAsked) return;
+      try {
+        gpuMap.setStrokes(b);
+      } catch (err) {
+        this.gpuFailed(err);
+      }
+    };
+    const here = () => setTimeout(async () => {
+      const [{ hatchSolid, STROKES_SEED }, { RNG }, { strokeBuffers }] = await Promise.all([import("./hatching.js"), import("./rng.js"), import("./gpu.js")]);
+      take(strokeBuffers(hatchSolid(W * TS, H * TS, TS, new RNG(seed ^ STROKES_SEED))));
+    }, 300);
+    try {
+      this.strokeWorker ??= new Worker(new URL("./strokes-worker.js", import.meta.url), { type: "module" });
+      this.strokeWorker.onmessage = ({ data }) => data.id === this.strokesAsked && take(data);
+      this.strokeWorker.onerror = (e) => {
+        e.preventDefault?.();
+        this.strokeWorker = null;
+        here();
+      };
+      this.strokeWorker.postMessage({ id, W, H, TS, seed });
+    } catch {
+      here();
+    }
+  }
+
   // The map's drawing for this level, tile size and zoom.
   buildMap() {
     const w = this.world;
     if (!this.exp || this.exp.level !== w.level || this.exp.TS !== this.TS) {
-      this.exp = new Expression(w.level, w.seed, this.TS, this.settings);
+      this.exp = new Expression(w.level, w.seed, this.TS, this.settings, { strokes: !this.gl });
       this.exp.player = { x: w.player.x, y: w.player.y };
       // (On the GPU, the strokes are inked there: the Expression draws none.)
       this.gpuMap = null;
+      // (On the GPU, the strokes come later, made in the background.)
       if (this.gl) {
         try {
-          const strokes = this.exp.solid;
-          this.gpuMap = new GpuMap(this.gl, this.exp, strokes);
-          this.exp.solid = [];
+          this.gpuMap = new GpuMap(this.gl, this.exp);
           this.exp.gpu = true;
+          this.makeStrokes();
         } catch (err) {
           return this.gpuFailed(err);
         }

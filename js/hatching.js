@@ -10,6 +10,9 @@
 
 // The settings chosen in the mockup, in pixels at 32 px tiles; `hatchSettings`
 // scales the pixel values to the actual tile size.
+// The hatching's strokes' random numbers: the level's seed, this mixed in.
+export const STROKES_SEED = 0x5011d;
+
 export const HATCH = {
   weight: 3.6, vary: 0.15, curve: 0.03, wobble: 0.4, maxLines: 4, spacing: 8.75,
   depth: 1.6, wallang: 0.15, tri: 0.9, stretch: 2, quads: 0.4, seam: 0,
