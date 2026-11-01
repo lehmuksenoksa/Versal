@@ -50,7 +50,7 @@ export const EXPRESSION_DEFAULTS = {
   // The depth map: how it is made, black up to `full` tiles from the known
   // walls and white from `reach`, its ragged edge, and (for some ways of
   // making it) how openings soften it.
-  depth: "distance", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
+  depth: "walls", full: 0.3, reach: 3.2, ragged: 0.6, opening: 1, taper: 2,
   // The hatching from black to white: strokes kept, their width, length and
   // ink in mid grey (each going on to nothing at white, but ink).
   keepGrey: 0.85, wBlack: 1.5, wGrey: 1.5, lenGrey: 0.6, inkGrey: 1,

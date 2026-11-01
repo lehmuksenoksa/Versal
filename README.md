@@ -6,8 +6,9 @@ and some goblins.
 - The map is drawn in the manner of Dyson Logos' dungeon maps: heavy walls drawn as chains of short
   pen strokes (jagged in cave rooms), a grey shadow cast down-right, a hand-drawn floor grid, and bold
   stone hatching in the rock. The hatching is one pattern for all the rock (the map hatched as solid
-  stone); a depth map from the known walls sets how heavily it is inked, so it never gives away
-  ground not yet seen.
+  stone); a depth map from the known walls sets how heavily it is inked: full depth behind walls
+  known all along, tapering to nothing toward where a wall runs on into wall not yet seen, so it
+  never gives away ground not yet seen. Floor that has been seen is never hatched.
 - Levels are made by areas: dungeon (built rooms and straight corridors; rooms of different kinds
   with pillars, niches, jail cells, beds, tables, shelves, crates and doors), cavern (misshapen caves
   with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).

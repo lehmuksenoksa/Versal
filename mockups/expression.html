@@ -132,7 +132,8 @@
     <label for="depth">Made by <select id="depth">
       <option value="diffuse">Diffusion: walls held black, openings white</option>
       <option value="blend">Blend: black from the walls, fading toward openings</option>
-      <option value="distance">Distance from known floor, white past openings</option></select></label>
+      <option value="distance">Distance from known floor, white past openings</option>
+      <option value="walls">Walls: each as deep as it is far along the known wall from wall not yet known</option></select></label>
     <label for="full">Black up to <output id="full-v"></output><input id="full" type="range" min="0" max="4" step="0.1"></label>
     <label for="reach">White from <output id="reach-v"></output><input id="reach" type="range" min="0.5" max="8" step="0.1"></label>
     <label for="ragged">Ragged edge <output id="ragged-v"></output><input id="ragged" type="range" min="0" max="0.8" step="0.05"></label>
