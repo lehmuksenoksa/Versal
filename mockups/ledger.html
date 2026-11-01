@@ -204,11 +204,14 @@
     <option value="23">23 of 23</option>
   </select></label>
   <label>The dark plates' edge <select id="opt-edge">
-    <option value="torn">torn paper</option>
-    <option value="blots">ink blots</option>
-    <option value="brush">dry brush</option>
-    <option value="ruled">ruled frame</option>
-    <option value="steps">grid steps</option>
+    <option value="torn-bold">torn: rough</option>
+    <option value="torn-fibre">torn: white core showing</option>
+    <option value="torn-cream">torn: over a cream sheet</option>
+    <option value="blot-splat">blots: splattered</option>
+    <option value="blot-drip">blots: dripping</option>
+    <option value="blot-pool">blots: pooled</option>
+    <option value="torn">torn: first try</option>
+    <option value="blots">blots: first try</option>
     <option value="straight">straight</option>
   </select></label>
   <label>Look marks the map <select id="opt-marks">
@@ -361,32 +364,18 @@ function render() {
 
 // The dark plates: one behind the top left corner (the place and the newest messages), one for
 // the sidebar; black as the unexplored ground, each with an edge in the style chosen.
-const SIDE_X = 940, GRID = 42.5, GX0 = 27, GY0 = -2;
+const SIDE_X = 940, CREAM = "#e4dac4";
 function drawPlates(c, tw, th) {
   const g = c.getContext("2d"), style = opt("edge");
   let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  // Low and high wobble along an edge, by distance along it.
+  // Wobble along an edge, by distance along it: slow, middling, quick.
   const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
-  const W1 = waves(4, 0.008, 0.03), W2 = waves(5, 0.08, 0.22);
+  const SLOW = waves(4, 0.008, 0.03), MID = waves(5, 0.05, 0.12), QUICK = waves(5, 0.2, 0.45), RIM = waves(5, 0.04, 0.15);
   const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.clearRect(0, 0, 1280, 800);
   g.fillStyle = "#000";
-
-  if (style === "steps") {
-    // Carved from the map's own squares: the plates end on grid lines, a square further here
-    // and there, as rooms do.
-    const col = (x) => GX0 + Math.ceil((x - GX0) / GRID) * GRID, row = (y) => GY0 + Math.ceil((y - GY0) / GRID) * GRID;
-    const R = col(tw), B = row(th);
-    g.fillRect(0, 0, R, B);
-    for (let y = GY0; y < B; y += GRID) if (rnd() < 0.35) g.fillRect(R, y, GRID, GRID);
-    for (let x = R - GRID; x > -GRID; x -= GRID) if (rnd() < 0.3) g.fillRect(x, B, GRID, GRID);
-    const X = GX0 + Math.floor((SIDE_X - GX0) / GRID) * GRID;
-    g.fillRect(X, 0, 1280 - X, 800);
-    for (let y = GY0; y < 800; y += GRID) { const k = rnd(); if (k < 0.35) g.fillRect(X - GRID, y, GRID, GRID); if (k < 0.08) g.fillRect(X - 2 * GRID, y, GRID, GRID); }
-    return;
-  }
 
   // The edges as lines (the outer side into the map), sampled every 3px with their normals.
   const r = 34;
@@ -404,58 +393,123 @@ function drawPlates(c, tw, th) {
   const topEdge = line([[tw, -12], ...arc, [-12, th]]);
   const sideEdge = line([[SIDE_X, 812], [SIDE_X, -12]]);
   const plates = [[topEdge, [[-12, -12]]], [sideEdge, [[1292, -12], [1292, 812]]]];
-  const fill = (edge, close, off) => {
+  const fill = (edge, close, off, colour = "#000") => {
+    g.fillStyle = colour;
     g.beginPath();
-    edge.forEach(([x, y, nx, ny, t], i) => { const d = off(t); g[i ? "lineTo" : "moveTo"](x + nx * d, y + ny * d); });
+    edge.forEach(([x, y, nx, ny, t], i) => { const d = off(t, i); g[i ? "lineTo" : "moveTo"](x + nx * d, y + ny * d); });
     for (const [x, y] of close) g.lineTo(x, y);
     g.closePath();
     g.fill();
   };
+  // A jagged tear: slow wandering, middling bites, and sharp teeth (a clamped random walk).
+  const tear = (edge, amp) => {
+    let walk = 0;
+    return edge.map(([, , , , t]) => {
+      walk = Math.max(-1, Math.min(1, walk + (rnd() - 0.5) * 0.9));
+      return amp * (0.75 * noise(t, SLOW) + 0.45 * noise(t, MID)) + 0.35 * amp * walk + (rnd() - 0.5) * 2;
+    });
+  };
+  const drop = (x, y, rr) => { g.beginPath(); g.arc(x, y, rr, 0, 6.29); g.fill(); };
 
   for (const [edge, close] of plates) {
-    if (style === "torn") {
-      // Torn black paper: a wandering edge, frayed.
-      fill(edge, close, (t) => 7 * noise(t, W1) + 2.2 * noise(t, W2) + (rnd() - 0.5) * 2.4);
-    } else if (style === "brush") {
-      // A broad brush, dry at its edge: the plate a little short, then streaks along the edge,
-      // fewer and broken the further out.
-      fill(edge, close, (t) => -14 + 3 * noise(t, W1));
-      g.strokeStyle = "#000";
+    if (style === "torn-bold") {
+      const d = tear(edge, 26);
+      fill(edge, close, (t, i) => 6 + d[i]);
+    } else if (style === "torn-fibre") {
+      // Black paper torn: its pale core shows along the tear, wider here, gone there, with
+      // loose fibres.
+      const d = tear(edge, 12);
+      const rim = edge.map(([, , , , t]) => Math.max(0, 1.2 + 3.4 * noise(t, RIM) + (rnd() - 0.5) * 1.2));
+      fill(edge, close, (t, i) => d[i] + rim[i], CREAM);
+      g.strokeStyle = CREAM;
       g.lineCap = "round";
-      for (let o = -16; o <= 12; o += 2.2) {
-        const keep = 1 - (o + 16) / 30;
-        g.lineWidth = 2.2 + rnd() * 1.6;
-        let on = rnd() < keep;
+      for (let i = 0; i < edge.length; i++) {
+        if (rnd() > 0.22) continue;
+        const [x, y, nx, ny] = edge[i], o = d[i] + rim[i], a = (rnd() - 0.5) * 1.6, l = 2 + rnd() * 6;
+        const fx = nx * Math.cos(a) - ny * Math.sin(a), fy = nx * Math.sin(a) + ny * Math.cos(a);
+        g.lineWidth = 0.6 + rnd() * 0.6;
         g.beginPath();
-        for (const [x, y, nx, ny, t] of edge) {
-          if (rnd() < 0.035) on = rnd() < keep;
-          const d = o + 2.5 * noise(t, W1);
-          if (on) g.lineTo(x + nx * d, y + ny * d); else g.moveTo(x + nx * d, y + ny * d);
-        }
+        g.moveTo(x + nx * (o - 1), y + ny * (o - 1));
+        g.lineTo(x + nx * (o - 1) + fx * l, y + ny * (o - 1) + fy * l);
         g.stroke();
       }
+      fill(edge, close, (t, i) => d[i]);
+    } else if (style === "torn-cream") {
+      // Black paper over a torn cream sheet: two tears, the cream showing between.
+      const under = tear(edge, 13), d = tear(edge, 10);
+      fill(edge, close, (t, i) => 22 + under[i], CREAM);
+      fill(edge, close, (t, i) => d[i]);
+    } else if (style === "blot-splat") {
+      // Splattered: big blots along the edge, droplets flung out from some, smaller the further.
+      fill(edge, close, () => -2);
+      for (let i = 0; i < edge.length; i += 2) {
+        const [x, y, nx, ny] = edge[i];
+        if (rnd() < 0.55) drop(x + nx * (rnd() * 9 - 3), y + ny * (rnd() * 9 - 3), 5 + rnd() * rnd() * 20);
+        if (rnd() < 0.05) {
+          let dist = 14 + rnd() * 10, rr = 3 + rnd() * 3;
+          const a = (rnd() - 0.5) * 0.9, dx = nx * Math.cos(a) - ny * Math.sin(a), dy = nx * Math.sin(a) + ny * Math.cos(a);
+          for (let k = 0, n = 2 + Math.floor(rnd() * 4); k < n && rr > 0.8; k++) {
+            g.beginPath();
+            g.ellipse(x + dx * dist, y + dy * dist, rr * 1.5, rr, Math.atan2(dy, dx), 0, 6.29);
+            g.fill();
+            dist += 6 + rnd() * 16; rr *= 0.62;
+          }
+        }
+        if (rnd() < 0.04) drop(x + nx * (18 + rnd() * 50), y + ny * (18 + rnd() * 50), 0.8 + rnd() * 1.6);
+      }
+    } else if (style === "blot-drip") {
+      // Dripping: a bulging edge, and ink running down from it, each run ending in a drop.
+      fill(edge, close, (t) => 3 + 5 * noise(t, MID));
+      for (let i = 0; i < edge.length; i += 2) {
+        const [x, y, nx, ny, t] = edge[i], base = 3 + 5 * noise(t, MID);
+        if (rnd() < 0.5) drop(x + nx * base, y + ny * base, 4 + rnd() * 7);
+        const down = ny > 0.7, side = Math.abs(nx) > 0.7;
+        if ((down && rnd() < 0.08) || (side && rnd() < 0.07)) {
+          const w = 5 + rnd() * 6, len = 16 + rnd() * rnd() * 120;
+          const sx = x + nx * (base + (side ? 2 + rnd() * 8 : 0)), sy = y + ny * base;
+          g.beginPath();
+          g.moveTo(sx - w / 2, sy - 2);
+          g.quadraticCurveTo(sx - w / 2 + (rnd() - 0.5) * 3, sy + len / 2, sx - w * 0.35, sy + len);
+          g.lineTo(sx + w * 0.35, sy + len);
+          g.quadraticCurveTo(sx + w / 2 + (rnd() - 0.5) * 3, sy + len / 2, sx + w / 2, sy - 2);
+          g.closePath();
+          g.fill();
+          drop(sx, sy + len, w * 0.85);
+        }
+      }
+    } else if (style === "blot-pool") {
+      // Pooled: drops that run together into smooth, bulging lobes, as wet ink does (drawn
+      // blurred, then cut sharp).
+      const o = document.createElement("canvas");
+      o.width = 1280; o.height = 800;
+      const q = o.getContext("2d");
+      q.filter = "blur(11px)";
+      q.fillStyle = "#000";
+      q.beginPath();
+      edge.forEach(([x, y, nx, ny], i) => q[i ? "lineTo" : "moveTo"](x - nx * 6, y - ny * 6));
+      for (const [x, y] of close) q.lineTo(x, y);
+      q.closePath();
+      q.fill();
+      for (let i = 0; i < edge.length; i += 4) {
+        const [x, y, nx, ny] = edge[i], rr = 8 + rnd() * rnd() * 42, d = rnd() * 16 - 2;
+        q.beginPath(); q.arc(x + nx * d, y + ny * d, rr, 0, 6.29); q.fill();
+        if (rnd() < 0.07) { q.beginPath(); q.arc(x + nx * (d + rr + 10 + rnd() * 14), y + ny * (d + rr + 10 + rnd() * 14), 3 + rnd() * 5, 0, 6.29); q.fill(); }
+      }
+      const img = q.getImageData(0, 0, 1280, 800), px = img.data;
+      for (let k = 3; k < px.length; k += 4) px[k] = px[k] > 110 ? 255 : 0;
+      q.putImageData(img, 0, 0);
+      g.drawImage(o, 0, 0);
+    } else if (style === "torn") {
+      fill(edge, close, (t) => 7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4);
     } else if (style === "blots") {
-      // Ink blots: the edge pooled in round drops of every size.
       fill(edge, close, () => -4);
       for (let i = 0; i < edge.length; i += 3) {
         const [x, y, nx, ny] = edge[i], rr = 5 + rnd() * 11, d = rnd() * 7 - 2;
-        g.beginPath();
-        g.arc(x + nx * d, y + ny * d, rr, 0, 6.29);
-        g.fill();
-        if (rnd() < 0.12) { const d2 = d + rr + 4 + rnd() * 6, r2 = 1.5 + rnd() * 3; g.beginPath(); g.arc(x + nx * d2, y + ny * d2, r2, 0, 6.29); g.fill(); }
+        drop(x + nx * d, y + ny * d, rr);
+        if (rnd() < 0.12) { const d2 = d + rr + 4 + rnd() * 6; drop(x + nx * d2, y + ny * d2, 1.5 + rnd() * 3); }
       }
     } else {
-      // Straight, or ruled: a straight edge and, inside it, a fine double rule, as on a bookplate.
       fill(edge, close, () => 0);
-      if (style === "ruled") {
-        for (const [inset, w, a] of [[7, 1, 0.5], [12, 2.5, 0.35]]) {
-          g.strokeStyle = `rgba(221, 214, 198, ${a})`;
-          g.lineWidth = w;
-          g.beginPath();
-          edge.forEach(([x, y, nx, ny], i) => g[i ? "lineTo" : "moveTo"](x - nx * inset, y - ny * inset));
-          g.stroke();
-        }
-      }
     }
   }
 }
