@@ -146,7 +146,7 @@
   .keys-help b { font: 600 13px var(--letter); color: var(--gui-dim); }
   .keys-help .on b, .keys-help .on { color: var(--gui-text); }
   .marks { position: absolute; pointer-events: none; }
-  .edge { position: absolute; top: 0; right: 340px; width: 110px; height: 800px; pointer-events: none; }
+  .edge { position: absolute; top: 0; right: 340px; width: 160px; height: 800px; pointer-events: none; }
   .marks span { position: absolute; font: 700 26px var(--letter); transform: translate(-50%, -100%); }
 
   /* Phone: no room for the sidebar; the top carries your health, the rest opens as a sheet. */
@@ -245,7 +245,7 @@ const RUN = {
     { g: "z", n: "skeleton", st: "alarmed" },
     { g: "z", n: "skeleton", st: "suspicious" },
   ],
-  things: [{ g: "⊠", n: "a crate" }, { g: "▯", n: "a doorway, south" }],
+  things: [{ g: "∴", n: "rubble" }, { g: "▯", n: "a way on, north" }],
   log: [
     { turn: "Turn 398" },
     { t: "You go down into the old crypts." },
@@ -323,13 +323,12 @@ function render() {
   const lines = RUN.log.filter((l) => l.t);
   for (const phone of [false, true]) {
     const el = $(phone ? "phone" : "desk");
-    // The camera on you, as in the game: the picture moved so the @ is in the middle of the map
-    // left of the sidebar; the marks move with it.
-    const shift = -167;
+    // The desktop picture is taken at the map's own size, beside the sidebar, the camera on you.
+    const shift = 0;
     const marks = o === "l" && opt("marks") === "on"
       ? phone
         ? `<div class="marks">${[[133, 253, "!", "var(--blood)"], [68, 221, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span style="left:${x}px;top:${y}px;color:${c};font-size:18px">${m}</span>`).join("")}</div>`
-        : `<div class="marks" style="left:${shift}px;top:0">${[[541, 424, "!", "var(--blood)"], [445, 378, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span class="onmap" style="left:${x}px;top:${y}px;color:${c}">${m}</span>`).join("")}</div>`
+        : `<div class="marks" style="left:${shift}px;top:0">${[[385, 376, "!", "var(--blood)"], [342, 418, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span class="onmap" style="left:${x}px;top:${y}px;color:${c}">${m}</span>`).join("")}</div>`
       : "";
     const top = phone
       ? `<div class="top"><div class="head"><span class="place onmap">${RUN.place}</span><span class="hpline onmap ${low ? "low" : ""}" style="${low ? "color:var(--blood)" : ""}">${hp}<span>/${RUN.max}</span></span></div>
@@ -340,7 +339,7 @@ function render() {
       <div><h5>Health</h5><div class="hp ${low ? "low" : ""}">${hp}<span>/${RUN.max}</span></div><div class="statuses">${statuses()}</div></div>`;
     const keysHelp = `<div class="keys-help">${[["e", "equipment"], ["i", "inventory"], ["l", "look"], ["m", "messages"], ["?", "help"]].map(([k, n]) => `<span class="${k === o ? "on" : ""}"><b>${k}</b> ${n}</span>`).join("")}</div>`;
     el.innerHTML = `
-      <div class="map" style="background-image:url('ledger/${phone ? "phone" : "desk"}.jpg');${phone ? "background-position:center -150px" : `right:340px;background-size:1280px 800px;background-position:${shift}px 0`}"></div>
+      <div class="map" style="background-image:url('ledger/${phone ? "phone" : "wide"}.jpg');${phone ? "background-position:center -150px" : "right:340px;background-size:940px 800px;background-position:0 0"}"></div>
       ${marks}
       ${!phone && opt("edge") === "hatched" ? `<canvas class="edge" width="${EDGE_W * 2}" height="1600"></canvas>` : ""}
       ${top}
@@ -357,7 +356,7 @@ function render() {
 
 // The sidebar's edge in hatching: the map ends in groups of short, thick ink strokes, as rock
 // does into unexplored ground, more of them the nearer the sidebar, until all is black.
-const EDGE_W = 110;
+const EDGE_W = 160;
 function hatchEdge(c) {
   const x = c.getContext("2d"), W = EDGE_W, H = 800;
   let seed = 7;
@@ -365,19 +364,19 @@ function hatchEdge(c) {
   x.setTransform(2, 0, 0, 2, 0, 0);
   x.clearRect(0, 0, W, H);
   // Solid black for the last stretch, under the strokes, so they end in it.
-  const solid = 26;
+  const solid = 14;
   x.fillStyle = "#000";
   x.fillRect(W - solid, 0, solid, H);
   x.lineCap = "round";
   x.strokeStyle = "#000";
-  for (let y = -10; y < H + 10; y += 7) {
-    for (let cx = 0; cx < W - solid + 10; cx += 9) {
-      const k = (cx + rnd() * 18) / (W - solid);
-      if (rnd() > k * k * 1.15) continue;
+  for (let y = -10; y < H + 10; y += 12) {
+    for (let cx = 0; cx < W - solid + 10; cx += 13) {
+      const k = Math.min(1, (cx + rnd() * 22) / (W - solid));
+      if (rnd() > Math.pow(k, 1.7) * 1.1) continue;
       // A group of three or four parallel strokes, at its own angle, as the hatching's cells.
-      const a = rnd() * Math.PI, n = 3 + (rnd() < 0.4), len = 14 + rnd() * 16, gap = 5.5;
+      const a = rnd() * Math.PI, n = 3 + (rnd() < 0.5) + (k > 0.7), len = 16 + rnd() * 14 + k * 8, gap = 6;
       const ux = Math.cos(a), uy = Math.sin(a), px = -uy, py = ux;
-      const gx = cx + rnd() * 9, gy = y + rnd() * 7;
+      const gx = cx + rnd() * 13, gy = y + rnd() * 12;
       x.lineWidth = 4 + rnd() * 2.5;
       for (let i = 0; i < n; i++) {
         const o = (i - (n - 1) / 2) * gap, l = len * (0.75 + rnd() * 0.25);
