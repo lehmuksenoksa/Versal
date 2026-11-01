@@ -483,8 +483,8 @@ function drawShadow(ctx, level, TS, floor, seed) {
   g.fill(solid, "evenodd");
   g.restore();
   const things = (mode) => {
-    // (No shadow for a campfire's teepee.)
-    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => f.type !== "campfire" : null);
+    // (No shadow for a campfire's teepee, nor for stairs, flat on the floor.)
+    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => f.type !== "campfire" && f.type !== "stairs" : null);
     if (level.rubble) drawRubble(g, level, TS, new RNG(seed ^ 0x2bb1e), mode);
   };
   things("cast");
@@ -684,6 +684,18 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
       P.box(x, y, w, h, 0, OUT + (f.type === "sarcophagus" ? 0.4 : 0), PAPER);
       const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
       P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
+    } else if (f.type === "stairs") {
+      // A flight of steps seen from above: a frame, and treads across it,
+      // narrowing the way down (wider the way up), an arrow to say which.
+      const s = TS * 0.82, top = y - s / 2;
+      P.box(x, y, s, s, rng.range(-0.03, 0.03), OUT, PAPER);
+      for (let i = 1; i < 5; i++) {
+        const t = i / 5, half = (s / 2) * (f.dir === "down" ? 1 - t * 0.55 : 0.45 + t * 0.55) * 0.86;
+        P.line(x - half, top + s * t, x + half, top + s * t, IN);
+      }
+      const ay = f.dir === "down" ? 1 : -1, tip = y + ay * s * 0.32;
+      P.line(x - s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
+      P.line(x + s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
     } else if (f.type === "campfire") {
       // A teepee of three logs seen from the side: plain bars of ink leaning
       // together, crossing a little past their point. (The flame is drawn

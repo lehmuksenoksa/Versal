@@ -101,6 +101,19 @@ A blow at a monster that hasn't noticed the player (asleep or unaware) always la
 hard. When no more than half a goblin pack is left the rest flee, then regroup, warier; the undead
 never flee.
 
+There are three levels, each changing gradually across it, left to right, from one kind of ground
+to the next: the old crypts (built dungeon into collapsed rooms), the broken deep (collapsed rooms
+into caverns), the goblin warrens (caverns into the goblin king's halls, big rough-hewn halls held up
+by rough columns). Stairs (drawn as a flight of treads, remembered with the walls) lead down from the
+far side of each and up from where the player arrives; `>` and `<` take them, and a level is kept
+as it was left, what was seen of it too. Each level has its own monsters, by the ground of their
+room: skeletons and zombies (`z`, white and green, edged in ink: slow, the zombies never giving up
+a chase), rats (`r`, quick packs), bats (`b`, flitting), spiders and giant spiders (`s`, `S`: waiting
+still, their bites poisoning), cultists (`h`, red, patrolling from room to room with lanterns that
+light a sneaking player near them), goblins (`g`) led by bigger goblin warriors, trolls (`T`, green,
+healing), and in the throne room on the far side of the last level the goblin king (`G`, crowned)
+with his guard. Killing him wins the run.
+
 A run starts by asking the player's name (`?name=…` in the address skips it). The player has 20 hit
 points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
 and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw

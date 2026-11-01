@@ -146,6 +146,7 @@ body.wide #corner .news { max-width: 340px; }
 #help p, #death p { margin: 0 0 10px; color: var(--gui-dim); }
 #help .hint, #death .hint { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 16px; }
 #death h2 { color: var(--blood); font-size: 36px; }
+#death.won h2 { color: #d9b65a; }
 
 /* The page that asks the player's name. */
 #start { background: #000; }
@@ -165,3 +166,4 @@ body.wide #corner .news { max-width: 340px; }
 #side .ledger li.dim { opacity: 0.35; }
 #side .ledger li.pick .key { color: var(--gui-text); }
 #side .panel-head.ask h4 { color: #d9a53a; }
+#actions button[hidden] { display: none; }

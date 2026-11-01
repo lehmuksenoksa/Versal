@@ -1,5 +1,7 @@
 # Versal: plan for expanding the game
 
+All five milestones are in the game (the first version of each); what follows is the plan as decided.
+
 The look is roughly done; this is what comes next, in milestones that can each be tried on their own.
 Decided with the player of the game; open questions at the end.
 

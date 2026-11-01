@@ -8,7 +8,7 @@
 // on torn black plates (js/plates.js). Plain page elements over the map's
 // canvas, redone only when something they show has changed.
 
-import { ordinal, ITEMS, PACK, itemName } from "./world.js";
+import { ordinal, ITEMS, PACK, itemName, MONSTERS } from "./world.js";
 import { drawPlates, drawDrawer } from "./plates.js";
 
 // How wide the screen must be for the sidebar; how wide the sidebar is.
@@ -20,6 +20,7 @@ const KEYS_HELP = [
   ["WASD, arrows, numpad", "move; into a monster, attack; into a door, open it"],
   ["z", "search for secret doors"],
   ["r", "rest until healed"],
+  ["> and <", "go down or up the stairs you stand on"],
   [". or space", "wait a turn"],
   ["f", "put out the lamp (sneak), or light it"],
   ["c", "close a door"],
@@ -37,7 +38,7 @@ const KEYS_HELP = [
 // How a monster's state reads in the look.
 const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed", fleeing: "fleeing" };
 // Things worth naming in the look (the rest of the furniture too common to).
-const THINGS = { campfire: "a campfire", altar: "an altar", coffin: "a coffin", sarcophagus: "a sarcophagus", table: "a table", bed: "a bed", shelf: "shelves", bench: "a bench", crate: "a crate", barrel: "a barrel", chair: "a chair" };
+const THINGS = { stairs: "stairs", campfire: "a campfire", altar: "an altar", coffin: "a coffin", sarcophagus: "a sarcophagus", table: "a table", bed: "a bed", shelf: "shelves", bench: "a bench", crate: "a crate", barrel: "a barrel", chair: "a chair" };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const NAME_KEY = "versal-name";
@@ -130,7 +131,7 @@ export class UI {
   update(world) {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
-    const stamp = [world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
+    const stamp = [world.place.depth, !!world.won, world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
       window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;
@@ -180,9 +181,16 @@ export class UI {
       drawDrawer(this.el.drawer.querySelector(".dback"), r.width, r.height, r.height + 80, DRAWER_GREY);
     }
 
-    // How the run ended.
-    this.el.death.hidden = !world.dead;
-    if (world.dead) {
+    // How the run ended: died, or won.
+    this.el.death.hidden = !world.ended;
+    this.el.death.classList.toggle("won", !!world.won);
+    if (world.won) {
+      const v = world.won;
+      this.el.death.innerHTML = `<div class="card"><h2>You have won</h2>
+        <p>${esc(v.name)} the ${esc(v.cls.toLowerCase())}, of the ${ordinal(v.level)} level, killed the goblin king in ${esc(v.place.toLowerCase())}, after ${v.turns} turns.</p>
+        <p>You killed ${v.kills} ${v.kills === 1 ? "monster" : "monsters"} in all.</p>
+        <p class="hint">Press any key, or tap, to start again.</p></div>`;
+    } else if (world.dead) {
       const d = world.dead;
       this.el.death.innerHTML = `<div class="card"><h2>You died</h2>
         <p>${esc(d.name)} the ${esc(d.cls.toLowerCase())}, of the ${ordinal(d.level)} level, ${esc(d.how)} in ${esc(d.place.toLowerCase())}, on its ${ordinal(d.depth)} level, after ${d.turns} turns.</p>
@@ -236,7 +244,7 @@ export class UI {
         if (!THINGS[f.type] || !world.isVisible(Math.floor(f.x), Math.floor(f.y))) continue;
         things.set(f.type, (things.get(f.type) ?? 0) + 1);
       }
-      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(a.kind)}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}</span></li>`).join("");
+      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(MONSTERS[a.kind]?.name ?? a.kind)}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}</span></li>`).join("");
       return `${head("In sight", "l")}
         <div><h5>Creatures</h5><ul class="ledger">${creatures || empty("none")}</ul></div>
         <div><h5>Things</h5><ul class="ledger">${things.size ? [...things].map(([t, n]) => row("", n > 1 ? `${THINGS[t].replace(/^an? /, "")} (${n})` : THINGS[t])).join("") : empty("nothing of note")}</ul></div>

@@ -14,19 +14,33 @@
 
 import { RNG } from "./rng.js";
 import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
-import { generateAreas } from "./levelgen.js";
+import { generateAreas, AREAS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline } from "./sightline.js";
 
 // The kinds of monster: their letters and names; their speed (moves for each
 // of the player's); how much they wander when milling about (the goblins' 1);
 // how many to a pack (in a crypt, `crypt`); their hit points; their blows
-// (the chance to hit, the damage, what it's called, and whether a hard one
-// makes the player bleed).
+// (the chance to hit, the damage, what it's called, whether a hard one makes
+// the player bleed, the chance it poisons); experience for a kill. And their
+// ways: `undead` (never flee), `drops` (sometimes what they carried),
+// `erratic` (flits about, even chasing), `lurker` (waits still till roused),
+// `relentless` (never gives up a chase), `patrol` (its pack walks from room
+// to room), `lantern` (carries one: lights the player near it), `regen` (heals,
+// hit points a turn), `boss` (killing it wins).
 export const MONSTERS = {
   goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5, drops: true },
+  warrior: { glyph: "g", name: "goblin warrior", speed: 0.75, wander: 0.8, pack: [1, 1], hp: [10, 14], hit: 0.75, dmg: [2, 5], verb: "hacks", bleeds: true, xp: 15, drops: true },
+  king: { glyph: "G", name: "goblin king", speed: 0.7, wander: 0, pack: [1, 1], hp: [60, 70], hit: 0.8, dmg: [4, 10], verb: "smites", bleeds: true, xp: 100, lurker: true, boss: true },
   // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
   skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8, undead: true },
+  zombie: { glyph: "z", name: "zombie", speed: 0.35, wander: 0.2, pack: [1, 3], hp: [10, 14], hit: 0.6, dmg: [2, 5], verb: "batters", xp: 10, undead: true, relentless: true },
+  rat: { glyph: "r", name: "rat", speed: 1.2, wander: 1.2, pack: [3, 6], hp: [1, 3], hit: 0.6, dmg: [1, 2], verb: "bites", xp: 2 },
+  bat: { glyph: "b", name: "bat", speed: 1.5, wander: 2, pack: [2, 4], hp: [2, 3], hit: 0.55, dmg: [1, 2], verb: "bites", xp: 3, erratic: true },
+  spider: { glyph: "s", name: "spider", speed: 0.9, wander: 0, pack: [1, 2], hp: [3, 5], hit: 0.7, dmg: [1, 3], verb: "bites", poison: 0.4, xp: 6, lurker: true },
+  giant: { glyph: "S", name: "giant spider", speed: 0.8, wander: 0, pack: [1, 1], hp: [12, 16], hit: 0.7, dmg: [2, 6], verb: "bites", poison: 0.6, xp: 25, lurker: true },
+  cultist: { glyph: "h", name: "cultist", speed: 0.9, wander: 0.5, pack: [2, 4], hp: [6, 9], hit: 0.7, dmg: [1, 5], verb: "stabs", xp: 12, drops: true, patrol: true, lantern: true },
+  troll: { glyph: "T", name: "troll", speed: 0.6, wander: 0.4, pack: [1, 1], hp: [30, 40], hit: 0.65, dmg: [4, 9], verb: "smashes", xp: 40, regen: 0.5 },
 };
 
 // The player: hit points to start with; the blow (until there are weapons, as
@@ -60,8 +74,18 @@ const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 export const itemName = (it, article = true) => (it.n > 1 ? `${it.n} ${ITEMS[it.type].plural ?? `${ITEMS[it.type].name}s`}` : article ? an(ITEMS[it.type].name) : ITEMS[it.type].name);
 const makeItem = (type, n = 1) => ({ type, glyph: ITEMS[type].glyph, n });
 
-// Where the player is (one place for now).
-export const PLACE = { name: "The old crypts", depth: 1 };
+// The places, one a level: each changes from one kind of ground to the next
+// across it (levelgen.js), with its monsters by the ground of their room
+// (kinds and how common), and how often a goblin pack is led by a warrior.
+export const PLACES = [
+  { name: "The old crypts", depth: 1, from: "dungeon", to: "collapsed", down: true, warriors: 0,
+    spawns: { dungeon: { skeleton: 3, cultist: 2, rat: 1, zombie: 1, spider: 1 }, collapsed: { rat: 3, zombie: 2, spider: 2, skeleton: 1 } } },
+  { name: "The broken deep", depth: 2, from: "collapsed", to: "cavern", up: true, down: true, warriors: 0.25,
+    spawns: { collapsed: { rat: 3, zombie: 2, spider: 2 }, cavern: { goblin: 4, bat: 2, spider: 1, giant: 1 } } },
+  { name: "The goblin warrens", depth: 3, from: "cavern", to: "halls", up: true, throne: true, warriors: 0.8,
+    spawns: { cavern: { goblin: 3, spider: 1, giant: 1, troll: 1, bat: 1 }, halls: { goblin: 4, troll: 1 } } },
+];
+export const PLACE = PLACES[0];
 
 // How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
@@ -106,56 +130,122 @@ export class World {
     this.seed = this.rng.seed;
     this.events = [];
     this.nextId = 1;
-    const level = (this.level = generateAreas(this.rng));
-    // Pillars on grid crossings, which no step goes diagonally past; and the
-    // doors, by their square.
-    this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
-    this.pillars = (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) }));
-    this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
-    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
+    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: 0, y: 0, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
       // What's held and worn, by where; what's carried, each with its letter.
       equip: { hand: makeItem("dagger"), off: null, head: null, body: null }, pack: [] };
     this.stow(makeItem("potion"));
     // The turns gone by, the messages so far (each { text, turn, kind }), and
-    // how the run ended (null while it goes on).
+    // how the run ended (null while it goes on: died, or won).
     this.turn = 0;
     this.messages = [];
     this.dead = null;
-    this.place = PLACE;
-    this.log(`You come down into ${PLACE.name.toLowerCase()}.`);
-    this.actors = [this.player];
-    // Squares in the way though floor (campfires), and squares lit by the
-    // level's lights (no sneaking there).
-    this.blocks = level.blocks ?? new Set();
-    this.lit = new Uint8Array(level.w * level.h);
+    this.won = null;
+    // The levels made so far, each kept as left (see makePlace).
+    this.places = [];
+    this.enter(1);
+    this.log(`You come down into ${this.place.name.toLowerCase()}.`);
+  }
+
+  // Is the run over?
+  get ended() { return !!(this.dead || this.won); }
+
+  // A level: its map, its monsters and things, what's been seen of it.
+  makePlace(depth) {
+    const P = PLACES[depth - 1], rng = this.rng.fork(), seed = rng.seed;
+    const level = generateAreas(rng, { from: P.from, to: P.to, up: !!P.up, down: !!P.down, throne: !!P.throne });
+    const W = level.w, H = level.h;
+    const st = {
+      P, level, seed,
+      // Pillars on grid crossings, which no step goes diagonally past; and the
+      // doors, by their square.
+      posts: new Set((level.posts ?? []).map(([x, y]) => y * (W + 1) + x)),
+      pillars: (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) })),
+      doors: new Map((level.doors ?? []).map((d) => [d.y * W + d.x, d])),
+      // Squares in the way though floor (campfires), and squares lit by the
+      // level's lights (no sneaking there).
+      blocks: level.blocks ?? new Set(), lit: new Uint8Array(W * H),
+      actors: [], items: [],
+      visible: new Uint8Array(W * H), seen: new Uint8Array(W * H),
+      // What has a line of sight to the player (for monsters noticing them,
+      // whatever the player can see).
+      inView: new Uint8Array(W * H),
+    };
+    return st;
+  }
+
+  // Go to level `depth` (made if it hasn't been): the player arriving on the
+  // stairs from where they came (`via` "down": the stairs up; "up": down).
+  enter(depth, via = null) {
+    if (this.place) this.saveHere();
+    const fresh = !this.places[depth - 1];
+    if (fresh) this.places[depth - 1] = this.makePlace(depth);
+    const st = this.places[depth - 1];
+    Object.assign(this, { level: st.level, seed: st.seed, posts: st.posts, pillars: st.pillars, doors: st.doors, blocks: st.blocks, lit: st.lit, items: st.items, visible: st.visible, seen: st.seen, inView: st.inView });
+    this.place = st.P;
+    const L = this.level, at = via === "up" ? L.stairsDown ?? L.start : L.stairsUp ?? L.start;
+    this.player.x = at.x;
+    this.player.y = at.y;
+    this.actors = [this.player, ...st.actors];
+    if (fresh) this.furnish(st);
+    this.updateFov();
+  }
+  // Keep this level as it is, to come back to.
+  saveHere() {
+    const st = this.places[this.place.depth - 1];
+    st.actors = this.actors.filter((a) => a !== this.player);
+    st.items = this.items;
+  }
+
+  // A new level's lights, monsters and things.
+  furnish(st) {
+    const level = this.level, P = st.P, W = level.w;
     const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     for (const l of level.lights ?? [])
-      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 5.5, opaque, (x, y) => (this.lit[y * level.w + x] = 1));
+      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 5.5, opaque, (x, y) => (this.lit[y * W + x] = 1));
     // (A lit place, and the open squares next to it, its light's dim band.)
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {
-        if (!level.lit?.[y * level.w + x]) continue;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!opaque(x + dx, y + dy)) this.lit[(y + dy) * level.w + x + dx] = 1;
+        if (!level.lit?.[y * W + x]) continue;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!opaque(x + dx, y + dy)) this.lit[(y + dy) * W + x + dx] = 1;
       }
-    // A pack round every campfire, awake; and in about a third of the rooms.
-    const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
+    // A pack round every campfire, awake; and in about a third of the rooms,
+    // each of a kind found in that room's ground (round a campfire, goblins
+    // if there are any there). Not where the player arrives, nor near the stairs.
+    const away = (r) => r !== level.startRoom && r !== level.throneRoom;
+    const rooms = this.rng.shuffle(level.rooms.filter(away)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
     const packs = Math.max(Math.round(level.rooms.length / 3), rooms.filter((r) => r.campfire).length);
     for (const room of rooms.slice(0, packs)) {
-      const kind = room.cave ? "goblin" : "skeleton", M = MONSTERS[kind];
-      this.spawnPack(room, this.rng.int(...(room.kind === "crypt" && M.crypt ? M.crypt : M.pack)), room.campfire ? "neutral" : null, kind);
+      const table = P.spawns[AREAS[room.type]] ?? Object.values(P.spawns)[0];
+      let kind = room.campfire && table.goblin ? "goblin" : null;
+      if (!kind) {
+        let r = this.rng.next() * Object.values(table).reduce((a, b) => a + b, 0);
+        kind = Object.keys(table).find((k) => (r -= table[k]) < 0) ?? Object.keys(table)[0];
+      }
+      const M = MONSTERS[kind];
+      this.spawnPack(room, this.rng.int(...(room.kind === "crypt" && M.crypt ? M.crypt : M.pack)), room.campfire ? "neutral" : null, kind, kind === "goblin" && this.rng.chance(P.warriors) ? "warrior" : null);
     }
+    // The goblin king on his throne, his guard round him.
+    if (level.throneRoom) this.spawnPack(level.throneRoom, 5, "neutral", "warrior", "king");
     // Things lying about: a few in the rooms (not the one the player starts in).
-    this.items = [];
-    for (const room of this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).slice(0, Math.round(level.rooms.length / PACK.perRooms))) {
+    for (const room of this.rng.shuffle(level.rooms.filter(away)).slice(0, Math.round(level.rooms.length / PACK.perRooms))) {
       const spot = this.freeSpotIn(room);
       if (spot) this.items.push({ x: spot.x, y: spot.y, item: this.randomItem() });
     }
-    this.visible = new Uint8Array(level.w * level.h);
-    this.seen = new Uint8Array(level.w * level.h);
-    // What has a line of sight to the player (for goblins noticing them,
-    // whatever the player can see).
-    this.inView = new Uint8Array(level.w * level.h);
-    this.updateFov();
+  }
+
+  // Take the stairs where the player stands (`dir` "down" or "up").
+  takeStairs(dir) {
+    if (this.ended) return false;
+    const L = this.level, p = this.player, st = dir === "down" ? L.stairsDown : L.stairsUp;
+    if (!st || st.x !== p.x || st.y !== p.y) {
+      this.log(dir === "down" ? "There are no stairs down here." : "There are no stairs up here.");
+      return false;
+    }
+    const from = this.level, depth = this.place.depth + (dir === "down" ? 1 : -1);
+    this.enter(depth, dir);
+    this.events.push({ type: "level", from });
+    this.log(dir === "down" ? `You go down into ${this.place.name.toLowerCase()}.` : `You climb back up to ${this.place.name.toLowerCase()}.`);
+    return true;
   }
 
   // What the player can see: squares in sight past the walls and shut doors
@@ -180,13 +270,17 @@ export class World {
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }
 
-  spawnPack(room, n, state = null, kind = "goblin") {
+  // A pack of `n` of a kind in a room (led, `leaderKind`, by another kind:
+  // a goblin warrior; the goblin king, in the middle of the room).
+  spawnPack(room, n, state = null, kind = "goblin", leaderKind = null) {
     let leader = null;
-    state ??= this.rng.chance(0.35) ? "sleeping" : "neutral";
+    state ??= this.rng.chance(0.35) && !MONSTERS[kind].patrol ? "sleeping" : "neutral";
     for (let k = 0; k < n; k++) {
-      const spot = this.freeSpotIn(room);
-      if (!spot) break;
-      const g = { id: this.nextId++, kind, glyph: MONSTERS[kind].glyph, x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...MONSTERS[kind].hp), energy: this.rng.next() };
+      const kk = k === 0 && leaderKind ? leaderKind : kind;
+      const spot = kk === "king" ? { x: room.cx, y: room.cy } : this.freeSpotIn(room);
+      if (!spot || !this.isFree(spot.x, spot.y)) continue;
+      const hp = this.rng.int(...MONSTERS[kk].hp);
+      const g = { id: this.nextId++, kind: kk, glyph: MONSTERS[kk].glyph, x: spot.x, y: spot.y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next() };
       g.leader = leader || g;
       leader = g.leader;
       this.actors.push(g);
@@ -226,7 +320,7 @@ export class World {
   // The player steps by (dx, dy): into a monster, a whack; into a shut door,
   // opening it. Returns true if a turn passed.
   playerMove(dx, dy) {
-    if (this.dead) return false;
+    if (this.ended) return false;
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (!this.canStep(p.x, p.y, dx, dy)) return false;
     const g = this.actorAt(nx, ny);
@@ -242,6 +336,9 @@ export class World {
     this.moveActor(p, nx, ny);
     const here = this.itemsAt(nx, ny);
     if (here.length) this.log(`You see ${here.map((i) => itemName(i.item)).join(" and ")} here.`);
+    const L = this.level;
+    if (L.stairsDown && L.stairsDown.x === nx && L.stairsDown.y === ny) this.log("There are stairs down here (>).");
+    if (L.stairsUp && L.stairsUp.x === nx && L.stairsUp.y === ny) this.log("There are stairs up here (<).");
     // (Sneaking, a step is slower, and quieter.)
     this.makeNoise(this.sneaking ? "sneak" : "step");
     return this.tick(false, false, this.sneaking ? SNEAK_STEP : 1);
@@ -264,7 +361,7 @@ export class World {
   // Close an open door next to the player (none standing in it). Returns
   // true if one was, which takes the turn.
   closeDoor() {
-    if (this.dead) return false;
+    if (this.ended) return false;
     const p = this.player;
     for (const [dx, dy] of DIRS8) {
       const d = this.doorAt(p.x + dx, p.y + dy);
@@ -283,7 +380,7 @@ export class World {
 
   // The player spends a turn searching for secret doors.
   search() {
-    if (this.dead) return false;
+    if (this.ended) return false;
     this.events.push({ type: "search" });
     return this.tick(true);
   }
@@ -357,7 +454,7 @@ export class World {
   }
   // Pick up what lies here (a turn), if there's room.
   pickUp() {
-    if (this.dead) return false;
+    if (this.ended) return false;
     const p = this.player, here = this.itemsAt(p.x, p.y);
     if (!here.length) { this.log("There's nothing here."); return false; }
     let took = false;
@@ -447,6 +544,12 @@ export class World {
     if (killed) {
       this.player.kills++;
       this.gainXp(MONSTERS[g.kind].xp);
+      if (MONSTERS[g.kind].boss) {
+        const p = this.player;
+        this.won = { name: p.name, cls: p.cls, level: p.level, turns: this.turn, kills: p.kills, place: this.place.name };
+        this.log(`The ${name} falls. You have won!`, "good");
+        this.events.push({ type: "won" });
+      }
       // (Goblins sometimes drop what they carried.)
       if (MONSTERS[g.kind].drops && this.rng.chance(PACK.drop)) {
         const item = this.randomItem();
@@ -482,7 +585,7 @@ export class World {
   // (`cost`: how many turns the player's action takes: the monsters act as
   // much more, the ailments and healing go on each whole turn.)
   tick(searching = false, resting = false, cost = 1) {
-    if (this.dead) return false;
+    if (this.ended) return false;
     const before = this.turn;
     this.clock = (this.clock ?? 0) + cost;
     this.turn = Math.floor(this.clock + 1e-9);
@@ -491,8 +594,10 @@ export class World {
     this.chaseMap = null;
     for (const g of [...this.actors]) {
       if (g === this.player) continue;
-      g.energy += MONSTERS[g.kind].speed * cost;
-      while (g.energy >= 1 && !this.dead && this.actors.includes(g)) {
+      const M = MONSTERS[g.kind];
+      if (M.regen && g.hp < g.maxHp) g.hp = Math.min(g.maxHp, g.hp + M.regen * cost);
+      g.energy += M.speed * cost;
+      while (g.energy >= 1 && !this.ended && this.actors.includes(g)) {
         g.energy -= 1;
         if (g.state === "aggressive") this.chase(g);
         else if (g.state === "suspicious") this.investigate(g);
@@ -507,10 +612,11 @@ export class World {
     return true;
   }
 
-  // Is the player lit (their lamp, or a lit place)?
+  // Is the player lit (their lamp, a lit place, or a cultist's lantern near)?
   playerLit() {
     const p = this.player;
-    return !this.sneaking || !!this.lit[p.y * this.level.w + p.x];
+    return !this.sneaking || !!this.lit[p.y * this.level.w + p.x] ||
+      this.actors.some((a) => MONSTERS[a.kind]?.lantern && Math.max(Math.abs(a.x - p.x), Math.abs(a.y - p.y)) <= 3 && this.inView[a.y * this.level.w + a.x]);
   }
 
   // A suspicious monster goes to look where it last saw or heard the player.
@@ -579,7 +685,9 @@ export class World {
     p.hp -= dmg;
     const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance);
     if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.rng.int(...B.turns));
-    this.log(`The ${M.name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}`, "hurt");
+    const poison = M.poison && this.rng.chance(M.poison);
+    if (poison) p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, this.rng.int(...AILMENTS.poisoned.turns));
+    this.log(`The ${M.name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}${poison ? " You are poisoned." : ""}`, "hurt");
     if (p.hp <= 0) this.die(`killed by a ${M.name}`);
   }
 
@@ -595,7 +703,7 @@ export class World {
   // Why the player can't rest now (null if they can): a monster in sight, or
   // nothing to rest for.
   cantRest() {
-    if (this.dead) return "dead";
+    if (this.ended) return "over";
     if (this.monsterInSight()) return "You can't rest with an enemy in sight.";
     if (this.player.hp >= this.player.maxHp && !Object.keys(this.player.ailments).length) return "You don't need rest.";
     return null;
@@ -655,6 +763,8 @@ export class World {
       for (const a of pack) {
         if (a.state !== "aggressive") continue;
         a.calm = calm;
+        // (Zombies never give up.)
+        if (MONSTERS[a.kind].relentless && !far) continue;
         if (far || calm >= GOBLIN.calm) {
           a.state = "suspicious";
           a.aware = 0.6;
@@ -687,6 +797,8 @@ export class World {
   // nearer, opening a shut door in the way now and then.
   chase(g) {
     const p = this.player, dx = p.x - g.x, dy = p.y - g.y;
+    // (A bat flits about even chasing.)
+    if (MONSTERS[g.kind].erratic && this.rng.chance(0.4)) return this.randomStep(g);
     if (Math.max(Math.abs(dx), Math.abs(dy)) === 1 && this.canStep(g.x, g.y, dx, dy) && !this.shut(p.x, p.y)) {
       if (!this.dead) this.strike(g);
       return;
@@ -711,14 +823,53 @@ export class World {
 
   // Leaders wander; the rest of the pack stays within two steps of them.
   mill(g) {
-    const L = g.leader, k = MONSTERS[g.kind].wander;
+    const L = g.leader, M = MONSTERS[g.kind], k = M.wander;
+    // (Spiders and the king wait where they are.)
+    if (M.lurker) return;
     if (L === g) {
+      // (Cultists walk from room to room.)
+      if (M.patrol) return this.patrol(g);
       if (this.rng.chance(0.4 * k)) this.randomStep(g);
       return;
     }
     const near = (x, y) => Math.max(Math.abs(x - L.x), Math.abs(y - L.y)) <= 2;
     if (!near(g.x, g.y)) return this.stepToward(g, L.x, L.y);
     if (this.rng.chance(0.6 * k)) this.randomStep(g, near);
+  }
+
+  // A patrol's leader walks to a room (picked anew on getting there), by the
+  // shortest way.
+  patrol(g) {
+    const rooms = this.level.rooms;
+    if (!g.goal || (Math.abs(g.x - g.goal.x) <= 1 && Math.abs(g.y - g.goal.y) <= 1) || this.rng.chance(0.01)) {
+      const r = this.rng.pick(rooms);
+      g.goal = { x: r.cx, y: r.cy };
+    }
+    if (!this.rng.chance(0.7)) return;
+    const step = this.stepOnWay(g, g.goal);
+    if (step) this.moveActor(g, step.x, step.y);
+    else g.goal = null;
+  }
+  // The first step on the shortest way from `a` to `t` (walking, through open
+  // doors), within 60 squares; null if none.
+  stepOnWay(a, t) {
+    const W = this.level.w, key = (x, y) => y * W + x, prev = new Map([[key(a.x, a.y), -1]]), q = [[a.x, a.y]];
+    for (let i = 0; i < q.length && i < 6000; i++) {
+      const [x, y] = q[i];
+      if (x === t.x && y === t.y) {
+        let k = key(x, y), first = null;
+        while (prev.get(k) !== -1) { first = k; k = prev.get(k); }
+        return first === null ? null : { x: first % W, y: Math.floor(first / W) };
+      }
+      for (const [dx, dy] of DIRS8) {
+        const nx = x + dx, ny = y + dy, k = key(nx, ny);
+        if (prev.has(k) || !this.canStep(x, y, dx, dy) || !this.walkable(nx, ny) || this.shut(nx, ny)) continue;
+        if (this.actorAt(nx, ny) && !(nx === t.x && ny === t.y)) continue;
+        prev.set(k, key(x, y));
+        q.push([nx, ny]);
+      }
+    }
+    return null;
   }
 
   randomStep(a, ok = () => true) {

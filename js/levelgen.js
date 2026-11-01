@@ -4,7 +4,14 @@
 //   cavern: misshapen caves (the big ones with rock formations standing in
 //     them) joined by winding passages of varying width;
 //   collapsed: built rooms and caves mixed, some of the rooms half fallen in,
-//     with rubble on their floors and along their corridors.
+//     with rubble on their floors and along their corridors;
+//   halls: the goblin king's: big halls hewn roughly out of the rock, held
+//     up by rough columns, joined by wide hewn passages.
+// Or (`from` and `to` set) the level changes from one kind to the other,
+// gradually, across it from left to right: the player starts on the left
+// (by the stairs up, `stairsUp`, if `up`), the stairs down (`stairsDown`, if
+// `down`) are on the far right, and (`throne`) the far right's biggest hall
+// is the throne room (`throneRoom`).
 // A corridor changes as it crosses from one region into another.
 // The level has the shape the game and the map drawing expect (see
 // dungeon.js), and also `area` (each tile's region type, an index into
@@ -25,8 +32,8 @@
 
 import { T, carveCave } from "./dungeon.js";
 
-export const AREAS = ["dungeon", "cavern", "collapsed"];
-const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2;
+export const AREAS = ["dungeon", "cavern", "collapsed", "halls"];
+const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
 
 export const LEVELGEN_DEFAULTS = {
   // The level's size in squares.
@@ -55,6 +62,9 @@ export const LEVELGEN_DEFAULTS = {
   // How often a door is a secret one (none into the start room, nor jail
   // cells): rock to look at until the player finds it.
   secretDoors: 0.15,
+  // A level changing from one kind of ground to another (names from AREAS),
+  // null for regions; its stairs; a throne room.
+  from: null, to: null, up: false, down: false, throne: false,
 };
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -104,8 +114,17 @@ function tryAreas(S, rng) {
     if (r.type < 0) r.type = DUNGEON;
   }
   const wx = valueNoise(rng, W, H, 9), wy = valueNoise(rng, W, H, 9);
+  // (A level changing across: the far kind more and more to the right, the
+  // border wandering and fraying.)
+  const from = AREAS.indexOf(S.from), to = AREAS.indexOf(S.to), across = from >= 0 && to >= 0;
+  const blot = valueNoise(rng, W, H, 5);
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
+      if (across) {
+        const t = x / W + (wx(x, y) - 0.5) * 0.45 + (blot(x, y) - 0.5) * 0.3;
+        area[idx(x, y)] = t > 0.5 ? to : from;
+        continue;
+      }
       const px = x + 0.5 + (wx(x, y) - 0.5) * 14, py = y + 0.5 + (wy(x, y) - 0.5) * 14;
       let best = 0, bd = Infinity;
       regions.forEach((r, k) => {
@@ -122,7 +141,11 @@ function tryAreas(S, rng) {
     const sx = rng.int(2, W - 3), sy = rng.int(2, H - 3), type = typeAt(sx, sy);
     const isCave = type === CAVERN || (type === COLLAPSED && rng.chance(0.4));
     let w, h;
-    if (isCave) {
+    if (type === HALLS) {
+      // (Big, even halls, hewn out roughly: room for columns.)
+      w = rng.int(5, 8) * 2;
+      h = rng.int(4, 6) * 2;
+    } else if (isCave) {
       w = Math.round(rng.int(7, 16) * S.caveSize);
       h = Math.round(rng.int(6, 12) * S.caveSize);
     } else {
@@ -140,7 +163,7 @@ function tryAreas(S, rng) {
     h = clamp(h, 4, H - 6);
     const x = clamp(sx - (w >> 1), 2, W - w - 3), y = clamp(sy - (h >> 1), 2, H - h - 3);
     if (rooms.some((o) => x - 2 < o.x + o.w && x + w + 2 > o.x && y - 2 < o.y + o.h && y + h + 2 > o.y)) continue;
-    rooms.push({ x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1), cave: isCave, type, collapsed: !isCave && type === COLLAPSED && rng.chance(S.collapse) });
+    rooms.push({ x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1), cave: isCave, type, halls: type === HALLS, collapsed: !isCave && type === COLLAPSED && rng.chance(S.collapse) });
   }
   if (rooms.length < Math.max(3, target * 0.5)) return null;
 
@@ -209,7 +232,20 @@ function tryAreas(S, rng) {
         for (let x = r.x; x < r.x + r.w; x++) {
           tiles[idx(x, y)] = T.FLOOR;
           roomOf[idx(x, y)] = ri;
+          // (A hall's walls hewn roughly, as a cave's.)
+          if (r.halls) cave[idx(x, y)] = 1;
         }
+      if (r.halls) {
+        // Rough columns holding it up, in rows a few squares in from the
+        // walls, every four squares, its middle kept clear.
+        for (let y = r.y + 2; y < r.y + r.h - 2; y += 4)
+          for (let x = r.x + 2; x < r.x + r.w - 2; x += 4) {
+            if (Math.abs(x - r.cx) <= 1 && Math.abs(y - r.cy) <= 1) continue;
+            tiles[idx(x, y)] = T.ROCK;
+          }
+        if (reach(r).size !== floorIn(r)) for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) tiles[idx(x, y)] = T.FLOOR;
+        continue;
+      }
       if (!r.collapsed) continue;
       // Fallen in from a corner or a side: a ragged blob of rock (its edge,
       // and the walls about it, ragged like a cave's), leaving the middle;
@@ -244,7 +280,17 @@ function tryAreas(S, rng) {
   const width = valueNoise(rng, W, H, 6);
   const dig = (x, y, t) => {
     tiles[idx(x, y)] = T.FLOOR;
-    if (t === CAVERN) {
+    if (t === HALLS) {
+      // (Wide hewn passages: two squares, rough.)
+      cave[idx(x, y)] = 1;
+      for (const [dx, dy] of [[1, 0], [0, 1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < W - 1 && ny < H - 1 && typeAt(nx, ny) === HALLS) {
+          tiles[idx(nx, ny)] = T.FLOOR;
+          cave[idx(nx, ny)] = 1;
+        }
+      }
+    } else if (t === CAVERN) {
       cave[idx(x, y)] = 1;
       const r = Math.max(0, (S.passage * (0.4 + 1.2 * width(x, y)) - 1) / 2);
       for (let dy = -Math.ceil(r); dy <= Math.ceil(r); dy++)
@@ -673,9 +719,43 @@ function tryAreas(S, rng) {
     }
 
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
-  // (The player starts in a built room: a dungeon's if there is one.)
+  // (The player starts in a built room: a dungeon's if there is one. On a
+  // level changing across, in the leftmost room of its first kind (built if
+  // it can), the stairs down in the rightmost of the other, the throne room
+  // the biggest hall on the far side.)
   const built = rooms.filter((r) => !r.cave && !r.collapsed), dungeonRooms = built.filter((r) => r.type === DUNGEON);
-  const startRoom = rng.pick(dungeonRooms.length ? dungeonRooms : built.length ? built : rooms);
+  let startRoom = rng.pick(dungeonRooms.length ? dungeonRooms : built.length ? built : rooms), downRoom = null, throneRoom = null;
+  if (across) {
+    const byX = (list) => [...list].sort((a, b) => a.cx - b.cx);
+    const first = rooms.filter((r) => r.type === from), firm = first.filter((r) => !r.collapsed && r.cx < W * 0.4);
+    startRoom = byX(firm.length ? firm : first.length ? first : rooms)[0];
+    const far = byX(rooms.filter((r) => r.type === to && r !== startRoom));
+    if (S.throne) throneRoom = [...far.slice(-Math.max(1, Math.ceil(far.length / 3)))].sort((a, b) => b.w * b.h - a.w * a.h)[0] ?? null;
+    if (S.down) downRoom = byX(far.filter((r) => r !== throneRoom && !r.collapsed)).at(-1) ?? byX(rooms.filter((r) => r !== startRoom)).at(-1);
+  }
+  // The stairs: in the middle of their rooms, on floor, drawn and kept clear.
+  const stairsAt = (r) => {
+    let best = null;
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        if (!floorAt(x, y) || blocks.has(idx(x, y))) continue;
+        const d = Math.hypot(x - r.cx, y - r.cy);
+        if (!best || d < best.d) best = { x, y, d };
+      }
+    return best && { x: best.x, y: best.y };
+  };
+  const stairsUp = across && S.up ? stairsAt(startRoom) : null, stairsDown = downRoom ? stairsAt(downRoom) : null;
+  // (The throne room lit.)
+  if (throneRoom) {
+    throneRoom.lit = true;
+    for (let y = throneRoom.y; y < throneRoom.y + throneRoom.h; y++) for (let x = throneRoom.x; x < throneRoom.x + throneRoom.w; x++) if (floorAt(x, y)) lit[idx(x, y)] = 1;
+  }
+  for (const [st, dir] of [[stairsUp, "up"], [stairsDown, "down"]]) {
+    if (!st) continue;
+    for (let i = features.length - 1; i >= 0; i--) if (features[i].type !== "post" && Math.abs(features[i].x - st.x - 0.5) < 1 && Math.abs(features[i].y - st.y - 0.5) < 1) features.splice(i, 1);
+    rubble[idx(st.x, st.y)] = 0;
+    features.push({ type: "stairs", dir, x: st.x + 0.5, y: st.y + 0.5 });
+  }
   // Secret doors: their squares rock until found (each { x, y, dx, dy }, as
   // a door).
   const secrets = [], inStart = (x, y) => x >= startRoom.x && y >= startRoom.y && x < startRoom.x + startRoom.w && y < startRoom.y + startRoom.h;
@@ -702,8 +782,8 @@ function tryAreas(S, rng) {
     }
   return {
     w: W, h: H, tiles, cave, rooms, roomOf, wallOf, area, rubble, doors, secrets, features, posts, recesses, lights, lit, blocks, regions,
-    start: { x: startRoom.cx, y: startRoom.cy },
-    startRoom,
+    start: stairsUp ?? { x: startRoom.cx, y: startRoom.cy },
+    startRoom, stairsUp, stairsDown, throneRoom,
     idx, get,
   };
 }

@@ -327,8 +327,10 @@ export class Expression {
     // (The things in the rooms cut out of the grid, as the layers are
     // recoloured: the furniture inked with the grid, so not remembered; the
     // pillars with the walls.)
-    this.markLayer = layer({ grid: true, keys: true, furniture: "erase", inked: (f) => f.type !== "post" }).canvas;
-    this.wallLayer = layer({ walls: true, doors: false, furniture: "ink", inked: (f) => f.type === "post" }).canvas;
+    // (Stairs, as posts, remembered with the walls.)
+    const kept = (f) => f.type === "post" || f.type === "stairs";
+    this.markLayer = layer({ grid: true, keys: true, furniture: "erase", inked: (f) => !kept(f) }).canvas;
+    this.wallLayer = layer({ walls: true, doors: false, furniture: "ink", inked: kept }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
     // The doors, a layer of their own (redrawn as they open).
     this.doorLayer = blank(cw, ch);

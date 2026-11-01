@@ -26,6 +26,17 @@ const LETTERING = {
   item: { weight: 700, size: 0.78, ink: INK },
   // (The undead outlined in ink, not paper: skeletons white.)
   skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
+  zombie: { weight: 600, size: 1.05, ink: "#6d8424", edge: INK },
+  // (The rest as in the letters mockup, mockups/letters.html: in paper, in
+  // their colours, deepened.)
+  warrior: { weight: 600, size: 1.4, ink: INK },
+  king: { weight: 600, size: 1.35, ink: INK, crown: true },
+  rat: { weight: 600, size: 1.05, ink: "#4f2c10" },
+  bat: { weight: 600, size: 1.05, ink: "#4a443d" },
+  spider: { weight: 600, size: 1.05, ink: INK },
+  giant: { weight: 600, size: 1.05, ink: INK },
+  cultist: { weight: 600, size: 1.05, ink: "#981b10" },
+  troll: { weight: 600, size: 1.05, ink: "#22561c" },
   bold: 0.025,
   outline: 0.26,
   // (How far a letter's colour goes towards ink in the least light, the dark band.)
@@ -106,7 +117,42 @@ const SOUNDS = {
 // as they move, clicking idly, a dry hiss and rattle when roused, lying
 // still and creaking when dormant; their blows, the crack of bone struck,
 // and falling apart.
+// (Who is heard less: the undead, spiders, trolls, the king.)
+const QUIET = new Set(["skeleton", "zombie", "spider", "giant", "troll", "king"]);
 const WORDS = {
+  zombie: {
+    move: ["shuffle", "drag", "thud"], chatter: ["uhh", "mmh", "hhh"], growl: ["gnnh", "uuurgh"], alarm: ["UUURGH!", "GRAAH!"],
+    suspect: ["uh?", "mmh?"], snore: ["…"], attack: ["bite!", "claw!", "batter!"], whack: ["SPLUT!", "thud!", "squelch!"], fall: ["squelch!", "thud!"],
+  },
+  rat: {
+    move: ["skitter", "scrabble", "patter"], chatter: ["squeak", "eek", "chk"], growl: ["hiss", "sss"], alarm: ["SQUEAK!", "EEK!"],
+    suspect: ["sniff?", "squeak?"], snore: ["z"], attack: ["bite!", "nip!"], fall: ["squeal!", "eek!"],
+  },
+  bat: {
+    move: ["flap", "flutter", "flit"], chatter: ["eee", "tchk", "flap"], growl: ["eee!", "tchk!"], alarm: ["SKREE!"],
+    suspect: ["eee?"], snore: [".."], attack: ["bite!", "nip!"], fall: ["eep!", "flop!"],
+  },
+  spider: {
+    move: ["tik", "tik tik", "skitter"], chatter: ["…", "tik"], growl: ["hsss"], alarm: ["HSSS!"],
+    suspect: ["tik?"], snore: ["…"], attack: ["bite!", "sting!"], fall: ["splat!", "crunch!"],
+  },
+  cultist: {
+    move: ["step", "tread", "shuffle"], chatter: ["…ia…", "mutter", "chant", "hush"], growl: ["kill!", "for the dark!"], alarm: ["Intruder!", "There!", "Seize them!"],
+    suspect: ["who's there?", "hm?", "a sound…"], snore: ["zzz"], attack: ["stab!", "slash!"], fall: ["argh!", "no…!"],
+  },
+  troll: {
+    move: ["THUD", "stomp", "THUMP"], chatter: ["hrrm", "grumble", "hrmph"], growl: ["GRRRM", "hrrrr"], alarm: ["RAAARGH!"],
+    suspect: ["HRM?", "sniff…"], snore: ["ZZZ", "zzZZ"], attack: ["SMASH!", "CRUNCH!", "WHUMP!"], fall: ["THOOM!"],
+  },
+  warrior: {
+    alarm: ["CHARGE!", "GRAH!", "AT THEM!"], growl: ["grrr", "hrrk"], attack: ["hack!", "cleave!", "chop!"],
+  },
+  king: {
+    chatter: ["hmph", "hrrm"], growl: ["GRRAAH"], alarm: ["KILL IT!", "GUARDS!"], suspect: ["WHO DARES?"], attack: ["SMITE!", "CRUSH!"], fall: ["NOOO!"],
+  },
+  giant: {
+    move: ["tik", "TIK TIK", "skitter"], chatter: ["…", "click"], growl: ["HSSSS"], alarm: ["HSSSS!"], suspect: ["click?"], attack: ["BITE!", "sting!"], fall: ["SPLAT!", "crunch!"],
+  },
   skeleton: {
     move: ["clatter", "clack", "click-clack", "rattle", "tick tick"],
     chatter: ["click", "tk", "creak", "clack", "tk tk"],
@@ -221,7 +267,32 @@ export class Renderer {
     w.setSneaking(on, this.settings.sight);
   }
 
+  // The player has gone to another level (from `prev`): its map drawing,
+  // kept from when they were last there (what was seen of it with it), or a
+  // new one.
+  changeLevel(prev) {
+    this.levelMaps ??= new Map();
+    if (this.exp) this.levelMaps.set(prev, { exp: this.exp, gpuMap: this.gpuMap });
+    const kept = this.levelMaps.get(this.world.level);
+    this.fires = new Map();
+    this.views.clear();
+    this.sounds = [];
+    this.ghosts = [];
+    this.packHeard.clear();
+    this.world.sight = this.settings.sight;
+    this.world.updateFov();
+    if (kept && kept.exp.TS === this.TS && !!kept.gpuMap === !!this.gl) {
+      this.exp = kept.exp;
+      this.gpuMap = kept.gpuMap;
+      this.exp.player = { x: this.world.player.x, y: this.world.player.y };
+    } else this.exp = null;
+    this.cam.snap = true;
+    this.buildMap();
+    this.exp?.learn(this.world.player.x, this.world.player.y);
+  }
+
   setWorld(world) {
+    this.levelMaps = new Map();
     this.world = world;
     this.fires = new Map();
     this.world.sight = this.settings.sight;
@@ -389,12 +460,12 @@ export class Renderer {
         v.x = e.actor.x;
         v.y = e.actor.y;
         v.t0 = now;
-        v.dur = e.actor === this.world.player ? 120 : e.actor.kind === "skeleton" ? 320 : 150;
+        v.dur = e.actor === this.world.player ? 120 : { skeleton: 320, zombie: 360, troll: 260, bat: 110, rat: 120 }[e.actor.kind] ?? 150;
         // A pack on the move is heard now and then (not every goblin, every
         // step).
         if (e.actor !== this.world.player) {
           const pack = e.actor.leader.id;
-          if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < (e.actor.kind === "skeleton" ? 0.2 : 0.6)) {
+          if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < (QUIET.has(e.actor.kind) ? 0.2 : 0.6)) {
             this.packHeard.set(pack, now);
             this.hear(e.actor, "move", now);
           }
@@ -425,6 +496,11 @@ export class Renderer {
           this.ghosts.push({ glyph: e.target.glyph, kind: e.target.kind, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
           this.views.delete(e.target.id);
         }
+      } else if (e.type === "level") {
+        // The player took the stairs: this level's map (kept from before, if
+        // they've been here), and the last one's kept.
+        this.changeLevel(e.from);
+        return;
       } else if (e.type === "suspect") this.hear(e.actor, "suspect", now);
       else if (e.type === "flee") this.hear(e.actor, "flee", now);
       else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
@@ -515,7 +591,7 @@ export class Renderer {
       }
       if (now < v.nextSound) continue;
       // (Skeletons a good deal quieter.)
-      const quiet = a.kind === "skeleton" ? 3 : 1;
+      const quiet = QUIET.has(a.kind) ? 3 : 1;
       if (a.state === "aggressive") {
         this.hear(a, "growl", now);
         v.nextSound = now + (1300 + Math.random() * 2400) * quiet;
@@ -737,7 +813,14 @@ export class Renderer {
       const target = a === w.player || this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS) ? 1 : 0;
       if (v.alpha === undefined) v.alpha = target;
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
-      if (v.alpha > 0.02) this.drawActor(lc, a, v, now, t, motion);
+      if (v.alpha > 0.02) {
+        this.drawActor(lc, a, v, now, t, motion);
+        // (A cultist's lantern: a small flame held beside it.)
+        if (a.kind === "cultist") {
+          const k = ease(clamp01((now - v.t0) / v.dur)), lx = (v.fx + (v.x - v.fx) * k + 0.85) * TS, ly = (v.fy + (v.y - v.fy) * k + 0.45) * TS;
+          drawFire(lc, lx, ly, TS, t, a.id, v.alpha, 0.4, 0.24);
+        }
+      }
     }
     // Goblins struck down, tipping over and fading.
     this.ghosts = this.ghosts.filter((g) => now - g.t0 < 700);
@@ -826,12 +909,34 @@ export class Renderer {
     ctx.strokeText(ch, 0, -m.desc);
     ctx.fillStyle = ink;
     ctx.fillText(ch, 0, -m.desc);
+    // (The goblin king's crown: a band and three points over his letter, in
+    // its ink, outlined as it is.)
+    if (style.crown) {
+      const cw = size * 0.5, chh = size * 0.24, top = -m.asc - m.desc - size * 0.06;
+      ctx.beginPath();
+      ctx.moveTo(-cw / 2, top);
+      ctx.lineTo(-cw / 2, top - chh * 0.55);
+      ctx.lineTo(-cw / 2 + cw * 0.18, top - chh * 0.25);
+      ctx.lineTo(0, top - chh);
+      ctx.lineTo(cw / 2 - cw * 0.18, top - chh * 0.25);
+      ctx.lineTo(cw / 2, top - chh * 0.55);
+      ctx.lineTo(cw / 2, top);
+      ctx.closePath();
+      if (seen > 0) {
+        ctx.lineWidth = size * LETTERING.outline * 0.6;
+        ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * Math.min(1, lit)})`;
+        ctx.stroke();
+      }
+      ctx.fillStyle = ink;
+      ctx.fill();
+    }
     ctx.restore();
   }
 
   pose(a, v, now, t, motion) {
     // (`goblin`: any monster; skeletons stiffer, see sway.)
-    const pl = this.world.player, goblin = a !== pl, bones = a.kind === "skeleton";
+    // (The stiff undead, skeletons and zombies, as `bones`; spiders still.)
+    const pl = this.world.player, goblin = a !== pl, bones = a.kind === "skeleton" || a.kind === "zombie", still = a.kind === "spider" || a.kind === "giant" || a.kind === "king";
     let idle = POSES.breathe(t);
     if (goblin && a.state === "aggressive") {
       const dx = pl.x - a.x, dy = pl.y - a.y, d = Math.hypot(dx, dy) || 1;
@@ -842,6 +947,9 @@ export class Renderer {
     else if (goblin && a.state === "suspicious") idle = bones ? { ...POSES.peer(t * 0.5, v.phase), rot: POSES.peer(t * 0.5, v.phase).rot * 0.4 } : POSES.peer(t, v.phase);
     else if (goblin && a.state === "fleeing" && !bones) idle = POSES.hop(t * 1.8, v.phase);
     else if (bones) idle = POSES.sway(t, v.phase);
+    else if (still) idle = POSES.breathe(t * 0.6);
+    else if (a.kind === "bat") idle = POSES.hop(t * 2.2, v.phase);
+    else if (a.kind === "troll") idle = POSES.breathe(t * 0.7);
     else if (goblin) idle = POSES.hop(t, v.phase);
     const p = { ox: 0, oy: 0, sx: 1, sy: 1, rot: 0, shadow: 0, ...idle };
     p.ox *= motion;
@@ -851,7 +959,7 @@ export class Renderer {
     p.sy = 1 + (p.sy - 1) * motion;
 
     // (Only the milling dart about.)
-    if (goblin && !bones && a.state === "neutral" && motion > 0.5) {
+    if (goblin && !bones && !still && a.kind !== "troll" && a.state === "neutral" && motion > 0.5) {
       const d = v.dart, [range, minT, maxT] = DART;
       if (now > d.next) {
         d.tx = (Math.random() - 0.5) * 2 * range;

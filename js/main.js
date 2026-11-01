@@ -48,13 +48,13 @@ function newRun() {
 const REST_MS = 60;
 let resting = null;
 function startRest() {
-  if (!world || world.dead || resting) return;
+  if (!world || world.ended || resting) return;
   const why = world.cantRest();
   if (why) return world.log(why);
   world.log("You rest.");
   resting = setInterval(() => {
     const p = world.player;
-    if (world.dead) return stopRest(null);
+    if (world.ended) return stopRest(null);
     if (world.disturbed()) return stopRest("Something stirs. You stop resting.");
     world.tick(false, true);
     if (!world.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) stopRest("You feel rested.", "good");
@@ -71,7 +71,7 @@ window.addEventListener("keydown", (e) => {
   if (!world || e.ctrlKey || e.metaKey || e.altKey || !document.getElementById("start").hidden) return;
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
   // (Any key ends a run that's over, stops resting.)
-  if (world.dead) { e.preventDefault(); return newRun(); }
+  if (world.ended) { e.preventDefault(); return newRun(); }
   if (resting) { e.preventDefault(); return stopRest("You stop resting."); }
   if (ui.helpOpen) {
     if (e.key === "?" || e.key === "Escape") { e.preventDefault(); ui.toggleHelp(false); }
@@ -118,6 +118,9 @@ window.addEventListener("keydown", (e) => {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
     if (!world.dead) renderer.toggleLamp();
+  } else if (e.key === ">" || e.key === "<") {
+    e.preventDefault();
+    world.takeStairs(e.key === ">" ? "down" : "up");
   } else if (e.key === "," || e.key === "g") {
     e.preventDefault();
     world.pickUp();
@@ -149,7 +152,7 @@ window.addEventListener("keydown", (e) => {
 // Doing something with a thing: drinking, wielding or wearing, dropping (by
 // its letter), taking off (by where), picking up.
 function act(verb, key) {
-  if (!world || world.dead) return;
+  if (!world || world.ended) return;
   if (verb === "q") world.drink(key);
   else if (verb === "W") world.wield(key);
   else if (verb === "D") world.drop(key);
@@ -158,7 +161,7 @@ function act(verb, key) {
 }
 ui.onAct = (verb, key) => { ui.endAsk(); act(verb, key); };
 // A tap ends a run that's over; the help closes when tapped.
-document.getElementById("death").addEventListener("click", () => world?.dead && newRun());
+document.getElementById("death").addEventListener("click", () => world?.ended && newRun());
 document.getElementById("help").addEventListener("click", () => ui.toggleHelp(false));
 
 // Touch and mouse: a tap steps once toward the finger, which way by the
@@ -263,6 +266,8 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 const button = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
 button("act-search", () => world.search());
 button("act-pack", () => ui.togglePanel("i"));
+// (The stairs: whichever way the ones underfoot go.)
+button("act-stairs", () => world.takeStairs(world.level.stairsDown && world.level.stairsDown.x === world.player.x && world.level.stairsDown.y === world.player.y ? "down" : "up"));
 button("act-rest", () => (resting ? stopRest("You stop resting.") : startRest()));
 button("act-lamp", () => renderer.toggleLamp());
 button("act-close", () => world.closeDoor());
@@ -276,6 +281,10 @@ function updateActions() {
   if (lamp.textContent !== label) lamp.textContent = label;
   const can = world.canCloseDoor();
   if (close.disabled === can) close.disabled = !can;
+  // (The stairs' button only on stairs.)
+  const L = world.level, p = world.player, on = [L.stairsDown, L.stairsUp].some((st) => st && st.x === p.x && st.y === p.y);
+  const stairs = document.getElementById("act-stairs");
+  if (stairs.hidden === on) stairs.hidden = !on;
 }
 
 window.addEventListener("resize", () => renderer.resize());
