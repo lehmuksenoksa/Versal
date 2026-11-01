@@ -151,20 +151,21 @@ Every letter is edged in paper (fading with the light), except the undead, edged
 - The king's halls: braziers down the middle aisle, the columns striping the side aisles with shadow.
 - Dousing lights: not yet (see how the shadows play first).
 
-## Feedback on the presentation (being worked on)
+## Feedback on the presentation
 
-From the open questions in the presentation of the visual elements; each visual change gets a
-mockup first.
+From the open questions in the presentation of the visual elements; chosen on the choices page
+(`mockups/choices.html`, published with the answers saved in it).
 
-- **Done:** "Altogether..." taken out of equipment, "Room for..." out of the inventory.
-- **To mock up:** the name page (doesn't look good yet); a divider between health and the
-  character sheet that can't be taken for the experience line; things on the floor fitting neatly
-  inside a square, a tad smaller; the rat's, bat's and spider's letters smaller (small animals);
-  the cultist's lantern as light on the floor, no flame; stairs as in Dyson's maps, built into the
-  walls, bigger than a square if need be ("mock up the hell out of this"); braziers, hearths and
-  candles (none work yet).
-- **Levels:** more alternative routes through the maps; the king's halls varied (they all look
-  the same), the columns not all in rows across.
+- **In the game:** equipment and inventory without their sums; the name asked in the corner over
+  the level; a torn line under health; things on the floor at 0.66 of a square; rats, bats and
+  spiders at 0.75; the cultist's lantern as light on the floor (lit 2, dim 1, moving with them),
+  no flame; the camera always on the player, levels kept 4 squares back from the map's edge so
+  the hatching never meets it; candles as three fat candles; routes R4 (long loops, then short
+  tunnels); the king's halls varied by kind (columned either way, a forest of columns, round, a
+  crossing, split, round an uncut core, a storeroom, half dug, the throne room with an apse).
+- **Round 2, to choose:** braziers (the flame lower and bigger), hearths (more ideas), the throne.
+- **Stairs:** none of the mockups right yet; to redo from the player's examples of Dyson's maps.
+  Telling up from down: ink only (chosen), once the stairs are.
 - **Backlog:** a real victory page.
 
 ## Not now
