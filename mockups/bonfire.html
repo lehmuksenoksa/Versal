@@ -44,7 +44,7 @@
 <body>
 <header>
   <h1>Bonfire sticks</h1>
-  <p>The game's flame (G1) on a bundle of sticks seen from the side, in place of the ring of stones. Each card shows it at game size (the default zoom) and close up, lit by its own light in the game's bands. S2 is the stones as they are now, for comparison. Sticks marked "in front" are drawn over the flame's foot.</p>
+  <p>The game's flame (G1) over a teepee of solid logs, in place of the ring of stones. Each card shows it at game size (the default zoom) and close up, lit by its own light in the game's bands. S2 is the stones as they are now, for comparison.</p>
   <div class="bar">
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
@@ -376,31 +376,41 @@ const at = (x, y, TS) => (u, v) => [x + u * TS, y + v * TS];
 
 // What each bundle draws: `under` once, with the map; `front`, if any, each
 // frame over the flame's foot (as fire.js would draw it).
+// A solid log from (ax, ay) to (bx, by), `th` thick (in squares): filled with
+// ink, its ends a little rounded.
+function log(P, g, ax, ay, bx, by, TS, th) {
+  const len = Math.hypot(bx - ax, by - ay), a = Math.atan2(by - ay, bx - ax);
+  P.box((ax + bx) / 2, (ay + by) / 2, len, th * TS, a, 1, INK);
+  for (const [x, y] of [[ax, ay], [bx, by]]) { g.beginPath(); g.arc(x, y, th * TS * 0.5, 0, 2 * Math.PI); g.fillStyle = INK; g.fill(); }
+}
+// A teepee of `n` solid logs on the floor about (x, y): its foot `w` across
+// at `foot` below the middle, leaning in to cross a little below `top`, the
+// tops poking past one another.
+function teepee(P, g, x, y, TS, { n = 4, w = 0.5, foot = 0.3, top = -0.2, th = 0.075, poke = 0.08 } = {}) {
+  for (let i = 0; i < n; i++) {
+    const u = n === 1 ? 0 : i / (n - 1) - 0.5, bx = x + u * w * TS, by = y + foot * TS - Math.abs(u) * 0.03 * TS;
+    // (Each leans to the point and a little past it.)
+    const tx = x - u * poke * TS, ty = y + top * TS;
+    log(P, g, bx, by, tx, ty, TS, th);
+  }
+}
+
 const BUNDLES = [
-  { id: "K1", name: "Crossed pair, in front", note: "Two logs crossed low in front of the flame, their cut ends out, as the campfire sign.",
-    front: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.4, 0.1), ...p(0.42, 0.36), TS, 0.19); stick(P, ...p(0.4, 0.1), ...p(-0.42, 0.36), TS, 0.19); } },
-  { id: "K2", name: "Three crossed, in front", note: "K1 with a third log across behind them, flatter and wider.",
-    under: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.46, 0.16), ...p(0.48, 0.16), TS, 0.17); },
-    front: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.38, 0.14), ...p(0.4, 0.4), TS, 0.17); stick(P, ...p(0.38, 0.14), ...p(-0.4, 0.4), TS, 0.17); } },
-  { id: "K3", name: "Teepee", note: "Sticks leaning together to a point, the flame inside them; the near two in front.",
-    under: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.1, 0.36), ...p(0.05, -0.42), TS, 0.11, false); stick(P, ...p(0.16, 0.36), ...p(-0.02, -0.42), TS, 0.11, false); },
-    front: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.38, 0.4), ...p(0.02, -0.36), TS, 0.12, false); stick(P, ...p(0.4, 0.4), ...p(0.0, -0.36), TS, 0.12, false); } },
-  { id: "K4", name: "Stack of log ends", note: "Logs lying end-on, two below and one on top, the flame rising behind them.",
-    front: (P, x, y, TS) => { logEnd(P, x - 0.17 * TS, y + 0.3 * TS, 0.16, TS); logEnd(P, x + 0.17 * TS, y + 0.3 * TS, 0.16, TS); logEnd(P, x, y + 0.05 * TS, 0.15, TS); } },
-  { id: "K5", name: "Bundle of sticks", note: "A bundle of sticks lying on its side, tied twice, a few twigs poking out; the flame on top of it.",
-    under: (P, x, y, TS) => {
-      const p = at(x, y, TS);
-      for (const [y0, y1, a0, a1] of [[0.16, 0.22, -0.46, 0.44], [0.24, 0.28, -0.42, 0.48], [0.32, 0.34, -0.48, 0.4]]) stick(P, ...p(a0, y0), ...p(a1, y1), TS, 0.09, false);
-      twigs(P, [[...p(0.3, 0.24), ...p(0.44, 0.1)], [...p(-0.3, 0.3), ...p(-0.46, 0.18)]], TS);
-    },
-    front: (P, x, y, TS) => { const p = at(x, y, TS); stick(P, ...p(-0.44, 0.34), ...p(0.46, 0.4), TS, 0.1, false); P.line(...p(-0.06, 0.2), ...p(-0.03, 0.46), 2.2); P.line(...p(0.12, 0.21), ...p(0.14, 0.46), 2.2); } },
+  { id: "T1", name: "Teepee, four logs", note: "Four solid logs leaning together, about half a square across; a smaller flame (seven tenths) over their upper half.",
+    under: (P, x, y, TS, g) => teepee(P, g, x, y, TS), fire: [0.7, 0.12] },
+  { id: "T2", name: "Teepee, five logs, wider", note: "Five logs, a wider foot and a lower point: squatter; the flame at eight tenths.",
+    under: (P, x, y, TS, g) => teepee(P, g, x, y, TS, { n: 5, w: 0.6, foot: 0.32, top: -0.1, th: 0.07, poke: 0.1 }), fire: [0.8, 0.14] },
+  { id: "T3", name: "Teepee, three logs, small", note: "Three thicker logs, about two fifths of a square; a small flame (six tenths) at their top.",
+    under: (P, x, y, TS, g) => teepee(P, g, x, y, TS, { n: 3, w: 0.4, foot: 0.28, top: -0.14, th: 0.09, poke: 0.07 }), fire: [0.6, 0.08] },
+  { id: "T4", name: "Teepee, tall, flame at its foot", note: "Four logs taller than the flame, their tops crossing above it, the flame (six tenths) burning inside at their foot.",
+    under: (P, x, y, TS, g) => teepee(P, g, x, y, TS, { n: 4, w: 0.5, foot: 0.32, top: -0.34, th: 0.07, poke: 0.12 }), fire: [0.6, 0.22] },
 ];
 
 const FIRES = [
-  ...BUNDLES.map((v) => ({ ...v, base: (P, rng, x, y, TS) => v.under?.(P, x, y, TS) })),
+  ...BUNDLES.map((v) => ({ ...v, base: (P, rng, x, y, TS, g) => v.under?.(P, x, y, TS, g) })),
   { id: "S2", name: "Stones (now)", note: "The ring of stones round a heap of logs, as in the game now.", base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); } },
 ].map((v) => ({ ...v, flame: (g, x, y, TS, t) => {
-  drawFire(g, x, y, TS, t);
+  drawFire(g, x, y, TS, t, 0, 1, ...(v.fire ?? []));
   if (v.front) { g.save(); g.strokeStyle = INK; g.lineCap = "round"; v.front(pen(g, new RNG(77), TS / 32), x, y, TS); g.restore(); }
 } }));
 

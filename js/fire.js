@@ -48,10 +48,11 @@ function layer(g, cx, by, b, tips, fill, J) {
 }
 
 // The fire in the middle of square (x, y) (centre, in pixels) at time `t`
-// (seconds), `TS` the square's size; `seed` keeps fires apart.
-export function drawFire(g, x, y, TS, t, seed = 0, alpha = 1) {
+// (seconds), `TS` the square's size; `seed` keeps fires apart. `size` scales
+// it, and `foot` sets where it stands (squares below the middle).
+export function drawFire(g, x, y, TS, t, seed = 0, alpha = 1, size = 1, foot = 0.24) {
   const rng = new RNG(17 + Math.floor(t * RATE) * 13 + seed * 7919), r = (a, b) => rng.range(a, b);
-  const jit = () => r(-0.45, 0.45) * TS / 32, b = SIZE * 0.2 * r(0.96, 1.04) * TS, by = y + TS * 0.24;
+  const jit = () => r(-0.45, 0.45) * TS / 32, b = size * SIZE * 0.2 * r(0.96, 1.04) * TS, by = y + TS * foot;
   const outer = [0.56, -0.02, -0.6].map((tx, i) => ({ x: tx + r(-0.08, 0.08), h: i === 1 ? r(1.75, 2.15) : r(0.95, 1.4), lean: r(-0.22, 0.22), notch: r(0.35, 0.6) }));
   const mid = [
     { x: 0.45 + r(-0.1, 0.1), h: r(0.8, 1.15), lean: r(-0.15, 0.15), notch: r(0.35, 0.55) },
