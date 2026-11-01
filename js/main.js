@@ -105,6 +105,9 @@ let pinch = null;
 const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
 
 canvas.addEventListener("pointerdown", (e) => {
+  // (Kept from the browser, a press doesn't give the page the keys: in a
+  // frame, as in the Claude app, it takes them itself.)
+  window.focus();
   if (!world || e.button > 0) return;
   e.preventDefault();
   canvas.setPointerCapture?.(e.pointerId);
