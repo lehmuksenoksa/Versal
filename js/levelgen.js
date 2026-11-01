@@ -142,9 +142,10 @@ function tryAreas(S, rng) {
     const isCave = type === CAVERN || (type === COLLAPSED && rng.chance(0.4));
     let w, h;
     if (type === HALLS) {
-      // (Big, even halls, hewn out roughly: room for columns.)
-      w = rng.int(5, 8) * 2;
-      h = rng.int(4, 6) * 2;
+      // (Big halls, an odd number of squares each way, so their rows of
+      // columns sit evenly about the middle.)
+      w = rng.int(5, 8) * 2 + 1;
+      h = rng.int(4, 6) * 2 + 1;
     } else if (isCave) {
       w = Math.round(rng.int(7, 16) * S.caveSize);
       h = Math.round(rng.int(6, 12) * S.caveSize);
@@ -162,7 +163,8 @@ function tryAreas(S, rng) {
     w = clamp(w, 4, W - 6);
     h = clamp(h, 4, H - 6);
     const x = clamp(sx - (w >> 1), 2, W - w - 3), y = clamp(sy - (h >> 1), 2, H - h - 3);
-    if (rooms.some((o) => x - 2 < o.x + o.w && x + w + 2 > o.x && y - 2 < o.y + o.h && y + h + 2 > o.y)) continue;
+    // (Halls further apart: their walls are dug out a square here and there.)
+    if (rooms.some((o) => { const m = type === HALLS || o.halls ? 3 : 2; return x - m < o.x + o.w && x + w + m > o.x && y - m < o.y + o.h && y + h + m > o.y; })) continue;
     rooms.push({ x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1), cave: isCave, type, halls: type === HALLS, collapsed: !isCave && type === COLLAPSED && rng.chance(S.collapse) });
   }
   if (rooms.length < Math.max(3, target * 0.5)) return null;
@@ -186,6 +188,71 @@ function tryAreas(S, rng) {
     let c = 0;
     for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) if (floorAt(x, y)) c++;
     return c;
+  };
+
+  // A hall dug out of the rock: its walls hewn unevenly, in stretches of a
+  // few squares cut a square further back or left a square standing in, its
+  // corners cut off; and two rows of rough columns along it, evenly spaced
+  // and even about its middle, a broad aisle down the middle and narrower
+  // ones along the walls. (The columns, rock a square each, are kept in
+  // `hallColumns`, put back after the corridors, which may cut through.)
+  const hallColumns = [];
+  const hewHall = (r, ri) => {
+    const open = (x, y) => {
+      if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) return;
+      tiles[idx(x, y)] = T.FLOOR;
+      cave[idx(x, y)] = 1;
+      roomOf[idx(x, y)] = ri;
+    };
+    const shut = (x, y) => {
+      tiles[idx(x, y)] = T.ROCK;
+      cave[idx(x, y)] = 1;
+      roomOf[idx(x, y)] = -1;
+    };
+    // Each side, from corner to corner: [x, y] of its i-th square inside, and
+    // the way out through the wall.
+    const sides = [
+      { len: r.w, at: (i) => [r.x + i, r.y], out: [0, -1] },
+      { len: r.w, at: (i) => [r.x + i, r.y + r.h - 1], out: [0, 1] },
+      { len: r.h, at: (i) => [r.x, r.y + i], out: [-1, 0] },
+      { len: r.h, at: (i) => [r.x + r.w - 1, r.y + i], out: [1, 0] },
+    ];
+    for (const sd of sides)
+      for (let i = 1; i < sd.len - 1; ) {
+        const run = Math.min(rng.int(2, 4), sd.len - 1 - i), v = rng.next(), cut = v < 0.35 ? 1 : v < 0.65 ? -1 : 0;
+        for (let k = i; k < i + run; k++) {
+          const [x, y] = sd.at(k);
+          if (cut > 0) open(x + sd.out[0], y + sd.out[1]);
+          else if (cut < 0) shut(x, y);
+        }
+        i += run;
+      }
+    // The corners cut off: the corner square, and on a bigger hall sometimes
+    // the squares beside it too.
+    for (const [cx, cy, sx, sy] of [[r.x, r.y, 1, 1], [r.x + r.w - 1, r.y, -1, 1], [r.x, r.y + r.h - 1, 1, -1], [r.x + r.w - 1, r.y + r.h - 1, -1, -1]]) {
+      shut(cx, cy);
+      if (rng.chance(0.5)) shut(cx + sx, cy);
+      if (rng.chance(0.5)) shut(cx, cy + sy);
+    }
+    // The rows of columns, along the hall's longer way: as many as fit three
+    // or four squares apart, two squares in from the ends at least, an even
+    // spread (so they sit evenly about the middle).
+    const along = r.w >= r.h, len = along ? r.w : r.h, wide = along ? r.h : r.w;
+    let best = null;
+    for (const step of [3, 4])
+      for (let k = 2; (k - 1) * step <= len - 5; k++) {
+        const span = (k - 1) * step;
+        if (span % 2) continue;
+        if (!best || k > best.k || (k === best.k && span > best.span)) best = { k, step, span };
+      }
+    if (!best) return;
+    const off = wide >= 13 ? 3 : 2, start = (len - 1 - best.span) / 2;
+    for (const across of [off, wide - 1 - off])
+      for (let k = 0; k < best.k; k++) {
+        const u = start + k * best.step, [x, y] = along ? [r.x + u, r.y + across] : [r.x + across, r.y + u];
+        shut(x, y);
+        hallColumns.push(idx(x, y));
+      }
   };
 
   const fine = valueNoise(rng, W, H, 2.5);
@@ -236,14 +303,7 @@ function tryAreas(S, rng) {
           if (r.halls) cave[idx(x, y)] = 1;
         }
       if (r.halls) {
-        // Rough columns holding it up, in rows a few squares in from the
-        // walls, every four squares, its middle kept clear.
-        for (let y = r.y + 2; y < r.y + r.h - 2; y += 4)
-          for (let x = r.x + 2; x < r.x + r.w - 2; x += 4) {
-            if (Math.abs(x - r.cx) <= 1 && Math.abs(y - r.cy) <= 1) continue;
-            tiles[idx(x, y)] = T.ROCK;
-          }
-        if (reach(r).size !== floorIn(r)) for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) tiles[idx(x, y)] = T.FLOOR;
+        hewHall(r, ri);
         continue;
       }
       if (!r.collapsed) continue;
@@ -373,6 +433,8 @@ function tryAreas(S, rng) {
     const near = rooms.filter((r) => r !== a).sort((p, q) => dist(a, p) - dist(a, q));
     connect(a, near[rng.int(1, Math.min(2, near.length - 1))]);
   }
+  // (The halls' columns, where corridors cut through them, put back.)
+  for (const j of hallColumns) tiles[j] = T.ROCK;
   // Rubble and grit strewn on cave floors, more along the walls.
   for (let y = 1; y < H - 1; y++)
     for (let x = 1; x < W - 1; x++) {
@@ -748,7 +810,7 @@ function tryAreas(S, rng) {
   // (The throne room lit.)
   if (throneRoom) {
     throneRoom.lit = true;
-    for (let y = throneRoom.y; y < throneRoom.y + throneRoom.h; y++) for (let x = throneRoom.x; x < throneRoom.x + throneRoom.w; x++) if (floorAt(x, y)) lit[idx(x, y)] = 1;
+    for (let y = throneRoom.y - 1; y <= throneRoom.y + throneRoom.h; y++) for (let x = throneRoom.x - 1; x <= throneRoom.x + throneRoom.w; x++) if (floorAt(x, y) && roomOf[idx(x, y)] === rooms.indexOf(throneRoom)) lit[idx(x, y)] = 1;
   }
   for (const [st, dir] of [[stairsUp, "up"], [stairsDown, "down"]]) {
     if (!st) continue;

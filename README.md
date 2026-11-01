@@ -103,8 +103,8 @@ never flee.
 
 There are three levels, each changing gradually across it, left to right, from one kind of ground
 to the next: the old crypts (built dungeon into collapsed rooms), the broken deep (collapsed rooms
-into caverns), the goblin warrens (caverns into the goblin king's halls, big rough-hewn halls held up
-by rough columns). Stairs (drawn as a flight of treads, remembered with the walls) lead down from the
+into caverns), the goblin warrens (caverns into the goblin king's halls, big halls dug unevenly out of the rock, their corners cut off, held up
+by two rows of rough columns). Stairs (drawn as a flight of treads, remembered with the walls) lead down from the
 far side of each and up from where the player arrives; `>` and `<` take them, and a level is kept
 as it was left, what was seen of it too. Each level has its own monsters, by the ground of their
 room: skeletons and zombies (`z`, white and green, edged in ink: slow, the zombies never giving up
