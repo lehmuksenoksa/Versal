@@ -24,23 +24,22 @@ function step(dx, dy, repeat) {
   world.playerMove(dx, dy);
 }
 
-// A new run: the player's name asked (the last one offered), then a new
-// level, the lamp lit.
+// A new run: a new level, the lamp lit, and the player's name asked over it
+// (the last one offered).
 function newRun() {
   stopRest(null);
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
-  const go = (name) => {
-    if (world?.sneaking) renderer.toggleLamp();
-    world = new World(undefined, { name });
-    renderer.setWorld(world);
-    window.focus();
-  };
-  // (`?name=…` skips the question, for trying things out.)
+  // (The level is there at once; the name asked over it, in the corner,
+  // and the player named when it's given. `?name=…` skips the question, for
+  // trying things out.)
+  if (world?.sneaking) renderer.toggleLamp();
   const given = new URLSearchParams(location.search).get("name");
-  if (given) go(given);
-  else ui.askName(go);
+  world = new World(undefined, { name: given || ui.lastName() || "Adventurer" });
+  renderer.setWorld(world);
+  if (!given) ui.askName((name) => { world.player.name = name; window.focus(); });
+  window.focus();
 }
 
 // Resting: a turn every `REST_MS` until healed and well, or until something
@@ -68,7 +67,7 @@ function stopRest(why, kind) {
 }
 
 window.addEventListener("keydown", (e) => {
-  if (!world || e.ctrlKey || e.metaKey || e.altKey || !document.getElementById("start").hidden) return;
+  if (!world || e.ctrlKey || e.metaKey || e.altKey || ui.asking) return;
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
   // (Any key ends a run that's over, stops resting.)
   if (world.ended) { e.preventDefault(); return newRun(); }
@@ -224,7 +223,7 @@ canvas.addEventListener("pointerdown", (e) => {
   // (Kept from the browser, a press doesn't give the page the keys: in a
   // frame, as in the Claude app, it takes them itself.)
   window.focus();
-  if (!world || e.button > 0) return;
+  if (!world || e.button > 0 || ui.asking) return;
   if (resting) stopRest("You stop resting.");
   e.preventDefault();
   canvas.setPointerCapture?.(e.pointerId);
@@ -263,7 +262,7 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // The action strip (touch screens): search (or wait), the lamp, closing a
 // door; kept up to date each frame.
-const button = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
+const button = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && !ui.asking && fn());
 button("act-search", () => world.search());
 button("act-pack", () => ui.togglePanel("i"));
 // (The stairs: whichever way the ones underfoot go.)

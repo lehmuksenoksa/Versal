@@ -2271,12 +2271,19 @@ export class Expression {
   // (`lampSight`). Each light and lit place, for finding those in sight:
   // `lamps` (each the box it lights { x0, y0, x1, y1 }, in squares, and
   // some of the map points it lights to look for, `cells`).
-  lightLamps() {
-    const { mw, mh, TS, S, level: L } = this, lights = L.lights ?? [], places = this.litPlaces();
+  //
+  // And the lanterns carried about (`this.lanterns`, squares { x, y }: the
+  // cultists'), laid over the rest, which is kept (`lampBase`) so that only
+  // they need laying again as they move (`onlyLanterns`).
+  lightLamps(onlyLanterns = false, dirty = null) {
+    const { mw, mh, TS, S, level: L } = this, lanterns = this.lanterns ?? [], base = onlyLanterns ? this.lampBase : null;
+    const keep = base && dirty && this.lampCanvas && this.lampSight ? { lamp: this.lampCanvas, sight: this.lampSight } : null;
+    const lights = base ? [] : L.lights ?? [], places = base ? [] : this.litPlaces();
     this.lampLevel = this.lampCanvas = this.lampSight = null;
-    this.lamps = [];
-    if (!lights.length && !places.length) return;
-    const level = (this.lampLevel = new Float32Array(mw * mh)), steady = new Float32Array(mw * mh);
+    this.lamps = base ? base.lamps.slice() : [];
+    if (!base) this.lampBase = null;
+    if (!lights.length && !places.length && !lanterns.length && !this.lamps.length) return;
+    const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh)), steady = base ? base.steady.slice() : new Float32Array(mw * mh);
     // (Every fourth map point each way that the light being laid lights; and
     // a fire's light kept apart, `own`, to flicker in size; the rest,
     // `steady`.)
@@ -2342,15 +2349,53 @@ export class Expression {
         shine(x + 0.5, y + 0.5, out + 0.5, (mx, my) => Math.hypot(Math.max(x - mx / TS, 0, mx / TS - x - 1), Math.max(y - my / TS, 0, my / TS - y - 1)), (e) => (e <= 0 ? 1 : e < LIT.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
       this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, cells: [...cells] });
     }
-    const pic = (level, alpha) => {
-      const c = blank(mw, mh), im = new ImageData(mw, mh);
-      for (let j = 0; j < mw * mh; j++) im.data[j * 4 + 3] = Math.round(255 * alpha(level[j]));
-      c.getContext("2d").putImageData(im, 0, 0);
+    if (!base) this.lampBase = { level: level.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
+    // The lanterns: steady, in their own bands (LIGHTS.lantern).
+    const LB = LAMPS.lantern, lout = LB.full + LB.dim + LB.dark;
+    for (const l of lanterns) {
+      cells = new Set();
+      own = null;
+      const x = l.x + 0.5, y = l.y + 0.5;
+      shine(x, y, lout, (mx, my) => Math.hypot(mx / TS - x, my / TS - y), (e) => (e < LB.full ? 1 : e < LB.full + LB.dim ? S.dimLevel : e < lout ? S.darkLevel : 0));
+      this.lamps.push({ x0: x - lout, y0: y - lout, x1: x + lout, y1: y + lout, cells: [...cells], lantern: true });
+    }
+    // (Only the box `dirty` painted again into the pictures `keep`, when
+    // only the lanterns moved.)
+    const [bx0, by0, bx1, by1] = keep ? dirty.map((v, i) => Math.max(0, Math.min(i % 2 ? mh : mw, v))) : [0, 0, mw, mh];
+    const pic = (level, alpha, c) => {
+      const w = bx1 - bx0, h = by1 - by0;
+      c ??= blank(mw, mh);
+      if (w <= 0 || h <= 0) return c;
+      const im = new ImageData(w, h);
+      for (let y = by0; y < by1; y++)
+        for (let x = bx0; x < bx1; x++) im.data[((y - by0) * w + (x - bx0)) * 4 + 3] = Math.round(255 * alpha(level[y * mw + x]));
+      c.getContext("2d").putImageData(im, bx0, by0);
       return c;
     };
     // (`lampCanvas`: the steady light; the fires' are laid over it as drawn.)
-    this.lampCanvas = pic(steady, (v) => v);
-    this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)));
+    this.lampCanvas = pic(steady, (v) => v, keep?.lamp);
+    this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)), keep?.sight);
+  }
+
+  // The lanterns carried about moved (squares { x, y }): their light laid
+  // again, and the view taken again where it changed. True if it did.
+  setLanterns(list) {
+    const key = list.map((l) => `${l.x},${l.y}`).join(";");
+    if (key === (this.lanternKey ?? "")) return false;
+    const B = LAMPS.lantern, out = Math.ceil(B.full + B.dim + B.dark) + 1, moved = [...(this.lanterns ?? []), ...list], p = this.player;
+    let dirty = null;
+    for (const l of moved) dirty = unite(dirty, [(l.x - out) * R, (l.y - out) * R, (l.x + out + 1) * R, (l.y + out + 1) * R]);
+    this.changed = unite(this.changed, dirty);
+    this.lanternKey = key;
+    this.lanterns = list;
+    this.lightLamps(true, dirty);
+    this.doorsChanged = (this.doorsChanged ?? 0) + 1;
+    // (The view taken again only if the player might see their light.)
+    if (p && moved.some((l) => Math.max(Math.abs(l.x - p.x), Math.abs(l.y - p.y)) <= LAMP_SEE + out)) {
+      this.sightFrom = this.lightFrom = null;
+      this.learn(p.x, p.y);
+    }
+    return true;
   }
 
   // The level's lit places: each a run of lit squares ([x, y]s), its box

@@ -69,3 +69,48 @@ export function drawFire(g, x, y, TS, t, seed = 0, alpha = 1, size = 1, foot = 0
   g.fill();
   g.restore();
 }
+
+// A candle's flame seen from above, as the map is (chosen in
+// mockups/lights.html, candles A): a ragged ring of small tongues licking out
+// round a pale heart, turning, outlined in ink; and a soft warm glow round it,
+// breathing. (x, y) is the wick, `TS` the square's size, `t` the time in
+// seconds; `seed` keeps candles apart.
+const INK = "#1b1815";
+export function drawCandle(g, x, y, TS, t, seed = 0, alpha = 1) {
+  g.save();
+  g.globalAlpha = alpha;
+  const f = 1 + 0.06 * Math.sin(t * 7 + seed) + 0.04 * Math.sin(t * 17 + seed * 2), R = 0.42 * TS * f;
+  const grad = g.createRadialGradient(x, y, 0, x, y, R);
+  grad.addColorStop(0, "rgba(255, 214, 120, 0.6)");
+  grad.addColorStop(0.45, "rgba(255, 170, 70, 0.27)");
+  grad.addColorStop(1, "rgba(255, 150, 60, 0)");
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(x, y, R, 0, 2 * Math.PI);
+  g.fill();
+  const n = 5, r = 0.085 * TS, pts = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = (i / (n * 2)) * 2 * Math.PI + t * 0.6 + seed, tip = i % 2 === 0;
+    const rr = r * (tip ? 0.85 + 0.25 * Math.sin(t * (6 + (i % 3)) + i * 1.7 + seed) : 0.5);
+    pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]);
+  }
+  g.beginPath();
+  const [lx, ly] = pts.at(-1);
+  g.moveTo((pts[0][0] + lx) / 2, (pts[0][1] + ly) / 2);
+  pts.forEach(([px, py], i) => {
+    const [qx, qy] = pts[(i + 1) % pts.length];
+    g.quadraticCurveTo(px, py, (px + qx) / 2, (py + qy) / 2);
+  });
+  g.closePath();
+  g.fillStyle = COLOURS.mid;
+  g.fill();
+  g.lineWidth = (0.9 * TS) / 32;
+  g.strokeStyle = INK;
+  g.lineJoin = "round";
+  g.stroke();
+  g.beginPath();
+  g.arc(x, y, r * 0.38 * (1 + 0.1 * Math.sin(t * 9 + seed)), 0, 2 * Math.PI);
+  g.fillStyle = COLOURS.heart;
+  g.fill();
+  g.restore();
+}

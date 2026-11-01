@@ -48,6 +48,9 @@ export const LIGHTS = {
   fire: { full: 3.5, dim: 2, dark: 2, flame: 1.15, foot: 0.1 },
   brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 0.62, foot: -0.08 },
   hearth: { full: 3, dim: 1.5, dark: 1.5, flame: 0.8, foot: 0.05 },
+  // (A cultist's lantern, carried: light, no flame; as far as it shows them
+  // the player, as chosen in mockups/choices.html.)
+  lantern: { full: 2, dim: 1, dark: 1.5, flame: 0, foot: 0 },
   candles: { full: 1.25, dim: 1.25, dark: 1.5, flame: 0.2, foot: -0.05 },
 };
 
@@ -771,7 +774,7 @@ function tryAreas(S, rng) {
         const altar = features.findLast((f) => f.type === "altar");
         if (altar) {
           altar.holds = true;
-          const along = altar.w > altar.h, flames = [-0.5, 0, 0.5].map((t, i) => (along ? [t, i === 1 ? -0.12 : 0.04] : [i === 1 ? -0.12 : 0.04, t]));
+          const along = altar.w > altar.h, flames = [-0.55, 0, 0.55].map((t) => (along ? [t, 0] : [0, t]));
           roomLights.push({ x: altar.x, y: altar.y, kind: "candles", flames });
           features.push({ type: "candles", x: altar.x, y: altar.y, flames });
         }

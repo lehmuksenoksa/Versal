@@ -714,8 +714,21 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
         P.shape([[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]], 0, INK);
       }
     } else if (f.type === "candles") {
-      // Candles standing on an altar, a small round each.
-      for (const [dx, dy] of f.flames) P.round(x + dx * TS, y + dy * TS + TS * 0.04, TS * 0.075, 1.3, PAPER);
+      // Three fat candles standing on an altar, seen from above: a round
+      // each, its wick a dot. (Their flames and glows are drawn over them
+      // as they burn: fire.js.)
+      for (const [dx, dy] of f.flames) {
+        const cx = x + dx * TS, cy = y + dy * TS;
+        P.round(cx, cy, TS * 0.12, 1.5, PAPER);
+        if (mode === "paper" || mode === "ink") {
+          ctx.save();
+          ctx.fillStyle = INK;
+          ctx.beginPath();
+          ctx.arc(cx, cy, TS * 0.12 * 0.22, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
     } else if (f.type === "campfire") {
       // A teepee of three logs seen from the side: plain bars of ink leaning
       // together, crossing a little past their point. (The flame is drawn

@@ -4,7 +4,7 @@
 
 import { INK, PAPER } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
-import { drawFire } from "./fire.js";
+import { drawFire, drawCandle } from "./fire.js";
 import { LIGHTS } from "./levelgen.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
@@ -20,8 +20,9 @@ const LETTERING = {
   font: "Texturina, Georgia, serif",
   player: { weight: 800, size: 0.9, ink: "#a3261b" },
   monster: { weight: 600, size: 1.05, ink: INK },
-  // (Things lying about: smaller, in ink, potions in their colour.)
-  item: { weight: 700, size: 0.78, ink: INK },
+  // (Things lying about: smaller, in ink, potions in their colour; inside
+  // their square, as chosen in mockups/choices.html.)
+  item: { weight: 700, size: 0.66, ink: INK },
   // (The undead outlined in ink, not paper: skeletons white.)
   skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
   zombie: { weight: 600, size: 1.05, ink: "#6d8424", edge: INK },
@@ -29,9 +30,10 @@ const LETTERING = {
   // their colours, deepened.)
   warrior: { weight: 600, size: 1.4, ink: INK },
   king: { weight: 600, size: 1.35, ink: INK, crown: true },
-  rat: { weight: 600, size: 1.05, ink: "#4f2c10" },
-  bat: { weight: 600, size: 1.05, ink: "#4a443d" },
-  spider: { weight: 600, size: 1.05, ink: INK },
+  // (The small animals smaller, as chosen in mockups/choices.html.)
+  rat: { weight: 600, size: 0.75, ink: "#4f2c10" },
+  bat: { weight: 600, size: 0.75, ink: "#4a443d" },
+  spider: { weight: 600, size: 0.75, ink: INK },
   giant: { weight: 600, size: 1.05, ink: INK },
   cultist: { weight: 600, size: 1.05, ink: "#981b10" },
   troll: { weight: 600, size: 1.05, ink: "#22561c" },
@@ -702,6 +704,9 @@ export class Renderer {
     // The view in map units, and map units to device pixels.
     const vw = this.vw / this.zoom, vh = this.vh / this.zoom, sc = this.screenDpr * this.zoom;
 
+    // The cultists' lanterns lighting the floor where they stand now.
+    if (this.exp.setLanterns(w.actors.filter((a) => a.kind === "cultist").map((a) => ({ x: a.x, y: a.y })))) this.redraw(30);
+
     // Camera follows the player's drawn position.
     const pv = this.view(w.player);
     const pk = ease(clamp01((now - pv.t0) / pv.dur));
@@ -709,7 +714,9 @@ export class Renderer {
     const mw = L.w * TS, mh = L.h * TS;
     // (The view above anything along the bottom of the screen, `inset`: the
     // action strip.)
-    const fit = (target, view, size) => (size + 64 < view ? (size - view) / 2 : Math.max(-32, Math.min(size - view + 32, target)));
+    // (Always on the player, even by the map's edge, so nothing in view is
+    // ever under the corner or the sidebar: as chosen in mockups/choices.html.)
+    const fit = (target) => target;
     // (And left of the sidebar, `insetRight`.)
     const ih = vh - (this.inset ?? 0) / this.zoom, iw = vw - (this.insetRight ?? 0) / this.zoom;
     const tx = fit(px - iw / 2, iw, mw), ty = fit(py - ih / 2, ih, mh);
@@ -789,7 +796,7 @@ export class Renderer {
     // Then the letters.
     // The level's lights burning (campfires, braziers, hearths, candles),
     // while in sight (fading in and out as goblins do): each its size of
-    // flame (LIGHTS), candles a small flame each.
+    // flame (LIGHTS); candles each a small flame seen from above in its glow.
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
       const B = LIGHTS[l.kind] ?? LIGHTS.fire, x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
@@ -797,7 +804,8 @@ export class Renderer {
       this.fires.set(l, a);
       if (!(a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS)) return;
       const tt = t * (this.reduced ? 0.5 : 1);
-      if (l.flames) l.flames.forEach(([dx, dy], k) => drawFire(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a, B.flame, B.foot));
+      if (l.kind === "candles") l.flames.forEach(([dx, dy], k) => drawCandle(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a));
+      else if (l.flames) l.flames.forEach(([dx, dy], k) => drawFire(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a, B.flame, B.foot));
       else drawFire(lc, x, y, TS, tt, i, a, B.flame, B.foot);
     });
     // Things lying about: in sight, as letters; remembered, faint.
@@ -816,12 +824,8 @@ export class Renderer {
       if (v.alpha === undefined) v.alpha = target;
       v.alpha += (target - v.alpha) * Math.min(1, dt * 8);
       if (v.alpha > 0.02) {
+        // (A cultist's lantern shows as the light round them: no flame.)
         this.drawActor(lc, a, v, now, t, motion);
-        // (A cultist's lantern: a small flame held beside it.)
-        if (a.kind === "cultist") {
-          const k = ease(clamp01((now - v.t0) / v.dur)), lx = (v.fx + (v.x - v.fx) * k + 0.85) * TS, ly = (v.fy + (v.y - v.fy) * k + 0.45) * TS;
-          drawFire(lc, lx, ly, TS, t, a.id, v.alpha, 0.4, 0.24);
-        }
       }
     }
     // Goblins struck down, tipping over and fading.

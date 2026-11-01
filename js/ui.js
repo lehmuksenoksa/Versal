@@ -46,7 +46,7 @@ const NAME_KEY = "versal-name";
 export class UI {
   constructor() {
     const $ = (id) => document.getElementById(id);
-    this.el = { corner: $("corner"), side: $("side"), drawer: $("drawer"), death: $("death"), help: $("help"), start: $("start"), plates: $("plates") };
+    this.el = { corner: $("corner"), side: $("side"), drawer: $("drawer"), death: $("death"), help: $("help"), plates: $("plates") };
     this.stamp = "";
     this.drawerOpen = false;
     this.helpOpen = false;
@@ -83,7 +83,7 @@ export class UI {
   get wide() { return window.innerWidth >= SIDEBAR.minWidth; }
   get insetRight() { return this.wide ? SIDEBAR.width : 0; }
   // Is anything open that takes the keys (a page over the map)?
-  get blocking() { return this.helpOpen || !this.el.start.hidden; }
+  get blocking() { return this.helpOpen || !!this.asking; }
 
   toggleDrawer(open = !this.drawerOpen) {
     this.drawerOpen = open;
@@ -104,25 +104,32 @@ export class UI {
     this.stamp = "";
   }
 
-  // The page that asks who goes down; `go(name)` when answered.
+  // Who goes down: asked in the corner, over the level already there (as
+  // chosen in mockups/choices.html), the last name offered; `go(name)` when
+  // answered.
+  lastName() {
+    try { return localStorage.getItem(NAME_KEY) || ""; } catch { return ""; }
+  }
   askName(go) {
-    let last = "";
-    try { last = localStorage.getItem(NAME_KEY) || ""; } catch {}
-    const el = this.el.start;
-    el.hidden = false;
-    el.innerHTML = `<form class="card"><h2>Who goes down?</h2>
-      <label for="start-name">Your name</label>
-      <input id="start-name" name="name" maxlength="20" autocomplete="off" spellcheck="false" value="${esc(last)}">
-      <p>An adventurer, into the old crypts.</p>
-      <button type="submit">Go down</button></form>`;
-    const input = el.querySelector("input");
+    this.asking = { go, last: this.lastName() };
+    this.stamp = "";
+  }
+  // (The corner's question, once drawn: the name field taken, Enter to go.)
+  wireAsk() {
+    const form = this.el.corner.querySelector("form.ask");
+    if (!form || form.dataset.wired) return;
+    form.dataset.wired = "1";
+    const input = form.querySelector("input");
+    // (What's typed kept, should the corner be drawn again meanwhile.)
+    input.addEventListener("input", () => { if (this.asking) this.asking.last = input.value; });
     setTimeout(() => { input.focus(); input.select(); }, 0);
-    el.querySelector("form").addEventListener("submit", (e) => {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
       const name = input.value.trim().replace(/\s+/g, " ") || "Adventurer";
       try { localStorage.setItem(NAME_KEY, name); } catch {}
-      el.hidden = true;
-      el.innerHTML = "";
+      const { go } = this.asking;
+      this.asking = null;
+      this.stamp = "";
       go(name);
     });
   }
@@ -131,7 +138,7 @@ export class UI {
   update(world) {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
-    const stamp = [world.place.depth, !!world.won, world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
+    const stamp = [world.place.depth, !!this.asking, p.name, !!world.won, world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
       window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;
@@ -150,10 +157,14 @@ export class UI {
     this.el.corner.innerHTML = `<div class="head"><span class="place">${esc(world.place.name)}</span>
         <span class="depth">${ordinal(world.place.depth)} level</span>
         ${wide ? "" : `<span class="hpline${low ? " low" : ""}">${hp}</span>`}</div>
-      <div class="news">${news.map((m, i) => `<div class="age${news.length - 1 - i} ${m.kind}">${esc(m.text)}</div>`).join("")}</div>
-      ${world.messages.length > 3 ? `<div class="pull">m for more</div>` : ""}`;
-    const box = this.el.corner.querySelector(".news"), line = parseFloat(getComputedStyle(box).lineHeight) || 26;
-    while (box.children.length > 1 && box.scrollHeight > 3 * line + 4) box.firstElementChild.remove();
+      ${this.asking ? `<form class="ask"><label for="start-name">Who goes down?</label>
+        <input id="start-name" name="name" maxlength="20" autocomplete="off" spellcheck="false" enterkeyhint="go" value="${esc(this.asking.last)}">
+        <div class="pull">Enter to go down</div></form>`
+      : `<div class="news">${news.map((m, i) => `<div class="age${news.length - 1 - i} ${m.kind}">${esc(m.text)}</div>`).join("")}</div>
+      ${world.messages.length > 3 ? `<div class="pull">m for more</div>` : ""}`}`;
+    if (this.asking) this.wireAsk();
+    const box = this.el.corner.querySelector(".news"), line = box ? parseFloat(getComputedStyle(box).lineHeight) || 26 : 0;
+    while (box && box.children.length > 1 && box.scrollHeight > 3 * line + 4) box.firstElementChild.remove();
 
     // The sidebar (on a narrow screen, only a panel, over the map).
     const top = `<div class="who"><h3>${esc(p.name)}</h3><div>${esc(p.cls)}, level ${p.level}</div></div>
