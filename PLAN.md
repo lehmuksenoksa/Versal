@@ -128,6 +128,14 @@ Every letter is edged in paper (fading with the light), except the undead, edged
 | Giant spider | `S` | black |
 | Troll | `T` | green |
 
+## Light and shadow (done, first version)
+
+- Lit rooms lit by lights of their own that suit them (candles, braziers, hearths), not evenly;
+  columns, posts and big furniture throw shadows from them; lit rooms more often have columns.
+- Rock formations round campfires placed to make dark lanes past the camp or up to it.
+- The king's halls: braziers down the middle aisle, the columns striping the side aisles with shadow.
+- Dousing lights: not yet (see how the shadows play first).
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed

@@ -23,11 +23,17 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   aggressive: it chases them (a little slower than they move), attacks when next to them (no damage
   yet), and opens doors in the way now and then; it gives up when they are out of sight a while or
   far off.
-- Light other than the player's: goblin campfires in the caverns (a pack always round them; a
-  flame burning over a teepee of three logs, redrawn on twos), and lit dungeon rooms and stretches of corridor, lit throughout,
-  their light pouring out of open doorways in bands like the player's. Lit places are seen from
-  far off, in line of sight, and a sneaking player standing in one is noticed as if their lamp
-  were lit.
+- Light other than the player's, each light cast against the walls, columns, posts and the big
+  furniture (sarcophagi, altars, tables, shelves, crates, barrels), so it throws shadows to sneak
+  in: goblin campfires in the caverns (a pack always round them; a flame burning over a teepee of
+  three logs, redrawn on twos), with rock formations set round them so their shadows make a dark
+  way past the camp or up to it; in lit dungeon rooms, lights that suit them (candles on a
+  shrine's altar, a brazier at one end of a crypt, a hearth cut into the wall of a dining hall or
+  barracks, braziers in the middle of the rest, a lit room more often held up by columns); braziers
+  down the middle aisle of the king's halls, between the rows of columns (either side of the king
+  in the throne room); and stretches of corridor lit throughout. Lit places are seen from far off,
+  in line of sight, and a sneaking player standing in the light (a light's full and dim bands) is
+  noticed as if their lamp were lit.
 - The player whacks a monster by walking into it (goblins take a hit or two, skeletons three or four), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
   round them, only the dark band of light, and goblins much less likely to notice or wake.

@@ -10,6 +10,31 @@ export function postOutline(f, scale = 1) {
   return Array.from({ length: n }, (_, i) => [f.x * scale + r * Math.cos(a0 + (i * 2 * Math.PI) / n), f.y * scale + r * Math.sin(a0 + (i * 2 * Math.PI) / n)]);
 }
 
+// The outline of a big thing that throws a shadow from the level's lights
+// (corners [x, y] times `scale`), or null: sarcophagi, altars (not one with
+// candles on it), tables, shelves, crates and barrels.
+export function shadeOutline(f, scale = 1) {
+  if (f.holds) return null;
+  const box = (w, h, rot = 0) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
+    const dx = (u * w) / 2, dy = (v * h) / 2;
+    return [(f.x + dx * Math.cos(rot) - dy * Math.sin(rot)) * scale, (f.y + dx * Math.sin(rot) + dy * Math.cos(rot)) * scale];
+  });
+  if (f.type === "sarcophagus" || f.type === "altar" || f.type === "table" || f.type === "shelf") return box(f.w, f.h);
+  if (f.type === "crate") return box(f.s, f.s, f.rot ?? 0);
+  if (f.type === "barrel") return Array.from({ length: 6 }, (_, i) => [(f.x + f.r * Math.cos((i * Math.PI) / 3)) * scale, (f.y + f.r * Math.sin((i * Math.PI) / 3)) * scale]);
+  return null;
+}
+
+// Is (x, y) inside the outline `pts`?
+export function insideOutline(x, y, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 // Does the line from (ax, ay) to (bx, by) cross the outline `pts`?
 export function crossesOutline(ax, ay, bx, by, pts) {
   const side = (px, py, qx, qy, rx, ry) => (qx - px) * (ry - py) - (qy - py) * (rx - px);

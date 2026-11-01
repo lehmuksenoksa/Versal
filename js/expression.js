@@ -15,7 +15,8 @@
 import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds, STROKES_SEED } from "./hatching.js";
 import { RNG } from "./rng.js";
-import { Walls, postOutline } from "./sightline.js";
+import { Walls, postOutline, shadeOutline } from "./sightline.js";
+import { LIGHTS } from "./levelgen.js";
 import { T } from "./dungeon.js";
 
 export const EXPRESSION_DEFAULTS = {
@@ -70,9 +71,10 @@ const joinRect = (a, b) => {
   const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
   return [x, y, Math.max(a[0] + a[2], b[0] + b[2]) - x, Math.max(a[1] + a[3], b[1] + b[3]) - y];
 };
-// Lights in the level (campfires): their bands, in squares from the
-// light, like the candle's; and how far off the player sees what they light.
-const LAMPS = { fire: { full: 3.5, dim: 2, dark: 2 } };
+// Lights in the level (campfires, braziers, hearths, candles): their bands,
+// in squares from the light, like the candle's (levelgen.js's LIGHTS); and
+// how far off the player sees what they light.
+const LAMPS = LIGHTS;
 // Lit places (rooms, stretches of corridor): lit throughout, the light
 // pouring out of them in bands as the player's, in squares past their edge.
 const LIT = { dim: 1, dark: 2 };
@@ -348,14 +350,18 @@ export class Expression {
     for (let j = 0; j < mw * mh; j++) this.floor[j] = a[j * 4 + 3] >= 128 ? 1 : 0;
     this.walls = new Walls(drawn.loops, TS * 2);
     // Sight and light are cast against the walls and the posts (pillars):
-    // the shadows of them, slivers fanning out.
+    // the shadows of them, slivers fanning out. The level's own lights
+    // (`lampWalls`) also against the big things: sarcophagi, altars, tables,
+    // shelves, crates and barrels. (Not the player's lamp: they may stand
+    // among them.)
     this.lightWalls = new Walls(drawn.loops, TS * 2);
+    this.lampWalls = new Walls(drawn.loops, TS * 2);
     for (const f of level.features ?? []) {
-      if (f.type !== "post") continue;
-      const pts = postOutline(f, TS);
+      const post = f.type === "post", pts = post ? postOutline(f, TS) : shadeOutline(f, TS);
+      if (!pts) continue;
       for (let i = 0; i < pts.length; i++) {
         const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length];
-        for (const w of [this.walls, this.lightWalls]) w.add({ x0, y0, x1, y1 });
+        for (const w of post ? [this.walls, this.lightWalls, this.lampWalls] : [this.lampWalls]) w.add({ x0, y0, x1, y1 });
       }
     }
     // Shut doors stop sight and light: a wall across the way where each is.
@@ -1415,6 +1421,7 @@ export class Expression {
     if (old) {
       this.walls.remove(old);
       this.lightWalls.remove(old);
+      this.lampWalls.remove(old);
     }
     this.doorWalls.delete(key);
     if (!d.open) {
@@ -1423,6 +1430,7 @@ export class Expression {
       const s = { x0: cx + d.dy * h, y0: cy - d.dx * h, x1: cx - d.dy * h, y1: cy + d.dx * h };
       this.walls.add(s);
       this.lightWalls.add(s);
+      this.lampWalls.add(s);
       this.doorWalls.set(key, s);
     }
     if (quiet) return;
@@ -2284,7 +2292,7 @@ export class Expression {
     // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly.
     // (Past the walls in view only into the rock, not past shut doors.)
     const shine = (x, y, out, dist, band) => {
-      const view = this.lightWalls.visible(x * TS, y * TS, (out + 0.5) * TS), rim = view.beyond(S.lightWall * TS);
+      const view = this.lampWalls.visible(x * TS, y * TS, (out + 0.5) * TS), rim = view.beyond(S.lightWall * TS);
       const m = Math.ceil((out + 1) * R), cx = Math.floor(x * R), cy = Math.floor(y * R);
       const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
       const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });

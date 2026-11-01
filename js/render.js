@@ -5,13 +5,11 @@
 import { INK, PAPER } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire } from "./fire.js";
+import { LIGHTS } from "./levelgen.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
 
-// A campfire's flame: its size (times fire.js's) and where it stands (squares
-// below its square's middle), over the teepee of logs.
-const FIRE_SIZE = 1.15, FIRE_FOOT = 0.1;
 export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
@@ -789,14 +787,18 @@ export class Renderer {
       lc.setTransform(hs, 0, 0, hs, -cx * hs, -cy * hs);
     }
     // Then the letters.
-    // Campfires burning, while in sight (fading in and out as goblins do).
+    // The level's lights burning (campfires, braziers, hearths, candles),
+    // while in sight (fading in and out as goblins do): each its size of
+    // flame (LIGHTS), candles a small flame each.
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
-      if (l.kind !== "fire") return;
-      const x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
+      const B = LIGHTS[l.kind] ?? LIGHTS.fire, x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
       this.fires.set(l, a);
-      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(lc, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a, FIRE_SIZE, FIRE_FOOT);
+      if (!(a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS)) return;
+      const tt = t * (this.reduced ? 0.5 : 1);
+      if (l.flames) l.flames.forEach(([dx, dy], k) => drawFire(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a, B.flame, B.foot));
+      else drawFire(lc, x, y, TS, tt, i, a, B.flame, B.foot);
     });
     // Things lying about: in sight, as letters; remembered, faint.
     for (const it of w.items ?? []) {

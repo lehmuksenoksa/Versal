@@ -14,9 +14,9 @@
 
 import { RNG } from "./rng.js";
 import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
-import { generateAreas, AREAS } from "./levelgen.js";
+import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
-import { postOutline, crossesOutline } from "./sightline.js";
+import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
 
 // The kinds of monster: their letters and names; their speed (moves for each
 // of the player's); how much they wander when milling about (the goblins' 1);
@@ -200,8 +200,19 @@ export class World {
   furnish(st) {
     const level = this.level, P = st.P, W = level.w;
     const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
-    for (const l of level.lights ?? [])
-      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), 5.5, opaque, (x, y) => (this.lit[y * W + x] = 1));
+    // (Each light lights what it can see as far as its full and dim bands
+    // reach; posts and big things throw shadows, as on the map.)
+    const shades = [...st.pillars.map((p) => p.pts), ...(level.features ?? []).map((f) => shadeOutline(f)).filter(Boolean)];
+    for (const l of level.lights ?? []) {
+      const B = LIGHTS[l.kind] ?? LIGHTS.fire, far = B.full + B.dim;
+      const near = shades.filter((pts) => pts.some(([x, y]) => Math.abs(x - l.x) <= far + 1 && Math.abs(y - l.y) <= far + 1));
+      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), far, opaque, (x, y) => {
+        const cx = x + 0.5, cy = y + 0.5;
+        if (Math.hypot(cx - l.x, cy - l.y) > far) return;
+        if (near.some((pts) => !insideOutline(cx, cy, pts) && crossesOutline(l.x, l.y, cx, cy, pts))) return;
+        this.lit[y * W + x] = 1;
+      });
+    }
     // (A lit place, and the open squares next to it, its light's dim band.)
     for (let y = 0; y < level.h; y++)
       for (let x = 0; x < level.w; x++) {

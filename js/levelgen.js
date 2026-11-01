@@ -31,9 +31,25 @@
 // Columns are rock, a square each.
 
 import { T, carveCave } from "./dungeon.js";
+import { computeFov } from "./fov.js";
 
 export const AREAS = ["dungeon", "cavern", "collapsed", "halls"];
 const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
+
+// The kinds of light, by `kind` in `lights`: how far each lights, in squares
+// from the flame, in bands (full, then dim, then dark: as the player's lamp);
+// the game counts the full and dim bands as lit (no sneaking there), and the
+// dark one as dark, though the map shows it faintly. And the flame's size
+// (times a campfire's) and where it stands (squares below the light's
+// middle). Campfires in caves; braziers (a bowl of coals on legs, in the way)
+// in rooms and the king's halls; a hearth cut into a wall; candles on an
+// altar (three small flames).
+export const LIGHTS = {
+  fire: { full: 3.5, dim: 2, dark: 2, flame: 1.15, foot: 0.1 },
+  brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 0.62, foot: -0.08 },
+  hearth: { full: 3, dim: 1.5, dark: 1.5, flame: 0.8, foot: 0.05 },
+  candles: { full: 1.25, dim: 1.25, dark: 1.5, flame: 0.2, foot: -0.05 },
+};
 
 export const LEVELGEN_DEFAULTS = {
   // The level's size in squares.
@@ -59,6 +75,9 @@ export const LEVELGEN_DEFAULTS = {
   // Lights: how often a big cave has a campfire, a dungeon room is lit, and
   // a square of dungeon corridor starts a lit stretch.
   campfires: 0.4, litRooms: 0.3, litCorridors: 0.02,
+  // How often one of the king's halls has braziers down its middle (the
+  // throne room always).
+  litHalls: 0.6,
   // How often a door is a secret one (none into the start room, nor jail
   // cells): rock to look at until the player finds it.
   secretDoors: 0.15,
@@ -234,6 +253,9 @@ function tryAreas(S, rng) {
       if (rng.chance(0.5)) shut(cx + sx, cy);
       if (rng.chance(0.5)) shut(cx, cy + sy);
     }
+    // (Any square dug out that the corners' cutting left cut off, filled in.)
+    const kept = reach(r);
+    for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) if (floorAt(x, y) && !kept.has(idx(x, y))) shut(x, y);
     // The rows of columns, along the hall's longer way: as many as fit three
     // or four squares apart, two squares in from the ends at least, an even
     // spread (so they sit evenly about the middle).
@@ -247,6 +269,9 @@ function tryAreas(S, rng) {
       }
     if (!best) return;
     const off = wide >= 13 ? 3 : 2, start = (len - 1 - best.span) / 2;
+    // (Kept for lighting it: the columns' places along it, and the middle of
+    // the aisle between the rows.)
+    r.nave = { along, mid: (wide - 1) / 2, us: Array.from({ length: best.k }, (_, k) => start + k * best.step) };
     for (const across of [off, wide - 1 - off])
       for (let k = 0; k < best.k; k++) {
         const u = start + k * best.step, [x, y] = along ? [r.x + u, r.y + across] : [r.x + across, r.y + u];
@@ -454,7 +479,7 @@ function tryAreas(S, rng) {
   // squares (x, y its middle). Furniture is only drawn; columns (pillars
   // filling a square) are rock; posts (pillars on a grid crossing) only
   // block a step diagonally past them.
-  const features = [], posts = [], recesses = [], mustDoor = new Set(), niches = new Set();
+  const features = [], posts = [], recesses = [], mustDoor = new Set(), niches = new Set(), roomLights = [];
   // A room's sides: its squares just outside the wall (v 0) and on into the
   // rock (v 1, 2, ...; v -1 is the floor just inside), u along the side;
   // and the way into the room from there.
@@ -573,7 +598,10 @@ function tryAreas(S, rng) {
     // already pillared), before anything else goes in: a few, set evenly
     // about its middle, four a third of the way in from the walls (and two
     // more in the middle of a long one), all or none.
-    if (lo(r) >= 7 && kind !== "hall" && kind !== "gallery" && rng.chance(S.supports)) {
+    // (A room to be lit (see below) has them more often: their shadows are
+    // somewhere to sneak.)
+    const lightIt = rng.chance(S.litRooms);
+    if (lo(r) >= 7 && kind !== "hall" && kind !== "gallery" && rng.chance(lightIt ? 0.85 : S.supports)) {
       const ia = Math.max(2, Math.round(A * 0.28)), ib = Math.max(2, Math.round(B * 0.28));
       const as = [ia, A - 1 - ia], bs = [...new Set([ib, B - 1 - ib])];
       if (A % 2 === 1 && A >= 2 * B - 1 && A >= 11) as.push((A - 1) / 2);
@@ -698,6 +726,79 @@ function tryAreas(S, rng) {
         for (const side of [-1, 1]) post(Math.round(ax + sd.into[0] * 0.5 + along[0] * side * 2), Math.round(ay + sd.into[1] * 0.5 + along[1] * side * 2));
       }
     }
+    // Lit rooms, lit by lights of their own that suit them, set so the
+    // columns, posts and big furniture throw shadows to sneak in.
+    if (lightIt) {
+      const before = roomLights.length;
+      // A brazier on a free square (in the way), the nearest free one to the
+      // place (a, b) along and across the room.
+      const brazier = (a, b) => {
+        let bestSq = null;
+        for (let y = r.y; y < r.y + r.h; y++)
+          for (let x = r.x; x < r.x + r.w; x++) {
+            if (!free(x, y) || !floorAt(x, y)) continue;
+            const [px, py] = at(a, b), d = Math.hypot(x - px, y - py);
+            if (d <= 1.5 && (!bestSq || d < bestSq.d)) bestSq = { x, y, d };
+          }
+        if (!bestSq) return;
+        take(bestSq.x, bestSq.y);
+        roomLights.push({ x: bestSq.x + 0.5, y: bestSq.y + 0.5, kind: "brazier", block: idx(bestSq.x, bestSq.y) });
+        features.push({ type: "brazier", x: bestSq.x + 0.5, y: bestSq.y + 0.5 });
+      };
+      // A hearth cut into the middle of one of the room's walls (`sides`),
+      // where the rock is whole; burning in the way.
+      const hearth = (sides) => {
+        for (const sd of rng.shuffle([...sides])) {
+          const L = sd.len(r);
+          for (const u of [Math.floor((L - 1) / 2), Math.ceil((L - 1) / 2), Math.floor((L - 1) / 2) - 1, Math.ceil((L - 1) / 2) + 1]) {
+            if (u < 1 || u > L - 2 || !solid(r, sd, u - 1, u + 1, 0, 1)) continue;
+            const [ix, iy] = sd.at(r, u, -1);
+            if (!free(ix, iy)) continue;
+            hollow(r, sd, u, 0);
+            niches.add(sd.at(r, u, 0).join());
+            take(ix, iy);
+            const [x, y] = mid(r, sd, u, 0);
+            roomLights.push({ x, y, kind: "hearth", block: idx(Math.floor(x), Math.floor(y)) });
+            features.push({ type: "hearth", x, y, hx: -sd.into[0], hy: -sd.into[1] });
+            return true;
+          }
+        }
+        return false;
+      };
+      const shortSides = SIDES.filter((sd) => !longSides.includes(sd));
+      if (kind === "shrine") {
+        // Candles on the altar (which then throws no shadow of its own).
+        const altar = features.findLast((f) => f.type === "altar");
+        if (altar) {
+          altar.holds = true;
+          const along = altar.w > altar.h, flames = [-0.5, 0, 0.5].map((t, i) => (along ? [t, i === 1 ? -0.12 : 0.04] : [i === 1 ? -0.12 : 0.04, t]));
+          roomLights.push({ x: altar.x, y: altar.y, kind: "candles", flames });
+          features.push({ type: "candles", x: altar.x, y: altar.y, flames });
+        }
+      } else if (kind === "crypt") {
+        // A brazier at one end of the long way (the sarcophagus throwing its
+        // shadow on toward the other); in the middle of a small crypt.
+        if (lo(r) >= 5) brazier(rng.chance(0.5) ? 1 : A - 2, (B - 1) / 2);
+        else brazier((A - 1) / 2, (B - 1) / 2);
+      } else if (kind === "dining" || kind === "barracks") {
+        // A hearth: in a short wall of a dining hall (the tables throwing
+        // their shadows down the room), the end of a barracks (between the
+        // rows of beds); a brazier if no wall will take one.
+        if (!hearth(shortSides.length ? shortSides : SIDES) && !hearth(SIDES)) brazier((A - 1) / 2, (B - 1) / 2);
+      } else if (kind === "gallery") {
+        // Braziers down the middle, between the rows of posts.
+        const [a0, n] = spread(A, 1, 5);
+        for (let i = 0; i < n; i++) brazier(a0 + 5 * i, (B - 1) / 2);
+      } else {
+        // In the middle (any columns round it throwing shadows out to the
+        // corners); in a long room, two, a third of the way from each end.
+        if (A >= 10) {
+          brazier(Math.round((A - 1) / 3), (B - 1) / 2);
+          brazier(Math.round((2 * (A - 1)) / 3), (B - 1) / 2);
+        } else brazier((A - 1) / 2, (B - 1) / 2);
+      }
+      if (roomLights.length > before) r.lit = true;
+    }
     // Recesses: rows of shallow alcoves (a fifth of a square deep) along a
     // wall or two, evenly spaced, clear of the ways in.
     if (kind !== "crypt" && !r.halfPosts && rng.chance(S.recesses)) {
@@ -740,6 +841,121 @@ function tryAreas(S, rng) {
   // { x, y, kind: "fire" } in squares, and a thing drawn; the fire's square
   // is in the way: `blocks`); and lit places, some dungeon rooms and
   // stretches of dungeon corridor, lit throughout (`lit`, a square each).
+  // Braziers down the middle of a hall, between the rows of its columns: in
+  // line with every other column (the middle one among them), so each
+  // brazier lights the aisle and the columns beside it throw stripes of
+  // shadow across the side aisles.
+  // (`flank`: either side of its middle, for the throne room, where the king
+  // stands.)
+  const hallBraziers = (r, flank = false) => {
+    const N = r.nave;
+    if (!N || r.lit) return;
+    const K = N.us.length, m = (K - 1) / 2;
+    const pick = K % 2 ? N.us.filter((_, i) => Math.abs(i - m) % 2 === (flank ? 1 : 0)) : K === 2 ? (flank ? N.us : [(N.us[0] + N.us[1]) / 2]) : [N.us[K / 2 - 1], N.us[K / 2]];
+    for (const u of pick) {
+      const a = Math.round(u), b = Math.round(N.mid), [x, y] = N.along ? [r.x + a, r.y + b] : [r.x + b, r.y + a];
+      if (!floorAt(x, y) || blocks.has(idx(x, y))) continue;
+      blocks.add(idx(x, y));
+      rubble[idx(x, y)] = 0;
+      lights.push({ x: x + 0.5, y: y + 0.5, kind: "brazier" });
+      features.push({ type: "brazier", x: x + 0.5, y: y + 0.5 });
+      r.lit = true;
+    }
+  };
+  // Rock formations set round a cave's campfire (at (fx, fy)) to throw
+  // shadows the player can creep along: a few small clumps two to four
+  // squares from it, each kept only if it makes the darkest way across the
+  // cave (from one way in to another) or up to the fire (to a dark square
+  // beside the camp) darker; until each is lit for a square at most. The
+  // light as the game reckons it: what the fire lights in its full and dim
+  // bands, in line of sight.
+  const shadowLanes = (r, fx, fy) => {
+    const F = LIGHTS.fire, far = F.full + F.dim;
+    const x0 = r.x - 1, y0 = r.y - 1, bw = r.w + 2, bh = r.h + 2, inBox = (x, y) => x >= x0 && y >= y0 && x < x0 + bw && y < y0 + bh;
+    const k = (x, y) => (y - y0) * bw + (x - x0);
+    const fire = idx(fx, fy);
+    // The ways in: floor on the box's edge with floor beyond it, a square
+    // from each stretch.
+    const ways = [], onWay = new Set();
+    for (let y = y0; y < y0 + bh; y++)
+      for (let x = x0; x < x0 + bw; x++) {
+        if (x !== x0 && y !== y0 && x !== x0 + bw - 1 && y !== y0 + bh - 1) continue;
+        if (!floorAt(x, y)) continue;
+        if (![[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !inBox(x + dx, y + dy) && floorAt(x + dx, y + dy))) continue;
+        onWay.add(idx(x, y));
+        if (!ways.some(([wx, wy]) => Math.max(Math.abs(wx - x), Math.abs(wy - y)) <= 2)) ways.push([x, y]);
+      }
+    if (!ways.length) return;
+    const litNow = () => {
+      const L = new Uint8Array(bw * bh);
+      computeFov(W, H, fx, fy, far, (x, y) => !floorAt(x, y), (x, y) => { if (inBox(x, y)) L[k(x, y)] = 1; });
+      return L;
+    };
+    // The fewest lit squares on a way from `from` to any of `to` (a test on
+    // squares), stepping as the player does (diagonals too), round the fire.
+    const darkest = (L, from, to) => {
+      const cost = new Int16Array(bw * bh).fill(9999), q = [[from[0], from[1]]];
+      cost[k(...from)] = L[k(...from)];
+      for (let i = 0; i < q.length; i++) {
+        const [x, y] = q[i], c = cost[k(x, y)];
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if ((!dx && !dy) || !inBox(nx, ny) || !floorAt(nx, ny) || idx(nx, ny) === fire) continue;
+            const nc = c + L[k(nx, ny)];
+            if (nc < cost[k(nx, ny)]) {
+              cost[k(nx, ny)] = nc;
+              q.push([nx, ny]);
+            }
+          }
+      }
+      let best = 9999;
+      for (let y = y0; y < y0 + bh; y++) for (let x = x0; x < x0 + bw; x++) if (to(x, y, L)) best = Math.min(best, cost[k(x, y)]);
+      return best;
+    };
+    const score = () => {
+      const L = litNow();
+      // (Across: the best way between two ways in, if there are two.)
+      let across = 0;
+      if (ways.length > 1) {
+        across = 9999;
+        for (let i = 0; i < ways.length; i++) for (let j = i + 1; j < ways.length; j++) across = Math.min(across, darkest(L, ways[i], (x, y) => x === ways[j][0] && y === ways[j][1]));
+      }
+      // (Up to the fire: to a dark square no more than three from it.)
+      let up = 9999;
+      for (const w of ways) up = Math.min(up, darkest(L, w, (x, y, L) => !L[k(x, y)] && Math.hypot(x - fx, y - fy) <= 3));
+      return Math.max(0, across - 1) + Math.max(0, up - 1);
+    };
+    let now = score();
+    for (let placed = 0; placed < 4 && now > 0; placed++) {
+      let best = null;
+      for (let t = 0; t < 40; t++) {
+        const a = rng.range(0, 2 * Math.PI), d = rng.range(2, 3.8), cx = Math.round(fx + Math.cos(a) * d), cy = Math.round(fy + Math.sin(a) * d);
+        const clump = [[cx, cy]], want = rng.int(1, 3);
+        for (let g = 0; g < want * 4 && clump.length < want; g++) {
+          const [bx, by] = rng.pick(clump), [dx, dy] = rng.pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
+          if (!clump.some(([ax, ay]) => ax === bx + dx && ay === by + dy)) clump.push([bx + dx, by + dy]);
+        }
+        // Standing free: floor all round, clear of the fire and the ways in.
+        const ok = clump.every(([x, y]) => {
+          if (!inBox(x, y) || Math.max(Math.abs(x - fx), Math.abs(y - fy)) < 2 || onWay.has(idx(x, y))) return false;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!floorAt(x + dx, y + dy) && !clump.some(([ax, ay]) => ax === x + dx && ay === y + dy)) return false;
+          return true;
+        });
+        if (!ok) continue;
+        for (const [x, y] of clump) tiles[idx(x, y)] = T.ROCK;
+        const v = reach(r).size === floorIn(r) ? score() : Infinity;
+        for (const [x, y] of clump) tiles[idx(x, y)] = T.FLOOR;
+        if (v < now && (!best || v < best.v)) best = { v, clump };
+      }
+      if (!best) break;
+      for (const [x, y] of best.clump) {
+        tiles[idx(x, y)] = T.ROCK;
+        rubble[idx(x, y)] = 0;
+      }
+      now = best.v;
+    }
+  };
   const lights = [], blocks = new Set(), lit = new Uint8Array(n), doorAt = new Set(doors.map((d) => idx(d.x, d.y)));
   for (const r of rooms) {
     if (!r.cave || !rng.chance(S.campfires)) continue;
@@ -757,12 +973,16 @@ function tryAreas(S, rng) {
     r.campfire = true;
     lights.push({ x: best.x + 0.5, y: best.y + 0.5, kind: "fire" });
     features.push({ type: "campfire", x: best.x + 0.5, y: best.y + 0.5 });
+    shadowLanes(r, best.x, best.y);
   }
-  for (const r of rooms) {
-    if (!r.kind || !rng.chance(S.litRooms)) continue;
-    r.lit = true;
-    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (floorAt(x, y)) lit[idx(x, y)] = 1;
+  // The dungeon rooms' lights (see the furnishing).
+  for (const l of roomLights) {
+    if (l.block !== undefined) blocks.add(l.block);
+    lights.push({ x: l.x, y: l.y, kind: l.kind, ...(l.flames ? { flames: l.flames } : {}) });
   }
+  // Braziers down the middle of some of the king's halls (and the throne
+  // room's, when it is chosen).
+  for (const r of rooms) if (r.halls && rng.chance(S.litHalls)) hallBraziers(r);
   const inRoom = (x, y) => rooms.some((r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
   const corridor = (x, y) => floorAt(x, y) && area[idx(x, y)] === DUNGEON && !cave[idx(x, y)] && !inRoom(x, y);
   for (let y = 2; y < H - 2; y++)
@@ -807,10 +1027,14 @@ function tryAreas(S, rng) {
     return best && { x: best.x, y: best.y };
   };
   const stairsUp = across && S.up ? stairsAt(startRoom) : null, stairsDown = downRoom ? stairsAt(downRoom) : null;
-  // (The throne room lit.)
+  // (The throne room lit: braziers down its middle, either side of where the
+  // king stands; any it had already taken away.)
   if (throneRoom) {
-    throneRoom.lit = true;
-    for (let y = throneRoom.y - 1; y <= throneRoom.y + throneRoom.h; y++) for (let x = throneRoom.x - 1; x <= throneRoom.x + throneRoom.w; x++) if (floorAt(x, y) && roomOf[idx(x, y)] === rooms.indexOf(throneRoom)) lit[idx(x, y)] = 1;
+    const T0 = throneRoom, inT = (o) => o.x >= T0.x && o.y >= T0.y && o.x < T0.x + T0.w && o.y < T0.y + T0.h;
+    for (const list of [lights, features]) for (let i = list.length - 1; i >= 0; i--) if ((list[i].kind ?? list[i].type) === "brazier" && inT(list[i])) list.splice(i, 1);
+    for (const j of [...blocks]) if (inT({ x: j % W, y: Math.floor(j / W) }) && !lights.some((l) => idx(Math.floor(l.x), Math.floor(l.y)) === j)) blocks.delete(j);
+    T0.lit = false;
+    hallBraziers(T0, true);
   }
   for (const [st, dir] of [[stairsUp, "up"], [stairsDown, "down"]]) {
     if (!st) continue;
