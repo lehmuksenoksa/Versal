@@ -64,9 +64,9 @@ Chosen so far (the "ink ledger", `mockups/ledger.html`; still being refined):
 
 | Level | Starts as | Changes into | Monsters |
 |---|---|---|---|
-| 1 | built dungeon (the start) | collapsed rooms | skeletons, zombies, rats, cultists |
+| 1 | built dungeon (the start) | collapsed rooms | skeletons, zombies, rats, cultists, spiders |
 | 2 | collapsed rooms | caverns | rats, zombies, goblins, bats, spiders, giant spiders |
-| 3 | caverns | the goblin king's halls | goblins, goblin warriors, trolls, giant spiders, the goblin king |
+| 3 | caverns | the goblin king's halls | goblins, goblin warriors, trolls, spiders, giant spiders, the goblin king |
 
 - The goblin king's halls: a new kind of ground; big rough-hewn halls dug out of the cavern, a
   throne room where the king waits with his guard.
@@ -97,5 +97,5 @@ blows, a defend action, weapon types against monster types, saving the run in th
 
 ## Open
 
-- Which levels spiders (`s`) and giant spiders (`S`) go on (giant spiders on 2 and 3 for now).
+- Giant spiders (`S`) on levels 2 and 3 for now; spiders (`s`) on every level.
 - More kinds of ground and monsters later.
