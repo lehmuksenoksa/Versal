@@ -63,7 +63,7 @@ Every letter is edged in paper (fading with the light), except the undead, edged
 |---|---|---|
 | Goblin | `g` | black |
 | Goblin warrior | `g` | black, clearly bigger |
-| Goblin king | `G` | black, big, with a gold crown |
+| Goblin king | `G` | black, big, with a crown |
 | Rat | `r` | brown |
 | Bat | `b` | dark grey |
 | Skeleton | `z` | white (edged in ink) |
