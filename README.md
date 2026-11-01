@@ -26,7 +26,7 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   their light pouring out of open doorways in bands like the player's. Lit places are seen from
   far off, in line of sight, and a sneaking player standing in one is noticed as if their lamp
   were lit.
-- The player whacks a goblin by walking into it (goblins take a hit or two), opens a door by walking
+- The player whacks a monster by walking into it (goblins take a hit or two, skeletons three or four), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
   round them, only the dark band of light, and goblins much less likely to notice or wake.
 - The map is drawn on the GPU (WebGL2) where there is one: the hatching inked there from every

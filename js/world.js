@@ -20,17 +20,15 @@ import { postOutline, crossesOutline } from "./sightline.js";
 
 // The kinds of monster: their letters; their speed (moves for each of the
 // player's); how much they wander when milling about (the goblins' 1); and
-// how many to a pack (in a crypt, `crypt`).
+// how many to a pack (in a crypt, `crypt`); and how many hits they take.
 export const MONSTERS = {
-  goblin: { glyph: "g", speed: 0.75, wander: 1, pack: [4, 7] },
-  // (Skeletons slow and still, alone or in pairs but in crypts.)
-  skeleton: { glyph: "z", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7] },
+  goblin: { glyph: "g", speed: 0.75, wander: 1, pack: [4, 7], hp: [1, 2] },
+  // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
+  skeleton: { glyph: "z", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [3, 4] },
 };
 
 // How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
-  // Hits it takes.
-  hp: [1, 2],
   // How far (in squares) a goblin notices the player, lamp lit and out; and
   // a sleeper.
   notice: 7, noticeSneaking: 3, wake: 3, wakeSneaking: 1,
@@ -122,7 +120,7 @@ export class World {
     for (let k = 0; k < n; k++) {
       const spot = this.freeSpotIn(room);
       if (!spot) break;
-      const g = { id: this.nextId++, kind, glyph: MONSTERS[kind].glyph, x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...GOBLIN.hp), energy: this.rng.next() };
+      const g = { id: this.nextId++, kind, glyph: MONSTERS[kind].glyph, x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...MONSTERS[kind].hp), energy: this.rng.next() };
       g.leader = leader || g;
       leader = g.leader;
       this.actors.push(g);
