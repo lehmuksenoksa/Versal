@@ -13,7 +13,9 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   with pillars, niches, jail cells, beds, tables, shelves, crates and doors), cavern (misshapen caves
   with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).
 - The player (a red `@`), goblins (`g`) and skeletons (a white `z`, edged in ink) are letters set in
-  Texturina, with a hatched pen shadow. Skeletons behave as goblins do but far less lively: slower,
+  Texturina, with a hatched pen shadow. Letters take the light as the map does: a paper outline
+  (the undead's in ink) that fades with the light, the colour darkening towards ink in the dim and
+  dark bands, and on unlit floor plain black with no outline. Skeletons behave as goblins do but far less lively: slower,
   alone or in pairs (but packs in crypts), standing stiff and swaying a little now and then rather
   than hopping, lying still when dormant, and seldom heard.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
@@ -96,6 +98,7 @@ in the browser console.
 | `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
 | `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
+| `mockups/letters.html` | Every letter, the player's and the monsters' to come, under each band of light, with each one's outline (paper or ink) and switches for how letters take the light. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
 | `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); field of view and memory. |

@@ -17,18 +17,19 @@ const FIRE_SIZE = 1.15, FIRE_FOOT = 0.1;
 export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
-// mockup (mockups/glyphs.html). Sizes are in tiles; bold and halo are
-// fractions of the letter size; tilt is the most a letter leans, in radians.
+// mockup (mockups/glyphs.html) and the letters mockup (mockups/letters.html).
+// Sizes are in tiles; bold and outline are fractions of the letter size; tilt
+// is the most a letter leans, in radians.
 const LETTERING = {
   font: "Texturina, Georgia, serif",
-  // (The player, unlit, has a heavy ring of the dark band's colour instead
-  // of the paper halo.)
-  player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.14, darkInk: "#741a12" },
+  player: { weight: 800, size: 0.9, ink: "#a3261b" },
   monster: { weight: 600, size: 1.05, ink: INK },
-  // (Skeletons white, edged in ink, not haloed in paper.)
-  skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK, edgeWidth: 0.26 },
+  // (The undead outlined in ink, not paper: skeletons white.)
+  skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
   bold: 0.025,
-  halo: 0.1,
+  outline: 0.26,
+  // (How far a letter's colour goes towards ink in the least light, the dark band.)
+  shade: 0.3,
   tilt: 0.06,
 };
 
@@ -784,35 +785,25 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
-    // A paper-coloured halo keeps the letter legible over grid and hatching
-    // (only as far as the light shows the paper). A letter with a ring for
-    // the dark (the player) has one of the dark band's colour instead where
-    // the light is dark (dim
-    // light reads as lit; the dark band, as dark).
-    const lit = p.lit ?? 1, dark = style.darkRing ? 1 - clamp01((lit - 0.2) / 0.5) : 0;
-    if (dark > 0) {
+    // Letters take the light as the map does. An outline keeps the letter
+    // legible over grid and hatching: paper, only as far as the light shows
+    // the paper; or (the undead) ink. The letter's colour goes towards ink as
+    // the light falls, a third of the way at the dark band. Unlit, a letter
+    // is plain black, with no outline at all (both fading out below the dark
+    // band's light).
+    const lit = p.lit ?? 1, S = this.settings, seen = clamp01(lit / Math.max(0.01, S.darkLevel));
+    const shade = seen * (LETTERING.shade + (1 - LETTERING.shade) * Math.min(1, lit));
+    if (seen > 0) {
       ctx.save();
-      ctx.globalAlpha *= dark;
-      // (The floor's colour in the dark band: the darkness, the paper showing
-      // through as much as the band's light.)
-      const c = (i) => parseInt(this.settings.darkColor.slice(1 + 2 * i, 3 + 2 * i), 16), PAPER_RGB = [247, 242, 230];
-      const band = [0, 1, 2].map((i) => Math.round(c(i) + (PAPER_RGB[i] - c(i)) * this.settings.darkLevel));
-      ctx.lineWidth = size * style.darkRing;
-      ctx.strokeStyle = `rgb(${band.join(", ")})`;
+      if (style.edge) ctx.globalAlpha *= seen;
+      ctx.lineWidth = size * LETTERING.outline;
+      ctx.strokeStyle = style.edge ?? `rgba(247, 242, 230, ${0.9 * Math.min(1, lit)})`;
       ctx.strokeText(ch, 0, -m.desc);
       ctx.restore();
     }
-    // (A letter with an `edge` has it in place of the halo, always.)
-    ctx.lineWidth = size * (style.edgeWidth ?? LETTERING.halo);
-    ctx.strokeStyle = style.edge ?? `rgba(247, 242, 230, ${0.9 * (style.darkRing ? 1 - dark : lit)})`;
-    ctx.strokeText(ch, 0, -m.desc);
-    // A little extra weight, to stand up to the heavy map lines. (Darker in
-    // the dark, for a letter with a colour for it.)
-    let ink = style.ink;
-    if (style.darkInk && dark > 0) {
-      const h = (s, i) => parseInt(s.slice(1 + 2 * i, 3 + 2 * i), 16);
-      ink = `rgb(${[0, 1, 2].map((i) => Math.round(h(style.ink, i) + (h(style.darkInk, i) - h(style.ink, i)) * dark)).join(", ")})`;
-    }
+    // A little extra weight, to stand up to the heavy map lines.
+    const h = (c, i) => parseInt(c.slice(1 + 2 * i, 3 + 2 * i), 16);
+    const ink = `rgb(${[0, 1, 2].map((i) => Math.round(h(INK, i) + (h(style.ink, i) - h(INK, i)) * shade)).join(", ")})`;
     ctx.lineWidth = size * LETTERING.bold;
     ctx.strokeStyle = ink;
     ctx.strokeText(ch, 0, -m.desc);
