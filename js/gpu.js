@@ -608,10 +608,12 @@ export class GpuMap {
       u("uLightK", 1 + S.flickerSize * swell);
       u("uLightBox", box.x, box.y, box.w, box.res);
       u("uLightSize", E.lightReach.width);
-      // (Cast from the player's square; following the letter on its way.)
+      // (Where it was cast from, its flicker in size about there; never moved
+      // after the letter, which would take the shadows off what casts them:
+      // it is cast anew as the letter goes, see Expression.update.)
       const [lx, ly] = E.lightFrom ?? [light.x, light.y];
       u("uLightC", lx, ly);
-      u("uLightShift", light.x - lx, light.y - ly);
+      u("uLightShift", 0, 0);
       // (The light cast where the player was, faded out over a step.)
       // (Quicker, for one cast on the way between squares.)
       const pv = E.lightPrev, k = pv ? 1 - Math.min(1, (performance.now() - pv.t) / (pv.quick ? LIGHT_QUICK_MS : LIGHT_FADE_MS)) : 0;
@@ -620,7 +622,7 @@ export class GpuMap {
         u("uPrevBox", pv.box.x, pv.box.y, pv.box.w, pv.box.res);
         u("uPrevSize", E.lightReachPrev.width);
         u("uPrevC", pv.from[0], pv.from[1]);
-        u("uPrevShift", light.x - pv.from[0], light.y - pv.from[1]);
+        u("uPrevShift", 0, 0);
       }
     }
     u("uDark", ...hex(S.darkColor)); u("uOut", ...hex(S.outColor)); u("uWarm", 1, 196 / 255, 120 / 255);
