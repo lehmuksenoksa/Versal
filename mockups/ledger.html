@@ -120,10 +120,11 @@
   .news .pull { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 4px; letter-spacing: 0.04em; }
 
   /* The drawer of messages, pulled down over the map. */
-  .drawer { position: absolute; left: 0; top: 0; height: 520px; background: #000; padding: 18px 26px; transform: translateY(calc(-100% - 80px)); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
+  .drawer { position: absolute; left: 0; top: 0; height: 520px; background: transparent; padding: 18px 26px; transform: translateY(-820px); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
   .drawer.open { transform: none; }
-  /* The drawer's torn foot, hanging below it. */
-  .drawer .foot { position: absolute; left: 0; top: calc(100% - 2px); width: 100%; height: 70px; pointer-events: none; }
+  /* The drawer's dark grey sheet, torn at its foot, drawn behind its text. */
+  .drawer .dback { position: absolute; left: 0; top: 0; width: 100%; height: 800px; pointer-events: none; }
+  .drawer > :not(.dback) { position: relative; }
   .drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; display: grid; gap: 3px; align-content: end; font-family: var(--log); font-style: var(--log-style); font-size: var(--log-size); line-height: 1.35; color: var(--gui-dim); }
   .drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; }
   .drawer li.new { color: var(--gui-text); }
@@ -243,8 +244,9 @@
   <div class="gencols">
     <div id="gen-corner"></div>
     <div id="gen-side"></div>
+    <div id="gen-drawer"></div>
   </div>
-  <div class="genrow"><button type="button" class="main" id="gen-both">New shapes for both</button><button type="button" id="gen-copy">Copy</button><button type="button" id="gen-save">Save</button><button type="button" id="gen-reset">Reset the black areas</button><span class="msg" id="gen-msg" role="status"></span></div>
+  <div class="genrow"><button type="button" class="main" id="gen-both">New shapes for all</button><button type="button" id="gen-copy">Copy</button><button type="button" id="gen-save">Save</button><button type="button" id="gen-reset">Reset the black areas</button><span class="msg" id="gen-msg" role="status"></span></div>
   <textarea id="gen-out" readonly aria-label="The shapes, as text to copy"></textarea>
   <div class="saved" id="gen-saved"></div>
 </section>
@@ -343,10 +345,10 @@ function panel() {
 }
 
 function drawer() {
-  return `<h5>Messages, ${RUN.place.toLowerCase()}</h5>
+  return `<canvas class="dback"></canvas><h5>Messages, ${RUN.place.toLowerCase()}</h5>
     <ol>${RUN.log.map((l, i) => l.turn ? `<li class="turn">${l.turn}</li>` : `<li class="${l.you ? "you" : i === RUN.log.length - 1 ? "new" : ""}">${l.t}</li>`).join("")}</ol>
     <div class="hint">m or Esc to push it back up</div>
-    <canvas class="foot"></canvas>`;
+`;
 }
 
 function render() {
@@ -398,7 +400,7 @@ function render() {
   while (msgs().length > 1 && msgs().reduce((h, d) => h + d.offsetHeight, 0) > 3 * LH + 2) msgs()[0].remove();
   const plates = $("desk").querySelector(".plates");
   if (plates) drawPlates(plates);
-  for (const id of ["desk", "phone"]) { const f = $(id).querySelector(".drawer .foot"); if (f) drawerFoot(f); }
+  drawDrawers();
 }
 
 // ---- The torn plates ----
@@ -415,6 +417,13 @@ const PARAMS = {
     ["cut", "Corners cut", 0, 0.7, 0.01, ""],
     ["tear", "Tear", 0, 2, 0.05, ""],
   ],
+  drawer: [
+    ["band", "Band", 10, 140, 1, "px"],
+    ["step", "Point spacing", 8, 160, 1, "px"],
+    ["jitter", "Wander in the band", 0, 1, 0.01, ""],
+    ["cut", "Corners cut", 0, 0.7, 0.01, ""],
+    ["tear", "Tear", 0, 2, 0.05, ""],
+  ],
   side: [
     ["band", "Band", 10, 100, 1, "px"],
     ["step", "Point spacing", 8, 160, 1, "px"],
@@ -427,6 +436,7 @@ const GEN = {
   // (The shapes chosen, saved in mockups/ledger/plates.json.)
   corner: { seed: 81016, band: 33, chars: 42, skew: 24, step: 30, jitter: 0.9, cut: 0.55, tear: 1.4 },
   side: { seed: 273917, band: 34, skew: 40, step: 89, jitter: 1, cut: 0.55, tear: 1.55 },
+  drawer: { seed: 81117, band: 33, step: 30, jitter: 0.9, cut: 0.55, tear: 1.4 },
 };
 const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const offscreen = (x, y) => x < 0 || y < 0 || x > 1280 || y > 800;
@@ -459,7 +469,8 @@ function keptSpace() {
 // the screen round to its left edge (the black area on the right of the way along, towards the
 // top left corner); the sidebar's from the bottom of the screen to the top (the black on the
 // right, towards the right edge). Made at first from the boxes kept for the text, leaning.
-const CHOSEN_AREAS = {"corner":[[644,0],[552,56],[460,79],[364,154],[163,159],[77,191],[0,181]],"side":[[952,800],[942,728],[950,660],[955,565],[948,506],[936,339],[942,200],[933,165],[932,96],[920,48],[924,0]]};
+const DRAWER_W = 940, DRAWER_AREA = [[940, 520], [640, 530], [330, 512], [0, 524]];
+const CHOSEN_AREAS = {"drawer":DRAWER_AREA,"corner":[[644,0],[552,56],[460,79],[364,154],[163,159],[77,191],[0,181]],"side":[[952,800],[942,728],[950,660],[955,565],[948,506],[936,339],[942,200],[933,165],[932,96],[920,48],[924,0]]};
 let AREAS = JSON.parse(JSON.stringify(CHOSEN_AREAS));
 const LEAN = 24, SIDE_LEAN = 40;
 function defaultAreas() {
@@ -474,12 +485,15 @@ function defaultAreas() {
   return { corner, side: [[SIDE_CORE, 800], [SIDE_CORE - SIDE_LEAN, 0]] };
 }
 // The polyline carried off the screen at both ends, and the black area it bounds.
-function extended(name) {
-  const a = AREAS[name], f = a[0], l = a[a.length - 1];
+// (The drawer's from its right end to its left, the drawer above.)
+function extended(name, a = AREAS[name]) {
+  const f = a[0], l = a[a.length - 1];
+  if (name === "drawer") return [[f[0] + 30, f[1]], ...a, [-30, l[1]]];
   return name === "corner" ? [[f[0], -30], ...a, [-30, l[1]]] : [[f[0], 830], ...a, [l[0], -30]];
 }
-function blackArea(name) {
-  return name === "corner" ? [...extended(name), [-30, -30]] : [...extended(name), [1300, -30], [1300, 830]];
+function blackArea(name, a = AREAS[name]) {
+  if (name === "drawer") return [...extended(name, a), [-30, -30], [a[0][0] + 30, -30]];
+  return name === "corner" ? [...extended(name, a), [-30, -30]] : [...extended(name, a), [1300, -30], [1300, 830]];
 }
 // A polyline moved `d` to the left of the way along it (out of the black), mitred.
 function offsetPoly(pts, d) {
@@ -537,10 +551,10 @@ function caveLine(line, P, rnd) {
 }
 
 // Keeping a point in its band: out of the black area, and no further than the band.
-function keepInBand(name, P, x, y) {
+function keepInBand(name, P, x, y, a = AREAS[name]) {
   if (offscreen(x, y)) return [x, y];
-  const near = nearestOn(extended(name), x, y);
-  if (insidePoly(blackArea(name), x, y)) return [near.x, near.y];
+  const near = nearestOn(extended(name, a), x, y);
+  if (insidePoly(blackArea(name, a), x, y)) return [near.x, near.y];
   if (near.d > P.band) { const k = P.band / near.d; return [near.x + (x - near.x) * k, near.y + (y - near.y) * k]; }
   return [x, y];
 }
@@ -560,8 +574,15 @@ function drawPlates(c) {
   g.fillStyle = "#000";
   AREAS ??= defaultAreas();
   const shapes = (lastShapes = plateShapes());
-  for (const [name, pts] of Object.entries(shapes)) {
-    const P = GEN[name], rnd = mulberry(P.seed * 31 + 7);
+  for (const [name, pts] of Object.entries(shapes)) tornFill(g, name, GEN[name], pts);
+  if ($("gen-showspace")?.checked && state.open !== "m") showAreas(g, ["corner", "side"]);
+  writeOut();
+}
+
+// An outline filled, torn round every 3px (none off the screen), kept in its band.
+function tornFill(g, name, P, pts, a = AREAS[name]) {
+  {
+    const rnd = mulberry(P.seed * 31 + 7);
     const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
     const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
     const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
@@ -575,7 +596,7 @@ function drawPlates(c) {
       for (let d = 0; d < L; d += 3, t += 3) {
         const x = ax + tx * d, y = ay + ty * d, on = !offscreen(x, y);
         const k = on ? P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4) : 0;
-        const [px, py] = keepInBand(name, P, x - ty * k, y + tx * k);
+        const [px, py] = keepInBand(name, P, x - ty * k, y + tx * k, a);
         g[first ? "moveTo" : "lineTo"](px, py);
         first = false;
       }
@@ -583,12 +604,14 @@ function drawPlates(c) {
     g.closePath();
     g.fill();
   }
-  // The black areas' edges (dashed, with their points to drag) and the bands' outer edges (dotted).
-  if ($("gen-showspace")?.checked) {
+}
+// The black areas' edges (dashed, with their points to drag) and the bands' outer edges (dotted).
+function showAreas(g, names) {
+  {
     const path = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => g[i ? "lineTo" : "moveTo"](x, y)); g.stroke(); };
     g.save();
     g.lineWidth = 1;
-    for (const name of ["corner", "side"]) {
+    for (const name of names) {
       g.strokeStyle = "rgba(221, 214, 198, 0.4)";
       g.setLineDash([2, 4]);
       path(offsetPoly(extended(name), GEN[name].band));
@@ -604,54 +627,44 @@ function drawPlates(c) {
     }
     g.restore();
   }
-  writeOut();
 }
 
-// The drawer's foot: torn as the plates are, in a band under the drawer (as the corner's edge).
-function drawerFoot(c) {
-  const W = c.parentElement.offsetWidth, H = 70, P = { ...GEN.corner, seed: GEN.corner.seed + 101 }, B = P.band;
-  c.width = W * 2; c.height = H * 2;
-  const g = c.getContext("2d");
-  g.setTransform(2, 0, 0, 2, 0, 0);
-  g.fillStyle = "#000";
-  // The way along: right to left, the drawer above (on its right); points moved about in the band.
-  const pts = caveLine([[W + 30, B / 2], [-30, B / 2]], P, mulberry(P.seed * 7919 + 13));
-  const rnd = mulberry(P.seed * 31 + 7);
-  const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
-  const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
-  const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
-  g.beginPath();
-  let t = 0, first = true;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, ay] = pts[i], [bx, by] = pts[i + 1], L = Math.hypot(bx - ax, by - ay);
-    if (L < 0.01) continue;
-    const tx = (bx - ax) / L, ty = (by - ay) / L;
-    for (let d = 0; d < L; d += 3, t += 3) {
-      const x = ax + tx * d, y = ay + ty * d, k = P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4);
-      g[first ? "moveTo" : "lineTo"](x - ty * k, Math.max(0, Math.min(B, y + tx * k)));
-      first = false;
-    }
+// The drawer: a dark grey sheet, its foot an edited polyline, torn in its band as the plates are.
+// (On the phone the same polyline, scaled to the phone's drawer.)
+const DRAWER_GREY = "#1e1c1a";
+function drawDrawers() {
+  for (const id of ["desk", "phone"]) {
+    const c = $(id).querySelector(".drawer .dback");
+    if (!c) continue;
+    const phone = id === "phone", W = c.parentElement.offsetWidth, sx = W / DRAWER_W, sy = phone ? 470 / 520 : 1;
+    const a = AREAS.drawer.map(([x, y]) => [x * sx, y * sy]), P = GEN.drawer;
+    c.width = W * 2; c.height = 1600;
+    const g = c.getContext("2d");
+    g.setTransform(2, 0, 0, 2, 0, 0);
+    g.fillStyle = DRAWER_GREY;
+    const pts = caveLine(offsetPoly(extended("drawer", a), P.band / 2), P, mulberry(P.seed * 7919 + 13));
+    tornFill(g, "drawer", P, [...pts, [-30, -30], [W + 30, -30]], a);
+    if (!phone && $("gen-showspace")?.checked && state.open === "m") showAreas(g, ["drawer"]);
   }
-  g.lineTo(-30, -1); g.lineTo(W + 30, -1);
-  g.closePath();
-  g.fill();
 }
 
 // ---- The generator's controls ----
 function genControls() {
-  for (const name of ["corner", "side"]) {
+  for (const name of ["corner", "side", "drawer"]) {
     const P = GEN[name], box = $(`gen-${name}`);
-    box.innerHTML = `<h3>${name === "corner" ? "The corner" : "The sidebar's edge"}
+    box.innerHTML = `<h3>${{ corner: "The corner", side: "The sidebar's edge", drawer: "The drawer's edge" }[name]}
         <button type="button" class="main" id="new-${name}">New shape</button>
         <label>seed <input type="number" id="seed-${name}" value="${P.seed}"></label></h3>
       ${PARAMS[name].map(([k, label, min, max, step, unit]) => `<label class="sl"><span>${label}</span><input type="range" id="${name}-${k}" min="${min}" max="${max}" step="${step}" value="${P[k]}"><output id="${name}-${k}-v">${P[k]}${unit}</output></label>`).join("")}`;
-    $(`new-${name}`).addEventListener("click", () => { P.seed = Math.floor(Math.random() * 1e6); $(`seed-${name}`).value = P.seed; render(); });
-    $(`seed-${name}`).addEventListener("input", (e) => { P.seed = +e.target.value || 0; render(); });
-    for (const [k, , , , , unit] of PARAMS[name]) $(`${name}-${k}`).addEventListener("input", (e) => { P[k] = +e.target.value; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; render(); });
+    // (Touching the drawer's controls opens the drawer, to see it.)
+    const show = () => { if (name === "drawer") state.open = "m"; else if (state.open === "m") state.open = "none"; };
+    $(`new-${name}`).addEventListener("click", () => { show(); P.seed = Math.floor(Math.random() * 1e6); $(`seed-${name}`).value = P.seed; render(); });
+    $(`seed-${name}`).addEventListener("input", (e) => { show(); P.seed = +e.target.value || 0; render(); });
+    for (const [k, , , , , unit] of PARAMS[name]) $(`${name}-${k}`).addEventListener("input", (e) => { show(); P[k] = +e.target.value; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; render(); });
   }
 }
 function genSync() {
-  for (const name of ["corner", "side"]) {
+  for (const name of ["corner", "side", "drawer"]) {
     const P = GEN[name];
     $(`seed-${name}`).value = P.seed;
     for (const [k, , , , , unit] of PARAMS[name]) { $(`${name}-${k}`).value = P[k]; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; }
@@ -661,7 +674,7 @@ function genSync() {
 function writeOut() {
   if (!lastShapes) return;
   const pts = (a) => a.map(([x, y]) => [Math.round(x), Math.round(y)]);
-  $("gen-out").value = JSON.stringify({ plates: GEN, areas: { corner: pts(AREAS.corner), side: pts(AREAS.side) }, outline: { corner: pts(lastShapes.corner), side: pts(lastShapes.side) } });
+  $("gen-out").value = JSON.stringify({ plates: GEN, areas: { corner: pts(AREAS.corner), side: pts(AREAS.side), drawer: pts(AREAS.drawer) }, outline: { corner: pts(lastShapes.corner), side: pts(lastShapes.side) } });
 }
 const SAVE_KEY = "versal-plates";
 const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "[]"); } catch { return []; } };
@@ -670,15 +683,15 @@ function showSaved() {
   $("gen-saved").innerHTML = list.length ? list.map((p, i) => `<button type="button" data-saved="${i}">Saved ${i + 1}</button>`).join("") : "";
   for (const b of $("gen-saved").querySelectorAll("[data-saved]")) b.addEventListener("click", () => {
     const p = loadSaved()[+b.dataset.saved], gen = p.gen ?? p;
-    Object.assign(GEN.corner, gen.corner); Object.assign(GEN.side, gen.side);
-    if (p.areas) AREAS = JSON.parse(JSON.stringify(p.areas));
+    Object.assign(GEN.corner, gen.corner); Object.assign(GEN.side, gen.side); if (gen.drawer) Object.assign(GEN.drawer, gen.drawer);
+    if (p.areas) AREAS = { ...AREAS, ...JSON.parse(JSON.stringify(p.areas)) };
     genSync(); render();
   });
 }
 genControls();
 $("gen-showspace").addEventListener("input", render);
 $("gen-sample").addEventListener("input", render);
-$("gen-both").addEventListener("click", () => { GEN.corner.seed = Math.floor(Math.random() * 1e6); GEN.side.seed = Math.floor(Math.random() * 1e6); genSync(); render(); });
+$("gen-both").addEventListener("click", () => { for (const n of ["corner", "side", "drawer"]) GEN[n].seed = Math.floor(Math.random() * 1e6); genSync(); render(); });
 $("gen-copy").addEventListener("click", () => {
   const text = $("gen-out").value;
   const done = () => { $("gen-msg").textContent = "Copied. Paste it to Claude."; };
@@ -693,19 +706,20 @@ $("gen-save").addEventListener("click", () => {
   showSaved();
 });
 showSaved();
-$("gen-reset").addEventListener("click", () => { AREAS = defaultAreas(); redrawPlates(); });
+$("gen-reset").addEventListener("click", () => { AREAS = JSON.parse(JSON.stringify(CHOSEN_AREAS)); redrawPlates(); });
 
 // Editing the black areas' edges with the mouse, on the desktop screen: drag a point (the end
 // points slide along the screen's edge); double-click the line to add a point, a point to take
 // it away.
-function redrawPlates() { const c = $("desk").querySelector(".plates"); if (c) drawPlates(c); }
+function redrawPlates() { const c = $("desk").querySelector(".plates"); if (c) drawPlates(c); drawDrawers(); }
+const editable = () => (state.open === "m" ? ["drawer", "side"] : ["corner", "side"]);
 function screenAt(e) {
   const r = $("desk").getBoundingClientRect();
   return [((e.clientX - r.left) * 1280) / r.width, ((e.clientY - r.top) * 800) / r.height];
 }
 function handleAt(x, y) {
   let best = null;
-  for (const name of ["corner", "side"]) AREAS[name].forEach(([px, py], i) => {
+  for (const name of editable()) AREAS[name].forEach(([px, py], i) => {
     const d = Math.hypot(px - x, py - y);
     if (d < 16 && (!best || d < best.d)) best = { name, i, d };
   });
@@ -726,6 +740,7 @@ $("desk").addEventListener("pointermove", (e) => {
   const a = AREAS[drag.name], last = drag.i === a.length - 1;
   let x = Math.max(0, Math.min(1280, x0)), y = Math.max(0, Math.min(800, y0));
   if (drag.name === "corner") { if (drag.i === 0) y = 0; if (last) x = 0; }
+  else if (drag.name === "drawer") { x = Math.min(DRAWER_W, x); if (drag.i === 0) x = DRAWER_W; if (last) x = 0; }
   else { if (drag.i === 0) y = 800; if (last) y = 0; }
   a[drag.i] = [x, y];
   $("desk").style.cursor = "grabbing";
@@ -741,7 +756,7 @@ $("desk").addEventListener("dblclick", (e) => {
     if (h.i > 0 && h.i < AREAS[h.name].length - 1) AREAS[h.name].splice(h.i, 1);
   } else {
     let best = null;
-    for (const name of ["corner", "side"]) { const n = nearestOn(AREAS[name], x, y); if (n && n.d < 14 && (!best || n.d < best.d)) best = { ...n, name }; }
+    for (const name of editable()) { const n = nearestOn(AREAS[name], x, y); if (n && n.d < 14 && (!best || n.d < best.d)) best = { ...n, name }; }
     if (best) AREAS[best.name].splice(best.i + 1, 0, [best.x, best.y]);
   }
   redrawPlates();
