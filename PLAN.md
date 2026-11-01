@@ -65,7 +65,7 @@ Decided with the player of the game; open questions at the end.
 | Rat | `r` | brown |
 | Bat | `b` | dark grey |
 | Skeleton | `z` | white (edged in ink) |
-| Zombie | `X` | sickly green |
+| Zombie | `z` | sickly green (told from the white skeleton by colour) |
 | Cultist | `h` | red (h for human) |
 | Spider | `s` | black |
 | Giant spider | `S` | black |
