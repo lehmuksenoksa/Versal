@@ -46,7 +46,7 @@ export const EXPRESSION_DEFAULTS = {
   // markings, walls and hatching; the hatching beyond sight is inked from a
   // weaker depth map.
   seeMarkC: "#1b1815", seeMark: 1, seeWallC: "#1b1815", seeWall: 1, seeHatchC: "#1b1815", seeHatch: 1,
-  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#6b5f52", memWall: 0.75, memHatchC: "#6b5f52", memHatch: 0.75,
+  memWeight: 0.35, memMarkC: "#8a7f72", memMark: 0, memWallC: "#1b1815", memWall: 0.75, memHatchC: "#1b1815", memHatch: 0.75,
   // The depth map: how it is made, black up to `full` tiles from the known
   // walls and white from `reach`, its ragged edge, and (for some ways of
   // making it) how openings soften it.
