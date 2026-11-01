@@ -57,7 +57,7 @@
 <div class="scroll"><div class="strips" id="strips"></div></div>
 
 <script>
-const INK = "#1b1815", PAPER = "#f7f2e6", DARK = [59, 57, 54], PAPER_RGB = [247, 242, 230];
+const INK = "#1b1815", PAPER = "#f7f2e6", GOLD = "#c9962b", DARK = [59, 57, 54], PAPER_RGB = [247, 242, 230];
 // (The outline, paper or ink, 0.26 of the letter; the game's halo now 0.1.)
 const FONT = "Texturina, Georgia, serif", HALO = 0.1, BOLD = 0.025, EDGE = 0.26;
 const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -69,7 +69,7 @@ const LETTERS = [
   { name: "You", note: "red @", ch: "@", ink: "#a3261b", weight: 800, size: 0.9, player: true, outline: "paper" },
   { name: "Goblin", note: "black g (now)", ch: "g", ink: INK, outline: "paper" },
   { name: "Goblin warrior", note: "black g, bigger", ch: "g", ink: INK, size: 1.4, outline: "paper" },
-  { name: "Goblin king", note: "black G, big, crowned", ch: "G", ink: INK, size: 1.35, crown: true, outline: "paper" },
+  { name: "Goblin king", note: "black G, big, gold crown", ch: "G", ink: INK, size: 1.35, crown: true, outline: "paper" },
   { name: "Rat", note: "brown r", ch: "r", ink: "#7a4a22", outline: "paper" },
   { name: "Bat", note: "dark grey b", ch: "b", ink: "#57524c", outline: "paper" },
   { name: "Skeleton", note: "white z (now)", ch: "z", ink: PAPER, outline: "ink" },
@@ -140,7 +140,7 @@ function letter(g, L, x, y, TS, light) {
   g.fillStyle = L.player && light.lit < 0.7 ? "#741a12" : L.ink;
   g.fillText(L.ch, 0, 0);
   if (L.crown) {
-    // A crown sitting on the G: a band and three points, in ink, haloed.
+    // A crown sitting on the G: a band and three points, gold, lined in ink, haloed.
     const cw = size * 0.5, ch = size * 0.24, top = -asc - size * 0.06;
     g.beginPath();
     g.moveTo(-cw / 2, top);
@@ -154,8 +154,11 @@ function letter(g, L, x, y, TS, light) {
     g.lineWidth = size * EDGE * 0.6;
     g.strokeStyle = inked ? INK : `rgba(247, 242, 230, ${0.9 * light.lit})`;
     g.stroke();
-    g.fillStyle = L.ink;
+    g.fillStyle = GOLD;
     g.fill();
+    g.lineWidth = Math.max(1, size * 0.035);
+    g.strokeStyle = INK;
+    g.stroke();
   }
   g.restore();
 }
