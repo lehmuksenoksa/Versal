@@ -436,7 +436,7 @@ const GEN = {
   // (The shapes chosen, saved in mockups/ledger/plates.json.)
   corner: { seed: 81016, band: 33, chars: 42, skew: 24, step: 30, jitter: 0.9, cut: 0.55, tear: 1.4 },
   side: { seed: 273917, band: 34, skew: 40, step: 89, jitter: 1, cut: 0.55, tear: 1.55 },
-  drawer: { seed: 81117, band: 33, step: 30, jitter: 0.9, cut: 0.55, tear: 1.4 },
+  drawer: { seed: 635060, band: 33, step: 30, jitter: 0.9, cut: 0.55, tear: 1.4 },
 };
 const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const offscreen = (x, y) => x < 0 || y < 0 || x > 1280 || y > 800;
@@ -469,7 +469,7 @@ function keptSpace() {
 // the screen round to its left edge (the black area on the right of the way along, towards the
 // top left corner); the sidebar's from the bottom of the screen to the top (the black on the
 // right, towards the right edge). Made at first from the boxes kept for the text, leaning.
-const DRAWER_W = 940, DRAWER_AREA = [[940, 520], [640, 530], [330, 512], [0, 524]];
+const DRAWER_W = 940, DRAWER_AREA = [[940, 509], [796, 503], [573, 517], [463, 522], [150, 544], [0, 547]];
 const CHOSEN_AREAS = {"drawer":DRAWER_AREA,"corner":[[644,0],[552,56],[460,79],[364,154],[163,159],[77,191],[0,181]],"side":[[952,800],[942,728],[950,660],[955,565],[948,506],[936,339],[942,200],[933,165],[932,96],[920,48],[924,0]]};
 let AREAS = JSON.parse(JSON.stringify(CHOSEN_AREAS));
 const LEAN = 24, SIDE_LEAN = 40;
