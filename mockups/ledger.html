@@ -235,14 +235,14 @@
 <section class="gen" aria-labelledby="gen-title">
   <h2 id="gen-title">The torn plates</h2>
   <div class="genrow">
-    <label><input type="checkbox" id="gen-showspace" checked> Show the black areas and their bands</label>
+    <label><input type="checkbox" id="gen-showspace" checked> Show and edit the black areas</label>
     <label>Messages <select id="gen-sample"><option value="short">as now</option><option value="long">long, to test the space</option></select></label>
   </div>
   <div class="gencols">
     <div id="gen-corner"></div>
     <div id="gen-side"></div>
   </div>
-  <div class="genrow"><button type="button" class="main" id="gen-both">New shapes for both</button><button type="button" id="gen-copy">Copy</button><button type="button" id="gen-save">Save</button><span class="msg" id="gen-msg" role="status"></span></div>
+  <div class="genrow"><button type="button" class="main" id="gen-both">New shapes for both</button><button type="button" id="gen-copy">Copy</button><button type="button" id="gen-save">Save</button><button type="button" id="gen-reset">Reset the black areas</button><span class="msg" id="gen-msg" role="status"></span></div>
   <textarea id="gen-out" readonly aria-label="The shapes, as text to copy"></textarea>
   <div class="saved" id="gen-saved"></div>
 </section>
@@ -406,7 +406,6 @@ const PARAMS = {
   corner: [
     ["band", "Band", 10, 140, 1, "px"],
     ["chars", "Message width", 24, 64, 1, " ch"],
-    ["skew", "Sides' lean", 0, 80, 1, "px"],
     ["step", "Point spacing", 8, 120, 1, "px"],
     ["jitter", "Wander in the band", 0, 1, 0.01, ""],
     ["cut", "Corners cut", 0, 0.7, 0.01, ""],
@@ -414,7 +413,6 @@ const PARAMS = {
   ],
   side: [
     ["band", "Band", 10, 100, 1, "px"],
-    ["skew", "Wider at the top", 0, 120, 1, "px"],
     ["step", "Point spacing", 8, 160, 1, "px"],
     ["jitter", "Wander in the band", 0, 1, 0.01, ""],
     ["cut", "Corners cut", 0, 0.7, 0.01, ""],
@@ -452,23 +450,63 @@ function keptSpace() {
   return { rects: [r1, r2, r3], w: Math.max(r1[2], r2[2], r3[2]), h: r3[3], lh, msgPx };
 }
 
-// A box's right side, leaning: further out at its top by the corner's lean.
-const rightAt = (r, y) => r[2] + GEN.corner.skew * (r[3] - y) / (r[3] - r[1]);
-// The line round the boxes `d` out from them, from off the top round to off the left.
-function stepsLine(rects, d) {
-  const pts = [];
-  let y = -30;
-  rects.forEach((r, i) => {
-    const next = rects[i + 1];
-    const y2 = next ? (next[2] < r[2] ? r[3] + d : r[3] - d) : r[3] + d;
-    pts.push([rightAt(r, y) + d, y], [rightAt(r, y2) + d, y2]);
-    y = y2;
+// The black areas' edges, as polylines edited with the mouse: the corner's from the top edge of
+// the screen round to its left edge (the black area on the right of the way along, towards the
+// top left corner); the sidebar's from the bottom of the screen to the top (the black on the
+// right, towards the right edge). Made at first from the boxes kept for the text, leaning.
+let AREAS = null;
+const LEAN = 24, SIDE_LEAN = 40;
+function defaultAreas() {
+  const rightAt = (r, y) => r[2] + LEAN * (r[3] - y) / (r[3] - r[1]);
+  const R = SPACE.rects, corner = [[rightAt(R[0], 0), 0]];
+  R.forEach((r, i) => {
+    const next = R[i + 1];
+    corner.push([rightAt(r, r[3]), r[3]]);
+    if (next) corner.push([rightAt(next, r[3]), r[3]]);
   });
-  pts.push([-30, y]);
-  return pts;
+  corner.push([0, R[R.length - 1][3]]);
+  return { corner, side: [[SIDE_CORE, 800], [SIDE_CORE - SIDE_LEAN, 0]] };
 }
-// The sidebar's black area starts at this x, at height y (wider at the top).
-const sideX = (P, y) => SIDE_CORE - P.skew * (1 - y / 800);
+// The polyline carried off the screen at both ends, and the black area it bounds.
+function extended(name) {
+  const a = AREAS[name], f = a[0], l = a[a.length - 1];
+  return name === "corner" ? [[f[0], -30], ...a, [-30, l[1]]] : [[f[0], 830], ...a, [l[0], -30]];
+}
+function blackArea(name) {
+  return name === "corner" ? [...extended(name), [-30, -30]] : [...extended(name), [1300, -30], [1300, 830]];
+}
+// A polyline moved `d` to the left of the way along it (out of the black), mitred.
+function offsetPoly(pts, d) {
+  const n = pts.map((p, i) => {
+    const q = pts[Math.min(i + 1, pts.length - 1)], o = pts[Math.max(i - 1, 0)];
+    const seg = (a, b) => { const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[1] - a[1]) / L, -(b[0] - a[0]) / L]; };
+    const n1 = i > 0 ? seg(o, p) : seg(p, q), n2 = i < pts.length - 1 ? seg(p, q) : n1;
+    let mx = n1[0] + n2[0], my = n1[1] + n2[1];
+    const L = Math.hypot(mx, my) || 1; mx /= L; my /= L;
+    const k = Math.min(3, 1 / Math.max(0.33, mx * n2[0] + my * n2[1]));
+    return [p[0] + mx * d * k, p[1] + my * d * k];
+  });
+  return n;
+}
+const insidePoly = (poly, x, y) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+// The nearest point on a polyline, and how far, and which piece.
+function nearestOn(pts, x, y) {
+  let best = null;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[i + 1], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)), px = ax + dx * t, py = ay + dy * t;
+    const d = Math.hypot(x - px, y - py);
+    if (!best || d < best.d) best = { x: px, y: py, d, i };
+  }
+  return best;
+}
 
 // Points along a line every `step` (give or take), each moved across the band (and a little
 // along), some dropped: the cave walls' way. Off the screen they stay put.
@@ -495,32 +533,16 @@ function caveLine(line, P, rnd) {
 // Keeping a point in its band: out of the black area, and no further than the band.
 function keepInBand(name, P, x, y) {
   if (offscreen(x, y)) return [x, y];
-  if (name === "side") { const s = sideX(P, y); return [Math.max(s - P.band, Math.min(s, x)), y]; }
-  const R = SPACE.rects, B = P.band;
-  for (let k = 0; k < 4; k++) {
-    const r = R.find((r) => x < rightAt(r, y) && y >= r[1] && y < r[3]);
-    if (!r) break;
-    if (rightAt(r, y) - x < r[3] - y) x = rightAt(r, y) + 0.01; else y = r[3] + 0.01;
-  }
-  const inside = R.some((r, i) => x < rightAt(r, y) + B && y >= (i ? r[1] - B : -1e9) && y < r[3] + B);
-  if (!inside) {
-    let best = null;
-    R.forEach((r, i) => {
-      const cy = Math.max(i ? r[1] - B : -1e9, Math.min(y, r[3] + B)), cx = Math.min(x, rightAt(r, cy) + B);
-      const dd = (cx - x) ** 2 + (cy - y) ** 2;
-      if (!best || dd < best[2]) best = [cx, cy, dd];
-    });
-    [x, y] = best;
-  }
+  const near = nearestOn(extended(name), x, y);
+  if (insidePoly(blackArea(name), x, y)) return [near.x, near.y];
+  if (near.d > P.band) { const k = P.band / near.d; return [near.x + (x - near.x) * k, near.y + (y - near.y) * k]; }
   return [x, y];
 }
 
 function plateShapes() {
   const C = GEN.corner, S = GEN.side;
-  const corner = caveLine(stepsLine(SPACE.rects, C.band / 2), C, mulberry(C.seed * 7919 + 13));
-  // (One straight, leaning line down the middle of the band: the points go along it.)
-  const mid = [[sideX(S, 830) - S.band / 2, 830], [sideX(S, -30) - S.band / 2, -30]];
-  const side = caveLine(mid, S, mulberry(S.seed * 7919 + 29));
+  const corner = caveLine(offsetPoly(extended("corner"), C.band / 2), C, mulberry(C.seed * 7919 + 13));
+  const side = caveLine(offsetPoly(extended("side"), S.band / 2), S, mulberry(S.seed * 7919 + 29));
   return { corner: [...corner, [-30, -30]], side: [...side, [1300, -30], [1300, 830]] };
 }
 
@@ -530,6 +552,7 @@ function drawPlates(c) {
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.clearRect(0, 0, 1280, 800);
   g.fillStyle = "#000";
+  AREAS ??= defaultAreas();
   const shapes = (lastShapes = plateShapes());
   for (const [name, pts] of Object.entries(shapes)) {
     const P = GEN[name], rnd = mulberry(P.seed * 31 + 7);
@@ -554,20 +577,25 @@ function drawPlates(c) {
     g.closePath();
     g.fill();
   }
-  // The black areas (dashed) and the bands' outer edges (dotted).
+  // The black areas' edges (dashed, with their points to drag) and the bands' outer edges (dotted).
   if ($("gen-showspace")?.checked) {
-    const C = GEN.corner, S = GEN.side;
     const path = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => g[i ? "lineTo" : "moveTo"](x, y)); g.stroke(); };
     g.save();
     g.lineWidth = 1;
-    g.strokeStyle = "rgba(221, 214, 198, 0.6)";
-    g.setLineDash([6, 5]);
-    path(stepsLine(SPACE.rects, 0));
-    path([[sideX(S, 0), 0], [sideX(S, 800), 800]]);
-    g.strokeStyle = "rgba(221, 214, 198, 0.4)";
-    g.setLineDash([2, 4]);
-    path(stepsLine(SPACE.rects, C.band));
-    path([[sideX(S, 0) - S.band, 0], [sideX(S, 800) - S.band, 800]]);
+    for (const name of ["corner", "side"]) {
+      g.strokeStyle = "rgba(221, 214, 198, 0.4)";
+      g.setLineDash([2, 4]);
+      path(offsetPoly(extended(name), GEN[name].band));
+      g.strokeStyle = "rgba(221, 214, 198, 0.75)";
+      g.setLineDash([6, 5]);
+      path(AREAS[name]);
+      g.setLineDash([]);
+      for (const [x, y] of AREAS[name]) {
+        g.beginPath(); g.arc(x, y, 6, 0, 6.29);
+        g.fillStyle = "#f7f2e6"; g.fill();
+        g.strokeStyle = "#8c2b1c"; g.lineWidth = 2; g.stroke(); g.lineWidth = 1;
+      }
+    }
     g.restore();
   }
   writeOut();
@@ -597,16 +625,17 @@ function genSync() {
 function writeOut() {
   if (!lastShapes) return;
   const pts = (a) => a.map(([x, y]) => [Math.round(x), Math.round(y)]);
-  $("gen-out").value = JSON.stringify({ plates: GEN, outline: { corner: pts(lastShapes.corner), side: pts(lastShapes.side) } });
+  $("gen-out").value = JSON.stringify({ plates: GEN, areas: { corner: pts(AREAS.corner), side: pts(AREAS.side) }, outline: { corner: pts(lastShapes.corner), side: pts(lastShapes.side) } });
 }
 const SAVE_KEY = "versal-plates";
 const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "[]"); } catch { return []; } };
 function showSaved() {
   const list = loadSaved();
-  $("gen-saved").innerHTML = list.length ? list.map((p, i) => `<button type="button" data-saved="${i}">Saved ${i + 1}: ${p.corner.seed} / ${p.side.seed}</button>`).join("") : "";
+  $("gen-saved").innerHTML = list.length ? list.map((p, i) => `<button type="button" data-saved="${i}">Saved ${i + 1}</button>`).join("") : "";
   for (const b of $("gen-saved").querySelectorAll("[data-saved]")) b.addEventListener("click", () => {
-    const p = loadSaved()[+b.dataset.saved];
-    Object.assign(GEN.corner, p.corner); Object.assign(GEN.side, p.side);
+    const p = loadSaved()[+b.dataset.saved], gen = p.gen ?? p;
+    Object.assign(GEN.corner, gen.corner); Object.assign(GEN.side, gen.side);
+    if (p.areas) AREAS = JSON.parse(JSON.stringify(p.areas));
     genSync(); render();
   });
 }
@@ -623,11 +652,64 @@ $("gen-copy").addEventListener("click", () => {
 });
 $("gen-save").addEventListener("click", () => {
   const list = loadSaved();
-  list.push(JSON.parse(JSON.stringify(GEN)));
+  list.push(JSON.parse(JSON.stringify({ gen: GEN, areas: AREAS })));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(list)); $("gen-msg").textContent = "Saved on this page, in this browser."; } catch { $("gen-msg").textContent = "This browser won't keep it: copy the text instead."; }
   showSaved();
 });
 showSaved();
+$("gen-reset").addEventListener("click", () => { AREAS = defaultAreas(); redrawPlates(); });
+
+// Editing the black areas' edges with the mouse, on the desktop screen: drag a point (the end
+// points slide along the screen's edge); double-click the line to add a point, a point to take
+// it away.
+function redrawPlates() { const c = $("desk").querySelector(".plates"); if (c) drawPlates(c); }
+function screenAt(e) {
+  const r = $("desk").getBoundingClientRect();
+  return [((e.clientX - r.left) * 1280) / r.width, ((e.clientY - r.top) * 800) / r.height];
+}
+function handleAt(x, y) {
+  let best = null;
+  for (const name of ["corner", "side"]) AREAS[name].forEach(([px, py], i) => {
+    const d = Math.hypot(px - x, py - y);
+    if (d < 16 && (!best || d < best.d)) best = { name, i, d };
+  });
+  return best;
+}
+let drag = null;
+$("desk").addEventListener("pointerdown", (e) => {
+  if (!$("gen-showspace").checked || !AREAS) return;
+  const h = handleAt(...screenAt(e));
+  if (!h) return;
+  drag = h;
+  $("desk").setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+$("desk").addEventListener("pointermove", (e) => {
+  const [x0, y0] = screenAt(e);
+  if (!drag) { if ($("gen-showspace").checked && AREAS) $("desk").style.cursor = handleAt(x0, y0) ? "grab" : ""; return; }
+  const a = AREAS[drag.name], last = drag.i === a.length - 1;
+  let x = Math.max(0, Math.min(1280, x0)), y = Math.max(0, Math.min(800, y0));
+  if (drag.name === "corner") { if (drag.i === 0) y = 0; if (last) x = 0; }
+  else { if (drag.i === 0) y = 800; if (last) y = 0; }
+  a[drag.i] = [x, y];
+  $("desk").style.cursor = "grabbing";
+  redrawPlates();
+});
+const endDrag = () => { drag = null; $("desk").style.cursor = ""; };
+$("desk").addEventListener("pointerup", endDrag);
+$("desk").addEventListener("pointercancel", endDrag);
+$("desk").addEventListener("dblclick", (e) => {
+  if (!$("gen-showspace").checked || !AREAS) return;
+  const [x, y] = screenAt(e), h = handleAt(x, y);
+  if (h) {
+    if (h.i > 0 && h.i < AREAS[h.name].length - 1) AREAS[h.name].splice(h.i, 1);
+  } else {
+    let best = null;
+    for (const name of ["corner", "side"]) { const n = nearestOn(AREAS[name], x, y); if (n && n.d < 14 && (!best || n.d < best.d)) best = { ...n, name }; }
+    if (best) AREAS[best.name].splice(best.i + 1, 0, [best.x, best.y]);
+  }
+  redrawPlates();
+});
 
 function open(k) {
   state.open = state.open === k || k === "none" ? "none" : k;
