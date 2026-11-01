@@ -483,7 +483,8 @@ function drawShadow(ctx, level, TS, floor, seed) {
   g.fill(solid, "evenodd");
   g.restore();
   const things = (mode) => {
-    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode);
+    // (No shadow for a campfire's teepee.)
+    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => f.type !== "campfire" : null);
     if (level.rubble) drawRubble(g, level, TS, new RNG(seed ^ 0x2bb1e), mode);
   };
   things("cast");
