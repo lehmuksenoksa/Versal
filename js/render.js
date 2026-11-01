@@ -51,10 +51,11 @@ const POSES = {
     const h = k < out ? Math.sin((Math.PI * k) / out) : 0, land = Math.exp(-(((k - out) / 0.06) ** 2));
     return { ox: dx * 0.22 * reach, oy: dy * 0.22 * reach - h * 0.12, sx: 1 + 0.2 * land - 0.04 * h, sy: 1 - 0.24 * land + 0.1 * h, rot: dx * 0.18 * reach, shadow: h };
   },
-  // Skeletons don't hop: they stand stiff, swaying in jerks, as if strung.
+  // Skeletons don't hop: they stand stiff, swaying now and then, slowly, in
+  // jerks, as if strung.
   sway(t, ph) {
-    const k = Math.round(Math.sin(t * 1.6 + ph) * 3) / 3;
-    return { rot: 0.07 * k, ox: 0.015 * k };
+    const k = Math.round(Math.sin(t * 0.7 + ph) * 2) / 2;
+    return { rot: 0.035 * k, ox: 0.008 * k };
   },
   // Dormant skeletons lie slumped and quite still.
   dormant(t, ph) {
@@ -375,12 +376,12 @@ export class Renderer {
         v.x = e.actor.x;
         v.y = e.actor.y;
         v.t0 = now;
-        v.dur = e.actor === this.world.player ? 120 : 150;
+        v.dur = e.actor === this.world.player ? 120 : e.actor.kind === "skeleton" ? 320 : 150;
         // A pack on the move is heard now and then (not every goblin, every
         // step).
         if (e.actor !== this.world.player) {
           const pack = e.actor.leader.id;
-          if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < 0.6) {
+          if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < (e.actor.kind === "skeleton" ? 0.2 : 0.6)) {
             this.packHeard.set(pack, now);
             this.hear(e.actor, "move", now);
           }
@@ -498,15 +499,17 @@ export class Renderer {
         v.nextSound = now + 1500 + Math.random() * (a.state === "neutral" ? 6000 : a.state === "sleeping" ? 3500 : 2500);
       }
       if (now < v.nextSound) continue;
+      // (Skeletons a good deal quieter.)
+      const quiet = a.kind === "skeleton" ? 3 : 1;
       if (a.state === "aggressive") {
         this.hear(a, "growl", now);
-        v.nextSound = now + 1300 + Math.random() * 2400;
+        v.nextSound = now + (1300 + Math.random() * 2400) * quiet;
       } else if (a.state === "sleeping") {
         this.hear(a, "snore", now);
-        v.nextSound = now + 2500 + Math.random() * 3000;
+        v.nextSound = now + (2500 + Math.random() * 3000) * quiet;
       } else {
         this.hear(a, "chatter", now);
-        v.nextSound = now + 5000 + Math.random() * 8000;
+        v.nextSound = now + (5000 + Math.random() * 8000) * quiet;
       }
     }
   }
@@ -822,7 +825,9 @@ export class Renderer {
     let idle = POSES.breathe(t);
     if (goblin && a.state === "aggressive") {
       const dx = pl.x - a.x, dy = pl.y - a.y, d = Math.hypot(dx, dy) || 1;
-      idle = POSES.lunge(t, v.phase / 6.28, dx / d, dy / d);
+      idle = POSES.lunge(bones ? t * 0.5 : t, v.phase / 6.28, dx / d, dy / d);
+      // (A skeleton's, half as far and half as quick.)
+      if (bones) idle = { ...idle, ox: idle.ox * 0.4, oy: idle.oy * 0.3, rot: idle.rot * 0.4, sx: 1 + (idle.sx - 1) * 0.3, sy: 1 + (idle.sy - 1) * 0.3, shadow: 0 };
     } else if (goblin && a.state === "sleeping") idle = bones ? POSES.dormant(t, v.phase / 6.28) : POSES.sleep(t, v.phase / 6.28);
     else if (bones) idle = POSES.sway(t, v.phase);
     else if (goblin) idle = POSES.hop(t, v.phase);
@@ -834,7 +839,7 @@ export class Renderer {
     p.sy = 1 + (p.sy - 1) * motion;
 
     // (Only the milling dart about.)
-    if (goblin && a.state === "neutral" && motion > 0.5) {
+    if (goblin && !bones && a.state === "neutral" && motion > 0.5) {
       const d = v.dart, [range, minT, maxT] = DART;
       if (now > d.next) {
         d.tx = (Math.random() - 0.5) * 2 * range;
@@ -861,7 +866,7 @@ export class Renderer {
     const k = clamp01((now - v.t0) / v.dur);
     const e = ease(k);
     const x = v.fx + (v.x - v.fx) * e, y = v.fy + (v.y - v.fy) * e;
-    if (k < 1) p.oy -= Math.sin(Math.PI * k) * (goblin && !bones ? 0.32 : 0.08) * motion;
+    if (k < 1) p.oy -= Math.sin(Math.PI * k) * (bones ? 0 : goblin ? 0.32 : 0.08) * motion;
     return { cx: (x + 0.5 + p.ox) * this.TS, cy: (y + 0.5 + p.oy) * this.TS, bx: (x + 0.5) * this.TS, baseY: (y + 0.5) * this.TS, p };
   }
 

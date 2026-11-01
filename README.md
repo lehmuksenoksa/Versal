@@ -13,8 +13,9 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   with pillars, niches, jail cells, beds, tables, shelves, crates and doors), cavern (misshapen caves
   with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).
 - The player (a red `@`), goblins (`g`) and skeletons (a white `z`, edged in ink) are letters set in
-  Texturina, with a hatched pen shadow. Skeletons behave as goblins do, but stand stiff, swaying in
-  jerks rather than hopping, and lie still when dormant.
+  Texturina, with a hatched pen shadow. Skeletons behave as goblins do but far less lively: slower,
+  alone or in pairs (but packs in crypts), standing stiff and swaying a little now and then rather
+  than hopping, lying still when dormant, and seldom heard.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
   Some packs sleep (slumped, breathing slowly); a pack that sees the player close by turns
   aggressive: it chases them (a little slower than they move), attacks when next to them (no damage

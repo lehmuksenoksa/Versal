@@ -18,13 +18,17 @@ import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline } from "./sightline.js";
 
-// The kinds of monster: their letters.
-export const MONSTERS = { goblin: { glyph: "g" }, skeleton: { glyph: "z" } };
+// The kinds of monster: their letters; their speed (moves for each of the
+// player's); how much they wander when milling about (the goblins' 1); and
+// how many to a pack (in a crypt, `crypt`).
+export const MONSTERS = {
+  goblin: { glyph: "g", speed: 0.75, wander: 1, pack: [4, 7] },
+  // (Skeletons slow and still, alone or in pairs but in crypts.)
+  skeleton: { glyph: "z", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7] },
+};
 
 // How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
-  // Moves a goblin makes for each of the player's.
-  speed: 0.75,
   // Hits it takes.
   hp: [1, 2],
   // How far (in squares) a goblin notices the player, lamp lit and out; and
@@ -78,7 +82,10 @@ export class World {
     // A pack round every campfire, awake; and in about a third of the rooms.
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
     const packs = Math.max(Math.round(level.rooms.length / 3), rooms.filter((r) => r.campfire).length);
-    for (const room of rooms.slice(0, packs)) this.spawnPack(room, this.rng.int(4, 7), room.campfire ? "neutral" : null, room.cave ? "goblin" : "skeleton");
+    for (const room of rooms.slice(0, packs)) {
+      const kind = room.cave ? "goblin" : "skeleton", M = MONSTERS[kind];
+      this.spawnPack(room, this.rng.int(...(room.kind === "crypt" && M.crypt ? M.crypt : M.pack)), room.campfire ? "neutral" : null, kind);
+    }
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
     // What has a line of sight to the player (for goblins noticing them,
@@ -254,7 +261,7 @@ export class World {
     this.chaseMap = null;
     for (const g of [...this.actors]) {
       if (g === this.player) continue;
-      g.energy += GOBLIN.speed;
+      g.energy += MONSTERS[g.kind].speed;
       if (g.energy < 1) continue;
       g.energy -= 1;
       if (g.state === "aggressive") this.chase(g);
@@ -348,14 +355,14 @@ export class World {
 
   // Leaders wander; the rest of the pack stays within two steps of them.
   mill(g) {
-    const L = g.leader;
+    const L = g.leader, k = MONSTERS[g.kind].wander;
     if (L === g) {
-      if (this.rng.chance(0.4)) this.randomStep(g);
+      if (this.rng.chance(0.4 * k)) this.randomStep(g);
       return;
     }
     const near = (x, y) => Math.max(Math.abs(x - L.x), Math.abs(y - L.y)) <= 2;
     if (!near(g.x, g.y)) return this.stepToward(g, L.x, L.y);
-    if (this.rng.chance(0.6)) this.randomStep(g, near);
+    if (this.rng.chance(0.6 * k)) this.randomStep(g, near);
   }
 
   randomStep(a, ok = () => true) {
