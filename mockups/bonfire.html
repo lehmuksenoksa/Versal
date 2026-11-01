@@ -45,11 +45,11 @@
 <body>
 <header>
   <h1>Bonfire sticks</h1>
-  <p>The game's flame (G1) over a teepee of solid logs, in place of the ring of stones; the flame can be turned off to see the logs alone. Each card shows it at game size (the default zoom) and close up, lit by its own light in the game's bands. S2 is the stones as they are now, for comparison.</p>
+  <p>The game's flame (G1) over a teepee of three solid logs, in place of the ring of stones, standing 0.10 below the middle at 1.15 times its size; the flame can be turned off to see the logs alone. Each card shows it at game size (the default zoom) and close up, lit by its own light in the game's bands. S2 is the stones as they are now, for comparison.</p>
   <div class="bar">
-    <label><input id="flame" type="checkbox"> Flame</label>
-    <label>Flame stands <input id="foot" type="range" min="-0.3" max="0.4" step="0.02" value="0.24"><output id="foot-v"></output></label>
-    <label>Flame size <input id="fsize" type="range" min="0.4" max="1.4" step="0.05" value="1"><output id="fsize-v"></output></label>
+    <label><input id="flame" type="checkbox" checked> Flame</label>
+    <label>Flame stands <input id="foot" type="range" min="-0.3" max="0.4" step="0.02" value="0.1"><output id="foot-v"></output></label>
+    <label>Flame size <input id="fsize" type="range" min="0.4" max="1.4" step="0.05" value="1.15"><output id="fsize-v"></output></label>
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
     <label>Close-up <input id="big" type="range" min="40" max="120" step="8" value="80"></label>
@@ -419,14 +419,37 @@ function teepee(g, x, y, TS, { n = 4, w = 0.5, foot = 0.3, top = -0.2, th = 0.07
   }
 }
 
-// (The flame, when shown, at its game size where the game stands it.)
+// Three logs, simply: straight bars from the foot to the point, `th` thick
+// (squares), ends square or round, crossing past the point by `poke` (0:
+// meeting there), or narrowing to it (`pointed`).
+function three(g, x, y, TS, { w = 0.4, foot = 0.28, top = -0.14, th = 0.09, poke = 0, ends = "square", pointed = false } = {}) {
+  g.fillStyle = INK;
+  for (const u of [-0.5, 0.5, 0]) {
+    const bx = x + u * w * TS, by = y + foot * TS, tx = x - u * poke * TS, ty = y + top * TS;
+    const len = Math.hypot(tx - bx, ty - by), ux = (tx - bx) / len, uy = (ty - by) / len, nx = -uy * th * TS / 2, ny = ux * th * TS / 2;
+    g.beginPath();
+    if (pointed) {
+      g.moveTo(bx + nx, by + ny); g.lineTo(tx, ty); g.lineTo(bx - nx, by - ny);
+    } else {
+      g.moveTo(bx + nx, by + ny); g.lineTo(tx + nx, ty + ny); g.lineTo(tx - nx, ty - ny); g.lineTo(bx - nx, by - ny);
+    }
+    g.closePath();
+    g.fill();
+    if (ends === "round") for (const [ex, ey] of pointed ? [[bx, by]] : [[bx, by], [tx, ty]]) { g.beginPath(); g.arc(ex, ey, th * TS / 2, 0, 2 * Math.PI); g.fill(); }
+  }
+}
+
 const BUNDLES = [
-  { id: "T1", name: "Four logs", note: "Four solid logs leaning together, about half a square across.",
-    under: (g, x, y, TS) => teepee(g, x, y, TS) },
-  { id: "T2", name: "Five logs, wider", note: "Five logs, a wider foot and a lower point: squatter.",
-    under: (g, x, y, TS) => teepee(g, x, y, TS, { n: 5, w: 0.6, foot: 0.32, top: -0.1, th: 0.07, poke: 0.1 }) },
-  { id: "T3", name: "Three logs, small", note: "Three thicker logs, about two fifths of a square.",
+  { id: "T3", name: "Three logs (as before)", note: "The three-log teepee you picked, rounded and crossing at the top.",
     under: (g, x, y, TS) => teepee(g, x, y, TS, { n: 3, w: 0.4, foot: 0.28, top: -0.14, th: 0.09, poke: 0.07 }) },
+  { id: "U1", name: "Straight bars, square ends", note: "Three plain bars, cut square, crossing a little past the point.",
+    under: (g, x, y, TS) => three(g, x, y, TS, { poke: 0.07 }) },
+  { id: "U2", name: "Straight bars, round ends", note: "The same, the ends rounded.",
+    under: (g, x, y, TS) => three(g, x, y, TS, { poke: 0.07, ends: "round" }) },
+  { id: "U3", name: "Meeting at the point", note: "Square bars leaning together, meeting at the point without crossing.",
+    under: (g, x, y, TS) => three(g, x, y, TS) },
+  { id: "U4", name: "Narrowing to the point", note: "Each log a long thin wedge, wide at the foot, coming to the point: the simplest.",
+    under: (g, x, y, TS) => three(g, x, y, TS, { th: 0.12, pointed: true }) },
 ];
 
 const FIRES = [
