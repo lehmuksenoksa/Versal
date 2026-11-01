@@ -870,6 +870,21 @@ export class Renderer {
     ctx.restore();
     const style = a === this.world.player ? LETTERING.player : LETTERING[a.kind] ?? LETTERING.monster;
     this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
+    // While the player looks (l), how aware each monster is, over it: ! alarmed, ? suspicious.
+    const mark = this.lookMarks && a !== this.world.player ? { aggressive: ["!", "#c4402e"], suspicious: ["?", "#d9a53a"] }[a.state] : null;
+    if (mark) {
+      ctx.save();
+      ctx.globalAlpha = v.alpha;
+      ctx.font = `700 ${TS * 0.62}px Texturina, Georgia, serif`;
+      ctx.textAlign = "center";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = TS * 0.14;
+      ctx.strokeStyle = "#000";
+      ctx.fillStyle = mark[1];
+      ctx.strokeText(mark[0], cx, cy - TS * 0.62);
+      ctx.fillText(mark[0], cx, cy - TS * 0.62);
+      ctx.restore();
+    }
   }
 }
 

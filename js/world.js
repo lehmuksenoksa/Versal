@@ -24,14 +24,17 @@ import { postOutline, crossesOutline } from "./sightline.js";
 // (the chance to hit, the damage, what it's called, and whether a hard one
 // makes the player bleed).
 export const MONSTERS = {
-  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits" },
+  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5 },
   // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
-  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true },
+  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8 },
 };
 
 // The player: hit points to start with; the blow (until there are weapons, as
 // a dagger's); healing, a hit point every so many turns, resting and not.
-export const PLAYER = { hp: 20, attack: [1, 4], heal: 20, restHeal: 5 };
+export const PLAYER = { hp: 20, attack: [1, 4], heal: 20, restHeal: 5, cls: "Adventurer" };
+// Experience: what each level needs, all told; each new level gives `hp` more
+// hit points, and every other one +1 to the blow.
+export const LEVELS = { xp: [0, 20, 50, 100, 170, 260, 380, 530, 720, 950], hp: 4 };
 // Ailments: bleeding, from a hard blow (`at` damage or more, by a monster
 // that `bleeds`, half the time), a hit point a turn for a few turns, stopped by
 // resting; poison, a hit point every `every` turns for a while.
@@ -60,8 +63,10 @@ const WHACK = 0.75;
 // to it, and two squares off; searching (a turn spent looking), and not.
 const SECRET = { near: 0.15, far: 0.06, searchNear: 0.6, searchFar: 0.3, reach: 2 };
 
+export const ordinal = (n) => `${n}${["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+
 export class World {
-  constructor(seed, { sight = 9 } = {}) {
+  constructor(seed, { sight = 9, name = "Adventurer" } = {}) {
     this.sight = sight;
     this.sneaking = false;
     this.rng = new RNG(seed);
@@ -74,7 +79,7 @@ export class World {
     this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
     this.pillars = (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) }));
     this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
-    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0 };
+    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0 };
     // The turns gone by, the messages so far (each { text, turn, kind }), and
     // how the run ended (null while it goes on).
     this.turn = 0;
@@ -257,8 +262,27 @@ export class World {
     this.log(on ? "You put out your lamp." : "You light your lamp.");
   }
 
-  // The player's blow, as damage from to.
-  attack() { return PLAYER.attack; }
+  // The player's blow, as damage from to (better every other level).
+  attack() {
+    const b = Math.floor((this.player.level - 1) / 2);
+    return [PLAYER.attack[0] + b, PLAYER.attack[1] + b];
+  }
+  // How much damage the player's armour takes off a blow (none yet).
+  defence() { return 0; }
+  // The experience the player's next level needs, all told (null at the last).
+  nextLevel() { return LEVELS.xp[this.player.level] ?? null; }
+
+  // Experience for a kill; enough, and a new level.
+  gainXp(n) {
+    const p = this.player;
+    p.xp += n;
+    while (this.nextLevel() !== null && p.xp >= this.nextLevel()) {
+      p.level++;
+      p.maxHp += LEVELS.hp;
+      p.hp += LEVELS.hp;
+      this.log(`You reach the ${ordinal(p.level)} level.`, "good");
+    }
+  }
 
   // A whack at monster `g`: it may miss; one out of hit points falls. Its pack
   // turns on the player, and the noise wakes packs asleep near by.
@@ -268,7 +292,10 @@ export class World {
     const killed = g.hp <= 0, name = MONSTERS[g.kind].name;
     this.events.push({ type: "whack", target: g, hit, killed, dmg });
     this.log(!hit ? `You miss the ${name}.` : killed ? `You kill the ${name}.` : `You hit the ${name}. (${dmg})`, killed ? "good" : "");
-    if (killed) this.player.kills++;
+    if (killed) {
+      this.player.kills++;
+      this.gainXp(MONSTERS[g.kind].xp);
+    }
     for (const a of this.pack(g)) {
       a.state = "aggressive";
       a.calm = 0;
@@ -348,7 +375,7 @@ export class World {
   die(how) {
     const p = this.player;
     p.hp = Math.min(p.hp, 0);
-    this.dead = { how, place: this.place.name, depth: this.place.depth, turns: this.turn, kills: p.kills };
+    this.dead = { how, place: this.place.name, depth: this.place.depth, turns: this.turn, kills: p.kills, name: p.name, cls: p.cls, level: p.level };
     this.log("You die.", "hurt");
     this.events.push({ type: "death" });
   }

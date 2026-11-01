@@ -24,13 +24,23 @@ function step(dx, dy, repeat) {
   world.playerMove(dx, dy);
 }
 
-// A new run: a new level, the lamp lit.
+// A new run: the player's name asked (the last one offered), then a new
+// level, the lamp lit.
 function newRun() {
   stopRest(null);
-  if (world?.sneaking) renderer.toggleLamp();
-  world = new World();
-  renderer.setWorld(world);
   ui.toggleDrawer(false);
+  ui.togglePanel("sheet");
+  document.body.dataset.started = "1";
+  const go = (name) => {
+    if (world?.sneaking) renderer.toggleLamp();
+    world = new World(undefined, { name });
+    renderer.setWorld(world);
+    window.focus();
+  };
+  // (`?name=…` skips the question, for trying things out.)
+  const given = new URLSearchParams(location.search).get("name");
+  if (given) go(given);
+  else ui.askName(go);
 }
 
 // Resting: a turn every `REST_MS` until healed and well, or until something
@@ -58,7 +68,7 @@ function stopRest(why, kind) {
 }
 
 window.addEventListener("keydown", (e) => {
-  if (!world || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!world || e.ctrlKey || e.metaKey || e.altKey || !document.getElementById("start").hidden) return;
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
   // (Any key ends a run that's over, stops resting.)
   if (world.dead) { e.preventDefault(); return newRun(); }
@@ -90,6 +100,9 @@ window.addEventListener("keydown", (e) => {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
     if (!world.dead) renderer.toggleLamp();
+  } else if (["e", "i", "l"].includes(e.key.toLowerCase())) {
+    e.preventDefault();
+    ui.togglePanel(e.key.toLowerCase());
   } else if (e.key === "m" || e.key === "M") {
     e.preventDefault();
     ui.toggleDrawer();
@@ -98,6 +111,7 @@ window.addEventListener("keydown", (e) => {
     ui.toggleHelp(true);
   } else if (e.key === "Escape") {
     ui.toggleDrawer(false);
+    ui.togglePanel("sheet");
   }
 });
 // A tap ends a run that's over; the help closes when tapped.
@@ -228,6 +242,7 @@ function loop(now) {
   // (A frame that fails doesn't stop the ones after it.)
   try {
     renderer.insetRight = ui.insetRight;
+    renderer.lookMarks = ui.panel === "l";
     renderer.frame(now);
     if (world) ui.update(world);
     updateActions();
@@ -252,6 +267,5 @@ window.versal = { get world() { return world; }, renderer, ui, newRun };
     // Fall back to whatever serif is available.
   }
   newRun();
-  document.body.dataset.started = "1";
   requestAnimationFrame(loop);
 })();

@@ -70,9 +70,46 @@ body { background: #000; overflow: hidden; }
   #corner .news { font-size: 15px; }
 }
 
-/* The sidebar, on wide screens. */
-#side { position: fixed; right: 0; top: 0; bottom: 0; z-index: 1; width: 340px; box-sizing: border-box; background: var(--gui); color: var(--gui-text); padding: 22px 26px; padding-right: max(26px, env(safe-area-inset-right, 0px)); display: grid; grid-template-rows: auto 1fr auto; gap: 18px; font: 15px var(--log); }
+/* On a wide screen, the corner and the sidebar on torn black plates (drawn
+   on this canvas), and the corner's text no longer outlined. */
+#plates { position: fixed; left: 0; top: 0; z-index: 1; pointer-events: none; }
+#plates[hidden] { display: none; }
+body.wide #corner, body.wide #corner * { -webkit-text-stroke: 0; }
+body.wide #corner .news { max-width: 340px; }
+
+/* The sidebar, on wide screens: who, health, then the sheet or a panel, the keys along its foot. */
+#side { position: fixed; right: 0; top: 0; bottom: 0; z-index: 1; width: 340px; box-sizing: border-box; background: transparent; color: var(--gui-text); padding: 22px 26px; padding-right: max(26px, env(safe-area-inset-right, 0px)); display: grid; grid-template-rows: auto auto 1fr auto; gap: 18px; font: 15px var(--log); }
 #side[hidden] { display: none; }
+#side .who h3 { margin: 0; font: 600 26px/1.1 var(--letter); }
+#side .who div { font: 600 15px var(--letter); color: var(--gui-dim); margin-top: 2px; }
+#side .body { border-top: 1px solid var(--gui-line); padding-top: 16px; display: grid; gap: 18px; align-content: start; min-height: 0; overflow: auto; }
+#side h5 small { float: right; font: 600 12px var(--letter); letter-spacing: 0.04em; text-transform: none; color: var(--gui-faint); }
+#side .panel-head { display: flex; justify-content: space-between; align-items: baseline; }
+#side .panel-head h4 { margin: 0; font: 600 22px var(--letter); }
+#side .panel-head small { font: 600 12px var(--letter); color: var(--gui-faint); }
+#side .ledger { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 16px; }
+#side .ledger li { display: grid; grid-template-columns: 16px 22px auto 1fr auto; gap: 6px; align-items: baseline; }
+#side .ledger.plain li { grid-template-columns: auto 1fr auto; }
+#side .ledger .key { font: 600 13px var(--letter); color: var(--gui-faint); }
+#side .ledger .g { font: 700 19px var(--letter); text-align: center; }
+#side .ledger .lead { border-bottom: 1px dotted var(--gui-line); transform: translateY(-4px); }
+#side .ledger .val { font-size: 15px; color: var(--gui-dim); font-variant-numeric: tabular-nums; }
+#side .ledger b.val { font: 600 17px var(--letter); color: var(--gui-text); }
+#side .ledger li.none { color: var(--gui-faint); font-style: italic; }
+#side .ledger li.none .g { color: var(--gui-faint); }
+#side .st { font: 600 14px var(--letter); color: var(--gui-dim); }
+#side .st.aggressive { color: var(--blood); }
+#side .st.suspicious { color: #d9a53a; }
+#side .sum { font-size: 15px; color: var(--gui-dim); }
+#side .sum b { font: 600 16px var(--letter); color: var(--gui-text); }
+#side .xp { font: 600 20px var(--letter); font-variant-numeric: tabular-nums; }
+#side .xp span { color: var(--gui-dim); font-size: 16px; }
+#side .xpline { height: 2px; background: var(--gui-line); margin-top: 6px; }
+#side .xpline i { display: block; height: 100%; background: var(--gui-dim); }
+#side .foot .on, #side .foot .on b { color: var(--gui-text); }
+/* On a narrow screen, a panel opens as a sheet from the bottom. */
+#side.sheetup { top: auto; left: 0; width: auto; max-height: 55vh; background: #000; border-top: 2px solid var(--gui-text); padding: 14px 18px calc(70px + env(safe-area-inset-bottom, 0px)); grid-template-rows: 1fr; z-index: 3; }
+#side.sheetup .body { border: 0; padding: 0; }
 #side h5, #drawer h5 { margin: 0 0 6px; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); }
 #side .hp { font: 600 34px/1 var(--letter); font-variant-numeric: tabular-nums; }
 #side .hp span { font-size: 22px; color: var(--gui-dim); }
@@ -81,12 +118,15 @@ body { background: #000; overflow: hidden; }
 #side .ailments .bleeding { color: var(--blood); }
 #side .ailments .poisoned { color: var(--poison); }
 #side .ailments .none { color: var(--gui-faint); font-weight: 400; }
-#side .foot { grid-row: 3; border-top: 1px solid var(--gui-line); padding-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--gui-faint); }
+#side .foot { grid-row: 4; border-top: 1px solid var(--gui-line); padding-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--gui-faint); }
 #side .foot b { font: 600 13px var(--letter); color: var(--gui-dim); }
 
 /* The messages drawer, pulled down over the map. */
-#drawer { position: fixed; left: 0; top: 0; z-index: 2; height: min(520px, 70vh); box-sizing: border-box; background: #1e1c1a; color: var(--gui-dim); padding: 18px 26px; transform: translateY(-105%); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
+#drawer { position: fixed; left: 0; top: 0; z-index: 2; height: min(520px, 70vh); box-sizing: border-box; background: transparent; color: var(--gui-dim); padding: 18px 26px; transform: translateY(calc(-100% - 90px)); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
 #drawer.open { transform: none; }
+/* (Its dark grey sheet, torn at the foot, drawn behind its text.) */
+#drawer .dback { position: absolute; left: 0; top: 0; pointer-events: none; }
+#drawer > :not(.dback) { position: relative; }
 #drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; font: 19px/1.35 var(--log); }
 #drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; }
 #drawer li.hurt { color: var(--blood); }
@@ -95,10 +135,10 @@ body { background: #000; overflow: hidden; }
 #drawer .hint { font: 600 13px var(--letter); color: var(--gui-faint); }
 
 /* The help, and the end of a run: a card over the dimmed map. */
-#help, #death { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); padding: 16px; }
-#help[hidden], #death[hidden] { display: none; }
-#help .card, #death .card { background: #000; color: var(--gui-text); padding: 26px 32px; max-width: 520px; font: 18px/1.45 var(--log); box-shadow: 0 0 0 1px var(--gui-line); }
-#help h2, #death h2 { margin: 0 0 10px; font: 600 28px var(--letter); }
+#help, #death, #start { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); padding: 16px; }
+#help[hidden], #death[hidden], #start[hidden] { display: none; }
+#help .card, #death .card, #start .card { background: #000; color: var(--gui-text); padding: 26px 32px; max-width: 520px; font: 18px/1.45 var(--log); box-shadow: 0 0 0 1px var(--gui-line); }
+#help h2, #death h2, #start h2 { margin: 0 0 10px; font: 600 28px var(--letter); }
 #help h2 + dl { margin-top: 0; }
 #help dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 18px; }
 #help dt { font: 600 15px var(--letter); color: var(--gui-text); white-space: nowrap; }
@@ -106,3 +146,12 @@ body { background: #000; overflow: hidden; }
 #help p, #death p { margin: 0 0 10px; color: var(--gui-dim); }
 #help .hint, #death .hint { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 16px; }
 #death h2 { color: var(--blood); font-size: 36px; }
+
+/* The page that asks the player's name. */
+#start { background: #000; }
+#start label { display: block; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); margin: 14px 0 6px; }
+#start input { width: 100%; box-sizing: border-box; font: 600 24px var(--letter); color: var(--gui-text); background: #000; border: 0; border-bottom: 1px solid var(--gui-dim); padding: 4px 0; outline: none; }
+#start input:focus { border-bottom-color: var(--gui-text); }
+#start p { margin: 12px 0 18px; color: var(--gui-dim); }
+#start button { font: 600 17px var(--letter); color: #000; background: var(--gui-text); border: 0; padding: 8px 18px; cursor: pointer; }
+#start button:focus-visible, #start input:focus-visible { outline: 2px solid #8c2b1c; outline-offset: 3px; }

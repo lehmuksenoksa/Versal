@@ -80,13 +80,19 @@ Move with the arrow keys, numpad or `wasd`; walk into a monster to attack it, in
 open it. Press `c` to close a door next to you, `z` to search for secret doors, `r` to rest until
 healed (stopped by anything coming into sight or chasing near by, or any key), `f` to put the lamp
 out (sneak) or light it, and `.` or space to wait a turn. `m` pulls down every message, `?` shows
-the keys.
+the keys. `e`, `i` and `l` open equipment, inventory and a look at what's in sight (with `!` and `?`
+over monsters on the map that have noticed you) in the sidebar, in place of the character sheet.
 
-The player has 20 hit points. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw
+A run starts by asking the player's name (`?name=…` in the address skips it). The player has 20 hit
+points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
+and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw
 can make you bleed (a hit point a turn for a few turns; resting stops it). Wounds heal a hit point
 every 20 turns, every 5 resting. At none, the run ends: a page says how, and any key or tap starts
 a new one. The place, its level and the newest three messages are written at the top left of the
-map; on a wide screen the sidebar on the right shows health and anything ailing the player.
+map; on a wide screen the sidebar on the right shows who the player is, their health, anything
+ailing them, and their sheet (experience, stats). On a wide screen both sit on torn black plates,
+and the messages drawer is a dark grey sheet torn at its foot, all shaped as chosen in the ledger
+mockup (`js/plates.js`, from `mockups/ledger/plates.json`).
 
 With a finger (or the mouse), tap to step once toward it (as the finger lifts), the way by its angle from the player
 (straight up, down and across taking wider wedges than the diagonals); hold to keep walking,
@@ -112,7 +118,8 @@ in the browser console.
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
 | `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); blows, health, ailments, healing and death; the message log; field of view and memory. |
-| `js/ui.js` | The words around the map: the place and newest messages, the sidebar, the messages drawer, the help and the end-of-run page. |
+| `js/ui.js` | The words around the map: the place and newest messages, the sidebar (sheet, equipment, inventory, look), the messages drawer, the help, the name and end-of-run pages. |
+| `js/plates.js` | The torn plates under the corner, the sidebar and the drawer: the chosen polylines, their edges drawn as cave walls and torn. |
 | `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |
