@@ -74,6 +74,23 @@
   .desk .screen { width: 1280px; height: 800px; }
   .phone .screen { width: 390px; height: 800px; }
   .label { font-size: 13px; color: var(--muted); padding: 6px 2px 0; }
+  .gen { margin-top: 20px; background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 12px; }
+  .gen h2 { margin: 0; }
+  .gen p { margin: 0; }
+  .gencols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 28px; }
+  .gencols > div { min-width: 0; display: grid; gap: 6px; align-content: start; }
+  .gencols h3 { margin: 0; font-size: 16px; font-weight: normal; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .gen label.sl { display: grid; grid-template-columns: 9.5em 1fr 3em; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); }
+  .gen label.sl output { font-variant-numeric: tabular-nums; color: var(--ink); text-align: right; }
+  .gen input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
+  .gen input[type="number"] { width: 7em; font: 14px var(--body); padding: 2px 4px; border: 1px solid var(--rule); background: #fff; }
+  .gen button { font: 14px var(--body); color: var(--ink); background: #fff; border: 1px solid var(--rule); padding: 4px 10px; cursor: pointer; }
+  .gen button.main { border-color: var(--ink); }
+  .gen textarea { width: 100%; min-height: 5.5em; font: 12px/1.4 ui-monospace, Menlo, monospace; border: 1px solid var(--rule); background: #fff; color: var(--ink); padding: 6px; resize: vertical; }
+  .genrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .saved { display: flex; flex-wrap: wrap; gap: 6px; }
+  .saved button { font-size: 13px; }
+  .msg { font-size: 13px; color: var(--muted); }
   .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px 28px; margin-top: 18px; }
   .notes > div { min-width: 0; }
   .notes p { margin: 0; }
@@ -203,12 +220,6 @@
     <option value="6">6 of 23 (low)</option>
     <option value="23">23 of 23</option>
   </select></label>
-  <label>Shape of the torn plates <select id="opt-edge">
-    <option value="kinked">kinked</option>
-    <option value="slant">slanted corner</option>
-    <option value="bowed">bowed</option>
-    <option value="box">rounded box, as before</option>
-  </select></label>
   <label>Look marks the map <select id="opt-marks">
     <option value="on">with ! and ? over letters</option>
     <option value="off">no</option>
@@ -219,6 +230,18 @@
   <div class="frame"><div class="fit desk"><div class="screen" id="desk" tabindex="0" aria-label="Game screen: press e, i, l or m"></div></div><div class="label">Desktop, 1280 by 800</div></div>
   <div class="frame phonebox"><div class="fit phone"><div class="screen" id="phone"></div></div><div class="label">Phone, 390 wide</div></div>
 </div>
+
+<section class="gen" aria-labelledby="gen-title">
+  <h2 id="gen-title">The torn plates' shape</h2>
+  <p>Each plate grows as a clump of squares around what it must cover, smoothed and cut as cave walls are (some squares added, some bitten away, the corners jittered and some cut off), then torn along its edge as before. Roll new shapes until one looks right, adjust it with the sliders, then copy the text below and send it to me; "Save" keeps it in a list on this page for you.</p>
+  <div class="gencols">
+    <div id="gen-corner"></div>
+    <div id="gen-side"></div>
+  </div>
+  <div class="genrow"><button type="button" class="main" id="gen-both">New shapes for both</button><button type="button" id="gen-copy">Copy</button><button type="button" id="gen-save">Save</button><span class="msg" id="gen-msg" role="status"></span></div>
+  <textarea id="gen-out" readonly aria-label="The shapes, as text to copy"></textarea>
+  <div class="saved" id="gen-saved"></div>
+</section>
 
 <section class="notes">
   <div><h2>The sidebar's top</h2><p>Always the same, whatever is open under it: your name, then your class and level; your health under its heading, current over most; then what ails you, each in its colour (none yet in the game: poisoned, bleeding, and so on). Low health turns red.</p></div>
@@ -357,87 +380,216 @@ function render() {
   if (plates) drawPlates(plates, topEl.offsetWidth + 22, topEl.offsetHeight + 8);
 }
 
-// The dark plates: one behind the top left corner (the place and the newest messages), one for
-// the sidebar; black as the unexplored ground, torn. The tear itself is always the same (the
-// first one tried); what changes is the plates' larger shape.
+// ---- The torn plates ----
+// Each plate: a clump of squares grown about what it must cover, smoothed and cut as cave walls
+// are, traced round, its corners jittered and some cut off; then torn along its edge (the first
+// tear tried). All from a seed and a few numbers, so a shape can be sent back and made again.
 const SIDE_X = 940;
+const PARAMS = [
+  ["cell", "Square size", 10, 60, 1, "px"],
+  ["grow", "Squares added", 0, 120, 1, ""],
+  ["carve", "Squares bitten", 0, 120, 1, ""],
+  ["smooth", "Smoothing", 0, 3, 1, ""],
+  ["jitter", "Corner jitter", 0, 0.5, 0.01, ""],
+  ["cut", "Corners cut", 0, 0.7, 0.01, ""],
+  ["tear", "Tear", 0, 2, 0.05, ""],
+];
+const GEN = {
+  corner: { seed: 1, cell: 26, grow: 26, carve: 10, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
+  side: { seed: 2, cell: 30, grow: 45, carve: 22, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
+};
+const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+
+// The outline of one plate, in screen pixels: `need` the box it must cover (reaching off the
+// screen), `reach` the box it may grow in (on the screen only); both [x0, y0, x1, y1].
+const offscreen = (x, y) => x < 0 || y < 0 || x > 1280 || y > 800;
+function plateOutline(P, need, reach) {
+  const rnd = mulberry(P.seed * 7919 + 13), C = P.cell;
+  const gx0 = Math.floor(Math.min(reach[0], need[0]) / C) - 1, gy0 = Math.floor(Math.min(reach[1], need[1]) / C) - 1, gx1 = Math.ceil(Math.max(reach[2], need[2]) / C) + 1, gy1 = Math.ceil(Math.max(reach[3], need[3]) / C) + 1;
+  const GW = gx1 - gx0, GH = gy1 - gy0, at = (i, j) => j * GW + i;
+  const fill = new Uint8Array(GW * GH), lock = new Uint8Array(GW * GH), inReach = new Uint8Array(GW * GH);
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    const x0 = (gx0 + i) * C, y0 = (gy0 + j) * C, x1 = x0 + C, y1 = y0 + C;
+    const hits = (b) => x1 > b[0] && x0 < b[2] && y1 > b[1] && y0 < b[3];
+    if (hits(need)) { fill[at(i, j)] = 1; lock[at(i, j)] = 1; }
+    if (hits(reach) && x0 >= 0 && y0 >= 0 && x1 <= 1280 && y1 <= 800) inReach[at(i, j)] = 1;
+  }
+  const n4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const ok = (i, j) => i >= 0 && j >= 0 && i < GW && j < GH;
+  const edgeCells = (want) => {
+    const out = [];
+    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+      const k = at(i, j);
+      if (fill[k] !== want || !inReach[k] || (want === 1 && lock[k])) continue;
+      if (n4.some(([dx, dy]) => ok(i + dx, j + dy) && fill[at(i + dx, j + dy)] !== want)) out.push(k);
+    }
+    return out;
+  };
+  // Grow: squares beside the plate join it, one at a time; bite: squares at its edge go.
+  for (let n = 0; n < P.grow; n++) { const e = edgeCells(0); if (!e.length) break; fill[e[Math.floor(rnd() * e.length)]] = 1; }
+  for (let n = 0; n < P.carve; n++) { const e = edgeCells(1); if (!e.length) break; fill[e[Math.floor(rnd() * e.length)]] = 0; }
+  // Smooth as caves are: a square with most of its eight neighbours filled fills, with few, empties.
+  for (let pass = 0; pass < P.smooth; pass++) {
+    const next = fill.slice();
+    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+      const k = at(i, j);
+      if (lock[k] || !inReach[k]) continue;
+      let m = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && ok(i + dx, j + dy) && fill[at(i + dx, j + dy)]) m++;
+      if (m >= 5) next[k] = 1; else if (m <= 2) next[k] = 0;
+    }
+    fill.set(next);
+  }
+  // One piece: keep what joins the locked squares; fill any holes; no squares touching only at a corner.
+  const seen = new Uint8Array(GW * GH), q = [];
+  for (let k = 0; k < fill.length; k++) if (lock[k]) { seen[k] = 1; q.push(k); }
+  while (q.length) { const k = q.pop(), i = k % GW, j = (k / GW) | 0; for (const [dx, dy] of n4) { const ni = i + dx, nj = j + dy; if (ok(ni, nj) && fill[at(ni, nj)] && !seen[at(ni, nj)]) { seen[at(ni, nj)] = 1; q.push(at(ni, nj)); } } }
+  for (let k = 0; k < fill.length; k++) fill[k] = seen[k];
+  const out = new Uint8Array(GW * GH);
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) if ((i === 0 || j === 0 || i === GW - 1 || j === GH - 1) && !fill[at(i, j)]) { out[at(i, j)] = 1; q.push(at(i, j)); }
+  while (q.length) { const k = q.pop(), i = k % GW, j = (k / GW) | 0; for (const [dx, dy] of n4) { const ni = i + dx, nj = j + dy; if (ok(ni, nj) && !fill[at(ni, nj)] && !out[at(ni, nj)]) { out[at(ni, nj)] = 1; q.push(at(ni, nj)); } } }
+  for (let k = 0; k < fill.length; k++) if (!out[k]) fill[k] = 1;
+  for (let again = true; again;) {
+    again = false;
+    for (let j = 0; j < GH - 1; j++) for (let i = 0; i < GW - 1; i++) {
+      const a = fill[at(i, j)], b = fill[at(i + 1, j)], c = fill[at(i, j + 1)], d = fill[at(i + 1, j + 1)];
+      if (a === d && b === c && a !== b) { fill[at(i, j)] = fill[at(i + 1, j)] = fill[at(i, j + 1)] = fill[at(i + 1, j + 1)] = 1; again = true; }
+    }
+  }
+  // Trace round it, clockwise (the plate on the right of the way round), corner to corner.
+  const next = new Map(), key = (x, y) => `${x},${y}`;
+  const add = (ax, ay, bx, by) => next.set(key(ax, ay), [bx, by]);
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    if (!fill[at(i, j)]) continue;
+    const empty = (dx, dy) => !ok(i + dx, j + dy) || !fill[at(i + dx, j + dy)];
+    const x = gx0 + i, y = gy0 + j;
+    if (empty(0, -1)) add(x, y, x + 1, y);
+    if (empty(1, 0)) add(x + 1, y, x + 1, y + 1);
+    if (empty(0, 1)) add(x + 1, y + 1, x, y + 1);
+    if (empty(-1, 0)) add(x, y + 1, x, y);
+  }
+  // Start on the outline at its leftmost, topmost corner, and walk.
+  let start = null;
+  for (const k of next.keys()) { const [x, y] = k.split(",").map(Number); if (!start || y < start[1] || (y === start[1] && x < start[0])) start = [x, y]; }
+  const loop = [start];
+  for (let p = next.get(key(...start)), guard = 0; p && (p[0] !== start[0] || p[1] !== start[1]) && guard < 100000; p = next.get(key(...p)), guard++) loop.push(p);
+  // As cave walls: drop corners along straight runs, add the middles of edges, jitter, cut some corners.
+  const pts = [];
+  for (let i = 0; i < loop.length; i++) {
+    const a = loop[i], b = loop[(i + 1) % loop.length], z = loop[(i - 1 + loop.length) % loop.length];
+    if ((z[0] === a[0] && a[0] === b[0]) || (z[1] === a[1] && a[1] === b[1])) { if (rnd() < 0.5) continue; }
+    pts.push(a);
+    pts.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
+  }
+  const shaped = [];
+  let dropped = false;
+  for (const [x, y] of pts) {
+    const px = x * C, py = y * C, off = offscreen(px, py);
+    if (!off && !dropped && rnd() < P.cut) { dropped = true; continue; }
+    dropped = false;
+    shaped.push(off ? [px, py] : [px + (rnd() * 2 - 1) * P.jitter * C, py + (rnd() * 2 - 1) * P.jitter * C]);
+  }
+  return shaped;
+}
+
+function plateShapes(tw, th) {
+  const corner = plateOutline(GEN.corner, [-100, -100, tw, th], [0, 0, tw + 260, th + 200]);
+  const side = plateOutline(GEN.side, [SIDE_X + 20, -100, 1380, 900], [SIDE_X - 220, 0, 1280, 800]);
+  return { corner, side };
+}
+
+let lastShapes = null;
 function drawPlates(c, tw, th) {
-  const g = c.getContext("2d"), shape = opt("edge");
-  let seed = 11;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
-  const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
-  const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
+  const g = c.getContext("2d");
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.clearRect(0, 0, 1280, 800);
   g.fillStyle = "#000";
-
-  // A smooth line through points (Catmull-Rom), for the bowed shapes.
-  const smooth = (pts, n = 10) => {
-    const out = [];
-    for (let i = 0; i < pts.length - 1; i++) {
-      const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-      for (let k = 0; k < n; k++) {
-        const t = k / n, t2 = t * t, t3 = t2 * t;
-        out.push([0, 1].map((j) => 0.5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3)));
-      }
-    }
-    out.push(pts[pts.length - 1]);
-    return out;
-  };
-  // The plates' larger shapes: the top one from its top right round to its bottom left, the
-  // sidebar's edge from the bottom up (so the map lies on each line's left).
-  const r = 34, arc = [];
-  for (let a = 0; a <= 8; a++) { const q = (a / 8) * (Math.PI / 2); arc.push([tw - r + r * Math.cos(q), th - r + r * Math.sin(q)]); }
-  const SHAPES = {
-    box: [[[tw, -12], ...arc, [-12, th]], [[SIDE_X, 812], [SIDE_X, -12]]],
-    // Paper tears in runs, fairly straight, turning at kinks.
-    kinked: [
-      [[tw + 22, -12], [tw + 8, th * 0.42], [tw - 6, th * 0.62], [tw - 30, th + 6], [tw * 0.62, th + 18], [tw * 0.3, th + 2], [-12, th + 22]],
-      [[916, 812], [946, 640], [922, 505], [934, 300], [956, 190], [934, -12]],
-    ],
-    // The top plate a torn-off corner, its lower edge on a slant; the sidebar's edge leaning.
-    slant: [
-      [[tw + 80, -12], [tw + 24, th * 0.5], [tw - 12, th + 4], [tw * 0.45, th + 26], [-12, th + 52]],
-      [[912, 812], [934, 430], [958, -12]],
-    ],
-    bowed: [
-      smooth([[tw + 30, -12], [tw + 6, th * 0.55], [tw * 0.7, th + 16], [tw * 0.3, th + 6], [-12, th + 26]]),
-      smooth([[918, 812], [950, 545], [922, 270], [954, -12]]),
-    ],
-  };
-  const [topPts, sidePts] = SHAPES[shape];
-  // Each line sampled every 3px, with its normal (into the map) and distance along it.
-  const line = (pts) => {
-    const out = [];
-    let t = 0;
-    for (let i = 0; i < pts.length - 1; i++) {
-      const [ax, ay] = pts[i], [bx, by] = pts[i + 1], L = Math.hypot(bx - ax, by - ay);
+  const shapes = (lastShapes = plateShapes(tw, th));
+  for (const [name, pts] of Object.entries(shapes)) {
+    const P = GEN[name], rnd = mulberry(P.seed * 31 + 7);
+    const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
+    const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
+    const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
+    // Round the outline every 3px, torn outward and in (none where it's off the screen).
+    g.beginPath();
+    let t = 0, first = true;
+    for (let i = 0; i < pts.length; i++) {
+      const [ax, ay] = pts[i], [bx, by] = pts[(i + 1) % pts.length], L = Math.hypot(bx - ax, by - ay);
       if (L < 0.01) continue;
       const tx = (bx - ax) / L, ty = (by - ay) / L;
-      for (let d = 0; d < L; d += 3, t += 3) out.push([ax + tx * d, ay + ty * d, ty, -tx, t]);
+      for (let d = 0; d < L; d += 3, t += 3) {
+        const x = ax + tx * d, y = ay + ty * d, on = x > -2 && y > -2 && x < 1282 && y < 802;
+        const k = on ? P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4) : 0;
+        g[first ? "moveTo" : "lineTo"](x - ty * k, y + tx * k);
+        first = false;
+      }
     }
-    return out;
-  };
-  const plates = [[line(topPts), [[-12, -12]]], [line(sidePts), [[1292, -12], [1292, 812]]]];
-  for (const [edge, close] of plates) {
-    g.beginPath();
-    edge.forEach(([x, y, nx, ny, t], i) => {
-      const d = 7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4;
-      g[i ? "lineTo" : "moveTo"](x + nx * d, y + ny * d);
-    });
-    for (const [x, y] of close) g.lineTo(x, y);
     g.closePath();
     g.fill();
   }
+  writeOut();
 }
+
+// ---- The generator's controls ----
+function genControls() {
+  for (const name of ["corner", "side"]) {
+    const P = GEN[name], box = $(`gen-${name}`);
+    box.innerHTML = `<h3>${name === "corner" ? "The corner" : "The sidebar's edge"}
+        <button type="button" class="main" id="new-${name}">New shape</button>
+        <label>seed <input type="number" id="seed-${name}" value="${P.seed}"></label></h3>
+      ${PARAMS.map(([k, label, min, max, step, unit]) => `<label class="sl"><span>${label}</span><input type="range" id="${name}-${k}" min="${min}" max="${max}" step="${step}" value="${P[k]}"><output id="${name}-${k}-v">${P[k]}${unit}</output></label>`).join("")}`;
+    $(`new-${name}`).addEventListener("click", () => { P.seed = Math.floor(Math.random() * 1e6); $(`seed-${name}`).value = P.seed; render(); });
+    $(`seed-${name}`).addEventListener("input", (e) => { P.seed = +e.target.value || 0; render(); });
+    for (const [k, , , , , unit] of PARAMS) $(`${name}-${k}`).addEventListener("input", (e) => { P[k] = +e.target.value; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; render(); });
+  }
+}
+function genSync() {
+  for (const name of ["corner", "side"]) {
+    const P = GEN[name];
+    $(`seed-${name}`).value = P.seed;
+    for (const [k, , , , , unit] of PARAMS) { $(`${name}-${k}`).value = P[k]; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; }
+  }
+}
+// The text to send: the numbers that make the shapes, and the outlines themselves (before tearing).
+function writeOut() {
+  if (!lastShapes) return;
+  const pts = (a) => a.map(([x, y]) => [Math.round(x), Math.round(y)]);
+  $("gen-out").value = JSON.stringify({ plates: GEN, outline: { corner: pts(lastShapes.corner), side: pts(lastShapes.side) } });
+}
+const SAVE_KEY = "versal-plates";
+const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "[]"); } catch { return []; } };
+function showSaved() {
+  const list = loadSaved();
+  $("gen-saved").innerHTML = list.length ? list.map((p, i) => `<button type="button" data-saved="${i}">Saved ${i + 1}: ${p.corner.seed} / ${p.side.seed}</button>`).join("") : "";
+  for (const b of $("gen-saved").querySelectorAll("[data-saved]")) b.addEventListener("click", () => {
+    const p = loadSaved()[+b.dataset.saved];
+    Object.assign(GEN.corner, p.corner); Object.assign(GEN.side, p.side);
+    genSync(); render();
+  });
+}
+genControls();
+$("gen-both").addEventListener("click", () => { GEN.corner.seed = Math.floor(Math.random() * 1e6); GEN.side.seed = Math.floor(Math.random() * 1e6); genSync(); render(); });
+$("gen-copy").addEventListener("click", () => {
+  const text = $("gen-out").value;
+  const done = () => { $("gen-msg").textContent = "Copied. Paste it to Claude."; };
+  try {
+    navigator.clipboard.writeText(text).then(done, () => { $("gen-out").select(); $("gen-msg").textContent = "Selected: copy it with your keyboard or menu."; });
+  } catch { $("gen-out").select(); $("gen-msg").textContent = "Selected: copy it with your keyboard or menu."; }
+});
+$("gen-save").addEventListener("click", () => {
+  const list = loadSaved();
+  list.push(JSON.parse(JSON.stringify(GEN)));
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(list)); $("gen-msg").textContent = "Saved on this page, in this browser."; } catch { $("gen-msg").textContent = "This browser won't keep it: copy the text instead."; }
+  showSaved();
+});
+showSaved();
 
 function open(k) {
   state.open = state.open === k || k === "none" ? "none" : k;
   render();
 }
 for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => open(b.dataset.open));
-for (const id of ["log", "status", "hp", "marks", "edge"]) $(`opt-${id}`).addEventListener("input", render);
+for (const id of ["log", "status", "hp", "marks"]) $(`opt-${id}`).addEventListener("input", render);
 addEventListener("keydown", (e) => {
   if (e.target.closest?.("select")) return;
   const k = e.key.toLowerCase();
