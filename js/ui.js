@@ -8,7 +8,7 @@
 // on torn black plates (js/plates.js). Plain page elements over the map's
 // canvas, redone only when something they show has changed.
 
-import { ordinal } from "./world.js";
+import { ordinal, ITEMS, PACK, itemName } from "./world.js";
 import { drawPlates, drawDrawer } from "./plates.js";
 
 // How wide the screen must be for the sidebar; how wide the sidebar is.
@@ -23,6 +23,11 @@ const KEYS_HELP = [
   [". or space", "wait a turn"],
   ["f", "put out the lamp (sneak), or light it"],
   ["c", "close a door"],
+  [",", "pick up what's here"],
+  ["q", "drink a potion"],
+  ["W", "wield a weapon, put on armour"],
+  ["t", "take off, put away"],
+  ["D", "drop"],
   ["e", "equipment"],
   ["i", "inventory"],
   ["l", "look at what's in sight"],
@@ -47,6 +52,29 @@ export class UI {
     // What the sidebar shows under the player: "sheet", "e", "i" or "l".
     this.panel = "sheet";
     this.platesFor = "";
+    // A question waiting for a letter: { verb, title } ("q" drink, "W" wield
+    // or wear, "D" drop: from the pack; "t" take off: from the equipment).
+    this.prompt = null;
+    // What to do when a thing's action is clicked: onAct(verb, key).
+    this.onAct = null;
+    this.el.side.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]");
+      if (b && this.onAct) this.onAct(b.dataset.act, b.dataset.key);
+    });
+  }
+
+  // Ask which thing (a letter or a click): the panel it's chosen from opened.
+  ask(verb) {
+    const titles = { q: "Drink which?", W: "Wield or wear which?", D: "Drop which?", t: "Take off which?" };
+    this.prompt = { verb, title: titles[verb] };
+    this.panel = verb === "t" ? "e" : "i";
+    this.stamp = "";
+  }
+  endAsk() {
+    if (!this.prompt) return;
+    this.prompt = null;
+    this.panel = "sheet";
+    this.stamp = "";
   }
 
   // Is the sidebar shown (a wide enough screen)? And so how much of the
@@ -102,7 +130,7 @@ export class UI {
   update(world) {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
-    const stamp = [world.messages.length, p.hp, p.maxHp, p.xp, p.level, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
+    const stamp = [world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
       window.innerWidth, window.innerHeight, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;
@@ -169,16 +197,38 @@ export class UI {
     const row = (g, name, val = "", key = "") => `<li><span class="key">${key}</span><span class="g">${esc(g)}</span><span>${esc(name)}</span><span class="lead"></span><span class="val">${val}</span></li>`;
     const empty = (text) => `<li class="none"><span></span><span class="g">·</span><span>${esc(text)}</span><span></span><span></span></li>`;
     const [a0, a1] = world.attack();
+    const P = this.prompt, can = {
+      q: (d) => d.cat === "potion",
+      W: (d) => d.cat === "weapon" || d.cat === "armour",
+      D: () => true,
+    };
+    const note = (it) => {
+      const d = ITEMS[it.type];
+      return d.cat === "weapon" ? `attack ${d.dmg[0]}–${d.dmg[1]}${d.hands === 2 ? ", two hands" : ""}` : d.cat === "armour" ? `defence ${d.def}` : it.n > 1 ? `${it.n}` : "";
+    };
+    const btn = (verb, key, label) => `<button type="button" class="act" data-act="${verb}" data-key="${key}">${label}</button>`;
     if (this.panel === "e") {
-      const eq = p.equip ?? {};
-      const slot = (where, label) => (eq[where] ? row(eq[where].glyph, eq[where].name, esc(eq[where].note ?? "")) : empty(`${label}: nothing`));
-      return `${head("Equipment", "e")}<ul class="ledger">${slot("hand", "hand")}${slot("off", "off hand")}${slot("head", "head")}${slot("body", "body")}</ul>
+      const eq = p.equip ?? {}, slots = [["hand", "hand", "a"], ["off", "off hand", "b"], ["head", "head", "c"], ["body", "body", "d"]];
+      const rows = slots.map(([where, label, key]) => {
+        const it = eq[where], two = where === "off" && eq.hand && ITEMS[eq.hand.type].hands === 2;
+        if (!it) return empty(two ? "off hand: the two-handed weapon" : `${label}: nothing`);
+        return `<li class="${P ? "pick" : ""}"><span class="key">${P ? key : ""}</span><span class="g">${esc(it.glyph)}</span><span>${esc(ITEMS[it.type].name)}</span><span class="lead"></span><span class="val">${esc(note(it))}</span>
+          <span class="acts">${btn("t", where, ITEMS[it.type].cat === "weapon" ? "put away" : "take off")}</span></li>`;
+      }).join("");
+      return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Equipment", "e")}<ul class="ledger">${rows}</ul>
         <div class="sum">Altogether: attack <b>${a0}–${a1}</b>, defence <b>${world.defence()}</b>.</div>`;
     }
     if (this.panel === "i") {
       const inv = p.pack ?? [];
-      return `${head("Inventory", "i")}<ul class="ledger">${inv.length ? inv.map((it) => row(it.glyph, it.name, esc(it.note ?? ""), it.key)).join("") : empty("You carry nothing.")}</ul>
-        <div class="sum">Room for <b>${10 - inv.length}</b> more things.</div>`;
+      const rows = inv.map((it) => {
+        const d = ITEMS[it.type], ok = !P || can[P.verb](d);
+        const acts = [d.cat === "potion" ? btn("q", it.key, "drink") : btn("W", it.key, d.cat === "weapon" ? "wield" : "wear"), btn("D", it.key, "drop")].join("");
+        return `<li class="${P ? (ok ? "pick" : "dim") : ""}"><span class="key">${it.key}</span><span class="g" style="${d.ink ? `color:${d.ink}` : ""}">${esc(it.glyph)}</span><span>${esc(it.n > 1 ? d.plural ?? d.name : d.name)}</span><span class="lead"></span><span class="val">${esc(note(it))}</span><span class="acts">${acts}</span></li>`;
+      }).join("");
+      const here = world.itemsAt(p.x, p.y);
+      return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Inventory", "i")}<ul class="ledger">${inv.length ? rows : empty("You carry nothing.")}</ul>
+        <div class="sum">Room for <b>${PACK.size - inv.length}</b> more ${PACK.size - inv.length === 1 ? "thing" : "things"}.</div>
+        ${here.length ? `<div class="sum">Here: ${here.map((i) => esc(itemName(i.item))).join(", ")}. ${btn("pick", "", "pick up")}</div>` : ""}`;
     }
     if (this.panel === "l") {
       const things = new Map();

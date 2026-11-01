@@ -24,7 +24,7 @@ import { postOutline, crossesOutline } from "./sightline.js";
 // (the chance to hit, the damage, what it's called, and whether a hard one
 // makes the player bleed).
 export const MONSTERS = {
-  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5 },
+  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5, drops: true },
   // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
   skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8 },
 };
@@ -39,6 +39,27 @@ export const LEVELS = { xp: [0, 20, 50, 100, 170, 260, 380, 530, 720, 950], hp: 
 // that `bleeds`, half the time), a hit point a turn for a few turns, stopped by
 // resting; poison, a hit point every `every` turns for a while.
 export const AILMENTS = { bleeding: { at: 3, chance: 0.5, turns: [3, 5], every: 1 }, poisoned: { turns: [12, 20], every: 3 } };
+// The things to be found: weapons (their blow, and how many hands), armour
+// (where it's worn, how much of a blow it takes off: up to its `def`), and
+// potions (how much they heal); each with its letter and ink, how deep it's
+// first found (`depth`) and how common (`weight`).
+export const ITEMS = {
+  dagger: { glyph: ")", name: "dagger", cat: "weapon", dmg: [1, 4], hands: 1, depth: 1, weight: 3 },
+  sword: { glyph: ")", name: "sword", cat: "weapon", dmg: [2, 6], hands: 1, depth: 1, weight: 2 },
+  axe: { glyph: ")", name: "axe", cat: "weapon", dmg: [3, 7], hands: 1, depth: 2, weight: 2 },
+  warhammer: { glyph: ")", name: "warhammer", cat: "weapon", dmg: [4, 10], hands: 2, depth: 2, weight: 1 },
+  helmet: { glyph: "[", name: "helmet", cat: "armour", slot: "head", def: 1, depth: 1, weight: 2 },
+  chainmail: { glyph: "[", name: "chainmail", cat: "armour", slot: "body", def: 2, depth: 1, weight: 1 },
+  potion: { glyph: "!", name: "potion of healing", plural: "potions of healing", cat: "potion", heal: [7, 12], ink: "#c4402e", depth: 1, weight: 5 },
+};
+// How many things the player can carry (worn and held aside); bare hands' blow;
+// how many things lie about a level (for every so many rooms); the chance a
+// goblin drops something when it falls.
+export const PACK = { size: 10, letters: "abcdefghij", bare: [1, 2], perRooms: 2.5, drop: 0.15 };
+const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
+export const itemName = (it, article = true) => (it.n > 1 ? `${it.n} ${ITEMS[it.type].plural ?? `${ITEMS[it.type].name}s`}` : article ? an(ITEMS[it.type].name) : ITEMS[it.type].name);
+const makeItem = (type, n = 1) => ({ type, glyph: ITEMS[type].glyph, n });
+
 // Where the player is (one place for now).
 export const PLACE = { name: "The old crypts", depth: 1 };
 
@@ -79,7 +100,10 @@ export class World {
     this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
     this.pillars = (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) }));
     this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
-    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0 };
+    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
+      // What's held and worn, by where; what's carried, each with its letter.
+      equip: { hand: makeItem("dagger"), off: null, head: null, body: null }, pack: [] };
+    this.stow(makeItem("potion"));
     // The turns gone by, the messages so far (each { text, turn, kind }), and
     // how the run ended (null while it goes on).
     this.turn = 0;
@@ -107,6 +131,12 @@ export class World {
     for (const room of rooms.slice(0, packs)) {
       const kind = room.cave ? "goblin" : "skeleton", M = MONSTERS[kind];
       this.spawnPack(room, this.rng.int(...(room.kind === "crypt" && M.crypt ? M.crypt : M.pack)), room.campfire ? "neutral" : null, kind);
+    }
+    // Things lying about: a few in the rooms (not the one the player starts in).
+    this.items = [];
+    for (const room of this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).slice(0, Math.round(level.rooms.length / PACK.perRooms))) {
+      const spot = this.freeSpotIn(room);
+      if (spot) this.items.push({ x: spot.x, y: spot.y, item: this.randomItem() });
     }
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
@@ -196,6 +226,8 @@ export class World {
       return this.tick();
     }
     this.moveActor(p, nx, ny);
+    const here = this.itemsAt(nx, ny);
+    if (here.length) this.log(`You see ${here.map((i) => itemName(i.item)).join(" and ")} here.`);
     return this.tick();
   }
 
@@ -262,13 +294,108 @@ export class World {
     this.log(on ? "You put out your lamp." : "You light your lamp.");
   }
 
-  // The player's blow, as damage from to (better every other level).
+  // The player's blow, as damage from to: their weapon's (bare hands') and
+  // better every other level.
   attack() {
-    const b = Math.floor((this.player.level - 1) / 2);
-    return [PLAYER.attack[0] + b, PLAYER.attack[1] + b];
+    const b = Math.floor((this.player.level - 1) / 2), w = this.player.equip.hand, d = w ? ITEMS[w.type].dmg : PACK.bare;
+    return [d[0] + b, d[1] + b];
   }
-  // How much damage the player's armour takes off a blow (none yet).
-  defence() { return 0; }
+  // How much of a blow the player's armour can take off (up to this).
+  defence() {
+    return Object.values(this.player.equip).reduce((s, it) => s + (it ? ITEMS[it.type].def ?? 0 : 0), 0);
+  }
+
+  // ---- Things ----
+  // A thing for this place: of those found this deep, by how common.
+  randomItem() {
+    const kinds = Object.entries(ITEMS).filter(([, d]) => d.depth <= this.place.depth);
+    let r = this.rng.next() * kinds.reduce((s, [, d]) => s + d.weight, 0);
+    for (const [type, d] of kinds) if ((r -= d.weight) < 0) return makeItem(type);
+    return makeItem("potion");
+  }
+  itemsAt(x, y) { return this.items.filter((i) => i.x === x && i.y === y); }
+  // Into the pack: potions of a kind together, else the first free letter.
+  // False if there's no room.
+  stow(item) {
+    const pack = this.player.pack, same = ITEMS[item.type].cat === "potion" && pack.find((i) => i.type === item.type);
+    if (same) { same.n += item.n; return same; }
+    if (pack.length >= PACK.size) return false;
+    const key = [...PACK.letters].find((k) => !pack.some((i) => i.key === k));
+    const it = { ...item, key };
+    pack.push(it);
+    pack.sort((a, b) => a.key.localeCompare(b.key));
+    return it;
+  }
+  packItem(key) { return this.player.pack.find((i) => i.key === key); }
+  unpack(it) {
+    const pack = this.player.pack;
+    pack.splice(pack.indexOf(it), 1);
+    const { key, ...item } = it;
+    return item;
+  }
+  // Pick up what lies here (a turn), if there's room.
+  pickUp() {
+    if (this.dead) return false;
+    const p = this.player, here = this.itemsAt(p.x, p.y);
+    if (!here.length) { this.log("There's nothing here."); return false; }
+    let took = false;
+    for (const floor of here) {
+      const it = this.stow(floor.item);
+      if (!it) { this.log(`You can't carry ${itemName(floor.item)}: your pack is full.`); break; }
+      this.items.splice(this.items.indexOf(floor), 1);
+      this.log(`You pick up ${itemName(floor.item)} (${it.key}).`);
+      took = true;
+    }
+    return took ? this.tick() : false;
+  }
+  // Drink a potion from the pack (a turn).
+  drink(key) {
+    const it = this.packItem(key), d = it && ITEMS[it.type];
+    if (!it || d.cat !== "potion") return false;
+    const p = this.player, heal = this.rng.int(...d.heal), before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    if (p.ailments.bleeding) delete p.ailments.bleeding;
+    if (--it.n <= 0) this.player.pack.splice(this.player.pack.indexOf(it), 1);
+    this.log(`You drink ${an(d.name)}. You feel better. (+${p.hp - before})`, "good");
+    return this.tick();
+  }
+  // Wield a weapon or put on armour from the pack (a turn); what was there
+  // goes into the pack in its place (a two-handed weapon frees the off hand).
+  wield(key) {
+    const it = this.packItem(key), d = it && ITEMS[it.type];
+    if (!it || (d.cat !== "weapon" && d.cat !== "armour")) return false;
+    const p = this.player, where = d.cat === "weapon" ? "hand" : d.slot;
+    const item = this.unpack(it), old = p.equip[where], extra = d.hands === 2 ? p.equip.off : null;
+    p.equip[where] = item;
+    if (extra) p.equip.off = null;
+    for (const o of [old, extra]) if (o && !this.stow(o)) this.drop(o, true);
+    this.log(d.cat === "weapon" ? `You wield the ${d.name}.` : `You put on the ${d.name}.`);
+    return this.tick();
+  }
+  // Take off what's held or worn there (a turn), into the pack.
+  takeOff(where) {
+    const p = this.player, it = p.equip[where];
+    if (!it) return false;
+    if (p.pack.length >= PACK.size) { this.log("Your pack is full."); return false; }
+    p.equip[where] = null;
+    this.stow(it);
+    this.log(ITEMS[it.type].cat === "weapon" ? `You put away the ${ITEMS[it.type].name}.` : `You take off the ${ITEMS[it.type].name}.`);
+    return this.tick();
+  }
+  // Drop a thing from the pack where the player stands (a turn); or, `item`
+  // given (`quiet`), drop that without a turn.
+  drop(keyOrItem, quiet = false) {
+    const p = this.player;
+    let item = keyOrItem;
+    if (typeof keyOrItem === "string") {
+      const it = this.packItem(keyOrItem);
+      if (!it) return false;
+      item = this.unpack(it);
+    }
+    this.items.push({ x: p.x, y: p.y, item });
+    this.log(`You drop ${itemName(item)}.`);
+    return quiet ? true : this.tick();
+  }
   // The experience the player's next level needs, all told (null at the last).
   nextLevel() { return LEVELS.xp[this.player.level] ?? null; }
 
@@ -295,6 +422,12 @@ export class World {
     if (killed) {
       this.player.kills++;
       this.gainXp(MONSTERS[g.kind].xp);
+      // (Goblins sometimes drop what they carried.)
+      if (MONSTERS[g.kind].drops && this.rng.chance(PACK.drop)) {
+        const item = this.randomItem();
+        this.items.push({ x: g.x, y: g.y, item });
+        this.log(`The ${name} drops ${itemName(item)}.`);
+      }
     }
     for (const a of this.pack(g)) {
       a.state = "aggressive";
@@ -361,9 +494,14 @@ export class World {
   // A monster's blow at the player: it may miss; a hard one may make them
   // bleed; out of hit points, they die.
   strike(g) {
-    const M = MONSTERS[g.kind], p = this.player, hit = this.rng.chance(M.hit), dmg = hit ? this.rng.int(...M.dmg) : 0;
+    const M = MONSTERS[g.kind], p = this.player, hit = this.rng.chance(M.hit);
+    let dmg = hit ? this.rng.int(...M.dmg) : 0;
     this.events.push({ type: "attack", actor: g, hit, dmg });
     if (!hit) return this.log(`The ${M.name} misses you.`);
+    // (Armour takes some of the blow off, up to its defence.)
+    const saved = Math.min(dmg, this.rng.int(0, this.defence()));
+    if (saved >= dmg) return this.log(`The ${M.name} ${M.verb} you, but your armour holds.`);
+    dmg -= saved;
     p.hp -= dmg;
     const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance);
     if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.rng.int(...B.turns));

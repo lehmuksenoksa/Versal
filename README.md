@@ -83,6 +83,14 @@ out (sneak) or light it, and `.` or space to wait a turn. `m` pulls down every m
 the keys. `e`, `i` and `l` open equipment, inventory and a look at what's in sight (with `!` and `?`
 over monsters on the map that have noticed you) in the sidebar, in place of the character sheet.
 
+Things lie about the rooms, written as letters on the floor (`)` weapons, `[` armour, `!` potions;
+remembered faintly once seen), and goblins sometimes drop what they carried. `,` picks up what's
+underfoot; `q` drinks a potion of healing, `W` wields a weapon or puts on armour, `t` takes one off,
+`D` drops one, each asking which by its letter (or click the word beside it in the sidebar). The
+pack holds ten things (`a` to `j`), potions of a kind together. The player starts with a dagger
+(1–4) and a potion; swords (2–6), axes (3–7) and two-handed warhammers (4–10) hit harder; a helmet
+or chainmail takes up to 1 or 2 off a blow.
+
 A run starts by asking the player's name (`?name=…` in the address skips it). The player has 20 hit
 points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
 and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw

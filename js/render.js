@@ -22,6 +22,8 @@ const LETTERING = {
   font: "Texturina, Georgia, serif",
   player: { weight: 800, size: 0.9, ink: "#a3261b" },
   monster: { weight: 600, size: 1.05, ink: INK },
+  // (Things lying about: smaller, in ink, potions in their colour.)
+  item: { weight: 700, size: 0.78, ink: INK },
   // (The undead outlined in ink, not paper: skeletons white.)
   skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
   bold: 0.025,
@@ -30,6 +32,9 @@ const LETTERING = {
   shade: 0.3,
   tilt: 0.06,
 };
+
+// Things' ink, where not black.
+const ITEM_INK = { potion: "#b5302a" };
 
 // Idle motion. Offsets are in tiles; t in seconds.
 const POSES = {
@@ -701,6 +706,15 @@ export class Renderer {
       this.fires.set(l, a);
       if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(lc, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a, FIRE_SIZE, FIRE_FOOT);
     });
+    // Things lying about: in sight, as letters; remembered, faint.
+    for (const it of w.items ?? []) {
+      const seen = w.seen[it.y * L.w + it.x], vis = w.isVisible(it.x, it.y);
+      if (!seen) continue;
+      const x = (it.x + 0.5) * TS, y = (it.y + 0.5) * TS;
+      if (x < view.x - TS || y < view.y - TS || x > view.x + vw + TS || y > view.y + vh + TS) continue;
+      const ink = ITEM_INK[it.item.type] ?? INK;
+      this.drawGlyph(lc, it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
+    }
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
       // Goblins show only while in sight, fading in and out.

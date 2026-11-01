@@ -1,6 +1,6 @@
 // Bootstrap: fonts, input and the animation loop.
 
-import { World } from "./world.js";
+import { World, ITEMS } from "./world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
 
@@ -77,6 +77,24 @@ window.addEventListener("keydown", (e) => {
     if (e.key === "?" || e.key === "Escape") { e.preventDefault(); ui.toggleHelp(false); }
     return;
   }
+  // A question waiting for a letter (which thing to drink, wield, drop, take off).
+  if (ui.prompt) {
+    e.preventDefault();
+    if (e.key === "Escape") return ui.endAsk();
+    const verb = ui.prompt.verb;
+    if (verb === "t") {
+      const where = { a: "hand", b: "off", c: "head", d: "body" }[e.key];
+      if (where) { ui.endAsk(); act(verb, where); }
+    } else if (/^[a-j]$/.test(e.key)) { ui.endAsk(); act(verb, e.key); }
+    return;
+  }
+  // (Capitals first: W and D aren't the moves w and d.)
+  if (e.key === "W" || e.key === "D") {
+    e.preventDefault();
+    const can = e.key === "W" ? world.player.pack.some((i) => ["weapon", "armour"].includes(ITEMS[i.type].cat)) : world.player.pack.length;
+    if (!can) return world.log(e.key === "W" ? "You have nothing to wield or wear." : "You carry nothing.");
+    return ui.ask(e.key);
+  }
   const dir = KEYS[e.code] || KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
   if (dir) {
     e.preventDefault();
@@ -100,6 +118,20 @@ window.addEventListener("keydown", (e) => {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
     if (!world.dead) renderer.toggleLamp();
+  } else if (e.key === "," || e.key === "g") {
+    e.preventDefault();
+    world.pickUp();
+  } else if (e.key === "q") {
+    // Drink: a potion at once when there's one kind, else ask which.
+    e.preventDefault();
+    const kinds = world.player.pack.filter((i) => ITEMS[i.type].cat === "potion");
+    if (!kinds.length) world.log("You have nothing to drink.");
+    else if (kinds.length === 1) world.drink(kinds[0].key);
+    else ui.ask("q");
+  } else if (e.key === "t") {
+    e.preventDefault();
+    if (!Object.values(world.player.equip).some(Boolean)) world.log("You wear and hold nothing.");
+    else ui.ask("t");
   } else if (["e", "i", "l"].includes(e.key.toLowerCase())) {
     e.preventDefault();
     ui.togglePanel(e.key.toLowerCase());
@@ -114,6 +146,17 @@ window.addEventListener("keydown", (e) => {
     ui.togglePanel("sheet");
   }
 });
+// Doing something with a thing: drinking, wielding or wearing, dropping (by
+// its letter), taking off (by where), picking up.
+function act(verb, key) {
+  if (!world || world.dead) return;
+  if (verb === "q") world.drink(key);
+  else if (verb === "W") world.wield(key);
+  else if (verb === "D") world.drop(key);
+  else if (verb === "t") world.takeOff(key);
+  else if (verb === "pick") world.pickUp();
+}
+ui.onAct = (verb, key) => { ui.endAsk(); act(verb, key); };
 // A tap ends a run that's over; the help closes when tapped.
 document.getElementById("death").addEventListener("click", () => world?.dead && newRun());
 document.getElementById("help").addEventListener("click", () => ui.toggleHelp(false));
@@ -217,11 +260,12 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // The action strip (touch screens): search (or wait), the lamp, closing a
 // door; kept up to date each frame.
-const act = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
-act("act-search", () => world.search());
-act("act-rest", () => (resting ? stopRest("You stop resting.") : startRest()));
-act("act-lamp", () => renderer.toggleLamp());
-act("act-close", () => world.closeDoor());
+const button = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
+button("act-search", () => world.search());
+button("act-pack", () => ui.togglePanel("i"));
+button("act-rest", () => (resting ? stopRest("You stop resting.") : startRest()));
+button("act-lamp", () => renderer.toggleLamp());
+button("act-close", () => world.closeDoor());
 function updateActions() {
   const lamp = document.getElementById("act-lamp"), close = document.getElementById("act-close");
   if (!world || !lamp) return;
