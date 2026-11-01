@@ -5,6 +5,21 @@ All five milestones are in the game (the first version of each); what follows is
 The look is roughly done; this is what comes next, in milestones that can each be tried on their own.
 Decided with the player of the game; open questions at the end.
 
+## How we work
+
+- **Every visual decision is the player's.** Nothing new to look at, and no change to how anything
+  looks, goes into the game without their say.
+- **A mockup first.** Each visual element or change starts as a mockup page (in `mockups/`, or
+  published for them to see) showing the options side by side, with the one recommended and why.
+  They choose or change it; only then is it built into the game.
+- **No visual choices made quietly while building.** If one comes up mid-work, stop and ask before
+  going on.
+- **Each new visual element gets a slide** in the presentation of the visual elements
+  (https://claude.ai/artifact/WCzvGZbKDgWCHNNdtuyaGv): what it is, a picture of it from the game,
+  who decided what, and what is open for their say.
+- Options are offered with a recommendation; decisions are asked with a tool that shows each
+  decision and its options.
+
 ## Decisions (asked and answered)
 
 - **Health:** 20 HP to start; goblins hit for 1–3, skeletons 1–4. Damage shown as numbers in the log.
