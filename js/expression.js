@@ -324,10 +324,11 @@ export class Expression {
     const drawn = layer({ floor: true, shadow: false });
     this.floorLayer = drawn.canvas; // (for its shape)
     this.shadowLayer = layer({ floor: true, fill: false }).canvas;
-    // (The things in the rooms cut out of the grid and inked with the walls,
-    // as the layers are recoloured.)
-    this.markLayer = layer({ grid: true, keys: true, furniture: "erase" }).canvas;
-    this.wallLayer = layer({ walls: true, doors: false, furniture: "ink" }).canvas;
+    // (The things in the rooms cut out of the grid, as the layers are
+    // recoloured: the furniture inked with the grid, so not remembered; the
+    // pillars with the walls.)
+    this.markLayer = layer({ grid: true, keys: true, furniture: "erase", inked: (f) => f.type !== "post" }).canvas;
+    this.wallLayer = layer({ walls: true, doors: false, furniture: "ink", inked: (f) => f.type === "post" }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
     // The doors, a layer of their own (redrawn as they open).
     this.doorLayer = blank(cw, ch);

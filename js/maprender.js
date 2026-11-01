@@ -34,11 +34,13 @@ const GRID = { wobble: 0.8, breaks: 0.35 };
 // hatching strokes.
 // The things in the rooms (`furniture`) are drawn with the grid on paper
 // ("paper"); or, for drawings recoloured as one ink, cut out of the grid
-// ("erase", with the grid) and inked with the walls ("ink", with the walls).
+// ("erase", with the grid) and inked with the walls ("ink", with the walls);
+// `inked` picks which are inked (with the walls, or with the grid when
+// erased).
 // The doors go with the walls unless `doors` is false.
 export function renderMap(level, TS, scale, seed, {
   plan = false, hatch: withHatch = !plan, paper = true, floor: withFloor = true, fill = true, shadow = true, grid = !plan, walls = true, keys = true,
-  furniture = "paper", doors = walls,
+  furniture = "paper", doors = walls, inked = null,
 } = {}) {
   const { w: W, h: H } = level;
   const canvas = document.createElement("canvas");
@@ -81,8 +83,9 @@ export function renderMap(level, TS, scale, seed, {
     drawGrid(ctx, W, H, TS, gridRng, open, caveTile);
     if (level.rubble) drawRubble(ctx, level, TS, new RNG(seed ^ 0x2bb1e));
     if (level.features && furniture !== "ink") drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), furniture);
+    if (level.features && furniture === "erase" && inked) drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), "ink", inked);
   }
-  if (walls && level.features && furniture === "ink") drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), "ink");
+  if (walls && level.features && furniture === "ink") drawFeatures(ctx, level.features, TS, new RNG(seed ^ 0xfea7), "ink", inked);
   ctx.restore();
 
   if (walls) {
@@ -607,7 +610,9 @@ function drawRubble(ctx, level, TS, rng, mode = "ink") {
 // drawn with the pen: posts (pillars on grid crossings, or half of one on a
 // wall's line, the wall drawn over its back) in ink; furniture outlined over
 // the paper. (Their shadows are drawn with the walls': see drawShadow.)
-function drawFeatures(ctx, features, TS, rng, mode = "paper") {
+// (Those `pick` leaves out are drawn unseen, so each of the rest is drawn
+// with the same hand as when all are.)
+function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
   const k = TS / 32, P = pen(ctx, rng, k, mode), OUT = 2.9, IN = 1.9;
   const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
   ctx.save();
@@ -618,6 +623,7 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper") {
     // (Laying out shadows: moved down and right, posts as far as the walls'.)
     ctx.save();
     if (mode === "cast") ctx.translate(...Array(2).fill(TS * (f.type === "post" ? 0.2 : 0.11)));
+    if (pick && !pick(f)) ctx.globalAlpha = 0;
     drawFeature(f);
     ctx.restore();
   }
