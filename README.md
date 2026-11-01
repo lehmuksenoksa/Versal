@@ -18,8 +18,8 @@ and some goblins.
   aggressive: it chases them (a little slower than they move), attacks when next to them (no damage
   yet), and opens doors in the way now and then; it gives up when they are out of sight a while or
   far off.
-- Light other than the player's: goblin campfires in the caverns (a pack always round them; the
-  flame burns, redrawn on twos), and lit dungeon rooms and stretches of corridor, lit throughout,
+- Light other than the player's: goblin campfires in the caverns (a pack always round them; a
+  flame burning over a teepee of three logs, redrawn on twos), and lit dungeon rooms and stretches of corridor, lit throughout,
   their light pouring out of open doorways in bands like the player's. Lit places are seen from
   far off, in line of sight, and a sneaking player standing in one is noticed as if their lamp
   were lit.
@@ -56,7 +56,7 @@ and some goblins.
   behind a pillar is hidden, goblins too): sharp where they block the view, fading out with distance.
   Known walls and hatching within a few squares stay inked as in sight round a corner, but the
   floor grid shows only where the player sees. What is in sight is drawn in black ink; what is remembered is
-  drawn more faintly, in browner ink, on a floor toned toward the stone; ground never seen is black,
+  drawn more faintly, without the floor grid or the furniture, on a floor toned toward the stone; ground never seen is black,
   fading in through thickening strokes. They carry a candle whose flame casts shadows, sharp near a
   wall and softer away from it, with darkness outside its light.
 

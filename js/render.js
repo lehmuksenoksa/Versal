@@ -11,6 +11,9 @@ export { EXPRESSION_DEFAULTS };
 
 // How far (in squares) the map fades into the darkness at its edges.
 const EDGE_FADE = 1.5;
+// A campfire's flame: its size (times fire.js's) and where it stands (squares
+// below its square's middle), over the teepee of logs.
+const FIRE_SIZE = 1.15, FIRE_FOOT = 0.1;
 export const ZOOM = { start: 0.48, min: 0.4, max: 2, step: 1.25 };
 
 // How the player and monsters are lettered, as chosen in the character
@@ -675,7 +678,7 @@ export class Renderer {
       const x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
       this.fires.set(l, a);
-      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(lc, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a);
+      if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFire(lc, x, y, TS, t * (this.reduced ? 0.5 : 1), i, a, FIRE_SIZE, FIRE_FOOT);
     });
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);

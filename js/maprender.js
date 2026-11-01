@@ -684,31 +684,14 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
       const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
       P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
     } else if (f.type === "campfire") {
-      // A ring of lumpy stones of mixed sizes, each touching the next (their
-      // sizes scaled a little so the ring closes), round a heap of logs. (The
-      // flame is drawn over it as it burns: fire.js.)
-      const R = TS * 0.42, rs = [];
-      for (let len = 0; len < 2 * Math.PI * R; ) {
-        const r = TS * rng.range(0.07, 0.14);
-        len += (rs.at(-1) ?? 0) + r;
-        rs.push(r);
-      }
-      const fit = (2 * Math.PI * R) / rs.reduce((t, r, i) => t + r + rs[(i + 1) % rs.length], 0);
-      let a = rng.range(0, 2 * Math.PI);
-      rs.forEach((r, i) => {
-        const at = R + rng.range(-0.02, 0.02) * TS, cx = x + Math.cos(a) * at, cy = y + Math.sin(a) * at;
-        const m = rng.int(6, 8), a0 = rng.range(0, 2 * Math.PI), pts = [];
-        for (let q = 0; q < m; q++) {
-          const b = a0 + (q / m) * 2 * Math.PI + rng.range(-0.25, 0.25), rr = ((r * fit) / 0.9) * rng.range(0.8, 1.12);
-          pts.push([cx + Math.cos(b) * rr, cy + Math.sin(b) * rr]);
-        }
-        P.lump(pts, 2.7, PAPER);
-        a += ((r + rs[(i + 1) % rs.length]) * fit) / R;
-      });
-      for (const b of [0.2, 1.3, 2.4, 3.5, 4.6, 5.6]) {
-        const c = Math.cos(b), sn = Math.sin(b), lx = x + c * 0.12 * TS, ly = y + sn * 0.12 * TS;
-        P.box(lx, ly, 0.42 * TS, 0.11 * TS, b, IN + 0.4, PAPER);
-        P.round(lx + c * 0.21 * TS, ly + sn * 0.21 * TS, 0.05 * TS, 1.2);
+      // A teepee of three logs seen from the side: plain bars of ink leaning
+      // together, crossing a little past their point. (The flame is drawn
+      // over it as it burns: fire.js.)
+      const w = 0.4, foot = 0.28, top = -0.14, th = 0.09, poke = 0.07;
+      for (const u of [-0.5, 0.5, 0]) {
+        const bx = x + u * w * TS, by = y + foot * TS, tx = x - u * poke * TS, ty = y + top * TS;
+        const len = Math.hypot(tx - bx, ty - by), nx = (-(ty - by) / len) * th * TS * 0.5, ny = ((tx - bx) / len) * th * TS * 0.5;
+        P.shape([[bx + nx, by + ny], [tx + nx, ty + ny], [tx - nx, ty - ny], [bx - nx, by - ny]], 0, INK);
       }
     }
   }
