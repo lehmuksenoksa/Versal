@@ -57,6 +57,8 @@ Decided with the player of the game; open questions at the end.
 
 ## The monsters' letters
 
+Every letter is edged in paper (fading with the light), except the undead, edged in ink.
+
 | Monster | Letter | Colour, look |
 |---|---|---|
 | Goblin | `g` | black |
