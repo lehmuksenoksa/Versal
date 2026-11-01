@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monster Letters</title>
+<style>
+  /* Layout: the switches, then a table of every letter under each light, then a strip at game size. */
+  @font-face { font-family: "Texturina"; font-weight: 100 900; src: url("../fonts/Texturina-Latin.woff2") format("woff2"); }
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  h2 { margin: 24px 0 8px; font-size: 19px; font-weight: normal; color: var(--muted); }
+  p { margin: 0 0 10px; max-width: 72ch; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 12px 0; font-size: 14px; color: var(--muted); }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  select { font: 14px var(--body); padding: 2px 4px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); }
+  .scroll { overflow-x: auto; max-width: 100%; }
+  table { border-collapse: separate; border-spacing: 6px; background: var(--paper); border: 1px solid var(--rule); }
+  th { font-weight: normal; font-size: 13px; color: var(--muted); text-align: left; padding: 0 4px; }
+  td.name { font-size: 15px; padding-right: 8px; white-space: nowrap; }
+  td.name span { display: block; font-size: 12px; color: var(--muted); }
+  canvas { display: block; }
+  .strips { display: grid; gap: 8px; background: var(--paper); border: 1px solid var(--rule); padding: 8px; width: max-content; }
+  .strips div { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+  .strips span { width: 9ch; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Monster letters</h1>
+  <p>Every letter, yours included, in Texturina as in the game: under the candle's full light (warmed), in its dim and dark bands, and on unlit floor. Close up first, then a strip of them all at game size. The pale skeleton always has the thick ink edge; the coloured letters can have the paper halo the black ones have, or the same ink edge.</p>
+  <div class="bar">
+    <label for="edge">Coloured letters <select id="edge"><option value="halo">with the paper halo</option><option value="ink" selected>edged in ink</option></select></label>
+  </div>
+</header>
+
+<div class="scroll"><table id="table"></table></div>
+
+<h2>At game size</h2>
+<div class="scroll"><div class="strips" id="strips"></div></div>
+
+<script>
+const INK = "#1b1815", PAPER = "#f7f2e6", DARK = [59, 57, 54], PAPER_RGB = [247, 242, 230];
+const FONT = "Texturina, Georgia, serif", HALO = 0.1, BOLD = 0.025, EDGE = 0.26;
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+const $ = (id) => document.getElementById(id);
+
+// The letters: the player, the monsters in the game now, and those to come.
+// (`colour`: one of the coloured letters, whose edge the switch sets;
+// `edge`: always edged in ink.)
+const LETTERS = [
+  { name: "You", note: "red @", ch: "@", ink: "#a3261b", weight: 800, size: 0.9, player: true },
+  { name: "Goblin", note: "black g (now)", ch: "g", ink: INK },
+  { name: "Goblin warrior", note: "black g, bigger", ch: "g", ink: INK, size: 1.4 },
+  { name: "Goblin king", note: "black G, big, crowned", ch: "G", ink: INK, size: 1.35, crown: true },
+  { name: "Rat", note: "brown r", ch: "r", ink: "#7a4a22", colour: true },
+  { name: "Bat", note: "dark grey b", ch: "b", ink: "#57524c", colour: true },
+  { name: "Skeleton", note: "white z (now)", ch: "z", ink: PAPER, edge: true },
+  { name: "Zombie", note: "sickly green X", ch: "X", ink: "#8aa13a", colour: true },
+  { name: "Cultist", note: "red h", ch: "h", ink: "#c7341f", colour: true },
+  { name: "Spider", note: "black s", ch: "s", ink: INK },
+  { name: "Giant spider", note: "black S", ch: "S", ink: INK },
+  { name: "Troll", note: "green T", ch: "T", ink: "#3d7a33", colour: true },
+];
+
+// The light: full (warmed), the dim and dark bands, and none. (`lit`: how
+// much of the paper shows, which is how strong a letter's paper halo is.)
+const LIGHTS = [
+  { name: "Full light", lit: 1, warm: true },
+  { name: "Dim band", lit: 0.75 },
+  { name: "Dark band", lit: 0.2 },
+  { name: "Unlit", lit: 0 },
+];
+const floorColour = (lit) => `rgb(${DARK.map((d, i) => Math.round(d + (PAPER_RGB[i] - d) * lit)).join(",")})`;
+
+// A patch of floor `cols` by `rows` squares of `TS`, its grid drawn by hand.
+function floor(g, cols, rows, TS, light, seed) {
+  let s = seed;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647 - 0.5);
+  g.fillStyle = floorColour(light.lit);
+  g.fillRect(0, 0, cols * TS, rows * TS);
+  if (light.warm) { g.fillStyle = "rgba(255, 196, 120, 0.18)"; g.fillRect(0, 0, cols * TS, rows * TS); }
+  g.strokeStyle = `rgba(27, 24, 21, ${0.18 + 0.12 * light.lit})`;
+  g.lineWidth = Math.max(0.8, TS / 40);
+  for (let i = 0; i <= cols; i++) { g.beginPath(); g.moveTo(i * TS + rnd() * TS * 0.03, 0); g.lineTo(i * TS + rnd() * TS * 0.03, rows * TS); g.stroke(); }
+  for (let j = 0; j <= rows; j++) { g.beginPath(); g.moveTo(0, j * TS + rnd() * TS * 0.03); g.lineTo(cols * TS, j * TS + rnd() * TS * 0.03); g.stroke(); }
+}
+
+// A letter standing in the square whose middle is (x, y): its hatched pen
+// shadow, its halo or ink edge, a little extra weight, and (the king) a crown.
+function letter(g, L, x, y, TS, light) {
+  const size = (L.size ?? 1.05) * TS, inked = L.edge || (L.colour && $("edge").value === "ink");
+  // The shadow: three short strokes on the floor.
+  const w = TS * 0.22, sy = y + TS * 0.38;
+  g.save();
+  g.globalAlpha = 0.55;
+  g.strokeStyle = INK;
+  g.lineCap = "round";
+  g.lineWidth = Math.max(1, TS * 0.04);
+  g.beginPath();
+  for (let k = -1; k <= 1; k++) { g.moveTo(x + k * w * 0.6 - w * 0.2, sy + w * 0.25); g.lineTo(x + k * w * 0.6 + w * 0.2, sy - w * 0.25); }
+  g.stroke();
+  g.restore();
+  g.save();
+  g.font = `${L.weight ?? 600} ${size}px ${FONT}`;
+  g.textAlign = "center";
+  g.textBaseline = "alphabetic";
+  g.lineJoin = "round";
+  const m = g.measureText(L.ch), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+  g.translate(x, y + (asc - desc) / 2);
+  // (The player, unlit, has a ring of the dark band's colour, as in the game.)
+  if (L.player && light.lit < 0.7) {
+    g.lineWidth = size * 0.14;
+    g.strokeStyle = floorColour(0.2);
+    g.strokeText(L.ch, 0, 0);
+  }
+  g.lineWidth = size * (inked ? EDGE : HALO);
+  g.strokeStyle = inked ? INK : `rgba(247, 242, 230, ${0.9 * (L.player ? Math.max(light.lit, 0.0) : light.lit)})`;
+  g.strokeText(L.ch, 0, 0);
+  g.lineWidth = size * BOLD;
+  g.strokeStyle = L.player && light.lit < 0.7 ? "#741a12" : L.ink;
+  g.strokeText(L.ch, 0, 0);
+  g.fillStyle = L.player && light.lit < 0.7 ? "#741a12" : L.ink;
+  g.fillText(L.ch, 0, 0);
+  if (L.crown) {
+    // A crown sitting on the G: a band and three points, in ink, haloed.
+    const cw = size * 0.5, ch = size * 0.24, top = -asc - size * 0.06;
+    g.beginPath();
+    g.moveTo(-cw / 2, top);
+    g.lineTo(-cw / 2, top - ch * 0.55);
+    g.lineTo(-cw / 2 + cw * 0.18, top - ch * 0.25);
+    g.lineTo(0, top - ch);
+    g.lineTo(cw / 2 - cw * 0.18, top - ch * 0.25);
+    g.lineTo(cw / 2, top - ch * 0.55);
+    g.lineTo(cw / 2, top);
+    g.closePath();
+    g.lineWidth = size * HALO;
+    g.strokeStyle = `rgba(247, 242, 230, ${0.9 * light.lit})`;
+    g.stroke();
+    g.fillStyle = L.ink;
+    g.fill();
+  }
+  g.restore();
+}
+
+function canvas(w, h) {
+  const c = document.createElement("canvas");
+  c.width = Math.round(w * dpr);
+  c.height = Math.round(h * dpr);
+  c.style.width = `${w}px`;
+  c.style.height = `${h}px`;
+  const g = c.getContext("2d");
+  g.scale(dpr, dpr);
+  return [c, g];
+}
+
+function draw() {
+  // Close up: a patch of floor three squares by two for each letter, under each light.
+  const TS = 52, table = $("table");
+  table.innerHTML = "<tr><th></th>" + LIGHTS.map((l) => `<th>${l.name}</th>`).join("") + "</tr>";
+  LETTERS.forEach((L, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="name">${L.name}<span>${L.note}</span></td>`;
+    for (const light of LIGHTS) {
+      const td = document.createElement("td"), [c, g] = canvas(3 * TS, 2.2 * TS);
+      floor(g, 3, 3, TS, light, 7 + i * 13);
+      letter(g, L, 1.5 * TS, (L.crown ? 1.25 : 1.05) * TS, TS, light);
+      td.append(c);
+      tr.append(td);
+    }
+    table.append(tr);
+  });
+  // At game size: all of them in a row, one square apart.
+  const ts = 21, strips = $("strips");
+  strips.innerHTML = "";
+  for (const light of LIGHTS) {
+    const row = document.createElement("div"), [c, g] = canvas((LETTERS.length * 2 + 1) * ts, 3 * ts);
+    floor(g, LETTERS.length * 2 + 1, 3, ts, light, 99);
+    LETTERS.forEach((L, i) => letter(g, L, (i * 2 + 1.5) * ts, 1.6 * ts, ts, light));
+    row.innerHTML = `<span>${light.name}</span>`;
+    row.append(c);
+    strips.append(row);
+  }
+}
+
+$("edge").addEventListener("input", draw);
+document.fonts.load(`600 40px Texturina`).then(() => document.fonts.load(`800 40px Texturina`)).then(draw, draw);
+draw();
+</script>
+</body>
+</html>
