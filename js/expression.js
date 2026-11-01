@@ -1466,7 +1466,7 @@ export class Expression {
 
   // Each frame, with the player drawn at map point (px, py): sight cast from
   // there when it moves, eased toward, and the candle.
-  update(now, dt, px, py, drawn = true) {
+  update(now, dt, px, py, drawn = true, at = null) {
     // Some of the redrawing, if there is any to do: slices until about 8 ms
     // are spent (at least one).
     if (this.job) {
@@ -1489,9 +1489,27 @@ export class Expression {
     // (Drawn on the GPU, `gpu`: the light only cast anew when it moves, its
     // flicker done there.)
     // (Its easing too: the GPU blends from what was in sight to what is.)
+    // (On the GPU, while the player's letter is on its way from one square
+    // to the next, `at`: cast from where it is, so shadows move with it; as
+    // often as that costs no more than a third of the time, `castCost`; and
+    // from the square itself once it is there.)
     if (this.gpu) {
-      if (!this.sightFrom || this.sightFrom[0] !== px || this.sightFrom[1] !== py) this.castSight(px, py);
-      if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py || !this.lightBox) this.castLight(px, py, now / 1000);
+      const [ax, ay] = at ?? [px, py], moving = ax !== px || ay !== py;
+      if (moving && now - (this.castAt ?? -1e9) < (this.castCost ?? 0) * 2) return;
+      const t0 = performance.now();
+      let cast = false;
+      if (!this.sightFrom || this.sightFrom[0] !== ax || this.sightFrom[1] !== ay) {
+        this.castSight(ax, ay, moving);
+        cast = true;
+      }
+      if (!this.lightFrom || this.lightFrom[0] !== ax || this.lightFrom[1] !== ay || !this.lightBox) {
+        this.castLight(ax, ay, now / 1000, moving);
+        cast = true;
+      }
+      if (cast) {
+        this.castAt = now;
+        this.castCost = 0.7 * (this.castCost ?? 0) + 0.3 * (performance.now() - t0);
+      }
       return;
     }
     // (The sight's easing and the light only for a frame the map is drawn
@@ -1508,7 +1526,7 @@ export class Expression {
   // ground that goes with it (see sightRock), clear out to `sight` and
   // fading out with distance after it; where walls block the view the edge
   // is nearly sharp.
-  castSight(px, py) {
+  castSight(px, py, quick = false) {
     const { S, TS } = this, { target } = this.sightCanvas, g = target.getContext("2d"), far = S.sight + S.sightFade;
     const r = (Math.max(far, this.lightOut()) + 1) * TS, v = this.lastView;
     const reuse = v && v.px === px && v.py === py && v.r >= r, path = reuse ? v.path : this.viewFrom(px, py, r);
@@ -1615,6 +1633,8 @@ export class Expression {
     }
     this.sightFrom = [px, py];
     this.sightCasts = (this.sightCasts ?? 0) + 1;
+    // (Cast on the way between squares: eased in quickly, `sightQuick`.)
+    this.sightQuick = quick;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
   }
 
@@ -1789,7 +1809,7 @@ export class Expression {
   // changes (`lightEdge`). Each frame, the whole flickers in brightness and
   // (unless it is inked, as the ink stays put) grows and shrinks a little
   // about the player.
-  castLight(px, py, t) {
+  castLight(px, py, t, quick = false) {
     const { S, TS } = this, rag = S.lightRag * TS;
     // The bands' outer edges: full, dim and dark.
     const rFull = (S.lightFull - 0.5) * TS, rad = rFull + S.lightDim * TS, out = this.lightOut() * TS;
@@ -1812,7 +1832,7 @@ export class Expression {
         const was = this.lightReach;
         this.lightReach = this.lightReachPrev?.width === size ? this.lightReachPrev : blank(size, size);
         this.lightReachPrev = was;
-        this.lightPrev = { box: lastBox, from: this.lightFrom, t: performance.now(), casts: this.lightCasts ?? 0 };
+        this.lightPrev = { box: lastBox, from: this.lightFrom, t: performance.now(), casts: this.lightCasts ?? 0, quick };
       } else this.lightPrev = null;
       // How much of the light reaches each point: in red, how many of the
       // flame's points see it (each adding 51); in green, the share of the

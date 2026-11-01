@@ -25,7 +25,7 @@ const TABLE_W = 1024;
 const LAMP_WARMTH = 0.7, EDGE_FADE = 1.5;
 // How long the light cast where the player was takes to fade, as they step
 // (a little longer than the step), and the fade's curve.
-const LIGHT_FADE_MS = 220;
+const LIGHT_FADE_MS = 220, LIGHT_QUICK_MS = 60, SIGHT_QUICK_MS = 30;
 const smoothK = (k) => k * k * (3 - 2 * k);
 
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -522,7 +522,8 @@ export class GpuMap {
       this.sightPics = { w, h, from: this.pic(w, h), spare: this.pic(w, h), eased: this.pic(w, h), cast: null, at: 0, k: 1 };
       this.versions.sightTo = null;
     }
-    const P = this.sightPics, tau = Math.max(1, S.reveal * 350), kAt = (t) => 1 - Math.exp(-(t - P.at) / tau);
+    // (A sight cast on the way between squares eases in quickly.)
+    const P = this.sightPics, tau = E.sightQuick ? SIGHT_QUICK_MS : Math.max(1, S.reveal * 350), kAt = (t) => 1 - Math.exp(-(t - P.at) / tau);
     if (P.cast !== E.sightCasts) {
       // A new sight: what shows now becomes where it eases from.
       if (P.cast !== null && this.tex.sightTo) {
@@ -612,7 +613,8 @@ export class GpuMap {
       u("uLightC", lx, ly);
       u("uLightShift", light.x - lx, light.y - ly);
       // (The light cast where the player was, faded out over a step.)
-      const pv = E.lightPrev, k = pv ? 1 - Math.min(1, (performance.now() - pv.t) / LIGHT_FADE_MS) : 0;
+      // (Quicker, for one cast on the way between squares.)
+      const pv = E.lightPrev, k = pv ? 1 - Math.min(1, (performance.now() - pv.t) / (pv.quick ? LIGHT_QUICK_MS : LIGHT_FADE_MS)) : 0;
       u("uPrevK", k > 0 ? smoothK(k) : 0);
       if (pv && k > 0) {
         u("uPrevBox", pv.box.x, pv.box.y, pv.box.w, pv.box.res);

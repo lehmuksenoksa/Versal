@@ -633,7 +633,9 @@ export class Renderer {
     if (!fresh) [cx, cy] = this.mapCam;
     this.drawnCam = [cx, cy];
     const view = { x: cx, y: cy, w: vw, h: vh };
-    if (this.low || gpu) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh);
+    // (On the GPU the sight and light follow the letter as it steps, cast
+    // from where it is drawn as often as they can be afforded.)
+    if (this.low || gpu) this.exp.update(now, dt, (w.player.x + 0.5) * TS, (w.player.y + 0.5) * TS, fresh, gpu ? [px, py] : null);
     else this.exp.update(now, dt, px, py);
     const t2 = performance.now();
     if (gpu) {
