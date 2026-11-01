@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Throne</title>
+<style>
+  /* The throne room (the L hall) as the generator makes it, with the throne
+     drawn in its apse three ways: each the room at game zoom and the throne
+     close. A mockup only: the game draws no throne yet. */
+  body { margin: 0; background: #2b221c; color: #f7f2e6; font: 15px/1.4 Georgia, serif; padding: 16px; display: grid; gap: 16px; }
+  canvas { display: block; max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<script type="module">
+import { renderMap, pen, INK, PAPER } from "../js/maprender.js";
+import { generateAreas } from "../js/levelgen.js";
+import { PLACES } from "../js/world.js";
+import { RNG } from "../js/rng.js";
+import { drawFire } from "../js/fire.js";
+import { LIGHTS } from "../js/levelgen.js";
+
+const q = new URLSearchParams(location.search), TS = 32;
+// A level 3 whose throne room lies wide (so the apse is at its end).
+const P = PLACES[2];
+let L = null;
+for (let s = +(q.get("seed") ?? 1); s < 400; s++) {
+  L = generateAreas(new RNG(s), { from: P.from, to: P.to, up: true, throne: true });
+  if (L.throneRoom?.seat && L.throneRoom.w > L.throneRoom.h) break;
+}
+const R = L.throneRoom, seat = R.seat;
+// Just the room and a little round it, as a level of its own.
+const m = 4, X0 = R.x - m, Y0 = R.y - m, w = R.w + 2 * m, h = R.h + 2 * m;
+const sub = { w, h, tiles: new Uint8Array(w * h), cave: new Uint8Array(w * h), rubble: new Uint8Array(w * h), features: [], recesses: [], doors: [] };
+for (let y = 0; y < h; y++)
+  for (let x = 0; x < w; x++) {
+    const j = (Y0 + y) * L.w + X0 + x, k = y * w + x;
+    sub.tiles[k] = L.tiles[j];
+    sub.cave[k] = L.cave[j];
+    // (No rubble under the throne.)
+    sub.rubble[k] = Math.max(Math.abs(X0 + x - seat.x), Math.abs(Y0 + y - seat.y)) <= 1 ? 0 : L.rubble[j];
+  }
+for (const f of L.features) if (f.x > X0 && f.y > Y0 && f.x < X0 + w && f.y < Y0 + h) sub.features.push({ ...f, x: f.x - X0, y: f.y - Y0 });
+const lights = L.lights.filter((l) => l.x > X0 && l.y > Y0 && l.x < X0 + w && l.y < Y0 + h).map((l) => ({ ...l, x: l.x - X0, y: l.y - Y0 }));
+// The way the throne's back faces: toward the apse's end.
+const back = R.w >= R.h ? [Math.sign(seat.x - R.cx) || 1, 0] : [0, Math.sign(seat.y - R.cy) || 1];
+const sx = seat.x - X0 + 0.5, sy = seat.y - Y0 + 0.5;
+
+// The throne, drawn with the map's pen (sizes in squares, a along the back,
+// c across).
+const THRONES = {
+  1: { name: "A stone chair on a dais", draw(P, T, k) {
+    P.shape([T(-1.35, -1.25), T(-1.35, 1.25), T(1.05, 1.25), T(1.05, -1.25)], 2.9, PAPER);
+    P.shape([T(-0.9, -0.95), T(-0.9, 0.95), T(1.05, 0.95), T(1.05, -0.95)], 1.9);
+    P.shape([T(-0.32, -0.46), T(-0.32, 0.46), T(0.36, 0.46), T(0.36, -0.46)], 2.9, PAPER);
+    P.shape([T(0.36, -0.62), T(0.36, 0.62), T(0.62, 0.62), T(0.62, -0.62)], 2.4, INK);
+    for (const s of [-1, 1]) P.shape([T(-0.3, s * 0.46), T(-0.3, s * 0.62), T(0.36, s * 0.62), T(0.36, s * 0.46)], 1.9, PAPER);
+  } },
+  2: { name: "Hewn from the living rock", rock: true, draw(P, T) {
+    // (A spur of the rock left standing behind it, as the map draws rock:
+    // see `rock` below; the seat cut into its foot, a step before it.)
+    P.shape([T(-0.4, -0.5), T(-0.4, 0.5), T(0.45, 0.5), T(0.45, -0.5)], 2.9, PAPER);
+    P.shape([T(-0.22, -0.3), T(-0.22, 0.3), T(0.45, 0.3), T(0.45, -0.3)], 1.6);
+    P.line(...T(-0.85, -0.75), ...T(-0.85, 0.75), 1.9);
+  } },
+  3: { name: "On a heap of plunder", draw(P, T, k, ctx, rng) {
+    // Plunder heaped round it: chests, barrels, a shield, coins.
+    P.shape([T(0.55, 0.75), T(0.55, 1.35), T(1.2, 1.35), T(1.2, 0.75)], 2.6, PAPER);
+    P.line(...T(0.55, 1.05), ...T(1.2, 1.05), 1.6);
+    P.round(...T(0.95, -1.05), 0.3 * TS * k, 2.6, PAPER);
+    P.round(...T(0.95, -1.05), 0.13 * TS * k, 1.6);
+    P.round(...T(-0.7, -1.15), 0.26 * TS * k, 2.4, PAPER);
+    P.line(...T(-0.7, -1.4), ...T(-0.7, -0.9), 1.4);
+    P.line(...T(-0.95, -1.15), ...T(-0.45, -1.15), 1.4);
+    P.shape([T(-1.0, 0.7), T(-1.0, 1.2), T(-0.45, 1.25), T(-0.45, 0.75)], 2.4, PAPER);
+    for (let i = 0; i < 26; i++) {
+      const a = rng.range(-1.2, 1.3), c = rng.range(-1.35, 1.35);
+      if (Math.abs(c) < 0.75 && a > -0.45 && a < 0.75) continue;
+      P.round(...T(a, c), 0.065 * TS * k, 1.3, PAPER);
+    }
+    P.shape([T(-0.32, -0.46), T(-0.32, 0.46), T(0.36, 0.46), T(0.36, -0.46)], 2.9, PAPER);
+    P.shape([T(0.36, -0.58), T(0.36, 0.58), T(0.6, 0.58), T(0.6, -0.58)], 2.4, INK);
+    for (const s of [-1, 1]) P.shape([T(-0.3, s * 0.46), T(-0.3, s * 0.6), T(0.36, s * 0.6), T(0.36, s * 0.46)], 1.9, PAPER);
+  } },
+};
+
+// One picture: the room at game zoom (24 px a square) beside the throne
+// close (64 px a square).
+function picture(opt) {
+  // (The spur behind the hewn throne: rock squares from behind the seat to
+  // the apse's wall, wider at the wall.)
+  let level = sub;
+  if (THRONES[opt].rock) {
+    level = { ...sub, tiles: sub.tiles.slice() };
+    const at = (a, c) => [Math.floor(sx + back[0] * a - back[1] * c), Math.floor(sy + back[1] * a + back[0] * c)];
+    for (let a = 1; a <= 6; a++) for (const c of a >= 2 ? [-1, 0, 1] : [0]) { const [x, y] = at(a, c); if (x >= 0 && y >= 0 && x < w && y < h) level.tiles[y * w + x] = 0; }
+  }
+  const out = document.createElement("canvas"), W = 700, H = 380;
+  out.width = W;
+  out.height = H;
+  const g = out.getContext("2d");
+  g.fillStyle = "#14110e";
+  g.fillRect(0, 0, W, H);
+  const panel = (scale, cw, ch, ox, oy, cx, cy) => {
+    const map = renderMap(level, TS, scale, 11, { keys: false }).canvas, c = map.getContext("2d");
+    c.save();
+    c.setTransform(scale, 0, 0, scale, 0, 0);
+    lights.forEach((l, i) => { const B = LIGHTS[l.kind] ?? LIGHTS.brazier; drawFire(c, l.x * TS, l.y * TS, TS, 0.4, i, 1, B.flame, B.foot); });
+    const k = TS / 32, rng = new RNG(5), P = pen(c, rng, k, "paper"), T = (a, cc) => [(sx + back[0] * a - back[1] * cc) * TS, (sy + back[1] * a + back[0] * cc) * TS];
+    c.strokeStyle = INK;
+    c.lineJoin = c.lineCap = "round";
+    THRONES[opt].draw(P, T, k, c, rng);
+    c.restore();
+    const px = cx * TS * scale - cw / 2, py = cy * TS * scale - ch / 2;
+    g.drawImage(map, px, py, cw, ch, ox, oy, cw, ch);
+  };
+  // (The room at game zoom, the apse toward the right; the throne close.)
+  panel(0.75, 400, 330, 10, 10, (R.cx - X0 + 0.5) + back[0] * 1.5, R.cy - Y0 + 0.5);
+  panel(2, 270, 330, 420, 10, sx + back[0] * 0.4, sy + back[1] * 0.4);
+  g.fillStyle = "#f7f2e6";
+  g.font = "16px Georgia, serif";
+  g.fillText(`${opt} · ${THRONES[opt].name}`, 12, 366);
+  g.fillStyle = "#a89b86";
+  g.font = "13px Georgia, serif";
+  g.fillText("at game zoom", 330, 366);
+  g.fillText("close", 650, 366);
+  return out;
+}
+for (const opt of [1, 2, 3]) { const c = picture(opt); c.id = `throne-${opt}`; document.body.append(c); }
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>

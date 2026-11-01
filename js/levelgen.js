@@ -43,7 +43,7 @@ const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
 // (times a campfire's) and where it stands (squares below the light's
 // middle). Campfires in caves; braziers (a bowl of coals on legs, in the way)
 // in rooms and the king's halls; a hearth cut into a wall; candles on an
-// altar (three small flames).
+// altar (three candles, each a small flame).
 export const LIGHTS = {
   fire: { full: 3.5, dim: 2, dark: 2, flame: 1.15, foot: 0.1 },
   brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 0.62, foot: -0.08 },
@@ -55,14 +55,21 @@ export const LIGHTS = {
 };
 
 export const LEVELGEN_DEFAULTS = {
-  // The level's size in squares.
-  w: 96, h: 64,
+  // The level's size in squares (what is generated); and a margin of solid
+  // rock added all round it, so no floor comes within that many squares of
+  // the map's edge (where the drawing of the rock round it would be cut).
+  w: 96, h: 64, margin: 4,
   // How many regions, and how likely each type is.
   regions: 3, dungeon: 2, cavern: 2, collapsed: 1,
   // Rooms per 100 squares of level; extra corridors (making loops) per room;
   // the share of doorways into clean dungeon rooms that have a door, and of
   // those doors left open.
   density: 0.4, loops: 0.2, doors: 0.8, openDoors: 0.25,
+  // More ways round, after those: long loops (corridors between rooms near
+  // as the crow flies but far apart on foot, rooms with one way in first),
+  // then shortcuts (short tunnels through the rock where two places a few
+  // squares apart are a long walk apart); how many of each, at most.
+  longLoops: 3, shortcuts: 4,
   // Caves' size; rock formations per 30 squares of a big cave, and their
   // largest size in squares; cavern passages' width in squares.
   caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
@@ -106,9 +113,45 @@ export function generateAreas(rng, settings = {}) {
   const S = { ...LEVELGEN_DEFAULTS, ...settings };
   for (let attempt = 0; attempt < 20; attempt++) {
     const level = tryAreas(S, rng);
-    if (level) return level;
+    if (level) return withMargin(level, Math.max(0, Math.round(S.margin)));
   }
   throw new Error("level generation failed");
+}
+
+// The level with `m` squares of rock added all round: every square's values
+// moved (rock outside; the region of the nearest square), and everything
+// placed in squares moved with them (each thing once: the start may be the
+// stairs).
+function withMargin(L, m) {
+  if (!m) return L;
+  const W0 = L.w, H0 = L.h, W = W0 + 2 * m, H = H0 + 2 * m, n = W * H;
+  const grow = (a, key) => {
+    const b = new a.constructor(n);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const ix = x - m, iy = y - m, inside = ix >= 0 && iy >= 0 && ix < W0 && iy < H0;
+        b[y * W + x] = inside ? a[iy * W0 + ix] : key === "area" ? a[clamp(iy, 0, H0 - 1) * W0 + clamp(ix, 0, W0 - 1)] : key === "roomOf" || key === "wallOf" ? -1 : 0;
+      }
+    return b;
+  };
+  const out = { ...L, w: W, h: H };
+  for (const [key, v] of Object.entries(L)) if (ArrayBuffer.isView(v) && v.length === W0 * H0) out[key] = grow(v, key);
+  const moved = new Set();
+  const move = (o) => {
+    if (!o || moved.has(o)) return;
+    moved.add(o);
+    if (Array.isArray(o)) { o[0] += m; o[1] += m; return; }
+    o.x += m;
+    o.y += m;
+    if (o.cx !== undefined) { o.cx += m; o.cy += m; }
+    if (o.seat) move(o.seat);
+  };
+  for (const key of ["rooms", "doors", "secrets", "features", "posts", "recesses", "lights", "regions"]) for (const o of L[key] ?? []) move(o);
+  for (const o of [L.start, L.stairsUp, L.stairsDown]) move(o);
+  out.blocks = new Set([...L.blocks].map((j) => (Math.floor(j / W0) + m) * W + (j % W0) + m));
+  out.idx = (x, y) => y * W + x;
+  out.get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : out.tiles[y * W + x]);
+  return out;
 }
 
 function tryAreas(S, rng) {
@@ -165,9 +208,11 @@ function tryAreas(S, rng) {
     let w, h;
     if (type === HALLS) {
       // (Big halls, an odd number of squares each way, so their rows of
-      // columns sit evenly about the middle.)
-      w = rng.int(5, 8) * 2 + 1;
-      h = rng.int(4, 6) * 2 + 1;
+      // columns sit evenly about the middle; standing tall as often as
+      // lying wide.)
+      let a = rng.int(5, 8) * 2 + 1, b = rng.int(4, 6) * 2 + 1;
+      if (b > a) [a, b] = [b, a];
+      [w, h] = rng.chance(0.5) ? [a, b] : [b, a];
     } else if (isCave) {
       w = Math.round(rng.int(7, 16) * S.caveSize);
       h = Math.round(rng.int(6, 12) * S.caveSize);
@@ -190,6 +235,46 @@ function tryAreas(S, rng) {
     rooms.push({ x, y, w, h, cx: x + (w >> 1), cy: y + (h >> 1), cave: isCave, type, halls: type === HALLS, collapsed: !isCave && type === COLLAPSED && rng.chance(S.collapse) });
   }
   if (rooms.length < Math.max(3, target * 0.5)) return null;
+
+  // Kinds of hall (the king's), each its own plan, by where it is and what
+  // fits it (`hallKind`). The throne room (the biggest hall in the far third,
+  // on a level with a throne) is L: a nave of columns leading to an apse
+  // where the king sits. The hall most by the caverns is K: begun in
+  // a cave and squared off at the other end. The smallest of the rest, when
+  // there are four halls or more, is I: a storeroom. The others take turns
+  // at A (columns in rows along the long way), B (a forest of columns), C
+  // (round, a ring of columns, cut clean), D (a crossing), F (split by a
+  // wall of rock with gaps in it) and J (dug round an uncut core), each
+  // where it fits.
+  const halls = rooms.filter((r) => r.halls);
+  if (halls.length) {
+    if (across && S.throne) {
+      const far = rooms.filter((r) => r.type === to).sort((a, b) => a.cx - b.cx);
+      const T0 = [...far.slice(-Math.max(1, Math.ceil(far.length / 3)))].sort((a, b) => b.w * b.h - a.w * a.h)[0];
+      if (T0?.halls) T0.hallKind = "L";
+    }
+    const caveNear = (r) => {
+      let c = 0;
+      for (let y = r.y - 4; y < r.y + r.h + 4; y++) for (let x = r.x - 4; x < r.x + r.w + 4; x++) if (typeAt(x, y) === CAVERN) c++;
+      return c;
+    };
+    halls.filter((r) => !r.hallKind).map((r) => [r, caveNear(r)]).filter(([, c]) => c > 12).sort((a, b) => b[1] - a[1]).slice(0, 1).forEach(([r]) => (r.hallKind = "K"));
+    const left = halls.filter((r) => !r.hallKind);
+    if (halls.length >= 4 && left.length >= 2) left.sort((a, b) => a.w * a.h - b.w * b.h)[0].hallKind = "I";
+    const fits = {
+      A: () => true, B: () => true, F: (r) => Math.max(r.w, r.h) >= 13,
+      C: (r) => Math.min(r.w, r.h) >= 11 && Math.abs(r.w - r.h) <= 4, D: (r) => Math.min(r.w, r.h) >= 13,
+      J: (r) => Math.min(r.w, r.h) >= 11 && Math.max(r.w, r.h) >= 13,
+    };
+    // (The biggest first, and the kinds used least, those that fit fewest
+    // halls before the rest.)
+    const used = Object.fromEntries(Object.keys(fits).map((k) => [k, 0])), rank = { D: 0, J: 1, C: 2, F: 3, B: 4, A: 5 };
+    for (const r of halls.filter((r) => !r.hallKind).sort((a, b) => b.w * b.h - a.w * a.h)) {
+      const order = Object.keys(fits).map((k) => [k, used[k] + rank[k] * 0.1 + rng.next() * 0.25]).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+      r.hallKind = order.find((k) => fits[k](r));
+      used[r.hallKind]++;
+    }
+  }
 
   // The floor of a room reachable from its middle (within its box, and a
   // square round it), as a set of tile indices.
@@ -283,6 +368,159 @@ function tryAreas(S, rng) {
       }
   };
 
+  // The other kinds of hall (A is hewHall's): the plan's floor (`inside`,
+  // by u along the hall and v across it), the rest of the box shut; the
+  // walls hewn unevenly in runs (by noise; C cut clean, its walls as built
+  // ones); rock left standing in it (`cores`: walls, a core) and columns,
+  // both put back after the corridors; floor cut off filled in. And where
+  // its braziers go (`lamps`, squares; the throne room's either side of the
+  // king's seat, `seat`), what a storeroom stacks (`stacks`).
+  const hewNoise = valueNoise(rng, W, H, 2.2);
+  const hewKind = (r, ri) => {
+    const kind = r.hallKind ?? "A";
+    if (kind === "A") return hewHall(r, ri);
+    const along = r.w >= r.h, len = along ? r.w : r.h, wide = along ? r.h : r.w, mid = (wide - 1) / 2, cu = (len - 1) / 2;
+    let flip = false;
+    const at = (u, v) => {
+      const uu = Math.round(flip ? len - 1 - u : u), vv = Math.round(v);
+      return along ? [r.x + uu, r.y + vv] : [r.x + vv, r.y + uu];
+    };
+    // (Places along a run of n squares: as many as fit three or four apart,
+    // two in from the ends at least, evenly about its middle.)
+    const rows = (n) => {
+      let best = null;
+      for (const step of [3, 4])
+        for (let k = 2; (k - 1) * step <= n - 5; k++) {
+          const span = (k - 1) * step;
+          if ((n - 1 - span) % 2 === 0 && (!best || k > best.k)) best = { k, step, start: (n - 1 - span) / 2 };
+        }
+      return best ? Array.from({ length: best.k }, (_, i) => best.start + i * best.step) : [Math.floor((n - 1) / 2)];
+    };
+    const off = wide >= 13 ? 3 : 2;
+    let inside = () => true, rough = 0.8, cut = false;
+    const cols = [], cores = [], lamps = [];
+    if (kind === "B") {
+      for (const u of rows(len)) for (const v of rows(wide)) cols.push([u, v]);
+      lamps.push(...(len >= 15 ? [[Math.round(len / 3), mid], [Math.round((2 * len) / 3) - 1, mid]] : [[cu, mid]]));
+    } else if (kind === "C") {
+      cut = true;
+      rough = 0;
+      inside = (u, v) => ((u - cu) / (len / 2)) ** 2 + ((v - mid) / (wide / 2)) ** 2 < 0.97;
+      for (let k = 0; k < 8; k++) cols.push([cu + Math.cos((k * Math.PI) / 4) * len * 0.29, mid + Math.sin((k * Math.PI) / 4) * wide * 0.29]);
+      lamps.push([cu, mid]);
+    } else if (kind === "D") {
+      rough = 0.5;
+      inside = (u, v) => Math.abs(u - cu) <= 3 || Math.abs(v - mid) <= 3;
+      for (const [a, b] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) cols.push([cu + a, mid + b]);
+      for (const s of [-1, 1]) {
+        if (len >= 15) cols.push([cu + s * 6, mid - 2], [cu + s * 6, mid + 2]);
+        if (wide >= 15) cols.push([cu - 2, mid + s * 6], [cu + 2, mid + s * 6]);
+      }
+      lamps.push([cu, mid]);
+    } else if (kind === "F") {
+      rough = 0.7;
+      const gaps = [0.25, 0.5, 0.75].map((t) => Math.round(t * (len - 1)));
+      for (let u = 0; u < len; u++) {
+        if (gaps.some((g) => u === g || u === g + 1)) continue;
+        cores.push([u, mid]);
+        if (hewNoise(...at(u, mid + 1)) > 0.5 && wide >= 11) cores.push([u, mid + 1]);
+      }
+      lamps.push([Math.round(len * 0.375), Math.round(mid / 2)], [Math.round(len * 0.625), Math.round(mid + 1 + (wide - mid - 1) / 2)]);
+    } else if (kind === "J") {
+      for (let u = 3; u <= len - 4; u++)
+        for (let v = 3; v <= wide - 4; v++) {
+          const t = hewNoise(...at(u, v)), edge = u === 3 || u === len - 4 || v === 3 || v === wide - 4;
+          if (!edge || t > 0.3) cores.push([u, v]);
+        }
+      lamps.push([cu, 1], [cu, wide - 2]);
+    } else if (kind === "I") {
+      rough = 0.7;
+      r.stacks = [];
+      for (let u = 1; u + 2 <= len - 2; u += 4) for (let v = 1; v + 1 <= wide - 2; v += 3) r.stacks.push({ squares: [0, 1, 2].flatMap((du) => [0, 1].map((dv) => at(u + du, v + dv))) });
+    } else if (kind === "K") {
+      // (The cave end toward the caverns.)
+      const cavernBy = (u0, u1) => {
+        let c = 0;
+        for (let u = u0; u <= u1; u++) for (let v = -3; v < wide + 3; v++) if (typeAt(...at(u, v)) === CAVERN) c++;
+        return c;
+      };
+      flip = cavernBy(len - 4, len + 3) > cavernBy(-4, 3);
+      const h0 = Math.floor(len * 0.45);
+      rough = 0.35;
+      inside = (u) => u >= h0;
+      for (const u of rows(len - h0).map((u) => u + h0)) cols.push([u, off], [u, wide - 1 - off]);
+      lamps.push([Math.round((h0 + len - 1) / 2), mid]);
+    } else if (kind === "L") {
+      // (The apse at the end toward the level's edge.)
+      flip = along ? r.cx < W / 2 : r.cy < H / 2;
+      const ar = Math.max(3, Math.floor((wide - 1) / 2) - 1), un = len - 1 - ar;
+      rough = 0.45;
+      inside = (u, v) => u <= un || Math.hypot(u - un, v - mid) < ar + 0.6;
+      for (const u of rows(un + 1)) cols.push([u, off], [u, wide - 1 - off]);
+      const us = un + Math.max(1, ar - 2);
+      r.seat = (([x, y]) => ({ x, y }))(at(us, mid));
+      lamps.push([us, mid - 2], [us, mid + 2]);
+    }
+    const sq = (list) => list.map(([u, v]) => at(u, v));
+    const colSq = sq(cols), coreSq = sq(cores);
+    const set = (x, y, floor) => {
+      if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) return;
+      tiles[idx(x, y)] = floor ? T.FLOOR : T.ROCK;
+      cave[idx(x, y)] = cut ? 0 : 1;
+      roomOf[idx(x, y)] = floor ? ri : -1;
+    };
+    for (let u = 0; u < len; u++) for (let v = 0; v < wide; v++) if (!inside(u, v)) set(...at(u, v), false);
+    if (kind === "K") {
+      const [x0, y0] = at(0, 0), [x1, y1] = at(Math.ceil(len * 0.6), wide - 1);
+      const box = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0) + 1, h: Math.abs(y1 - y0) + 1 };
+      box.cx = box.x + (box.w >> 1);
+      box.cy = box.y + (box.h >> 1);
+      carveCave(box, rng, (x, y) => set(x, y, true));
+    }
+    // Hewn unevenly (not near the columns, the rock left standing, the seat).
+    const near = new Set();
+    for (const [x, y] of [...colSq, ...coreSq, ...(r.seat ? [[r.seat.x, r.seat.y]] : [])]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) near.add(idx(x + dx, y + dy));
+    if (rough > 0) {
+      const edge = [];
+      for (let y = r.y - 1; y <= r.y + r.h; y++)
+        for (let x = r.x - 1; x <= r.x + r.w; x++) {
+          const f = floorAt(x, y);
+          if (!near.has(idx(x, y)) && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => floorAt(x + dx, y + dy) !== f)) edge.push([x, y, f]);
+        }
+      for (const [x, y, f] of edge) {
+        const t = hewNoise(x, y);
+        if (f && t < 0.3 * rough) set(x, y, false);
+        else if (!f && t > 1 - 0.3 * rough) set(x, y, true);
+      }
+    } else for (let y = r.y - 1; y <= r.y + r.h; y++) for (let x = r.x - 1; x <= r.x + r.w; x++) cave[idx(x, y)] = 0;
+    for (const [x, y] of [...coreSq, ...colSq]) {
+      set(x, y, false);
+      hallColumns.push(idx(x, y));
+    }
+    // (Floor cut off from the most of it, filled in.)
+    const parts = [], seen = new Set();
+    for (let y = r.y - 1; y <= r.y + r.h; y++)
+      for (let x = r.x - 1; x <= r.x + r.w; x++) {
+        if (!floorAt(x, y) || seen.has(idx(x, y))) continue;
+        const part = [idx(x, y)], q = [[x, y]];
+        seen.add(idx(x, y));
+        while (q.length) {
+          const [px, py] = q.pop();
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = px + dx, ny = py + dy;
+            if (nx < r.x - 1 || ny < r.y - 1 || nx > r.x + r.w || ny > r.y + r.h || !floorAt(nx, ny) || seen.has(idx(nx, ny))) continue;
+            seen.add(idx(nx, ny));
+            part.push(idx(nx, ny));
+            q.push([nx, ny]);
+          }
+        }
+        parts.push(part);
+      }
+    parts.sort((a, b) => b.length - a.length);
+    for (const part of parts.slice(1)) for (const j of part) set(j % W, Math.floor(j / W), false);
+    r.lamps = sq(lamps);
+  };
+
   const fine = valueNoise(rng, W, H, 2.5);
   // (Each square carved for a room is that room's: `roomOf`, the room's
   // index, -1 for none.)
@@ -331,7 +569,7 @@ function tryAreas(S, rng) {
           if (r.halls) cave[idx(x, y)] = 1;
         }
       if (r.halls) {
-        hewHall(r, ri);
+        hewKind(r, ri);
         continue;
       }
       if (!r.collapsed) continue;
@@ -460,6 +698,131 @@ function tryAreas(S, rng) {
     const a = rng.pick(rooms);
     const near = rooms.filter((r) => r !== a).sort((p, q) => dist(a, p) - dist(a, q));
     connect(a, near[rng.int(1, Math.min(2, near.length - 1))]);
+  }
+  // More ways round. Walking distances (eight ways, no cutting a corner of
+  // rock) from a square; which rooms are joined directly (by one run of
+  // corridor, or touching), and how many ways into each.
+  const walkFrom = (from) => {
+    const d = new Int32Array(n).fill(-1), q = new Int32Array(n);
+    let h = 0, t = 0;
+    d[from] = 0;
+    q[t++] = from;
+    while (h < t) {
+      const k = q[h++], x = k % W, y = (k / W) | 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy, m = ny * W + nx;
+          if ((!dx && !dy) || !floorAt(nx, ny) || d[m] >= 0 || (dx && dy && (!floorAt(nx, y) || !floorAt(x, ny)))) continue;
+          d[m] = d[k] + 1;
+          q[t++] = m;
+        }
+    }
+    return d;
+  };
+  const links = () => {
+    const comp = new Int32Array(n).fill(-1);
+    let id = 0;
+    for (let j = 0; j < n; j++) {
+      if (tiles[j] !== T.FLOOR || roomOf[j] >= 0 || comp[j] >= 0) continue;
+      const q = [j];
+      comp[j] = id;
+      while (q.length) {
+        const k = q.pop(), x = k % W, y = (k / W) | 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const m = (y + dy) * W + x + dx;
+          if (!floorAt(x + dx, y + dy) || roomOf[m] >= 0 || comp[m] >= 0) continue;
+          comp[m] = id;
+          q.push(m);
+        }
+      }
+      id++;
+    }
+    const touch = rooms.map(() => new Set());
+    for (let y = 1; y < H - 1; y++)
+      for (let x = 1; x < W - 1; x++) {
+        const ri = roomOf[idx(x, y)];
+        if (ri < 0 || !floorAt(x, y)) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const m = idx(x + dx, y + dy);
+          if (comp[m] >= 0) touch[ri].add(`c${comp[m]}`);
+          else if (roomOf[m] >= 0 && roomOf[m] !== ri && floorAt(x + dx, y + dy)) touch[ri].add(`r${roomOf[m]}`);
+        }
+      }
+    return { ways: touch.map((s) => s.size), linked: (a, b) => touch[a].has(`r${b}`) || [...touch[a]].some((k) => k[0] === "c" && touch[b].has(k)) };
+  };
+  // (A room's floor square nearest its middle.)
+  const middleOf = (ri) => {
+    const r = rooms[ri];
+    let best = null;
+    for (let y = r.y; y < r.y + r.h; y++)
+      for (let x = r.x; x < r.x + r.w; x++) {
+        const d = Math.abs(x - r.cx) + Math.abs(y - r.cy);
+        if (floorAt(x, y) && roomOf[idx(x, y)] === ri && (!best || d < best.d)) best = { j: idx(x, y), d };
+      }
+    return best?.j;
+  };
+  // Long loops: of each room's four nearest, those it is at least two and a
+  // half times as far from on foot as as the crow flies (and not joined to
+  // already), the worst first, rooms with one way in before the rest; each
+  // dug as a corridor between them.
+  for (let k = 0; k < S.longLoops; k++) {
+    const L = links(), mids = rooms.map((_, ri) => middleOf(ri));
+    let best = null;
+    for (const [ai, a] of rooms.entries()) {
+      if (mids[ai] === undefined) continue;
+      const d = walkFrom(mids[ai]);
+      const near = rooms.map((b, bi) => ({ bi, s: Math.abs(a.cx - b.cx) + Math.abs(a.cy - b.cy) })).filter((o) => o.bi !== ai).sort((p, q) => p.s - q.s).slice(0, 4);
+      for (const { bi, s } of near) {
+        if (mids[bi] === undefined || L.linked(ai, bi)) continue;
+        const w = d[mids[bi]];
+        if (w >= 0 && w < 2.5 * s) continue;
+        const score = (w < 0 ? 99 : w / s) + (L.ways[ai] === 1 || L.ways[bi] === 1 ? 2 : 0);
+        if (!best || score > best.score) best = { ai, bi, score };
+      }
+    }
+    if (!best) break;
+    connect(rooms[best.ai], rooms[best.bi]);
+  }
+  // Shortcuts: straight runs of rock, eight squares at most and walled
+  // along both sides, between floors (not of one room: not through a
+  // column) at least 24 steps and four times the run apart on foot; the
+  // most worthwhile dug first (as the ground there is), each changing what
+  // the next is worth.
+  for (let k = 0; k < S.shortcuts; k++) {
+    const cand = [];
+    for (let y = 2; y < H - 2; y++)
+      for (let x = 2; x < W - 2; x++) {
+        if (!floorAt(x, y)) continue;
+        for (const [dx, dy] of [[1, 0], [0, 1]]) {
+          let len = 0, ok = true, ex = x + dx, ey = y + dy;
+          while (ex > 1 && ey > 1 && ex < W - 2 && ey < H - 2 && !floorAt(ex, ey) && len <= 8) {
+            if (floorAt(ex + dy, ey + dx) || floorAt(ex - dy, ey - dx)) { ok = false; break; }
+            len++;
+            ex += dx;
+            ey += dy;
+          }
+          if (!ok || len < 1 || len > 8 || !floorAt(ex, ey)) continue;
+          const a = roomOf[idx(x, y)], b = roomOf[idx(ex, ey)];
+          if (a >= 0 && a === b) continue;
+          cand.push({ x, y, dx, dy, len });
+        }
+      }
+    rng.shuffle(cand);
+    const cache = new Map();
+    let best = null;
+    for (const c of cand.slice(0, 2500)) {
+      const from = idx(c.x, c.y);
+      if (!cache.has(from)) cache.set(from, walkFrom(from));
+      const d = cache.get(from)[idx(c.x + c.dx * (c.len + 1), c.y + c.dy * (c.len + 1))];
+      if (d >= 0 && (d < 24 || d < 4 * (c.len + 1))) continue;
+      const gain = d < 0 ? 1e6 : d - c.len - 1;
+      if (!best || gain > best.gain) best = { ...c, gain };
+    }
+    if (!best) break;
+    for (let i = 1; i <= best.len; i++) {
+      const x = best.x + best.dx * i, y = best.y + best.dy * i;
+      dig(x, y, typeAt(x, y));
+    }
   }
   // (The halls' columns, where corridors cut through them, put back.)
   for (const j of hallColumns) tiles[j] = T.ROCK;
@@ -851,6 +1214,26 @@ function tryAreas(S, rng) {
   // (`flank`: either side of its middle, for the throne room, where the king
   // stands.)
   const hallBraziers = (r, flank = false) => {
+    // (A hall of another kind than A: its braziers where its plan puts them,
+    // on the free floor square nearest each.)
+    if (r.lamps) {
+      if (r.lit) return;
+      for (const [lx, ly] of r.lamps) {
+        let spot = null;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const x = lx + dx, y = ly + dy, d = Math.abs(dx) + Math.abs(dy);
+            if (floorAt(x, y) && !blocks.has(idx(x, y)) && !(r.seat && r.seat.x === x && r.seat.y === y) && (!spot || d < spot.d)) spot = { x, y, d };
+          }
+        if (!spot) continue;
+        blocks.add(idx(spot.x, spot.y));
+        rubble[idx(spot.x, spot.y)] = 0;
+        lights.push({ x: spot.x + 0.5, y: spot.y + 0.5, kind: "brazier" });
+        features.push({ type: "brazier", x: spot.x + 0.5, y: spot.y + 0.5 });
+        r.lit = true;
+      }
+      return;
+    }
     const N = r.nave;
     if (!N || r.lit) return;
     const K = N.us.length, m = (K - 1) / 2;
@@ -985,7 +1368,16 @@ function tryAreas(S, rng) {
   }
   // Braziers down the middle of some of the king's halls (and the throne
   // room's, when it is chosen).
-  for (const r of rooms) if (r.halls && rng.chance(S.litHalls)) hallBraziers(r);
+  // A storeroom's stacks: a crate or a barrel on most squares of each.
+  for (const r of rooms)
+    for (const st of r.stacks ?? [])
+      for (const [x, y] of st.squares) {
+        if (!floorAt(x, y) || rng.chance(0.15)) continue;
+        rubble[idx(x, y)] = 0;
+        const fx = x + 0.5 + rng.range(-0.05, 0.05), fy = y + 0.5 + rng.range(-0.05, 0.05), size = rng.range(0.7, 0.82);
+        features.push(rng.chance(0.6) ? { type: "crate", x: fx, y: fy, s: size, rot: rng.range(-0.2, 0.2) } : { type: "barrel", x: fx, y: fy, r: size * 0.48 });
+      }
+  for (const r of rooms) if (r.halls && !r.stacks && rng.chance(S.litHalls)) hallBraziers(r);
   const inRoom = (x, y) => rooms.some((r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
   const corridor = (x, y) => floorAt(x, y) && area[idx(x, y)] === DUNGEON && !cave[idx(x, y)] && !inRoom(x, y);
   for (let y = 2; y < H - 2; y++)
@@ -1015,7 +1407,7 @@ function tryAreas(S, rng) {
     const first = rooms.filter((r) => r.type === from), firm = first.filter((r) => !r.collapsed && r.cx < W * 0.4);
     startRoom = byX(firm.length ? firm : first.length ? first : rooms)[0];
     const far = byX(rooms.filter((r) => r.type === to && r !== startRoom));
-    if (S.throne) throneRoom = [...far.slice(-Math.max(1, Math.ceil(far.length / 3)))].sort((a, b) => b.w * b.h - a.w * a.h)[0] ?? null;
+    if (S.throne) throneRoom = rooms.find((r) => r.hallKind === "L") ?? [...far.slice(-Math.max(1, Math.ceil(far.length / 3)))].sort((a, b) => b.w * b.h - a.w * a.h)[0] ?? null;
     if (S.down) downRoom = byX(far.filter((r) => r !== throneRoom && !r.collapsed)).at(-1) ?? byX(rooms.filter((r) => r !== startRoom)).at(-1);
   }
   // The stairs: in the middle of their rooms, on floor, drawn and kept clear.

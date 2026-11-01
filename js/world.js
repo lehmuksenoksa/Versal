@@ -288,7 +288,7 @@ export class World {
     state ??= this.rng.chance(0.35) && !MONSTERS[kind].patrol ? "sleeping" : "neutral";
     for (let k = 0; k < n; k++) {
       const kk = k === 0 && leaderKind ? leaderKind : kind;
-      const spot = kk === "king" ? { x: room.cx, y: room.cy } : this.freeSpotIn(room);
+      const spot = kk === "king" ? (room.seat ?? { x: room.cx, y: room.cy }) : this.freeSpotIn(room);
       if (!spot || !this.isFree(spot.x, spot.y)) continue;
       const hp = this.rng.int(...MONSTERS[kk].hp);
       const g = { id: this.nextId++, kind: kk, glyph: MONSTERS[kk].glyph, x: spot.x, y: spot.y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next() };
