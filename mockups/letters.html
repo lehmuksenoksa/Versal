@@ -125,19 +125,28 @@ function letter(g, L, x, y, TS, light) {
   g.lineJoin = "round";
   const m = g.measureText(L.ch), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
   g.translate(x, y + (asc - desc) / 2);
-  // (The player, unlit, has a ring of the dark band's colour, as in the game.)
-  if (L.player && light.lit < 0.7) {
+  // The player, outlined in paper, exactly as in the game (render.js
+  // drawGlyph): where the light is dark (fully at the dark band, from 0.7
+  // down), a ring of the dark band's colour (0.14) in place of the thin paper
+  // halo (0.1), and the red darkened.
+  const game = L.player && !inked, dark = game ? 1 - Math.min(1, Math.max(0, (light.lit - 0.2) / 0.5)) : 0;
+  if (dark > 0) {
+    g.save();
+    g.globalAlpha = dark;
     g.lineWidth = size * 0.14;
     g.strokeStyle = floorColour(0.2);
     g.strokeText(L.ch, 0, 0);
+    g.restore();
   }
-  g.lineWidth = size * EDGE;
-  g.strokeStyle = inked ? INK : `rgba(247, 242, 230, ${0.9 * (L.player ? Math.max(light.lit, 0.0) : light.lit)})`;
+  g.lineWidth = size * (game ? HALO : EDGE);
+  g.strokeStyle = inked ? INK : `rgba(247, 242, 230, ${0.9 * (game ? 1 - dark : light.lit)})`;
   g.strokeText(L.ch, 0, 0);
+  const hex = (c, i) => parseInt(c.slice(1 + 2 * i, 3 + 2 * i), 16);
+  const ink = dark > 0 ? `rgb(${[0, 1, 2].map((i) => Math.round(hex(L.ink, i) + (hex("#741a12", i) - hex(L.ink, i)) * dark)).join(", ")})` : L.ink;
   g.lineWidth = size * BOLD;
-  g.strokeStyle = L.player && light.lit < 0.7 ? "#741a12" : L.ink;
+  g.strokeStyle = ink;
   g.strokeText(L.ch, 0, 0);
-  g.fillStyle = L.player && light.lit < 0.7 ? "#741a12" : L.ink;
+  g.fillStyle = ink;
   g.fillText(L.ch, 0, 0);
   if (L.crown) {
     // A crown sitting on the G: a band and three points, gold, lined in ink, haloed.
