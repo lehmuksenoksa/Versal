@@ -12,10 +12,26 @@ Decided with the player of the game; open questions at the end.
 
 ## Milestone 2: the side panel
 
-- A character sheet in the manner of an RPG's, black with light text as in the old roguelikes
-  (ADOM, NetHack): stats, a small inventory, the log.
+Chosen so far (the "ink ledger", `mockups/ledger.html`; still being refined):
+
+- Black with light text, lettered as the map is: Texturina for names and items, Crimson Pro for
+  messages. Items and creatures listed by their letters, with dotted leaders to their values.
+- On a big screen the sidebar is always there, on the right. At its top, always: the name, class
+  and level; "Health" with hit points as current/most (11/23) and any ailments (bleeding,
+  poisoned...) in their colours. Under it, the character sheet (experience gained/needed for the
+  next level, the stats), or what's opened in its place: **e**quipment (worn and held, by where;
+  attack and defence as their sums), **i**nventory (carried, lettered for use), **l**ook (creatures
+  in sight and how aware, then things; `!` and `?` over the letters on the map). The keys along
+  its foot.
+- At the top left of the map: the place as the heading, the level ("1st level"), the newest three
+  messages (older ones fade; a long one wraps and older ones give way), "m for more". **m** pulls
+  the whole log down as a drawer.
+- Both sit on black plates with torn edges: each a black area (the corner's an upside-down
+  pyramid of leaning boxes, the sidebar wider at the top) and a band in which the edge is drawn
+  as cave walls are, then torn. The shapes chosen are in `mockups/ledger/plates.json`.
+- No fade at the level's edge (done); the sidebar has no line of its own.
+- Not settled: the phone layout; where search, lamp, close and rest go there.
 - Stats kept few: health, attack (from the weapon), defence (from armour), speed.
-- Mocked up first (two or three versions). On a phone, a strip.
 
 ## Milestone 3: items
 
