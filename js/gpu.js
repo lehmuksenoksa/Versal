@@ -22,7 +22,7 @@ const R = 8; // mask pixels per square, as Expression's
 const TABLE_W = 1024;
 // The level's lights' warmth, and the map fading into the darkness at its
 // edges (in squares), as Expression's and Renderer's.
-const LAMP_WARMTH = 0.7, EDGE_FADE = 1.5;
+const LAMP_WARMTH = 0.7;
 // How long the light cast where the player was takes to fade, as they step
 // (a little longer than the step), and the fade's curve.
 const LIGHT_FADE_MS = 220, LIGHT_QUICK_MS = 60, SIGHT_QUICK_MS = 30;
@@ -193,11 +193,11 @@ void main() {
   vec3 now = inked(c, m, texture(uMasks, mp), paperAt(uHatch, p).rgb, L, shapeRock, floorA);
   if (uFade > 0.5) c = mix(inked(c, m, texture(uPMasks, mp), paperAt(uPHatch, p).rgb, L, shapeRock, floorA), now, uFadeK);
   else c = now;
-  // The warmth of the player's light; and the map fading into the darkness
-  // at its edges.
+  // The warmth of the player's light; and the map ending at its edges (no
+  // fade: the hatching runs to the edge).
   c *= 1.0 - uWarmth * 0.35 * lp * (1.0 - uWarm);
-  vec2 e = min(p, uMap - p) / (${EDGE_FADE} * uTS);
-  float keep = clamp(e.x, 0.0, 1.0) * clamp(e.y, 0.0, 1.0);
+  vec2 e = min(p, uMap - p);
+  float keep = e.x >= 0.0 && e.y >= 0.0 ? 1.0 : 0.0;
   o = vec4(mix(uOut, c, keep), 1.0);
 }`;
 

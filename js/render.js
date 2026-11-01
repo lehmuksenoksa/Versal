@@ -9,8 +9,6 @@ import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
 
-// How far (in squares) the map fades into the darkness at its edges.
-const EDGE_FADE = 1.5;
 // A campfire's flame: its size (times fire.js's) and where it stands (squares
 // below its square's middle), over the teepee of logs.
 const FIRE_SIZE = 1.15, FIRE_FOOT = 0.1;
@@ -655,8 +653,8 @@ export class Renderer {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       ctx.setTransform(sc, 0, 0, sc, -cx * sc, -cy * sc);
     } else if (fresh) {
-      // Beyond the map, the darkness of ground not yet seen; the map fading
-      // into it at its edges, so no edge shows.
+      // Beyond the map, the darkness of ground not yet seen. (The map ends at
+      // its edges without fading: the hatching runs to the edge.)
       const out = this.settings.outColor;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = out;
@@ -665,18 +663,6 @@ export class Renderer {
 
       // The map as explored (light and darkness included).
       this.exp.drawMap(ctx, view, now);
-      const fade = EDGE_FADE * TS;
-      for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [
-        // (Each reaching a square past the edge, so no seam shows there.)
-        [0, 0, fade, 0, -TS, -TS, fade + TS, mh + 2 * TS], [mw, 0, mw - fade, 0, mw - fade, -TS, fade + TS, mh + 2 * TS],
-        [0, 0, 0, fade, -TS, -TS, mw + 2 * TS, fade + TS], [0, mh, 0, mh - fade, -TS, mh - fade, mw + 2 * TS, fade + TS],
-      ]) {
-        const g = ctx.createLinearGradient(x0, y0, x1, y1);
-        g.addColorStop(0, out);
-        g.addColorStop(1, `${out}00`);
-        ctx.fillStyle = g;
-        ctx.fillRect(rx, ry, rw, rh);
-      }
       if (this.low) {
         const c = this.mapCache ?? (this.mapCache = document.createElement("canvas"));
         if (c.width !== this.canvas.width || c.height !== this.canvas.height) { c.width = this.canvas.width; c.height = this.canvas.height; }
