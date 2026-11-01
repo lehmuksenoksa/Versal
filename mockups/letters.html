@@ -128,7 +128,7 @@ function letter(g, L, x, y, TS, light) {
   // The player, outlined in paper, exactly as in the game (render.js
   // drawGlyph): where the light is dark (fully at the dark band, from 0.7
   // down), a ring of the dark band's colour (0.14) in place of the thin paper
-  // halo (0.1), and the red darkened.
+  // halo (here as thick as the others', 0.26; the game's 0.1), and the red darkened.
   const game = L.player && !inked, dark = game ? 1 - Math.min(1, Math.max(0, (light.lit - 0.2) / 0.5)) : 0;
   if (dark > 0) {
     g.save();
@@ -138,7 +138,7 @@ function letter(g, L, x, y, TS, light) {
     g.strokeText(L.ch, 0, 0);
     g.restore();
   }
-  g.lineWidth = size * (game ? HALO : EDGE);
+  g.lineWidth = size * EDGE;
   g.strokeStyle = inked ? INK : `rgba(247, 242, 230, ${0.9 * (game ? 1 - dark : light.lit)})`;
   g.strokeText(L.ch, 0, 0);
   const hex = (c, i) => parseInt(c.slice(1 + 2 * i, 3 + 2 * i), 16);
