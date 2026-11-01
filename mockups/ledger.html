@@ -107,6 +107,7 @@
   .head { display: flex; align-items: baseline; gap: 14px; }
   .place { font: 600 28px/1.1 var(--letter); letter-spacing: 0.02em; }
   .depth { font: 600 17px var(--letter); color: var(--gui-dim); }
+  .desk .top .news { max-width: var(--msgw); }
   .news { margin-top: 8px; font-family: var(--log); font-style: var(--log-style); font-size: var(--log-size); line-height: 1.35; display: grid; gap: 1px; }
   .news div:nth-last-child(2) { color: #b3ab9c; }
   .news div:nth-last-child(3) { color: #8a8274; }
@@ -233,7 +234,7 @@
 
 <section class="gen" aria-labelledby="gen-title">
   <h2 id="gen-title">The torn plates' shape</h2>
-  <p>Each plate has a fully black area and a band around it; its edge is made inside the band and never leaves it, tear and all. The corner's black area is the space kept for the heading and three lines of messages (sized for the longest heading, "The halls of the goblin king, 3rd level"); its edge grows as a clump of squares in the band, smoothed and cut as cave walls are, then torn as before. It is made once, for that space, so it doesn't change as messages come and go. The sidebar's black area is the sidebar; its edge sways gently down the band, leans a little from run to run, and now and then takes a bite or puts out a tab, then is torn. Roll new shapes until one looks right, adjust with the sliders, then copy the text below and send it to me; "Save" keeps it in a list on this page for you.</p>
+  <p>Each plate has a fully black area and a band around it; its edge is drawn inside the band and never leaves it, tear and all. The corner's black area is an upside-down pyramid of three boxes: the heading (sized for the longest, "The halls of the goblin king, 3rd level"), under it the three lines of messages, under that "m for more". It is made once, for that space, so it doesn't change as messages come and go. The sidebar's black area leans: a little wider at the top. Each edge is drawn as cave walls are: points along the middle of the band, each moved about within the band, some dropped so the lines run longer, then torn as before. Roll new shapes until one looks right, adjust with the sliders, then copy the text below and send it to me; "Save" keeps it in a list on this page for you.</p>
   <div class="genrow">
     <label><input type="checkbox" id="gen-showspace" checked> Show the black areas and their bands</label>
     <label>Messages <select id="gen-sample"><option value="short">as now</option><option value="long">long, to test the space</option></select></label>
@@ -369,7 +370,7 @@ function render() {
     const top = phone
       ? `<div class="top"><div class="head"><span class="place onmap">${RUN.place}</span><span class="hpline onmap ${low ? "low" : ""}" style="${low ? "color:var(--blood)" : ""}">${hp}<span>/${RUN.max}</span></span></div>
           <div class="news onmap"><div>${lines.at(-1).t}</div></div></div>`
-      : `<div class="top" style="width:${SPACE.w}px;height:${SPACE.h}px;overflow:hidden"><div class="head"><span class="place onmap">${sample.place}</span><span class="depth onmap">${sample.depth}</span></div>
+      : `<div class="top" style="width:${SPACE.w + 26}px;height:${SPACE.h}px;overflow:hidden;--msgw:${SPACE.msgPx}px"><div class="head"><span class="place onmap">${sample.place}</span><span class="depth onmap">${sample.depth}</span></div>
           <div class="news onmap">${sample.lines.map((t) => `<div>${t}</div>`).join("")}<div class="pull">m for more</div></div></div>`;
     const sheetTop = `<div class="who"><h3>${RUN.name}</h3><div>${RUN.cls}, level ${RUN.level}</div></div>
       <div><h5>Health</h5><div class="hp ${low ? "low" : ""}">${hp}<span>/${RUN.max}</span></div><div class="statuses">${statuses()}</div></div>`;
@@ -391,197 +392,145 @@ function render() {
   const msgs = () => [...news.children].filter((d) => !d.classList.contains("pull"));
   while (msgs().length > 1 && msgs().reduce((h, d) => h + d.offsetHeight, 0) > 3 * LH + 2) msgs()[0].remove();
   const plates = $("desk").querySelector(".plates");
-  if (plates) drawPlates(plates, SPACE.w, SPACE.h);
+  if (plates) drawPlates(plates);
 }
 
 // ---- The torn plates ----
-// Each plate: a clump of squares grown about what it must cover, smoothed and cut as cave walls
-// are, traced round, its corners jittered and some cut off; then torn along its edge (the first
-// tear tried). All from a seed and a few numbers, so a shape can be sent back and made again.
-const SIDE_X = 940;
+// Each plate: a fully black area, and a band round it in which its edge is drawn, as cave walls
+// are (points along the band's middle, each moved about in the band, some dropped), then torn
+// (the first tear tried). All from a seed and a few numbers, so a shape can be made again.
+const SIDE_CORE = 952;
 const PARAMS = {
   corner: [
     ["band", "Band", 10, 140, 1, "px"],
-    ["chars", "Message width", 30, 64, 1, " ch"],
-    ["cell", "Square size", 10, 60, 1, "px"],
-    ["grow", "Squares added", 0, 120, 1, ""],
-    ["carve", "Squares bitten", 0, 120, 1, ""],
-    ["smooth", "Smoothing", 0, 3, 1, ""],
-    ["jitter", "Corner jitter", 0, 0.5, 0.01, ""],
+    ["chars", "Message width", 24, 64, 1, " ch"],
+    ["step", "Point spacing", 8, 120, 1, "px"],
+    ["jitter", "Wander in the band", 0, 1, 0.01, ""],
     ["cut", "Corners cut", 0, 0.7, 0.01, ""],
     ["tear", "Tear", 0, 2, 0.05, ""],
   ],
   side: [
     ["band", "Band", 10, 100, 1, "px"],
-    ["wander", "Sway", 0, 30, 1, "px"],
-    ["run", "Run length", 20, 200, 1, "px"],
-    ["kink", "Lean per run", 0, 20, 0.5, "px"],
-    ["bites", "Bites and tabs", 0, 0.5, 0.01, ""],
-    ["bite", "Bite size", 4, 40, 1, "px"],
+    ["skew", "Wider at the top", 0, 120, 1, "px"],
+    ["step", "Point spacing", 8, 160, 1, "px"],
+    ["jitter", "Wander in the band", 0, 1, 0.01, ""],
+    ["cut", "Corners cut", 0, 0.7, 0.01, ""],
     ["tear", "Tear", 0, 2, 0.05, ""],
   ],
 };
 const GEN = {
-  corner: { seed: 1, band: 56, chars: 46, cell: 26, grow: 26, carve: 10, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
-  side: { seed: 2, band: 40, wander: 10, run: 70, kink: 6, bites: 0.12, bite: 14, tear: 1 },
+  corner: { seed: 1, band: 44, chars: 42, step: 30, jitter: 0.75, cut: 0.3, tear: 1 },
+  side: { seed: 2, band: 34, skew: 40, step: 56, jitter: 0.7, cut: 0.3, tear: 1 },
 };
-// The kept space: its width from the message width in characters (of the log's face, at its size).
-let SPACE = { w: 460, h: 170, lh: 25.65 };
+const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const offscreen = (x, y) => x < 0 || y < 0 || x > 1280 || y > 800;
+
+// The space kept at the top left, as three boxes from the top: the heading (wide enough for the
+// longest), the messages (their width in characters of the log's face), "m for more".
+let SPACE = { w: 460, h: 170, lh: 25.65, msgPx: 340, rects: [] };
 function keptSpace() {
-  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--log-size")) || 19;
-  const face = getComputedStyle(document.documentElement).getPropertyValue("--log") || "Georgia";
+  const root = getComputedStyle(document.documentElement);
+  const size = parseFloat(root.getPropertyValue("--log-size")) || 19, face = root.getPropertyValue("--log") || "Georgia";
   const c = (keptSpace.c ??= document.createElement("canvas").getContext("2d"));
   c.font = `${size}px ${face}`;
   const text = "The skeleton claws you. (3) You hear a clatter to the west.";
-  const ch = c.measureText(text).width / text.length, lh = size * 1.35;
-  // ...and never narrower than the longest heading.
+  const ch = c.measureText(text).width / text.length, lh = size * 1.35, pad = 26;
   c.font = "600 28px Texturina, Georgia, serif";
   const longest = "The halls of the goblin king";
   let head = c.measureText(longest).width + longest.length * 0.02 * 28 + 14 + 8;
   c.font = "600 17px Texturina, Georgia, serif";
   head += c.measureText("3rd level").width;
-  return { w: Math.round(52 + Math.max(GEN.corner.chars * ch, head)), h: Math.round(18 + 32 + 8 + 3 * lh + 22 + 10), lh };
+  c.font = "600 13px Texturina, Georgia, serif";
+  const pull = c.measureText("m for more").width + 10 * 0.04 * 13;
+  const msgPx = Math.round(GEN.corner.chars * ch);
+  const r1 = [0, 0, Math.round(pad + head + 10), 54];
+  const r2 = [0, r1[3], Math.round(pad + msgPx + 12), Math.round(r1[3] + 8 + 3 * lh + 2)];
+  const r3 = [0, r2[3], Math.round(pad + pull + 12), r2[3] + 30];
+  return { rects: [r1, r2, r3], w: Math.max(r1[2], r2[2], r3[2]), h: r3[3], lh, msgPx };
 }
 
-// The sidebar's black area starts here (its text a little further in).
-const SIDE_CORE = 952;
-// The sidebar's edge: mostly vertical, living, inside its band. From the bottom up in runs; a slow sway down the
-// screen, a lean from run to run (kept within bounds), now and then a bite into the plate or a
-// tab out into the map.
-function sideOutline(P) {
-  const rnd = mulberry(P.seed * 7919 + 29);
-  const w1 = [rnd() * 6.28, 1 / (380 + rnd() * 320)], w2 = [rnd() * 6.28, 1 / (160 + rnd() * 160)];
-  const sway = (y) => P.wander * (0.7 * Math.sin(y * 6.28 * w1[1] + w1[0]) + 0.3 * Math.sin(y * 6.28 * w2[1] + w2[0]));
-  const pts = [];
-  let y = 830, lean = 0;
-  const mid = SIDE_CORE - P.band / 2;
-  const at = (dx, yy) => [Math.max(SIDE_CORE - P.band, Math.min(SIDE_CORE, mid + sway(yy) + lean + dx)), yy];
-  while (y > -30) {
-    pts.push(at(0, y));
-    if (rnd() < P.bites) {
-      const sgn = rnd() < 0.65 ? 1 : -1, h = P.bite * (0.6 + rnd() * 0.8), d = P.bite * (0.4 + rnd() * 0.6) * sgn;
-      pts.push(at(d * 0.9, y - h * 0.3), at(d, y - h * 0.7), at(0, y - h));
-      y -= h;
-    }
-    y -= P.run * (0.5 + rnd());
-    lean = Math.max(-P.kink * 1.6, Math.min(P.kink * 1.6, lean + (rnd() * 2 - 1) * P.kink));
-  }
-  pts.push(at(0, -30), [1300, -30], [1300, 830]);
+// The line round the boxes `d` out from them (mitred), from off the top round to off the left.
+function stepsLine(rects, d) {
+  const pts = [[rects[0][2] + d, -30]];
+  rects.forEach((r, i) => {
+    const next = rects[i + 1];
+    if (i > 0) pts.push([r[2] + d, pts[pts.length - 1][1]]);
+    const y = next ? (next[2] < r[2] ? r[3] + d : r[3] - d) : r[3] + d;
+    pts.push([r[2] + d, y]);
+  });
+  pts.push([-30, pts[pts.length - 1][1]]);
   return pts;
 }
-const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+// The sidebar's black area starts at this x, at height y (wider at the top).
+const sideX = (P, y) => SIDE_CORE - P.skew * (1 - y / 800);
 
-// The outline of one plate, in screen pixels: `need` the box it must cover (reaching off the
-// screen), `reach` the box it may grow in (on the screen only); both [x0, y0, x1, y1].
-const offscreen = (x, y) => x < 0 || y < 0 || x > 1280 || y > 800;
-function plateOutline(P, need, reach) {
-  const rnd = mulberry(P.seed * 7919 + 13), C = P.cell;
-  const gx0 = Math.floor(Math.min(reach[0], need[0]) / C) - 1, gy0 = Math.floor(Math.min(reach[1], need[1]) / C) - 1, gx1 = Math.ceil(Math.max(reach[2], need[2]) / C) + 1, gy1 = Math.ceil(Math.max(reach[3], need[3]) / C) + 1;
-  const GW = gx1 - gx0, GH = gy1 - gy0, at = (i, j) => j * GW + i;
-  const fill = new Uint8Array(GW * GH), lock = new Uint8Array(GW * GH), inReach = new Uint8Array(GW * GH);
-  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
-    const x0 = (gx0 + i) * C, y0 = (gy0 + j) * C, x1 = x0 + C, y1 = y0 + C;
-    const hits = (b) => x1 > b[0] && x0 < b[2] && y1 > b[1] && y0 < b[3];
-    if (hits(need)) { fill[at(i, j)] = 1; lock[at(i, j)] = 1; }
-    if (hits(reach) && x0 >= 0 && y0 >= 0 && x1 <= 1280 && y1 <= 800) inReach[at(i, j)] = 1;
-  }
-  const n4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const ok = (i, j) => i >= 0 && j >= 0 && i < GW && j < GH;
-  const edgeCells = (want) => {
-    const out = [];
-    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
-      const k = at(i, j);
-      if (fill[k] !== want || !inReach[k] || (want === 1 && lock[k])) continue;
-      if (n4.some(([dx, dy]) => ok(i + dx, j + dy) && fill[at(i + dx, j + dy)] !== want)) out.push(k);
-    }
-    return out;
-  };
-  // Grow: squares beside the plate join it, one at a time; bite: squares at its edge go.
-  for (let n = 0; n < P.grow; n++) { const e = edgeCells(0); if (!e.length) break; fill[e[Math.floor(rnd() * e.length)]] = 1; }
-  for (let n = 0; n < P.carve; n++) { const e = edgeCells(1); if (!e.length) break; fill[e[Math.floor(rnd() * e.length)]] = 0; }
-  // Smooth as caves are: a square with most of its eight neighbours filled fills, with few, empties.
-  for (let pass = 0; pass < P.smooth; pass++) {
-    const next = fill.slice();
-    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
-      const k = at(i, j);
-      if (lock[k] || !inReach[k]) continue;
-      let m = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && ok(i + dx, j + dy) && fill[at(i + dx, j + dy)]) m++;
-      if (m >= 5) next[k] = 1; else if (m <= 2) next[k] = 0;
-    }
-    fill.set(next);
-  }
-  // One piece: keep what joins the locked squares; fill any holes; no squares touching only at a corner.
-  const seen = new Uint8Array(GW * GH), q = [];
-  for (let k = 0; k < fill.length; k++) if (lock[k]) { seen[k] = 1; q.push(k); }
-  while (q.length) { const k = q.pop(), i = k % GW, j = (k / GW) | 0; for (const [dx, dy] of n4) { const ni = i + dx, nj = j + dy; if (ok(ni, nj) && fill[at(ni, nj)] && !seen[at(ni, nj)]) { seen[at(ni, nj)] = 1; q.push(at(ni, nj)); } } }
-  for (let k = 0; k < fill.length; k++) fill[k] = seen[k];
-  const out = new Uint8Array(GW * GH);
-  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) if ((i === 0 || j === 0 || i === GW - 1 || j === GH - 1) && !fill[at(i, j)]) { out[at(i, j)] = 1; q.push(at(i, j)); }
-  while (q.length) { const k = q.pop(), i = k % GW, j = (k / GW) | 0; for (const [dx, dy] of n4) { const ni = i + dx, nj = j + dy; if (ok(ni, nj) && !fill[at(ni, nj)] && !out[at(ni, nj)]) { out[at(ni, nj)] = 1; q.push(at(ni, nj)); } } }
-  for (let k = 0; k < fill.length; k++) if (!out[k]) fill[k] = 1;
-  for (let again = true; again;) {
-    again = false;
-    for (let j = 0; j < GH - 1; j++) for (let i = 0; i < GW - 1; i++) {
-      const a = fill[at(i, j)], b = fill[at(i + 1, j)], c = fill[at(i, j + 1)], d = fill[at(i + 1, j + 1)];
-      if (a === d && b === c && a !== b) { fill[at(i, j)] = fill[at(i + 1, j)] = fill[at(i, j + 1)] = fill[at(i + 1, j + 1)] = 1; again = true; }
-    }
-  }
-  // Trace round it, clockwise (the plate on the right of the way round), corner to corner.
-  const next = new Map(), key = (x, y) => `${x},${y}`;
-  const add = (ax, ay, bx, by) => next.set(key(ax, ay), [bx, by]);
-  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
-    if (!fill[at(i, j)]) continue;
-    const empty = (dx, dy) => !ok(i + dx, j + dy) || !fill[at(i + dx, j + dy)];
-    const x = gx0 + i, y = gy0 + j;
-    if (empty(0, -1)) add(x, y, x + 1, y);
-    if (empty(1, 0)) add(x + 1, y, x + 1, y + 1);
-    if (empty(0, 1)) add(x + 1, y + 1, x, y + 1);
-    if (empty(-1, 0)) add(x, y + 1, x, y);
-  }
-  // Start on the outline at its leftmost, topmost corner, and walk.
-  let start = null;
-  for (const k of next.keys()) { const [x, y] = k.split(",").map(Number); if (!start || y < start[1] || (y === start[1] && x < start[0])) start = [x, y]; }
-  const loop = [start];
-  for (let p = next.get(key(...start)), guard = 0; p && (p[0] !== start[0] || p[1] !== start[1]) && guard < 100000; p = next.get(key(...p)), guard++) loop.push(p);
-  // As cave walls: drop corners along straight runs, add the middles of edges, jitter, cut some corners.
-  const pts = [];
-  for (let i = 0; i < loop.length; i++) {
-    const a = loop[i], b = loop[(i + 1) % loop.length], z = loop[(i - 1 + loop.length) % loop.length];
-    if ((z[0] === a[0] && a[0] === b[0]) || (z[1] === a[1] && a[1] === b[1])) { if (rnd() < 0.5) continue; }
-    pts.push(a);
-    pts.push([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
-  }
-  const shaped = [];
+// Points along a line every `step` (give or take), each moved across the band (and a little
+// along), some dropped: the cave walls' way. Off the screen they stay put.
+function caveLine(line, P, rnd) {
+  const out = [line[0]];
   let dropped = false;
-  for (const [x, y] of pts) {
-    const px = x * C, py = y * C, off = offscreen(px, py);
-    if (!off && !dropped && rnd() < P.cut) { dropped = true; continue; }
-    dropped = false;
-    shaped.push(off ? [px, py] : [px + (rnd() * 2 - 1) * P.jitter * C, py + (rnd() * 2 - 1) * P.jitter * C]);
+  for (let i = 0; i < line.length - 1; i++) {
+    const [ax, ay] = line[i], [bx, by] = line[i + 1], L = Math.hypot(bx - ax, by - ay);
+    if (L < 0.01) continue;
+    const tx = (bx - ax) / L, ty = (by - ay) / L;
+    for (let d = P.step * (0.4 + rnd() * 0.6); d < L; d += P.step * (0.6 + rnd() * 0.8)) {
+      const x = ax + tx * d, y = ay + ty * d;
+      if (offscreen(x, y)) { out.push([x, y]); continue; }
+      if (!dropped && rnd() < P.cut) { dropped = true; continue; }
+      dropped = false;
+      const across = (rnd() * 2 - 1) * P.jitter * P.band / 2, along = (rnd() - 0.5) * P.step * 0.3;
+      out.push([x + tx * along + ty * across, y + ty * along - tx * across]);
+    }
+    out.push([bx, by]);
   }
-  return shaped;
+  return out;
 }
 
-function plateShapes(tw, th) {
-  const corner = plateOutline(GEN.corner, [-100, -100, tw, th], [0, 0, tw + GEN.corner.band, th + GEN.corner.band]);
-  const side = sideOutline(GEN.side);
-  return { corner, side };
+// Keeping a point in its band: out of the black area, and no further than the band.
+function keepInBand(name, P, x, y) {
+  if (offscreen(x, y)) return [x, y];
+  if (name === "side") { const s = sideX(P, y); return [Math.max(s - P.band, Math.min(s, x)), y]; }
+  const R = SPACE.rects, B = P.band;
+  for (let k = 0; k < 4; k++) {
+    const r = R.find((r) => x < r[2] && y >= r[1] && y < r[3]);
+    if (!r) break;
+    if (r[2] - x < r[3] - y) x = r[2] + 0.01; else y = r[3] + 0.01;
+  }
+  const inside = R.some((r, i) => x < r[2] + B && y >= (i ? r[1] - B : -1e9) && y < r[3] + B);
+  if (!inside) {
+    let best = null;
+    R.forEach((r, i) => {
+      const cx = Math.min(x, r[2] + B), cy = Math.max(i ? r[1] - B : -1e9, Math.min(y, r[3] + B));
+      const dd = (cx - x) ** 2 + (cy - y) ** 2;
+      if (!best || dd < best[2]) best = [cx, cy, dd];
+    });
+    [x, y] = best;
+  }
+  return [x, y];
+}
+
+function plateShapes() {
+  const C = GEN.corner, S = GEN.side;
+  const corner = caveLine(stepsLine(SPACE.rects, C.band / 2), C, mulberry(C.seed * 7919 + 13));
+  const mid = [];
+  for (let y = 830; y >= -30; y -= 20) mid.push([sideX(S, y) - S.band / 2, y]);
+  const side = caveLine(mid, S, mulberry(S.seed * 7919 + 29));
+  return { corner: [...corner, [-30, -30]], side: [...side, [1300, -30], [1300, 830]] };
 }
 
 let lastShapes = null;
-function drawPlates(c, tw, th) {
+function drawPlates(c) {
   const g = c.getContext("2d");
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.clearRect(0, 0, 1280, 800);
   g.fillStyle = "#000";
-  const shapes = (lastShapes = plateShapes(tw, th));
+  const shapes = (lastShapes = plateShapes());
   for (const [name, pts] of Object.entries(shapes)) {
     const P = GEN[name], rnd = mulberry(P.seed * 31 + 7);
     const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
     const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
     const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
-    // Round the outline every 3px, torn outward and in (none where it's off the screen).
+    // Round the outline every 3px, torn (none off the screen), kept in the band.
     g.beginPath();
     let t = 0, first = true;
     for (let i = 0; i < pts.length; i++) {
@@ -589,14 +538,9 @@ function drawPlates(c, tw, th) {
       if (L < 0.01) continue;
       const tx = (bx - ax) / L, ty = (by - ay) / L;
       for (let d = 0; d < L; d += 3, t += 3) {
-        const x = ax + tx * d, y = ay + ty * d, on = x > -2 && y > -2 && x < 1282 && y < 802;
+        const x = ax + tx * d, y = ay + ty * d, on = !offscreen(x, y);
         const k = on ? P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4) : 0;
-        let px = x - ty * k, py = y + tx * k;
-        // Kept in the band: never into the black area, never past the band.
-        if (on && name === "corner") {
-          px = Math.min(px, tw + P.band); py = Math.min(py, th + P.band);
-          if (px < tw && py < th) { if (tw - px < th - py) px = tw; else py = th; }
-        } else if (on) px = Math.max(SIDE_CORE - P.band, Math.min(SIDE_CORE, px));
+        const [px, py] = keepInBand(name, P, x - ty * k, y + tx * k);
         g[first ? "moveTo" : "lineTo"](px, py);
         first = false;
       }
@@ -606,17 +550,18 @@ function drawPlates(c, tw, th) {
   }
   // The black areas (dashed) and the bands' outer edges (dotted).
   if ($("gen-showspace")?.checked) {
-    const B = GEN.corner.band, S = GEN.side.band;
+    const C = GEN.corner, S = GEN.side;
+    const path = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => g[i ? "lineTo" : "moveTo"](x, y)); g.stroke(); };
     g.save();
     g.lineWidth = 1;
     g.strokeStyle = "rgba(221, 214, 198, 0.6)";
     g.setLineDash([6, 5]);
-    g.strokeRect(-1, -1, tw + 1.5, th + 1.5);
-    g.beginPath(); g.moveTo(SIDE_CORE + 0.5, 0); g.lineTo(SIDE_CORE + 0.5, 800); g.stroke();
+    path(stepsLine(SPACE.rects, 0));
+    path([[sideX(S, 0), 0], [sideX(S, 800), 800]]);
     g.strokeStyle = "rgba(221, 214, 198, 0.4)";
     g.setLineDash([2, 4]);
-    g.strokeRect(-1, -1, tw + B + 1.5, th + B + 1.5);
-    g.beginPath(); g.moveTo(SIDE_CORE - S + 0.5, 0); g.lineTo(SIDE_CORE - S + 0.5, 800); g.stroke();
+    path(stepsLine(SPACE.rects, C.band));
+    path([[sideX(S, 0) - S.band, 0], [sideX(S, 800) - S.band, 800]]);
     g.restore();
   }
   writeOut();
