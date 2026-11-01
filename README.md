@@ -98,6 +98,7 @@ in the browser console.
 | `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
 | `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
+| `mockups/sidebar.html` | Six proposals for the frame around the map (character sheet, pack, log, actions), each on desktop and phone. |
 | `mockups/letters.html` | Every letter, the player's and the monsters' to come, under each band of light, with each one's outline (paper or ink) and switches for how letters take the light. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
