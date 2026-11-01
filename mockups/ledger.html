@@ -34,9 +34,9 @@
     --letter: Texturina, Georgia, serif;
     --hand: "IM Fell Italic", Georgia, serif;
     /* The log's face: chosen with the switch. */
-    --log: Alegreya, Georgia, serif;
+    --log: "Crimson Pro", Georgia, serif;
     --log-style: normal;
-    --log-size: 18px;
+    --log-size: 19px;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -106,7 +106,8 @@
 
   /* The sidebar: always there. On top, who you are and your health; under it, your sheet, or
      what you've opened. */
-  .side { position: absolute; right: 0; top: 0; bottom: 0; width: 340px; background: var(--gui); border-left: 1px solid var(--gui-line); padding: 22px 26px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 18px; }
+  /* (Black as the unexplored ground around the map, with no edge: the map simply ends in it.) */
+  .side { position: absolute; right: 0; top: 0; bottom: 0; width: 340px; background: #000; padding: 22px 26px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 18px; }
   .who h3 { margin: 0; font: 600 26px/1.1 var(--letter); }
   .who div { font: 600 15px var(--letter); color: var(--gui-dim); margin-top: 2px; }
   h5 { margin: 0 0 6px; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); display: flex; justify-content: space-between; }
@@ -182,11 +183,11 @@
 
 <div class="opts">
   <label>The log in <select id="opt-log">
+    <option value="crimson">Crimson Pro</option>
     <option value="alegreya">Alegreya</option>
     <option value="garamond">EB Garamond</option>
     <option value="fell">IM Fell, upright</option>
     <option value="spectral">Spectral</option>
-    <option value="crimson">Crimson Pro</option>
     <option value="texturina">Texturina, as the letters</option>
     <option value="fellitalic">IM Fell italic, as before</option>
   </select></label>
