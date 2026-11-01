@@ -146,7 +146,8 @@
   .keys-help b { font: 600 13px var(--letter); color: var(--gui-dim); }
   .keys-help .on b, .keys-help .on { color: var(--gui-text); }
   .marks { position: absolute; pointer-events: none; }
-  .edge { position: absolute; top: 0; right: 340px; width: 160px; height: 800px; pointer-events: none; }
+  .plates { position: absolute; inset: 0; width: 1280px; height: 800px; pointer-events: none; }
+  .desk .side { background: transparent; }
   .marks span { position: absolute; font: 700 26px var(--letter); transform: translate(-50%, -100%); }
 
   /* Phone: no room for the sidebar; the top carries your health, the rest opens as a sheet. */
@@ -202,8 +203,12 @@
     <option value="6">6 of 23 (low)</option>
     <option value="23">23 of 23</option>
   </select></label>
-  <label>The sidebar's edge <select id="opt-edge">
-    <option value="hatched">hatched</option>
+  <label>The dark plates' edge <select id="opt-edge">
+    <option value="torn">torn paper</option>
+    <option value="blots">ink blots</option>
+    <option value="brush">dry brush</option>
+    <option value="ruled">ruled frame</option>
+    <option value="steps">grid steps</option>
     <option value="straight">straight</option>
   </select></label>
   <label>Look marks the map <select id="opt-marks">
@@ -333,7 +338,7 @@ function render() {
     const top = phone
       ? `<div class="top"><div class="head"><span class="place onmap">${RUN.place}</span><span class="hpline onmap ${low ? "low" : ""}" style="${low ? "color:var(--blood)" : ""}">${hp}<span>/${RUN.max}</span></span></div>
           <div class="news onmap"><div>${lines.at(-1).t}</div></div></div>`
-      : `<div class="top" style="right:340px"><div class="head"><span class="place onmap">${RUN.place}</span><span class="depth onmap">${RUN.depth}</span></div>
+      : `<div class="top" style="max-width:620px"><div class="head"><span class="place onmap">${RUN.place}</span><span class="depth onmap">${RUN.depth}</span></div>
           <div class="news onmap">${lines.slice(-3).map((l) => `<div>${l.t}</div>`).join("")}<div class="pull">m for more</div></div></div>`;
     const sheetTop = `<div class="who"><h3>${RUN.name}</h3><div>${RUN.cls}, level ${RUN.level}</div></div>
       <div><h5>Health</h5><div class="hp ${low ? "low" : ""}">${hp}<span>/${RUN.max}</span></div><div class="statuses">${statuses()}</div></div>`;
@@ -341,7 +346,7 @@ function render() {
     el.innerHTML = `
       <div class="map" style="background-image:url('ledger/${phone ? "phone" : "wide"}.jpg');${phone ? "background-position:center -150px" : "right:340px;background-size:940px 800px;background-position:0 0"}"></div>
       ${marks}
-      ${!phone && opt("edge") === "hatched" ? `<canvas class="edge" width="${EDGE_W * 2}" height="1600"></canvas>` : ""}
+      ${phone ? "" : `<canvas class="plates" width="2560" height="1600"></canvas>`}
       ${top}
       ${phone
         ? `<div class="side ${side ? "open" : ""}"><div class="body" style="border:0;padding:0">${side ? panel() : ""}</div></div>`
@@ -350,40 +355,106 @@ function render() {
       ${phone ? `<div class="keys">${[["e", "Equip"], ["i", "Carried"], ["l", "Look"], ["m", "Log"], ["", "Act"]].map(([k, n]) => `<div class="${k && k === o ? "on" : ""}">${n}</div>`).join("")}</div>` : ""}`;
   }
   for (const b of document.querySelectorAll("[data-open]")) b.setAttribute("aria-pressed", String(b.dataset.open === o));
-  const edge = $("desk").querySelector(".edge");
-  if (edge) hatchEdge(edge);
+  const plates = $("desk").querySelector(".plates"), topEl = $("desk").querySelector(".top");
+  if (plates) drawPlates(plates, topEl.offsetWidth + 22, topEl.offsetHeight + 8);
 }
 
-// The sidebar's edge in hatching: the map ends in groups of short, thick ink strokes, as rock
-// does into unexplored ground, more of them the nearer the sidebar, until all is black.
-const EDGE_W = 160;
-function hatchEdge(c) {
-  const x = c.getContext("2d"), W = EDGE_W, H = 800;
-  let seed = 7;
+// The dark plates: one behind the top left corner (the place and the newest messages), one for
+// the sidebar; black as the unexplored ground, each with an edge in the style chosen.
+const SIDE_X = 940, GRID = 42.5, GX0 = 27, GY0 = -2;
+function drawPlates(c, tw, th) {
+  const g = c.getContext("2d"), style = opt("edge");
+  let seed = 11;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  x.setTransform(2, 0, 0, 2, 0, 0);
-  x.clearRect(0, 0, W, H);
-  // Solid black for the last stretch, under the strokes, so they end in it.
-  const solid = 14;
-  x.fillStyle = "#000";
-  x.fillRect(W - solid, 0, solid, H);
-  x.lineCap = "round";
-  x.strokeStyle = "#000";
-  for (let y = -10; y < H + 10; y += 12) {
-    for (let cx = 0; cx < W - solid + 10; cx += 13) {
-      const k = Math.min(1, (cx + rnd() * 22) / (W - solid));
-      if (rnd() > Math.pow(k, 1.7) * 1.1) continue;
-      // A group of three or four parallel strokes, at its own angle, as the hatching's cells.
-      const a = rnd() * Math.PI, n = 3 + (rnd() < 0.5) + (k > 0.7), len = 16 + rnd() * 14 + k * 8, gap = 6;
-      const ux = Math.cos(a), uy = Math.sin(a), px = -uy, py = ux;
-      const gx = cx + rnd() * 13, gy = y + rnd() * 12;
-      x.lineWidth = 4 + rnd() * 2.5;
-      for (let i = 0; i < n; i++) {
-        const o = (i - (n - 1) / 2) * gap, l = len * (0.75 + rnd() * 0.25);
-        x.beginPath();
-        x.moveTo(gx + px * o - (ux * l) / 2, gy + py * o - (uy * l) / 2);
-        x.lineTo(gx + px * o + (ux * l) / 2, gy + py * o + (uy * l) / 2);
-        x.stroke();
+  // Low and high wobble along an edge, by distance along it.
+  const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
+  const W1 = waves(4, 0.008, 0.03), W2 = waves(5, 0.08, 0.22);
+  const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
+  g.setTransform(2, 0, 0, 2, 0, 0);
+  g.clearRect(0, 0, 1280, 800);
+  g.fillStyle = "#000";
+
+  if (style === "steps") {
+    // Carved from the map's own squares: the plates end on grid lines, a square further here
+    // and there, as rooms do.
+    const col = (x) => GX0 + Math.ceil((x - GX0) / GRID) * GRID, row = (y) => GY0 + Math.ceil((y - GY0) / GRID) * GRID;
+    const R = col(tw), B = row(th);
+    g.fillRect(0, 0, R, B);
+    for (let y = GY0; y < B; y += GRID) if (rnd() < 0.35) g.fillRect(R, y, GRID, GRID);
+    for (let x = R - GRID; x > -GRID; x -= GRID) if (rnd() < 0.3) g.fillRect(x, B, GRID, GRID);
+    const X = GX0 + Math.floor((SIDE_X - GX0) / GRID) * GRID;
+    g.fillRect(X, 0, 1280 - X, 800);
+    for (let y = GY0; y < 800; y += GRID) { const k = rnd(); if (k < 0.35) g.fillRect(X - GRID, y, GRID, GRID); if (k < 0.08) g.fillRect(X - 2 * GRID, y, GRID, GRID); }
+    return;
+  }
+
+  // The edges as lines (the outer side into the map), sampled every 3px with their normals.
+  const r = 34;
+  const line = (pts) => {
+    const out = [];
+    let t = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [ax, ay] = pts[i], [bx, by] = pts[i + 1], L = Math.hypot(bx - ax, by - ay), tx = (bx - ax) / L, ty = (by - ay) / L;
+      for (let d = 0; d < L; d += 3, t += 3) out.push([ax + tx * d, ay + ty * d, ty, -tx, t]);
+    }
+    return out;
+  };
+  const arc = [];
+  for (let a = 0; a <= 8; a++) { const q = (a / 8) * (Math.PI / 2); arc.push([tw - r + r * Math.cos(q), th - r + r * Math.sin(q)]); }
+  const topEdge = line([[tw, -12], ...arc, [-12, th]]);
+  const sideEdge = line([[SIDE_X, 812], [SIDE_X, -12]]);
+  const plates = [[topEdge, [[-12, -12]]], [sideEdge, [[1292, -12], [1292, 812]]]];
+  const fill = (edge, close, off) => {
+    g.beginPath();
+    edge.forEach(([x, y, nx, ny, t], i) => { const d = off(t); g[i ? "lineTo" : "moveTo"](x + nx * d, y + ny * d); });
+    for (const [x, y] of close) g.lineTo(x, y);
+    g.closePath();
+    g.fill();
+  };
+
+  for (const [edge, close] of plates) {
+    if (style === "torn") {
+      // Torn black paper: a wandering edge, frayed.
+      fill(edge, close, (t) => 7 * noise(t, W1) + 2.2 * noise(t, W2) + (rnd() - 0.5) * 2.4);
+    } else if (style === "brush") {
+      // A broad brush, dry at its edge: the plate a little short, then streaks along the edge,
+      // fewer and broken the further out.
+      fill(edge, close, (t) => -14 + 3 * noise(t, W1));
+      g.strokeStyle = "#000";
+      g.lineCap = "round";
+      for (let o = -16; o <= 12; o += 2.2) {
+        const keep = 1 - (o + 16) / 30;
+        g.lineWidth = 2.2 + rnd() * 1.6;
+        let on = rnd() < keep;
+        g.beginPath();
+        for (const [x, y, nx, ny, t] of edge) {
+          if (rnd() < 0.035) on = rnd() < keep;
+          const d = o + 2.5 * noise(t, W1);
+          if (on) g.lineTo(x + nx * d, y + ny * d); else g.moveTo(x + nx * d, y + ny * d);
+        }
+        g.stroke();
+      }
+    } else if (style === "blots") {
+      // Ink blots: the edge pooled in round drops of every size.
+      fill(edge, close, () => -4);
+      for (let i = 0; i < edge.length; i += 3) {
+        const [x, y, nx, ny] = edge[i], rr = 5 + rnd() * 11, d = rnd() * 7 - 2;
+        g.beginPath();
+        g.arc(x + nx * d, y + ny * d, rr, 0, 6.29);
+        g.fill();
+        if (rnd() < 0.12) { const d2 = d + rr + 4 + rnd() * 6, r2 = 1.5 + rnd() * 3; g.beginPath(); g.arc(x + nx * d2, y + ny * d2, r2, 0, 6.29); g.fill(); }
+      }
+    } else {
+      // Straight, or ruled: a straight edge and, inside it, a fine double rule, as on a bookplate.
+      fill(edge, close, () => 0);
+      if (style === "ruled") {
+        for (const [inset, w, a] of [[7, 1, 0.5], [12, 2.5, 0.35]]) {
+          g.strokeStyle = `rgba(221, 214, 198, ${a})`;
+          g.lineWidth = w;
+          g.beginPath();
+          edge.forEach(([x, y, nx, ny], i) => g[i ? "lineTo" : "moveTo"](x - nx * inset, y - ny * inset));
+          g.stroke();
+        }
       }
     }
   }
