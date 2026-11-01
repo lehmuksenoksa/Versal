@@ -78,7 +78,7 @@ function stepToward(d, walking) {
   return false;
 }
 
-const goblinsInSight = () => new Set(world.actors.filter((a) => a.kind === "goblin" && world.isVisible(a.x, a.y)).map((a) => a.id));
+const goblinsInSight = () => new Set(world.actors.filter((a) => a !== world.player && world.isVisible(a.x, a.y)).map((a) => a.id));
 
 function walk() {
   if (!hold || !world) return;

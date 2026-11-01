@@ -1,10 +1,12 @@
-// The world: one map, the player, and a few packs of goblins. Turn-based:
-// each turn the player acts (steps, whacks a goblin in the way, opens or
-// closes a door, or waits) and the goblins, a little slower, act after.
+// The world: one map, the player, and a few packs of monsters: goblins in
+// the caves, skeletons in the built rooms. Turn-based: each turn the player
+// acts (steps, whacks a monster in the way, opens or closes a door, or
+// waits) and the monsters, a little slower, act after.
 // The player sees what lies in their field of view, and remembers what they
 // have seen; with the lamp out (sneaking) they see less, and are noticed
 // less, unless they stand where the level's lights fall.
-// A goblin is "neutral" (milling about with its pack), "sleeping" (still;
+// A monster (each kind the same but for its letter and noises) is
+// "neutral" (milling about with its pack), "sleeping" (still;
 // some packs start so), or "aggressive" (chasing the player, attacking when
 // next to them, opening doors in the way now and then). A pack turns
 // together; it gives up when the player is out of its sight a while, or far
@@ -16,6 +18,10 @@ import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline } from "./sightline.js";
 
+// The kinds of monster: their letters.
+export const MONSTERS = { goblin: { glyph: "g" }, skeleton: { glyph: "z" } };
+
+// How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
   // Moves a goblin makes for each of the player's.
   speed: 0.75,
@@ -72,7 +78,7 @@ export class World {
     // A pack round every campfire, awake; and in about a third of the rooms.
     const rooms = this.rng.shuffle(level.rooms.filter((r) => r !== level.startRoom)).sort((a, b) => (b.campfire ? 1 : 0) - (a.campfire ? 1 : 0));
     const packs = Math.max(Math.round(level.rooms.length / 3), rooms.filter((r) => r.campfire).length);
-    for (const room of rooms.slice(0, packs)) this.spawnPack(room, this.rng.int(4, 7), room.campfire ? "neutral" : null);
+    for (const room of rooms.slice(0, packs)) this.spawnPack(room, this.rng.int(4, 7), room.campfire ? "neutral" : null, room.cave ? "goblin" : "skeleton");
     this.visible = new Uint8Array(level.w * level.h);
     this.seen = new Uint8Array(level.w * level.h);
     // What has a line of sight to the player (for goblins noticing them,
@@ -103,13 +109,13 @@ export class World {
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; }
 
-  spawnPack(room, n, state = null) {
+  spawnPack(room, n, state = null, kind = "goblin") {
     let leader = null;
     state ??= this.rng.chance(0.35) ? "sleeping" : "neutral";
     for (let k = 0; k < n; k++) {
       const spot = this.freeSpotIn(room);
       if (!spot) break;
-      const g = { id: this.nextId++, kind: "goblin", glyph: "g", x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...GOBLIN.hp), energy: this.rng.next() };
+      const g = { id: this.nextId++, kind, glyph: MONSTERS[kind].glyph, x: spot.x, y: spot.y, state, calm: 0, hp: this.rng.int(...GOBLIN.hp), energy: this.rng.next() };
       g.leader = leader || g;
       leader = g.leader;
       this.actors.push(g);
@@ -136,15 +142,15 @@ export class World {
     if (!dx || !dy) return true;
     return !this.posts.has((y + (dy > 0 ? 1 : 0)) * (this.level.w + 1) + x + (dx > 0 ? 1 : 0));
   }
-  pack(g) { return this.actors.filter((a) => a.kind === "goblin" && a.leader === g.leader); }
+  pack(g) { return this.actors.filter((a) => a !== this.player && a.leader === g.leader); }
 
-  // The player steps by (dx, dy): into a goblin, a whack; into a shut door,
+  // The player steps by (dx, dy): into a monster, a whack; into a shut door,
   // opening it. Returns true if a turn passed.
   playerMove(dx, dy) {
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (!this.canStep(p.x, p.y, dx, dy)) return false;
     const g = this.actorAt(nx, ny);
-    if (g && g.kind === "goblin") {
+    if (g && g !== this.player) {
       this.whack(g);
       return this.tick();
     }
@@ -237,7 +243,7 @@ export class World {
     }
     const p = this.player;
     for (const a of this.actors)
-      if (a.kind === "goblin" && a.state === "sleeping" && Math.hypot(a.x - p.x, a.y - p.y) <= GOBLIN.hearWhack) a.state = "neutral";
+      if (a !== p && a.state === "sleeping" && Math.hypot(a.x - p.x, a.y - p.y) <= GOBLIN.hearWhack) a.state = "neutral";
   }
 
   // A turn passes: the goblins act (each as its speed allows), then see

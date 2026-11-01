@@ -25,6 +25,8 @@ const LETTERING = {
   // of the paper halo.)
   player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.14, darkInk: "#741a12" },
   monster: { weight: 600, size: 1.05, ink: INK },
+  // (Skeletons white, edged in ink, not haloed in paper.)
+  skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
   bold: 0.025,
   halo: 0.1,
   tilt: 0.06,
@@ -48,6 +50,15 @@ const POSES = {
     const reach = k < out ? 1 - Math.pow(1 - k / out, 3) : 1 - ease((k - out) / (1 - out));
     const h = k < out ? Math.sin((Math.PI * k) / out) : 0, land = Math.exp(-(((k - out) / 0.06) ** 2));
     return { ox: dx * 0.22 * reach, oy: dy * 0.22 * reach - h * 0.12, sx: 1 + 0.2 * land - 0.04 * h, sy: 1 - 0.24 * land + 0.1 * h, rot: dx * 0.18 * reach, shadow: h };
+  },
+  // Skeletons don't hop: they stand stiff, swaying in jerks, as if strung.
+  sway(t, ph) {
+    const k = Math.round(Math.sin(t * 1.6 + ph) * 3) / 3;
+    return { rot: 0.07 * k, ox: 0.015 * k };
+  },
+  // Dormant skeletons lie slumped and quite still.
+  dormant(t, ph) {
+    return { sy: 0.86, sx: 1.06, rot: ph > 0.5 ? 0.2 : -0.2 };
   },
   // Sleepers lie still, slumped a little, breathing slowly.
   sleep(t, ph) {
@@ -76,6 +87,23 @@ const SOUNDS = {
   // Searching, and a secret door found.
   search: { words: ["tap tap", "hmm…", "knock knock", "tap"], range: 1, dur: 1.1 },
   secret: { words: ["a secret door!"], range: 30, dur: 2.2 },
+};
+
+// The words of the skeletons' noises, where not the goblins': clattering
+// as they move, clicking idly, a dry hiss and rattle when roused, lying
+// still and creaking when dormant; their blows, the crack of bone struck,
+// and falling apart.
+const WORDS = {
+  skeleton: {
+    move: ["clatter", "clack", "click-clack", "rattle", "tick tick"],
+    chatter: ["click", "tk", "creak", "clack", "tk tk"],
+    growl: ["hsss", "kkkk", "rattle", "clack clack"],
+    alarm: ["KRRK!", "hsss!", "CLACK!"],
+    snore: ["…", "creak", "tick"],
+    attack: ["slash!", "claw!", "scrape!", "jab!"],
+    whack: ["CRACK!", "clonk!", "crunch!", "WHACK!"],
+    fall: ["clatter!", "crash!", "rattle!"],
+  },
 };
 
 // How the words look: ink with a paper halo; a death cry red; the fighting
@@ -350,7 +378,7 @@ export class Renderer {
         v.dur = e.actor === this.world.player ? 120 : 150;
         // A pack on the move is heard now and then (not every goblin, every
         // step).
-        if (e.actor.kind === "goblin") {
+        if (e.actor !== this.world.player) {
           const pack = e.actor.leader.id;
           if (now - (this.packHeard.get(pack) ?? -1e9) > 900 && Math.random() < 0.6) {
             this.packHeard.set(pack, now);
@@ -380,7 +408,7 @@ export class Renderer {
         if (e.hit) v.hitT = now;
         if (e.killed) {
           this.hear(e.target, "fall", now, null, this.world.player);
-          this.ghosts.push({ glyph: e.target.glyph, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
+          this.ghosts.push({ glyph: e.target.glyph, kind: e.target.kind, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
           this.views.delete(e.target.id);
         }
       } else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
@@ -400,14 +428,14 @@ export class Renderer {
   // The fighting's words (`by`: who struck `a`) fly off from it (see
   // place); while blows are flying, the goblins' other noises aren't shown.
   hear(a, kind, now, text = null, by = null) {
-    const S = SOUNDS[kind], p = this.world.player, TS = this.TS;
+    const S = SOUNDS[kind], p = this.world.player, TS = this.TS, pick = (w) => w[Math.floor(Math.random() * w.length)];
     if (BLOWS.has(kind)) this.lastBlow = now;
     if (BACKGROUND.has(kind) && this.fighting(now)) return;
     const d = Math.hypot(a.x - p.x, a.y - p.y), seen = this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS);
     if (!seen && d > S.range) return;
     const v = this.view(a), j = (r) => (Math.random() - 0.5) * 2 * r;
     const s = {
-      text: text ?? S.words[Math.floor(Math.random() * S.words.length)], kind, t0: now, dur: S.dur * 1000,
+      text: text ?? pick(WORDS[(kind === "attack" ? by : a)?.kind]?.[kind] ?? S.words), kind, t0: now, dur: S.dur * 1000,
       x: (v.x + 0.5 + j(0.25)) * TS, y: (v.y + 0.1) * TS, rot: j(0.18),
       alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / S.range),
     };
@@ -458,7 +486,7 @@ export class Renderer {
   // snore now and then while asleep.
   listen(now) {
     for (const a of this.world.actors) {
-      if (a.kind !== "goblin") continue;
+      if (a === this.world.player) continue;
       const v = this.view(a);
       if (v.state !== a.state) {
         // (One shout from a pack as it turns, not one from each.)
@@ -692,7 +720,7 @@ export class Renderer {
     this.ghosts = this.ghosts.filter((g) => now - g.t0 < 700);
     for (const g of this.ghosts) {
       const k = (now - g.t0) / 700;
-      this.drawGlyph(lc, g.glyph, (g.x + 0.5) * TS, (g.y + 0.5 + 0.15 * k) * TS, LETTERING.monster, { rot: g.tilt * 1.4 * ease(k), sx: 1, sy: 1 - 0.3 * k, alpha: 1 - k, lit: this.exp.lightAt((g.x + 0.5) * TS, (g.y + 0.5) * TS) });
+      this.drawGlyph(lc, g.glyph, (g.x + 0.5) * TS, (g.y + 0.5 + 0.15 * k) * TS, LETTERING[g.kind] ?? LETTERING.monster, { rot: g.tilt * 1.4 * ease(k), sx: 1, sy: 1 - 0.3 * k, alpha: 1 - k, lit: this.exp.lightAt((g.x + 0.5) * TS, (g.y + 0.5) * TS) });
     }
     // What can be heard, seen or not.
     this.listen(now);
@@ -769,8 +797,9 @@ export class Renderer {
       ctx.strokeText(ch, 0, -m.desc);
       ctx.restore();
     }
+    // (A letter with an `edge` has it in place of the halo, always.)
     ctx.lineWidth = size * LETTERING.halo;
-    ctx.strokeStyle = `rgba(247, 242, 230, ${0.9 * (style.darkRing ? 1 - dark : lit)})`;
+    ctx.strokeStyle = style.edge ?? `rgba(247, 242, 230, ${0.9 * (style.darkRing ? 1 - dark : lit)})`;
     ctx.strokeText(ch, 0, -m.desc);
     // A little extra weight, to stand up to the heavy map lines. (Darker in
     // the dark, for a letter with a colour for it.)
@@ -788,12 +817,14 @@ export class Renderer {
   }
 
   pose(a, v, now, t, motion) {
-    const goblin = a.kind === "goblin", pl = this.world.player;
+    // (`goblin`: any monster; skeletons stiffer, see sway.)
+    const pl = this.world.player, goblin = a !== pl, bones = a.kind === "skeleton";
     let idle = POSES.breathe(t);
     if (goblin && a.state === "aggressive") {
       const dx = pl.x - a.x, dy = pl.y - a.y, d = Math.hypot(dx, dy) || 1;
       idle = POSES.lunge(t, v.phase / 6.28, dx / d, dy / d);
-    } else if (goblin && a.state === "sleeping") idle = POSES.sleep(t, v.phase / 6.28);
+    } else if (goblin && a.state === "sleeping") idle = bones ? POSES.dormant(t, v.phase / 6.28) : POSES.sleep(t, v.phase / 6.28);
+    else if (bones) idle = POSES.sway(t, v.phase);
     else if (goblin) idle = POSES.hop(t, v.phase);
     const p = { ox: 0, oy: 0, sx: 1, sy: 1, rot: 0, shadow: 0, ...idle };
     p.ox *= motion;
@@ -830,7 +861,7 @@ export class Renderer {
     const k = clamp01((now - v.t0) / v.dur);
     const e = ease(k);
     const x = v.fx + (v.x - v.fx) * e, y = v.fy + (v.y - v.fy) * e;
-    if (k < 1) p.oy -= Math.sin(Math.PI * k) * (goblin ? 0.32 : 0.08) * motion;
+    if (k < 1) p.oy -= Math.sin(Math.PI * k) * (goblin && !bones ? 0.32 : 0.08) * motion;
     return { cx: (x + 0.5 + p.ox) * this.TS, cy: (y + 0.5 + p.oy) * this.TS, bx: (x + 0.5) * this.TS, baseY: (y + 0.5) * this.TS, p };
   }
 
@@ -852,7 +883,7 @@ export class Renderer {
     }
     ctx.stroke();
     ctx.restore();
-    const style = a === this.world.player ? LETTERING.player : LETTERING.monster;
+    const style = a === this.world.player ? LETTERING.player : LETTERING[a.kind] ?? LETTERING.monster;
     this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
   }
 }

@@ -673,7 +673,9 @@ function tryAreas(S, rng) {
     }
 
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
-  const startRoom = rng.pick(rooms);
+  // (The player starts in a built room: a dungeon's if there is one.)
+  const built = rooms.filter((r) => !r.cave && !r.collapsed), dungeonRooms = built.filter((r) => r.type === DUNGEON);
+  const startRoom = rng.pick(dungeonRooms.length ? dungeonRooms : built.length ? built : rooms);
   // Secret doors: their squares rock until found (each { x, y, dx, dy }, as
   // a door).
   const secrets = [], inStart = (x, y) => x >= startRoom.x && y >= startRoom.y && x < startRoom.x + startRoom.w && y < startRoom.y + startRoom.h;

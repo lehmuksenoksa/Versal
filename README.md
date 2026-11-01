@@ -1,7 +1,7 @@
 # Versal
 
 A sketchpad for the look and feel of a browser roguelike: one hand-inked dungeon map, the player,
-and some goblins.
+goblins in the caves and skeletons in the built rooms. The player always starts in a dungeon room.
 
 - The map is drawn in the manner of Dyson Logos' dungeon maps: heavy walls drawn as chains of short
   pen strokes (jagged in cave rooms), a grey shadow cast down-right, a hand-drawn floor grid, and bold
@@ -12,7 +12,9 @@ and some goblins.
 - Levels are made by areas: dungeon (built rooms and straight corridors; rooms of different kinds
   with pillars, niches, jail cells, beds, tables, shelves, crates and doors), cavern (misshapen caves
   with rock formations and rubble, winding passages) and collapsed (both, rooms half fallen in).
-- The player (a red `@`) and goblins (`g`) are letters set in Texturina, with a hatched pen shadow.
+- The player (a red `@`), goblins (`g`) and skeletons (a white `z`, edged in ink) are letters set in
+  Texturina, with a hatched pen shadow. Skeletons behave as goblins do, but stand stiff, swaying in
+  jerks rather than hopping, and lie still when dormant.
 - Goblins hop with squash and stretch, dart about within their tile, and mill around a pack leader.
   Some packs sleep (slumped, breathing slowly); a pack that sees the player close by turns
   aggressive: it chases them (a little slower than they move), attacks when next to them (no damage
@@ -43,7 +45,8 @@ and some goblins.
   one in sight within two squares (better next to it); searching with E spends a turn and gives
   much better chances. Once found it is an ordinary door. Goblins don't use them until then.
 - Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
-  move, "grr" when aggressive, "zzz" asleep. They show out of sight too, within hearing, fainter
+  move, "grr" when aggressive, "zzz" asleep; skeletons "clatter", "hsss" and lie silent but for a
+  creak, and fall apart with a "crash!". They show out of sight too, within hearing, fainter
   with distance. In a fight the words of the fighting fly off into open space, clear of each other
   and of the letters: hits pop out along the blow (yellow, in small capitals), misses sink, death
   cries (red) jolt and sink; the background noise isn't shown while blows are flying.
