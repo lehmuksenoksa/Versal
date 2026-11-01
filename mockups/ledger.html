@@ -233,7 +233,11 @@
 
 <section class="gen" aria-labelledby="gen-title">
   <h2 id="gen-title">The torn plates' shape</h2>
-  <p>Each plate grows as a clump of squares around what it must cover, smoothed and cut as cave walls are (some squares added, some bitten away, the corners jittered and some cut off), then torn along its edge as before. Roll new shapes until one looks right, adjust it with the sliders, then copy the text below and send it to me; "Save" keeps it in a list on this page for you.</p>
+  <p>Each plate has a fully black area and a band around it; its edge is made inside the band and never leaves it, tear and all. The corner's black area is the space kept for the heading and three lines of messages (sized for the longest heading, "The halls of the goblin king, 3rd level"); its edge grows as a clump of squares in the band, smoothed and cut as cave walls are, then torn as before. It is made once, for that space, so it doesn't change as messages come and go. The sidebar's black area is the sidebar; its edge sways gently down the band, leans a little from run to run, and now and then takes a bite or puts out a tab, then is torn. Roll new shapes until one looks right, adjust with the sliders, then copy the text below and send it to me; "Save" keeps it in a list on this page for you.</p>
+  <div class="genrow">
+    <label><input type="checkbox" id="gen-showspace" checked> Show the black areas and their bands</label>
+    <label>Messages <select id="gen-sample"><option value="short">as now</option><option value="long">long, to test the space</option></select></label>
+  </div>
   <div class="gencols">
     <div id="gen-corner"></div>
     <div id="gen-side"></div>
@@ -347,6 +351,12 @@ function render() {
   document.documentElement.style.setProperty("--log-size", size);
   const hp = +opt("hp"), low = hp / RUN.max < 0.34;
   const lines = RUN.log.filter((l) => l.t);
+  // The space kept at the top left: the heading, three lines of messages at most (a long one
+  // wraps, and older ones give way), "m for more". Its width in characters of the log's face.
+  SPACE = keptSpace();
+  const sample = $("gen-sample")?.value === "long"
+    ? { place: "The halls of the goblin king", depth: "3rd level", lines: ["You hear a dry clatter somewhere far off to the west.", "A second skeleton rises from the bone pile by the wall.", "The skeleton's claws rake your arm. (3) You bleed."] }
+    : { place: RUN.place, depth: RUN.depth, lines: lines.slice(-3).map((l) => l.t) };
   for (const phone of [false, true]) {
     const el = $(phone ? "phone" : "desk");
     // The desktop picture is taken at the map's own size, beside the sidebar, the camera on you.
@@ -359,8 +369,8 @@ function render() {
     const top = phone
       ? `<div class="top"><div class="head"><span class="place onmap">${RUN.place}</span><span class="hpline onmap ${low ? "low" : ""}" style="${low ? "color:var(--blood)" : ""}">${hp}<span>/${RUN.max}</span></span></div>
           <div class="news onmap"><div>${lines.at(-1).t}</div></div></div>`
-      : `<div class="top" style="max-width:620px"><div class="head"><span class="place onmap">${RUN.place}</span><span class="depth onmap">${RUN.depth}</span></div>
-          <div class="news onmap">${lines.slice(-3).map((l) => `<div>${l.t}</div>`).join("")}<div class="pull">m for more</div></div></div>`;
+      : `<div class="top" style="width:${SPACE.w}px;height:${SPACE.h}px;overflow:hidden"><div class="head"><span class="place onmap">${sample.place}</span><span class="depth onmap">${sample.depth}</span></div>
+          <div class="news onmap">${sample.lines.map((t) => `<div>${t}</div>`).join("")}<div class="pull">m for more</div></div></div>`;
     const sheetTop = `<div class="who"><h3>${RUN.name}</h3><div>${RUN.cls}, level ${RUN.level}</div></div>
       <div><h5>Health</h5><div class="hp ${low ? "low" : ""}">${hp}<span>/${RUN.max}</span></div><div class="statuses">${statuses()}</div></div>`;
     const keysHelp = `<div class="keys-help">${[["e", "equipment"], ["i", "inventory"], ["l", "look"], ["m", "messages"], ["?", "help"]].map(([k, n]) => `<span class="${k === o ? "on" : ""}"><b>${k}</b> ${n}</span>`).join("")}</div>`;
@@ -376,8 +386,12 @@ function render() {
       ${phone ? `<div class="keys">${[["e", "Equip"], ["i", "Carried"], ["l", "Look"], ["m", "Log"], ["", "Act"]].map(([k, n]) => `<div class="${k && k === o ? "on" : ""}">${n}</div>`).join("")}</div>` : ""}`;
   }
   for (const b of document.querySelectorAll("[data-open]")) b.setAttribute("aria-pressed", String(b.dataset.open === o));
-  const plates = $("desk").querySelector(".plates"), topEl = $("desk").querySelector(".top");
-  if (plates) drawPlates(plates, topEl.offsetWidth + 22, topEl.offsetHeight + 8);
+  // Older messages give way while the newest take more than three lines.
+  const news = $("desk").querySelector(".top .news"), LH = keptSpace().lh;
+  const msgs = () => [...news.children].filter((d) => !d.classList.contains("pull"));
+  while (msgs().length > 1 && msgs().reduce((h, d) => h + d.offsetHeight, 0) > 3 * LH + 2) msgs()[0].remove();
+  const plates = $("desk").querySelector(".plates");
+  if (plates) drawPlates(plates, SPACE.w, SPACE.h);
 }
 
 // ---- The torn plates ----
@@ -385,19 +399,76 @@ function render() {
 // are, traced round, its corners jittered and some cut off; then torn along its edge (the first
 // tear tried). All from a seed and a few numbers, so a shape can be sent back and made again.
 const SIDE_X = 940;
-const PARAMS = [
-  ["cell", "Square size", 10, 60, 1, "px"],
-  ["grow", "Squares added", 0, 120, 1, ""],
-  ["carve", "Squares bitten", 0, 120, 1, ""],
-  ["smooth", "Smoothing", 0, 3, 1, ""],
-  ["jitter", "Corner jitter", 0, 0.5, 0.01, ""],
-  ["cut", "Corners cut", 0, 0.7, 0.01, ""],
-  ["tear", "Tear", 0, 2, 0.05, ""],
-];
-const GEN = {
-  corner: { seed: 1, cell: 26, grow: 26, carve: 10, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
-  side: { seed: 2, cell: 30, grow: 45, carve: 22, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
+const PARAMS = {
+  corner: [
+    ["band", "Band", 10, 140, 1, "px"],
+    ["chars", "Message width", 30, 64, 1, " ch"],
+    ["cell", "Square size", 10, 60, 1, "px"],
+    ["grow", "Squares added", 0, 120, 1, ""],
+    ["carve", "Squares bitten", 0, 120, 1, ""],
+    ["smooth", "Smoothing", 0, 3, 1, ""],
+    ["jitter", "Corner jitter", 0, 0.5, 0.01, ""],
+    ["cut", "Corners cut", 0, 0.7, 0.01, ""],
+    ["tear", "Tear", 0, 2, 0.05, ""],
+  ],
+  side: [
+    ["band", "Band", 10, 100, 1, "px"],
+    ["wander", "Sway", 0, 30, 1, "px"],
+    ["run", "Run length", 20, 200, 1, "px"],
+    ["kink", "Lean per run", 0, 20, 0.5, "px"],
+    ["bites", "Bites and tabs", 0, 0.5, 0.01, ""],
+    ["bite", "Bite size", 4, 40, 1, "px"],
+    ["tear", "Tear", 0, 2, 0.05, ""],
+  ],
 };
+const GEN = {
+  corner: { seed: 1, band: 56, chars: 46, cell: 26, grow: 26, carve: 10, smooth: 1, jitter: 0.25, cut: 0.3, tear: 1 },
+  side: { seed: 2, band: 40, wander: 10, run: 70, kink: 6, bites: 0.12, bite: 14, tear: 1 },
+};
+// The kept space: its width from the message width in characters (of the log's face, at its size).
+let SPACE = { w: 460, h: 170, lh: 25.65 };
+function keptSpace() {
+  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--log-size")) || 19;
+  const face = getComputedStyle(document.documentElement).getPropertyValue("--log") || "Georgia";
+  const c = (keptSpace.c ??= document.createElement("canvas").getContext("2d"));
+  c.font = `${size}px ${face}`;
+  const text = "The skeleton claws you. (3) You hear a clatter to the west.";
+  const ch = c.measureText(text).width / text.length, lh = size * 1.35;
+  // ...and never narrower than the longest heading.
+  c.font = "600 28px Texturina, Georgia, serif";
+  const longest = "The halls of the goblin king";
+  let head = c.measureText(longest).width + longest.length * 0.02 * 28 + 14 + 8;
+  c.font = "600 17px Texturina, Georgia, serif";
+  head += c.measureText("3rd level").width;
+  return { w: Math.round(52 + Math.max(GEN.corner.chars * ch, head)), h: Math.round(18 + 32 + 8 + 3 * lh + 22 + 10), lh };
+}
+
+// The sidebar's black area starts here (its text a little further in).
+const SIDE_CORE = 952;
+// The sidebar's edge: mostly vertical, living, inside its band. From the bottom up in runs; a slow sway down the
+// screen, a lean from run to run (kept within bounds), now and then a bite into the plate or a
+// tab out into the map.
+function sideOutline(P) {
+  const rnd = mulberry(P.seed * 7919 + 29);
+  const w1 = [rnd() * 6.28, 1 / (380 + rnd() * 320)], w2 = [rnd() * 6.28, 1 / (160 + rnd() * 160)];
+  const sway = (y) => P.wander * (0.7 * Math.sin(y * 6.28 * w1[1] + w1[0]) + 0.3 * Math.sin(y * 6.28 * w2[1] + w2[0]));
+  const pts = [];
+  let y = 830, lean = 0;
+  const mid = SIDE_CORE - P.band / 2;
+  const at = (dx, yy) => [Math.max(SIDE_CORE - P.band, Math.min(SIDE_CORE, mid + sway(yy) + lean + dx)), yy];
+  while (y > -30) {
+    pts.push(at(0, y));
+    if (rnd() < P.bites) {
+      const sgn = rnd() < 0.65 ? 1 : -1, h = P.bite * (0.6 + rnd() * 0.8), d = P.bite * (0.4 + rnd() * 0.6) * sgn;
+      pts.push(at(d * 0.9, y - h * 0.3), at(d, y - h * 0.7), at(0, y - h));
+      y -= h;
+    }
+    y -= P.run * (0.5 + rnd());
+    lean = Math.max(-P.kink * 1.6, Math.min(P.kink * 1.6, lean + (rnd() * 2 - 1) * P.kink));
+  }
+  pts.push(at(0, -30), [1300, -30], [1300, 830]);
+  return pts;
+}
 const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 
 // The outline of one plate, in screen pixels: `need` the box it must cover (reaching off the
@@ -493,8 +564,8 @@ function plateOutline(P, need, reach) {
 }
 
 function plateShapes(tw, th) {
-  const corner = plateOutline(GEN.corner, [-100, -100, tw, th], [0, 0, tw + 260, th + 200]);
-  const side = plateOutline(GEN.side, [SIDE_X + 20, -100, 1380, 900], [SIDE_X - 220, 0, 1280, 800]);
+  const corner = plateOutline(GEN.corner, [-100, -100, tw, th], [0, 0, tw + GEN.corner.band, th + GEN.corner.band]);
+  const side = sideOutline(GEN.side);
   return { corner, side };
 }
 
@@ -520,12 +591,33 @@ function drawPlates(c, tw, th) {
       for (let d = 0; d < L; d += 3, t += 3) {
         const x = ax + tx * d, y = ay + ty * d, on = x > -2 && y > -2 && x < 1282 && y < 802;
         const k = on ? P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4) : 0;
-        g[first ? "moveTo" : "lineTo"](x - ty * k, y + tx * k);
+        let px = x - ty * k, py = y + tx * k;
+        // Kept in the band: never into the black area, never past the band.
+        if (on && name === "corner") {
+          px = Math.min(px, tw + P.band); py = Math.min(py, th + P.band);
+          if (px < tw && py < th) { if (tw - px < th - py) px = tw; else py = th; }
+        } else if (on) px = Math.max(SIDE_CORE - P.band, Math.min(SIDE_CORE, px));
+        g[first ? "moveTo" : "lineTo"](px, py);
         first = false;
       }
     }
     g.closePath();
     g.fill();
+  }
+  // The black areas (dashed) and the bands' outer edges (dotted).
+  if ($("gen-showspace")?.checked) {
+    const B = GEN.corner.band, S = GEN.side.band;
+    g.save();
+    g.lineWidth = 1;
+    g.strokeStyle = "rgba(221, 214, 198, 0.6)";
+    g.setLineDash([6, 5]);
+    g.strokeRect(-1, -1, tw + 1.5, th + 1.5);
+    g.beginPath(); g.moveTo(SIDE_CORE + 0.5, 0); g.lineTo(SIDE_CORE + 0.5, 800); g.stroke();
+    g.strokeStyle = "rgba(221, 214, 198, 0.4)";
+    g.setLineDash([2, 4]);
+    g.strokeRect(-1, -1, tw + B + 1.5, th + B + 1.5);
+    g.beginPath(); g.moveTo(SIDE_CORE - S + 0.5, 0); g.lineTo(SIDE_CORE - S + 0.5, 800); g.stroke();
+    g.restore();
   }
   writeOut();
 }
@@ -537,17 +629,17 @@ function genControls() {
     box.innerHTML = `<h3>${name === "corner" ? "The corner" : "The sidebar's edge"}
         <button type="button" class="main" id="new-${name}">New shape</button>
         <label>seed <input type="number" id="seed-${name}" value="${P.seed}"></label></h3>
-      ${PARAMS.map(([k, label, min, max, step, unit]) => `<label class="sl"><span>${label}</span><input type="range" id="${name}-${k}" min="${min}" max="${max}" step="${step}" value="${P[k]}"><output id="${name}-${k}-v">${P[k]}${unit}</output></label>`).join("")}`;
+      ${PARAMS[name].map(([k, label, min, max, step, unit]) => `<label class="sl"><span>${label}</span><input type="range" id="${name}-${k}" min="${min}" max="${max}" step="${step}" value="${P[k]}"><output id="${name}-${k}-v">${P[k]}${unit}</output></label>`).join("")}`;
     $(`new-${name}`).addEventListener("click", () => { P.seed = Math.floor(Math.random() * 1e6); $(`seed-${name}`).value = P.seed; render(); });
     $(`seed-${name}`).addEventListener("input", (e) => { P.seed = +e.target.value || 0; render(); });
-    for (const [k, , , , , unit] of PARAMS) $(`${name}-${k}`).addEventListener("input", (e) => { P[k] = +e.target.value; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; render(); });
+    for (const [k, , , , , unit] of PARAMS[name]) $(`${name}-${k}`).addEventListener("input", (e) => { P[k] = +e.target.value; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; render(); });
   }
 }
 function genSync() {
   for (const name of ["corner", "side"]) {
     const P = GEN[name];
     $(`seed-${name}`).value = P.seed;
-    for (const [k, , , , , unit] of PARAMS) { $(`${name}-${k}`).value = P[k]; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; }
+    for (const [k, , , , , unit] of PARAMS[name]) { $(`${name}-${k}`).value = P[k]; $(`${name}-${k}-v`).textContent = `${P[k]}${unit}`; }
   }
 }
 // The text to send: the numbers that make the shapes, and the outlines themselves (before tearing).
@@ -568,6 +660,8 @@ function showSaved() {
   });
 }
 genControls();
+$("gen-showspace").addEventListener("input", render);
+$("gen-sample").addEventListener("input", render);
 $("gen-both").addEventListener("click", () => { GEN.corner.seed = Math.floor(Math.random() * 1e6); GEN.side.seed = Math.floor(Math.random() * 1e6); genSync(); render(); });
 $("gen-copy").addEventListener("click", () => {
   const text = $("gen-out").value;
