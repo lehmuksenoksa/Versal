@@ -65,6 +65,11 @@ const POSES = {
   dormant(t, ph) {
     return { sy: 0.86, sx: 1.06, rot: ph > 0.5 ? 0.2 : -0.2 };
   },
+  // Suspicious, they stop and peer about: a slow lean one way, then the other.
+  peer(t, ph) {
+    const k = Math.sin(t * 1.3 + ph);
+    return { rot: 0.12 * Math.sign(k) * Math.min(1, Math.abs(k) * 3), sy: 1.04, sx: 0.98, oy: -0.03 };
+  },
   // Sleepers lie still, slumped a little, breathing slowly.
   sleep(t, ph) {
     const b = 0.5 + 0.5 * Math.sin(t * 1.4 + ph * 6);
@@ -81,6 +86,9 @@ const SOUNDS = {
   growl: { words: ["grr", "grrr", "hsss", "grrk", "rrr"], range: 16, dur: 1.2 },
   alarm: { words: ["grr!", "GRR!", "hsss!", "rraah!"], range: 20, dur: 1.4 },
   snore: { words: ["zzz", "zz", "zzZ", "z"], range: 8, dur: 1.8 },
+  // Something heard or glimpsed; and a pack breaking.
+  suspect: { words: ["huh?", "eh?", "sniff sniff", "hm?", "wha?"], range: 14, dur: 1.5 },
+  flee: { words: ["run!", "eep!", "aaah!", "flee!"], range: 20, dur: 1.4 },
   // The fighting, and doors.
   attack: { words: ["stab!", "hack!", "chomp!", "slash!", "jab!"], range: 20, dur: 1 },
   whack: { words: ["WHACK!", "thwack!", "bonk!", "THUD!"], range: 20, dur: 1 },
@@ -104,6 +112,7 @@ const WORDS = {
     chatter: ["click", "tk", "creak", "clack", "tk tk"],
     growl: ["hsss", "kkkk", "rattle", "clack clack"],
     alarm: ["KRRK!", "hsss!", "CLACK!"],
+    suspect: ["…?", "creak?", "tk?"],
     snore: ["…", "creak", "tick"],
     attack: ["slash!", "claw!", "scrape!", "jab!"],
     whack: ["CRACK!", "clonk!", "crunch!", "WHACK!"],
@@ -416,7 +425,9 @@ export class Renderer {
           this.ghosts.push({ glyph: e.target.glyph, kind: e.target.kind, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
           this.views.delete(e.target.id);
         }
-      } else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
+      } else if (e.type === "suspect") this.hear(e.actor, "suspect", now);
+      else if (e.type === "flee") this.hear(e.actor, "flee", now);
+      else if (e.type === "sneak") this.hear(this.world.player, "lamp", now, e.on ? "lamp out" : "lamp lit");
       else if (e.type === "search") this.hear(this.world.player, "search", now);
       else if (e.type === "secret" && this.exp) {
         // A secret door found: the map drawn again with it there (the drawing
@@ -511,6 +522,11 @@ export class Renderer {
       } else if (a.state === "sleeping") {
         this.hear(a, "snore", now);
         v.nextSound = now + (2500 + Math.random() * 3000) * quiet;
+      } else if (a.state === "suspicious") {
+        this.hear(a, "suspect", now);
+        v.nextSound = now + (3500 + Math.random() * 4000) * quiet;
+      } else if (a.state === "fleeing") {
+        v.nextSound = now + 3000;
       } else {
         this.hear(a, "chatter", now);
         v.nextSound = now + (5000 + Math.random() * 8000) * quiet;
@@ -823,6 +839,8 @@ export class Renderer {
       // (A skeleton's, half as far and half as quick.)
       if (bones) idle = { ...idle, ox: idle.ox * 0.4, oy: idle.oy * 0.3, rot: idle.rot * 0.4, sx: 1 + (idle.sx - 1) * 0.3, sy: 1 + (idle.sy - 1) * 0.3, shadow: 0 };
     } else if (goblin && a.state === "sleeping") idle = bones ? POSES.dormant(t, v.phase / 6.28) : POSES.sleep(t, v.phase / 6.28);
+    else if (goblin && a.state === "suspicious") idle = bones ? { ...POSES.peer(t * 0.5, v.phase), rot: POSES.peer(t * 0.5, v.phase).rot * 0.4 } : POSES.peer(t, v.phase);
+    else if (goblin && a.state === "fleeing" && !bones) idle = POSES.hop(t * 1.8, v.phase);
     else if (bones) idle = POSES.sway(t, v.phase);
     else if (goblin) idle = POSES.hop(t, v.phase);
     const p = { ox: 0, oy: 0, sx: 1, sy: 1, rot: 0, shadow: 0, ...idle };

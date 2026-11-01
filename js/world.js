@@ -26,7 +26,7 @@ import { postOutline, crossesOutline } from "./sightline.js";
 export const MONSTERS = {
   goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5, drops: true },
   // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
-  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8 },
+  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8, undead: true },
 };
 
 // The player: hit points to start with; the blow (until there are weapons, as
@@ -65,21 +65,33 @@ export const PLACE = { name: "The old crypts", depth: 1 };
 
 // How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
-  // How far (in squares) a goblin notices the player, lamp lit and out; and
-  // a sleeper.
-  notice: 7, noticeSneaking: 3, wake: 3, wakeSneaking: 1,
-  // The chance, each turn, that a goblin notices a sneaking player in reach.
-  sneakChance: 0.5,
   // An aggressive pack gives up after this many turns not seeing the player,
   // or at once when they are further off than `lose`.
   calm: 8, lose: 14,
   // The chance a chasing goblin gets a shut door open.
   door: 0.5,
-  // How far off a whack wakes sleeping packs.
-  hearWhack: 8,
 };
-// The player's chance to hit with a whack.
-const WHACK = 0.75;
+// The player's chance to hit with a whack; a blow at a monster that hasn't
+// noticed them (asleep or unaware) always lands, `sneak` times as hard.
+const WHACK = 0.75, SNEAK_HIT = 3;
+// Time: a step with the lamp out takes this many turns.
+export const SNEAK_STEP = 1.5;
+// Noticing the player. A monster's awareness (0 to 1) grows each turn it sees
+// or hears them, and ebbs (`ebb` a turn) while it doesn't; at a third it's
+// suspicious and comes to look (?), full, alarmed, and its pack chases (!);
+// a suspicious one calms below `calm`. Seen: within `seeLit` squares where
+// the player is lit (the lamp, or a lit place), `seeDark` where not; `sight`
+// (`sightDark` in the dark) a turn up close, less further off, `near`
+// (`nearDark`) more next to them. Heard: each
+// noise (`NOISE`, how far it carries and how loud) a turn, `hear` at most.
+// How much a monster sees and hears by its state (`SENSES`); one that has fled
+// is `wary` (more).
+export const AWARE = { seeLit: 8, seeDark: 2.5, sight: 0.45, near: 0.4, sightDark: 0.22, nearDark: 0.1, hear: 0.35, ebb: 0.05, calm: 0.2, wary: 1.5 };
+const NOISE = { step: [3, 0.5], sneak: [1, 0.3], blow: [8, 1], door: [4, 0.6] };
+const SENSES = { sleeping: { see: 0, hear: 0.5 }, neutral: { see: 0.6, hear: 0.6 }, suspicious: { see: 1.2, hear: 1.2 } };
+// Morale: when no more than half a pack is left the rest flee (the undead
+// never) for a while, then regroup, wary.
+const MORALE = { flee: [10, 18] };
 // The chance, each turn, of the player seeing a secret door in sight: next
 // to it, and two squares off; searching (a turn spent looking), and not.
 const SECRET = { near: 0.15, far: 0.06, searchNear: 0.6, searchFar: 0.3, reach: 2 };
@@ -179,6 +191,8 @@ export class World {
       leader = g.leader;
       this.actors.push(g);
     }
+    // (How big the pack was, for its morale.)
+    if (leader) for (const a of this.pack(leader)) a.packSize = this.pack(leader).length;
   }
 
   freeSpotIn(room) {
@@ -228,7 +242,14 @@ export class World {
     this.moveActor(p, nx, ny);
     const here = this.itemsAt(nx, ny);
     if (here.length) this.log(`You see ${here.map((i) => itemName(i.item)).join(" and ")} here.`);
-    return this.tick();
+    // (Sneaking, a step is slower, and quieter.)
+    this.makeNoise(this.sneaking ? "sneak" : "step");
+    return this.tick(false, false, this.sneaking ? SNEAK_STEP : 1);
+  }
+
+  // A noise the player makes, at their square, heard this turn.
+  makeNoise(kind, x = this.player.x, y = this.player.y) {
+    (this.noises ??= []).push({ x, y, r: NOISE[kind][0], loud: NOISE[kind][1] });
   }
 
   // Is there an open door next to the player to close (none standing in it)?
@@ -256,6 +277,7 @@ export class World {
 
   setDoor(door, open, by) {
     door.open = open;
+    if (by === this.player) this.makeNoise("door");
     this.events.push({ type: "door", door, by });
   }
 
@@ -414,11 +436,14 @@ export class World {
   // A whack at monster `g`: it may miss; one out of hit points falls. Its pack
   // turns on the player, and the noise wakes packs asleep near by.
   whack(g) {
-    const hit = this.rng.chance(WHACK), dmg = hit ? this.rng.int(...this.attack()) : 0;
+    const unaware = g.state === "sleeping" || g.state === "neutral";
+    const hit = unaware || this.rng.chance(WHACK), dmg = hit ? this.rng.int(...this.attack()) * (unaware ? SNEAK_HIT : 1) : 0;
     if (hit) g.hp -= dmg;
     const killed = g.hp <= 0, name = MONSTERS[g.kind].name;
-    this.events.push({ type: "whack", target: g, hit, killed, dmg });
-    this.log(!hit ? `You miss the ${name}.` : killed ? `You kill the ${name}.` : `You hit the ${name}. (${dmg})`, killed ? "good" : "");
+    this.events.push({ type: "whack", target: g, hit, killed, dmg, sneak: unaware });
+    this.makeNoise("blow");
+    const what = unaware ? `the unaware ${name}` : `the ${name}`;
+    this.log(!hit ? `You miss ${what}.` : killed ? `You kill ${what}.${unaware ? ` (${dmg})` : ""}` : `You ${unaware ? "strike" : "hit"} ${what}. (${dmg})`, killed ? "good" : "");
     if (killed) {
       this.player.kills++;
       this.gainXp(MONSTERS[g.kind].xp);
@@ -430,43 +455,92 @@ export class World {
       }
     }
     for (const a of this.pack(g)) {
+      if (a.state === "fleeing") continue;
       a.state = "aggressive";
       a.calm = 0;
+      a.aware = 1;
     }
     if (killed) {
       this.actors.splice(this.actors.indexOf(g), 1);
       // (A pack whose leader falls follows another.)
-      if (g.leader === g) {
-        const rest = this.pack(g);
-        for (const a of rest) a.leader = rest[0];
+      const rest = this.pack(g);
+      if (g.leader === g) for (const a of rest) a.leader = rest[0];
+      // (Half the pack gone, the rest flee: the undead never.)
+      const L = rest[0]?.leader;
+      if (L && !MONSTERS[g.kind].undead && !L.broken && rest.length <= (g.packSize ?? 1) / 2) {
+        L.broken = true;
+        for (const a of rest) { a.state = "fleeing"; a.fear = this.rng.int(...MORALE.flee); }
+        this.log(rest.length > 1 ? `The ${name}s flee!` : `The ${name} flees!`, "good");
+        this.events.push({ type: "flee", actor: rest[0] });
       }
     }
-    const p = this.player;
-    for (const a of this.actors)
-      if (a !== p && a.state === "sleeping" && Math.hypot(a.x - p.x, a.y - p.y) <= GOBLIN.hearWhack) a.state = "neutral";
   }
 
   // A turn passes: the goblins act (each as its speed allows), then see
   // what they notice; the player's ailments and healing take their course.
   // (`resting`: a turn spent resting: healing quicker, and bleeding stops.)
-  tick(searching = false, resting = false) {
+  // (`cost`: how many turns the player's action takes: the monsters act as
+  // much more, the ailments and healing go on each whole turn.)
+  tick(searching = false, resting = false, cost = 1) {
     if (this.dead) return false;
-    this.turn++;
+    const before = this.turn;
+    this.clock = (this.clock ?? 0) + cost;
+    this.turn = Math.floor(this.clock + 1e-9);
     this.updateFov();
     this.spot(searching);
     this.chaseMap = null;
     for (const g of [...this.actors]) {
       if (g === this.player) continue;
-      g.energy += MONSTERS[g.kind].speed;
-      if (g.energy < 1) continue;
-      g.energy -= 1;
-      if (g.state === "aggressive") this.chase(g);
-      else if (g.state === "neutral") this.mill(g);
+      g.energy += MONSTERS[g.kind].speed * cost;
+      while (g.energy >= 1 && !this.dead && this.actors.includes(g)) {
+        g.energy -= 1;
+        if (g.state === "aggressive") this.chase(g);
+        else if (g.state === "suspicious") this.investigate(g);
+        else if (g.state === "fleeing") this.flee(g);
+        else if (g.state === "neutral") this.mill(g);
+      }
     }
     this.updateFov();
     this.notice();
-    if (!this.dead) this.ailing(resting);
+    this.noises = [];
+    for (let t = before; t < this.turn && !this.dead; t++) this.ailing(resting);
     return true;
+  }
+
+  // Is the player lit (their lamp, or a lit place)?
+  playerLit() {
+    const p = this.player;
+    return !this.sneaking || !!this.lit[p.y * this.level.w + p.x];
+  }
+
+  // A suspicious monster goes to look where it last saw or heard the player.
+  investigate(g) {
+    const t = g.lastSpot;
+    if (!t || (g.x === t.x && g.y === t.y)) return this.randomStep(g);
+    // (Slowly: not every turn.)
+    if (this.rng.chance(0.7)) this.stepToward(g, t.x, t.y);
+  }
+
+  // A fleeing monster gets away from the player; cornered, it fights. When
+  // its fear is spent it rejoins its pack, wary.
+  flee(g) {
+    const p = this.player, dist = this.chaseSteps(), W = this.level.w, here = dist[g.y * W + g.x];
+    if (--g.fear <= 0) {
+      g.state = "neutral";
+      g.wary = true;
+      g.aware = 0.3;
+      return;
+    }
+    let best = null;
+    for (const [sx, sy] of this.rng.shuffle([...DIRS8])) {
+      const x = g.x + sx, y = g.y + sy;
+      if (!this.isFree(x, y) || !this.canStep(g.x, g.y, sx, sy)) continue;
+      const d = dist[y * W + x];
+      if (d < 0 || (here >= 0 && d <= here)) continue;
+      if (!best || d > best.d) best = { x, y, d };
+    }
+    if (best) return this.moveActor(g, best.x, best.y);
+    if (Math.max(Math.abs(p.x - g.x), Math.abs(p.y - g.y)) === 1) this.strike(g);
   }
 
   // Ailments take their course, and wounds heal (quicker resting).
@@ -533,32 +607,45 @@ export class World {
   // sight, or one chasing within earshot?
   disturbed() {
     const p = this.player;
-    return this.monsterInSight() || this.actors.some((a) => a !== p && a.state === "aggressive" && Math.hypot(a.x - p.x, a.y - p.y) <= 12);
+    return this.monsterInSight() || this.actors.some((a) => a !== p && (a.state === "aggressive" || a.state === "suspicious") && Math.hypot(a.x - p.x, a.y - p.y) <= 12);
   }
 
-  // Goblins that see the player close by turn aggressive, their packs with
-  // them; a sleeper only when very close. With the lamp out, only nearer
-  // and not every turn. Aggressive packs give up after GOBLIN.calm turns of
-  // not seeing the player, or when they are far off.
+  // What the monsters notice: each that sees or hears the player grows more
+  // aware (more when close, when the player is lit, when it's alert), and
+  // less while it doesn't. A third aware, suspicious; fully, alarmed, and its
+  // pack with it. Aggressive packs give up after GOBLIN.calm turns of not
+  // seeing the player, or when they are far off, but stay suspicious.
   notice() {
-    const p = this.player, angry = new Set(), W = this.level.w;
-    // (In a lit place, the lamp out hides nothing.)
-    const hidden = this.sneaking && !this.lit[p.y * W + p.x];
-    const reach = hidden ? GOBLIN.noticeSneaking : GOBLIN.notice, wake = hidden ? GOBLIN.wakeSneaking : GOBLIN.wake;
+    const p = this.player, W = this.level.w, lit = this.playerLit(), range = lit ? AWARE.seeLit : AWARE.seeDark;
+    const angry = new Set();
     for (const g of this.actors) {
       if (g === p) continue;
       const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), sees = this.inView[g.y * W + g.x] === 1;
       g.sees = sees;
-      if (!sees || d > (g.state === "sleeping" ? wake : reach)) continue;
-      if (hidden && !this.rng.chance(GOBLIN.sneakChance)) continue;
-      angry.add(g.leader);
+      if (g.state === "aggressive" || g.state === "fleeing") continue;
+      const S = SENSES[g.state] ?? SENSES.neutral;
+      let gain = 0;
+      if (sees && d <= range) gain += ((lit ? AWARE.sight : AWARE.sightDark) * (1 - (d - 1) / range) + (d <= 1 ? (lit ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
+      for (const n of this.noises ?? []) {
+        const dn = Math.hypot(g.x - n.x, g.y - n.y);
+        if (dn <= n.r) gain += AWARE.hear * n.loud * (1 - dn / (n.r + 1)) * S.hear;
+      }
+      if (g.wary) gain *= AWARE.wary;
+      if (gain > 0) {
+        g.aware = Math.min(1, (g.aware ?? 0) + gain);
+        g.lastSpot = { x: p.x, y: p.y };
+      } else g.aware = Math.max(0, (g.aware ?? 0) - AWARE.ebb);
+      if (g.aware >= 1) angry.add(g.leader);
+      else if (g.aware >= 1 / 3 && g.state !== "suspicious") {
+        g.state = "suspicious";
+        this.events.push({ type: "suspect", actor: g });
+      } else if (g.state === "suspicious" && g.aware < AWARE.calm) g.state = "neutral";
     }
     for (const g of this.actors) {
-      if (g === p) continue;
-      if (angry.has(g.leader)) {
-        g.state = "aggressive";
-        g.calm = 0;
-      }
+      if (g === p || !angry.has(g.leader) || g.state === "fleeing") continue;
+      g.state = "aggressive";
+      g.calm = 0;
+      g.aware = 1;
     }
     // (A pack keeps on while any of it sees the player.)
     for (const g of this.actors) {
@@ -566,8 +653,13 @@ export class World {
       const pack = this.pack(g), far = pack.every((a) => Math.max(Math.abs(a.x - p.x), Math.abs(a.y - p.y)) > GOBLIN.lose);
       const calm = pack.some((a) => a.sees) ? 0 : (g.calm ?? 0) + 1;
       for (const a of pack) {
+        if (a.state !== "aggressive") continue;
         a.calm = calm;
-        if (far || calm >= GOBLIN.calm) a.state = "neutral";
+        if (far || calm >= GOBLIN.calm) {
+          a.state = "suspicious";
+          a.aware = 0.6;
+          a.lastSpot = { x: p.x, y: p.y };
+        }
       }
     }
   }

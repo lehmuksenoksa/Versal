@@ -91,6 +91,16 @@ pack holds ten things (`a` to `j`), potions of a kind together. The player start
 (1–4) and a potion; swords (2–6), axes (3–7) and two-handed warhammers (4–10) hit harder; a helmet
 or chainmail takes up to 1 or 2 off a blow.
 
+Monsters notice the player gradually: each turn one sees or hears them it grows more aware (much
+more when the player is lit, by the lamp or a lit place, and close; less while milling about; not
+at all by sight while asleep); a third aware, it turns suspicious (`?`), stops and peers, and goes
+to look where it last saw or heard them; fully aware, it and its pack chase (`!`). Awareness ebbs
+while it sees and hears nothing. With the lamp out a step takes one and a half turns, is quieter,
+and the player can only be seen from two or three squares off, so a monster can be reached unaware.
+A blow at a monster that hasn't noticed the player (asleep or unaware) always lands, three times as
+hard. When no more than half a goblin pack is left the rest flee, then regroup, warier; the undead
+never flee.
+
 A run starts by asking the player's name (`?name=…` in the address skips it). The player has 20 hit
 points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
 and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw

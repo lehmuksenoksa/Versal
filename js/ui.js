@@ -35,7 +35,7 @@ const KEYS_HELP = [
   ["?", "this help"],
 ];
 // How a monster's state reads in the look.
-const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed" };
+const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed", fleeing: "fleeing" };
 // Things worth naming in the look (the rest of the furniture too common to).
 const THINGS = { campfire: "a campfire", altar: "an altar", coffin: "a coffin", sarcophagus: "a sarcophagus", table: "a table", bed: "a bed", shelf: "shelves", bench: "a bench", crate: "a crate", barrel: "a barrel", chair: "a chair" };
 
@@ -131,7 +131,7 @@ export class UI {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
     const stamp = [world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
-      window.innerWidth, window.innerHeight, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
+      window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;
     const wide = this.wide;
@@ -249,7 +249,7 @@ export class UI {
       <div><h5>Stats</h5><ul class="ledger plain">
         <li><span>Attack</span><span class="lead"></span><b class="val">${a0}–${a1}</b></li>
         <li><span>Defence</span><span class="lead"></span><b class="val">${world.defence()}</b></li>
-        <li><span>Speed</span><span class="lead"></span><b class="val">normal</b></li>
+        <li><span>Speed</span><span class="lead"></span><b class="val">${world.sneaking ? "slow, sneaking" : "normal"}</b></li>
         <li><span>Kills</span><span class="lead"></span><b class="val">${p.kills}</b></li>
         <li><span>Turns</span><span class="lead"></span><b class="val">${world.turn}</b></li></ul></div>`;
   }
