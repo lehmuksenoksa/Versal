@@ -137,7 +137,7 @@ in the browser console.
 
 | File | What it does |
 | --- | --- |
-| `js/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern and collapsed ground, their rooms, corridors, rubble, doors, room kinds and furnishings. |
+| `js/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern, collapsed ground and the goblin king's halls (or one kind changing into another across the level, with stairs and a throne room), their rooms, corridors, rubble, doors, room kinds and furnishings. |
 | `js/dungeon.js` | Tile types, cave carving, and the older single-kind generator (still used by the expression mockup). |
 | `js/maprender.js` | The hand-inked map: wall outlines and strokes, recesses, doors, shadow, floor grid (looser on cave floors), rubble, furniture and pillars, room numbers. |
 | `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
