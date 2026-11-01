@@ -5,12 +5,15 @@
 <meta charset="utf-8">
 <title>Versal Ink Ledger</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;500&family=EB+Garamond:wght@400;500&family=IM+Fell+English&family=Spectral:wght@400&family=Crimson+Pro:wght@400&display=swap">
 <style>
   /* Layout: the Versal mockup sheet. A live game screen (desktop) and the same state on a phone,
      driven by the game's own keys (e, i, l, m) or the buttons; the switches below try the open
      questions; what each part is for is written under it. */
   @font-face { font-family: "Texturina"; font-weight: 100 900; src: url("../fonts/Texturina-Latin.woff2") format("woff2"); }
-  @font-face { font-family: "IM Fell"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
+  @font-face { font-family: "IM Fell Italic"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
   :root {
     --desk: #e6dfcf;
     --paper: #f7f2e6;
@@ -26,9 +29,14 @@
     --gui-faint: #5d574f;
     --blood: #c4402e;
     --warn: #d9a53a;
+    --poison: #8aa13a;
     --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
     --letter: Texturina, Georgia, serif;
-    --hand: "IM Fell", Georgia, serif;
+    --hand: "IM Fell Italic", Georgia, serif;
+    /* The log's face: chosen with the switch. */
+    --log: Alegreya, Georgia, serif;
+    --log-style: normal;
+    --log-size: 18px;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
@@ -52,7 +60,7 @@
   }
   .bar button kbd { font: bold 13px var(--body); margin-right: 5px; }
   .bar button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); }
-  button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button:focus-visible, select:focus-visible, .screen:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .opts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 4px 0 14px; font-size: 14px; color: var(--muted); }
   .opts label { display: flex; align-items: center; gap: 6px; }
   select { font: 14px var(--body); padding: 2px 4px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); }
@@ -71,69 +79,85 @@
   .notes p { margin: 0; }
 
   /* ---- The game screen ---- */
-  .map { position: absolute; inset: 0; background: #000 center / cover no-repeat; transition: right 0.25s ease; }
+  .map { position: absolute; inset: 0; background: #000 center / cover no-repeat; }
   .g { font-family: var(--letter); font-weight: 700; }
+  /* Text straight on the hatching: outlined in black, as the letters are outlined, instead of
+     sitting on a fade. */
+  .onmap { paint-order: stroke fill; -webkit-text-stroke: 6px var(--gui); }
 
-  /* The top: the place, your health, the newest messages fading. */
-  .top { position: absolute; left: 0; top: 0; right: 0; padding: 18px 26px 40px; background: linear-gradient(to bottom, rgba(14,13,12,0.92) 55%, rgba(14,13,12,0)); pointer-events: none; transition: right 0.25s ease; }
-  .head { display: flex; align-items: baseline; gap: 18px; }
-  .place { font: 600 26px/1.1 var(--letter); letter-spacing: 0.02em; }
-  .depth { font: italic 16px var(--hand); color: var(--gui-dim); }
-  .health { margin-left: auto; display: flex; align-items: baseline; gap: 8px; font: 600 20px var(--letter); font-variant-numeric: tabular-nums; }
-  .health small { font: italic 15px var(--hand); color: var(--gui-dim); }
-  .health .hurt { color: var(--blood); }
-  .strokes { font: 600 22px/1 var(--letter); letter-spacing: 1px; white-space: nowrap; }
-  .strokes s { text-decoration: none; color: var(--gui-faint); }
-  .news { margin-top: 8px; font: italic 18px/1.35 var(--hand); display: grid; gap: 1px; }
-  .news div:nth-last-child(2) { opacity: 0.6; }
-  .news div:nth-last-child(3) { opacity: 0.35; }
-  .news .pull { font: italic 14px var(--hand); color: var(--gui-faint); margin-top: 2px; }
+  /* The top of the map: the place, the level, the newest messages. */
+  .top { position: absolute; left: 0; top: 0; padding: 18px 26px; pointer-events: none; }
+  .head { display: flex; align-items: baseline; gap: 14px; }
+  .place { font: 600 28px/1.1 var(--letter); letter-spacing: 0.02em; }
+  .depth { font: 600 17px var(--letter); color: var(--gui-dim); }
+  .news { margin-top: 8px; font-family: var(--log); font-style: var(--log-style); font-size: var(--log-size); line-height: 1.35; display: grid; gap: 1px; }
+  .news div:nth-last-child(2) { color: #b3ab9c; }
+  .news div:nth-last-child(3) { color: #8a8274; }
+  .news .pull { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 4px; letter-spacing: 0.04em; }
 
   /* The drawer of messages, pulled down over the map. */
-  .drawer { position: absolute; left: 0; right: 0; top: 0; height: 520px; background: var(--gui); border-bottom: 2px solid var(--gui-text); padding: 18px 26px; transform: translateY(-102%); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
+  .drawer { position: absolute; left: 0; top: 0; height: 520px; background: var(--gui); border-bottom: 2px solid var(--gui-text); padding: 18px 26px; transform: translateY(-102%); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
   .drawer.open { transform: none; }
-  .drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; display: grid; gap: 3px; align-content: end; font: italic 18px/1.35 var(--hand); color: var(--gui-dim); }
-  .drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; font-style: normal; }
+  .drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; display: grid; gap: 3px; align-content: end; font-family: var(--log); font-style: var(--log-style); font-size: var(--log-size); line-height: 1.35; color: var(--gui-dim); }
+  .drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; }
   .drawer li.new { color: var(--gui-text); }
   .drawer li.you { color: var(--blood); }
-  .drawer .hint { font: italic 14px var(--hand); color: var(--gui-faint); }
+  .drawer .hint { font: 600 13px var(--letter); color: var(--gui-faint); }
 
-  /* The sidebar: one ledger at a time. */
-  .side { position: absolute; right: 0; top: 0; bottom: 0; width: 340px; background: var(--gui); border-left: 1px solid var(--gui-line); padding: 22px 26px; display: grid; gap: 18px; align-content: start; transform: translateX(102%); transition: transform 0.25s ease; }
-  .side.open { transform: none; }
-  .side h3 { margin: 0; font: 600 24px var(--letter); display: flex; justify-content: space-between; align-items: baseline; }
-  .side h3 small { font: italic 15px var(--hand); color: var(--gui-faint); }
-  h5 { margin: 0 0 6px; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); }
+  /* The sidebar: always there. On top, who you are and your health; under it, your sheet, or
+     what you've opened. */
+  .side { position: absolute; right: 0; top: 0; bottom: 0; width: 340px; background: var(--gui); border-left: 1px solid var(--gui-line); padding: 22px 26px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 18px; }
+  .who h3 { margin: 0; font: 600 26px/1.1 var(--letter); }
+  .who div { font: 600 15px var(--letter); color: var(--gui-dim); margin-top: 2px; }
+  h5 { margin: 0 0 6px; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); display: flex; justify-content: space-between; }
+  h5 small { font: 600 12px var(--letter); letter-spacing: 0.04em; text-transform: none; color: var(--gui-faint); }
+  .hp { font: 600 34px/1 var(--letter); font-variant-numeric: tabular-nums; }
+  .hp span { font-size: 22px; color: var(--gui-dim); }
+  .hp.low { color: var(--blood); }
+  .statuses { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font: 600 15px var(--letter); }
+  .statuses .bleeding { color: var(--blood); }
+  .statuses .poisoned { color: var(--poison); }
+  .statuses .none { color: var(--gui-faint); font-weight: 400; }
+  .body { border-top: 1px solid var(--gui-line); padding-top: 16px; display: grid; gap: 18px; align-content: start; min-height: 0; }
+  .panel-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .panel-head h4 { margin: 0; font: 600 22px var(--letter); }
+  .panel-head small { font: 600 12px var(--letter); color: var(--gui-faint); }
   .ledger { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 16px; }
   .ledger li { display: grid; grid-template-columns: 16px 22px auto 1fr auto; gap: 6px; align-items: baseline; }
-  .ledger li .key { font: italic 14px var(--hand); color: var(--gui-faint); }
+  .ledger.plain li { grid-template-columns: auto 1fr auto; }
+  .ledger li .key { font: 600 13px var(--letter); color: var(--gui-faint); }
   .ledger li .g { font-size: 19px; text-align: center; }
   .ledger li .lead { border-bottom: 1px dotted var(--gui-line); transform: translateY(-4px); }
   .ledger li .val { font: 15px var(--body); color: var(--gui-dim); font-variant-numeric: tabular-nums; }
+  .ledger li b.val { font: 600 17px var(--letter); color: var(--gui-text); }
   .ledger li.none { color: var(--gui-faint); font-style: italic; }
   .ledger li.none .g { color: var(--gui-faint); }
-  .st { font: italic 15px var(--hand); }
+  .xp { font: 600 20px var(--letter); font-variant-numeric: tabular-nums; }
+  .xp span { color: var(--gui-dim); font-size: 16px; }
+  .xpline { height: 2px; background: var(--gui-line); margin-top: 6px; }
+  .xpline i { display: block; height: 100%; background: var(--gui-dim); }
+  .st { font: 600 14px var(--letter); }
   .st.alarmed { color: var(--blood); }
   .st.suspicious { color: var(--warn); }
-  .st.unaware { color: var(--gui-dim); }
-  .sum { font: italic 16px var(--hand); color: var(--gui-dim); }
-  .sum b { font: 600 16px var(--letter); color: var(--gui-text); font-style: normal; }
-  .help { font: italic 14px var(--hand); color: var(--gui-faint); }
-  .help b { font: 600 13px var(--letter); color: var(--gui-dim); font-style: normal; }
+  .sum { font-size: 15px; color: var(--gui-dim); }
+  .sum b { font: 600 16px var(--letter); color: var(--gui-text); }
+  .keys-help { border-top: 1px solid var(--gui-line); padding-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font: 13px var(--body); color: var(--gui-faint); }
+  .keys-help b { font: 600 13px var(--letter); color: var(--gui-dim); }
+  .keys-help .on b, .keys-help .on { color: var(--gui-text); }
   .marks { position: absolute; pointer-events: none; }
   .marks span { position: absolute; font: 700 26px var(--letter); transform: translate(-50%, -100%); }
 
-  /* Phone: the top the same, the sidebar a sheet from the bottom, a row of keys. */
-  .phone .top { padding: 12px 14px 30px; }
-  .phone .place { font-size: 19px; }
-  .phone .health { font-size: 16px; }
-  .phone .strokes { font-size: 15px; letter-spacing: 0; }
+  /* Phone: no room for the sidebar; the top carries your health, the rest opens as a sheet. */
+  .phone .top { padding: 12px 14px; right: 0; }
+  .phone .place { font-size: 20px; }
+  .phone .depth { font-size: 14px; }
+  .phone .hpline { margin-left: auto; font: 600 17px var(--letter); }
+  .phone .hpline span { color: var(--gui-dim); font-size: 13px; }
   .phone .news { font-size: 15px; margin-top: 4px; }
-  .phone .side { left: 0; top: auto; width: auto; height: 360px; border-left: 0; border-top: 2px solid var(--gui-text); padding: 14px 18px; transform: translateY(102%); bottom: 56px; }
+  .phone .side { left: 0; top: auto; width: auto; height: 380px; bottom: 56px; border-left: 0; border-top: 2px solid var(--gui-text); padding: 14px 18px; transform: translateY(102%); transition: transform 0.25s ease; grid-template-rows: auto 1fr; gap: 12px; }
   .phone .side.open { transform: none; }
-  .phone .side h3 { font-size: 19px; }
   .phone .ledger { font-size: 14px; }
-  .phone .drawer { height: 470px; padding: 14px; }
+  .phone .drawer { right: 0; height: 470px; padding: 14px; }
   .phone .drawer ol { font-size: 15px; }
   .phone .keys { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; background: var(--gui); border-top: 1px solid var(--gui-line); display: grid; grid-template-columns: repeat(5, 1fr); }
   .phone .keys div { display: grid; place-items: center; font: 600 13px var(--letter); color: var(--gui-dim); }
@@ -143,13 +167,13 @@
 <body>
 
 <header>
-  <h1>The ink ledger, again</h1>
-  <p>The ledger from the six proposals, refined. On top of the map: the place, your health, and the newest messages, fading; pull the older ones down as a drawer. The sidebar opens only when asked: <b>e</b>quipment, <b>i</b>nventory, or <b>l</b>ook at what's in sight. Press the keys (click the screen first) or use the buttons; the same key closes it again.</p>
+  <h1>The ink ledger, third round</h1>
+  <p>The sidebar is always there now. On top it says who you are and how you are: your name, class and level, then your health as current over most, and anything ailing you. Under that, your sheet (experience and stats), or what you've opened instead: <b>e</b>quipment, <b>i</b>nventory, <b>l</b>ook. The place and the newest messages stay on the map, on the hatching; <b>m</b> pulls the rest down. Press the keys (click the screen first) or use the buttons; the same key closes again.</p>
 </header>
 
 <div class="bar" role="group" aria-label="Open">
   <span>Open:</span>
-  <button type="button" id="open-none" data-open="none"><kbd>Esc</kbd>Nothing</button>
+  <button type="button" id="open-none" data-open="none"><kbd>Esc</kbd>Your sheet</button>
   <button type="button" id="open-e" data-open="e"><kbd>e</kbd>Equipment</button>
   <button type="button" id="open-i" data-open="i"><kbd>i</kbd>Inventory</button>
   <button type="button" id="open-l" data-open="l"><kbd>l</kbd>Look</button>
@@ -157,19 +181,24 @@
 </div>
 
 <div class="opts">
-  <label>Health as <select id="opt-health">
-    <option value="number">a number, 14 of 20</option>
-    <option value="strokes">strokes, crossed off</option>
-    <option value="word">a word, with the number</option>
+  <label>The log in <select id="opt-log">
+    <option value="alegreya">Alegreya</option>
+    <option value="garamond">EB Garamond</option>
+    <option value="fell">IM Fell, upright</option>
+    <option value="spectral">Spectral</option>
+    <option value="crimson">Crimson Pro</option>
+    <option value="texturina">Texturina, as the letters</option>
+    <option value="fellitalic">IM Fell italic, as before</option>
   </select></label>
-  <label>Newest messages <select id="opt-news">
-    <option value="3">three lines, fading</option>
-    <option value="1">one line</option>
-    <option value="0">none (the drawer only)</option>
+  <label>Ailing <select id="opt-status">
+    <option value="two">bleeding and poisoned</option>
+    <option value="one">bleeding</option>
+    <option value="none">nothing</option>
   </select></label>
-  <label>The sidebar <select id="opt-push">
-    <option value="cover">covers the map's edge</option>
-    <option value="push">pushes the map aside</option>
+  <label>Health <select id="opt-hp">
+    <option value="11">11 of 23</option>
+    <option value="6">6 of 23 (low)</option>
+    <option value="23">23 of 23</option>
   </select></label>
   <label>Look marks the map <select id="opt-marks">
     <option value="on">with ! and ? over letters</option>
@@ -183,16 +212,18 @@
 </div>
 
 <section class="notes">
-  <div><h2>On top</h2><p>The place as the heading, as you liked; health beside it, always there, so nothing else has to be open in a fight. The newest messages under it in the sounds' italic, older ones fading. A small "m for more" under them; on a phone, a tap on the lines.</p></div>
-  <div><h2>The drawer</h2><p>The whole log of this level pulled down over the map, newest at the bottom, grouped by turn. What happened to you in red. Closes with m, Esc, or by pushing it back up.</p></div>
-  <div><h2>Equipment and inventory</h2><p>Two ledgers. Equipment is what you wear and hold, by where it goes, with what each gives; your attack and defence are the sums, written under it, so the stats live where they come from. Inventory is what you carry, lettered for using (q, then a letter), with room left.</p></div>
-  <div><h2>Look</h2><p>Everything in sight: creatures with how aware they are, then things. With marks on, the same ! and ? appear over the letters on the map while it's open, so the list and the map point at each other.</p></div>
+  <div><h2>The sidebar's top</h2><p>Always the same, whatever is open under it: your name, then your class and level; your health under its heading, current over most; then what ails you, each in its colour (none yet in the game: poisoned, bleeding, and so on). Low health turns red.</p></div>
+  <div><h2>Your sheet</h2><p>What the sidebar shows when nothing else is open: experience, gained over needed for the next level, with a hairline of how far along; then the stats as a ledger. The keys for the other screens along the bottom, the open one lit.</p></div>
+  <div><h2>On the map</h2><p>The place, the level ("1st level"), and the newest three messages, set straight on the hatching with a black outline, as the creatures' letters have one, instead of on a fade to black.</p></div>
+  <div><h2>On a phone</h2><p>No room for a sidebar beside the map. The top carries your health on the right of the place; equipment, inventory, look and your sheet open as a sheet from the bottom.</p></div>
 </section>
 
 <script>
 // The moment shown, made up for the milestones to come.
 const RUN = {
-  place: "The old crypts", depth: "first level", hp: 14, max: 20,
+  name: "Edda", cls: "Grave robber", level: 3, xp: 140, next: 200,
+  place: "The old crypts", depth: "1st level", max: 23,
+  stats: [["Attack", "1–4"], ["Defence", "2"], ["Speed", "normal"]],
   equip: [
     { where: "hand", g: ")", n: "dagger", v: "attack 1–4" },
     { where: "off hand", none: true },
@@ -204,12 +235,11 @@ const RUN = {
     { k: "b", g: ")", n: "short sword", v: "attack 2–5" },
     { k: "c", g: ")", n: "warhammer", v: "attack 3–7" },
   ],
-  room: 8,
   near: [
-    { g: "z", n: "skeleton", st: "alarmed", mark: "!" },
-    { g: "z", n: "skeleton", st: "suspicious", mark: "?" },
+    { g: "z", n: "skeleton", st: "alarmed" },
+    { g: "z", n: "skeleton", st: "suspicious" },
   ],
-  things: [{ g: "▭", n: "a table" }, { g: "▯", n: "a door, south" }],
+  things: [{ g: "⊠", n: "a crate" }, { g: "▯", n: "a doorway, south" }],
   log: [
     { turn: "Turn 398" },
     { t: "You go down into the old crypts." },
@@ -221,8 +251,17 @@ const RUN = {
     { turn: "Turn 410" },
     { t: "A skeleton rises." },
     { t: "You hit the skeleton." },
-    { t: "The skeleton claws you. (3)", you: true },
+    { t: "The skeleton claws you. (3) You bleed.", you: true },
   ],
+};
+const LOGFACE = {
+  alegreya: ["Alegreya, Georgia, serif", "normal", "18px"],
+  garamond: ['"EB Garamond", Georgia, serif', "normal", "19px"],
+  fell: ['"IM Fell English", Georgia, serif', "normal", "18px"],
+  spectral: ["Spectral, Georgia, serif", "normal", "17px"],
+  crimson: ['"Crimson Pro", Georgia, serif', "normal", "19px"],
+  texturina: ["Texturina, Georgia, serif", "normal", "16px"],
+  fellitalic: ['"IM Fell Italic", Georgia, serif', "italic", "18px"],
 };
 const OPEN_NAMES = { e: "Equipment", i: "Inventory", l: "Look", m: "Messages" };
 const $ = (id) => document.getElementById(id);
@@ -230,49 +269,36 @@ const g = (c) => `<span class="g">${c}</span>`;
 const state = { open: "none" };
 const opt = (id) => $(`opt-${id}`).value;
 
-function health(phone) {
-  const hurt = RUN.hp / RUN.max;
-  const word = hurt > 0.9 ? "unhurt" : hurt > 0.6 ? "scratched" : hurt > 0.35 ? "hurt" : "badly hurt";
-  if (opt("health") === "strokes") {
-    const n = RUN.max, on = RUN.hp;
-    let s = "";
-    for (let i = 0; i < n; i++) { s += i < on ? "|" : "<s>|</s>"; if (i % 5 === 4 && i < n - 1) s += phone ? "" : " "; }
-    return `<span class="strokes">${s}</span>`;
-  }
-  if (opt("health") === "word") return `<span class="hurt">${word}</span><small>${RUN.hp} of ${RUN.max}</small>`;
-  return `<span>${RUN.hp}</span><small>of ${RUN.max}</small>`;
+function statuses() {
+  const s = { two: ["bleeding", "poisoned"], one: ["bleeding"], none: [] }[opt("status")];
+  return s.length ? s.map((w) => `<span class="${w}">${w}</span>`).join("") : `<span class="none">nothing ails you</span>`;
 }
 
-function news() {
-  const n = +opt("news");
-  const lines = RUN.log.filter((l) => l.t).slice(-n);
-  return n ? `<div class="news">${lines.map((l) => `<div>${l.t}</div>`).join("")}<div class="pull">m for more</div></div>` : `<div class="news"><div class="pull">m for messages</div></div>`;
-}
-
-function panel(phone) {
+function panel() {
   const o = state.open;
   if (o === "e") {
-    return `<h3>Equipment<small>e to close</small></h3>
+    return `<div class="panel-head"><h4>Equipment</h4><small>e to close</small></div>
       <ul class="ledger">${RUN.equip.map((q) => q.none
         ? `<li class="none"><span></span>${g("·")}<span>${q.where}: nothing</span><span></span><span></span></li>`
         : `<li><span></span>${g(q.g)}<span>${q.n}</span><span class="lead"></span><span class="val">${q.v}</span></li>`).join("")}</ul>
-      <div class="sum">Altogether: attack <b>1–4</b>, defence <b>2</b>, speed <b>normal</b>.</div>
-      <div class="help"><b>w</b> wield · <b>t</b> take off · <b>i</b> inventory</div>`;
+      <div class="sum">Altogether: attack <b>1–4</b>, defence <b>2</b>.</div>`;
   }
   if (o === "i") {
-    return `<h3>Inventory<small>i to close</small></h3>
-      <ul class="ledger">${RUN.inv.map((q) => `<li><span class="key">${q.k}</span>${g(q.g)}<span>${q.n}</span><span class="lead"></span><span class="val">${q.v}</span></li>`).join("")}
-        ${Array.from({ length: 2 }, () => `<li class="none"><span></span>${g("·")}<span></span><span></span><span></span></li>`).join("")}</ul>
-      <div class="sum">Room for <b>5</b> more things.</div>
-      <div class="help"><b>q</b> drink · <b>w</b> wield · <b>d</b> drop · <b>e</b> equipment</div>`;
+    return `<div class="panel-head"><h4>Inventory</h4><small>i to close</small></div>
+      <ul class="ledger">${RUN.inv.map((q) => `<li><span class="key">${q.k}</span>${g(q.g)}<span>${q.n}</span><span class="lead"></span><span class="val">${q.v}</span></li>`).join("")}</ul>
+      <div class="sum">Room for <b>5</b> more things.</div>`;
   }
   if (o === "l") {
-    return `<h3>In sight<small>l to close</small></h3>
+    return `<div class="panel-head"><h4>In sight</h4><small>l to close</small></div>
       <div><h5>Creatures</h5><ul class="ledger">${RUN.near.map((n) => `<li><span></span>${g(n.g)}<span>${n.n}</span><span class="lead"></span><span class="st ${n.st}">${n.st}</span></li>`).join("")}</ul></div>
       <div><h5>Things</h5><ul class="ledger">${RUN.things.map((t) => `<li><span></span><span class="g" style="font-size:15px;color:var(--gui-dim)">${t.g}</span><span>${t.n}</span><span></span><span></span></li>`).join("")}</ul></div>
       <div class="sum">You are <b>seen</b>; your lamp is lit.</div>`;
   }
-  return "";
+  // Your sheet.
+  return `<div><h5>Experience<small>to the ${RUN.level + 1}th level</small></h5>
+      <div class="xp">${RUN.xp}<span> / ${RUN.next}</span></div>
+      <div class="xpline"><i style="width:${(100 * RUN.xp) / RUN.next}%"></i></div></div>
+    <div><h5>Stats</h5><ul class="ledger plain">${RUN.stats.map(([k, v]) => `<li><span>${k}</span><span class="lead"></span><b class="val">${v}</b></li>`).join("")}</ul></div>`;
 }
 
 function drawer() {
@@ -282,26 +308,39 @@ function drawer() {
 }
 
 function render() {
-  const o = state.open, side = o === "e" || o === "i" || o === "l", push = opt("push") === "push";
+  const o = state.open, side = o === "e" || o === "i" || o === "l";
+  const [face, style, size] = LOGFACE[opt("log")];
+  document.documentElement.style.setProperty("--log", face);
+  document.documentElement.style.setProperty("--log-style", style);
+  document.documentElement.style.setProperty("--log-size", size);
+  const hp = +opt("hp"), low = hp / RUN.max < 0.34;
+  const lines = RUN.log.filter((l) => l.t);
   for (const phone of [false, true]) {
-    const el = $(phone ? "phone" : "desk"), W = phone ? 390 : 1280;
-    const mapRight = !phone && side && push ? 340 : 0;
-    // The camera on you, as in the game: the desktop picture moved so the @ is in the middle of
-    // the map (of what's left of it, when the sidebar pushes it); the marks move with it.
-    const shift = !phone && side && push ? -470 : -360;
-    const marks = !phone && o === "l" && opt("marks") === "on"
-      ? `<div class="marks" style="left:${shift}px;top:0">${[[922, 290, "!", "var(--blood)"], [765, 290, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span style="left:${x}px;top:${y}px;color:${c}">${m}</span>`).join("")}</div>`
-      : !phone && o === "l" ? "" : phone && o === "l" && opt("marks") === "on"
-      ? `<div class="marks">${[[174, 230, "!", "var(--blood)"], [78, 230, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span style="left:${x}px;top:${y}px;color:${c};font-size:18px">${m}</span>`).join("")}</div>` : "";
+    const el = $(phone ? "phone" : "desk");
+    // The camera on you, as in the game: the picture moved so the @ is in the middle of the map
+    // left of the sidebar; the marks move with it.
+    const shift = -167;
+    const marks = o === "l" && opt("marks") === "on"
+      ? phone
+        ? `<div class="marks">${[[133, 253, "!", "var(--blood)"], [68, 221, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span style="left:${x}px;top:${y}px;color:${c};font-size:18px">${m}</span>`).join("")}</div>`
+        : `<div class="marks" style="left:${shift}px;top:0">${[[541, 424, "!", "var(--blood)"], [445, 378, "?", "var(--warn)"]].map(([x, y, m, c]) => `<span class="onmap" style="left:${x}px;top:${y}px;color:${c}">${m}</span>`).join("")}</div>`
+      : "";
+    const top = phone
+      ? `<div class="top"><div class="head"><span class="place onmap">${RUN.place}</span><span class="hpline onmap ${low ? "low" : ""}" style="${low ? "color:var(--blood)" : ""}">${hp}<span>/${RUN.max}</span></span></div>
+          <div class="news onmap"><div>${lines.at(-1).t}</div></div></div>`
+      : `<div class="top" style="right:340px"><div class="head"><span class="place onmap">${RUN.place}</span><span class="depth onmap">${RUN.depth}</span></div>
+          <div class="news onmap">${lines.slice(-3).map((l) => `<div>${l.t}</div>`).join("")}<div class="pull">m for more</div></div></div>`;
+    const sheetTop = `<div class="who"><h3>${RUN.name}</h3><div>${RUN.cls}, level ${RUN.level}</div></div>
+      <div><h5>Health</h5><div class="hp ${low ? "low" : ""}">${hp}<span>/${RUN.max}</span></div><div class="statuses">${statuses()}</div></div>`;
+    const keysHelp = `<div class="keys-help">${[["e", "equipment"], ["i", "inventory"], ["l", "look"], ["m", "messages"], ["?", "help"]].map(([k, n]) => `<span class="${k === o ? "on" : ""}"><b>${k}</b> ${n}</span>`).join("")}</div>`;
     el.innerHTML = `
-      <div class="map" style="background-image:url('sidebar/${phone ? "phone" : "desk"}.jpg');right:${mapRight}px;${phone ? "background-position:center 30px" : `background-size:1280px 800px;background-position:${shift}px 0`}"></div>
+      <div class="map" style="background-image:url('ledger/${phone ? "phone" : "desk"}.jpg');${phone ? "background-position:center -150px" : `right:340px;background-size:1280px 800px;background-position:${shift}px 0`}"></div>
       ${marks}
-      <div class="top" style="right:${!phone && side ? 340 : 0}px">
-        <div class="head"><span class="place">${RUN.place}</span>${phone ? "" : `<span class="depth">${RUN.depth}</span>`}<span class="health">${health(phone)}</span></div>
-        ${phone && opt("news") !== "0" ? `<div class="news"><div>${RUN.log.filter((l) => l.t).at(-1).t}</div></div>` : phone ? "" : news()}
-      </div>
-      <div class="side ${side ? "open" : ""}">${panel(phone)}</div>
-      <div class="drawer ${o === "m" ? "open" : ""}">${drawer()}</div>
+      ${top}
+      ${phone
+        ? `<div class="side ${side ? "open" : ""}"><div class="body" style="border:0;padding:0">${side ? panel() : ""}</div></div>`
+        : `<div class="side">${sheetTop}<div class="body">${panel()}</div>${keysHelp}</div>`}
+      <div class="drawer ${o === "m" ? "open" : ""}" style="${phone ? "" : "right:340px"}">${drawer()}</div>
       ${phone ? `<div class="keys">${[["e", "Equip"], ["i", "Carried"], ["l", "Look"], ["m", "Log"], ["", "Act"]].map(([k, n]) => `<div class="${k && k === o ? "on" : ""}">${n}</div>`).join("")}</div>` : ""}`;
   }
   for (const b of document.querySelectorAll("[data-open]")) b.setAttribute("aria-pressed", String(b.dataset.open === o));
@@ -312,7 +351,7 @@ function open(k) {
   render();
 }
 for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => open(b.dataset.open));
-for (const id of ["health", "news", "push", "marks"]) $(`opt-${id}`).addEventListener("input", render);
+for (const id of ["log", "status", "hp", "marks"]) $(`opt-${id}`).addEventListener("input", render);
 addEventListener("keydown", (e) => {
   if (e.target.closest?.("select")) return;
   const k = e.key.toLowerCase();
@@ -329,9 +368,9 @@ const fit = () => {
   }
 };
 new ResizeObserver(fit).observe(document.body);
-state.open = "i";
 render();
 fit();
+document.fonts.ready.then(render);
 </script>
 </body>
 </html>
