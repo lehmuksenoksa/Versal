@@ -25,7 +25,7 @@ Chosen so far (the "ink ledger", `mockups/ledger.html`; still being refined):
   its foot.
 - At the top left of the map: the place as the heading, the level ("1st level"), the newest three
   messages (older ones fade; a long one wraps and older ones give way), "m for more". **m** pulls
-  the whole log down as a drawer.
+  the whole log down as a drawer, its foot torn as the plates are.
 - Both sit on black plates with torn edges: each a black area (the corner's an upside-down
   pyramid of leaning boxes, the sidebar wider at the top) and a band in which the edge is drawn
   as cave walls are, then torn. The shapes chosen are in `mockups/ledger/plates.json`.

@@ -120,8 +120,10 @@
   .news .pull { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 4px; letter-spacing: 0.04em; }
 
   /* The drawer of messages, pulled down over the map. */
-  .drawer { position: absolute; left: 0; top: 0; height: 520px; background: var(--gui); border-bottom: 2px solid var(--gui-text); padding: 18px 26px; transform: translateY(-102%); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
+  .drawer { position: absolute; left: 0; top: 0; height: 520px; background: #000; padding: 18px 26px; transform: translateY(calc(-100% - 80px)); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
   .drawer.open { transform: none; }
+  /* The drawer's torn foot, hanging below it. */
+  .drawer .foot { position: absolute; left: 0; top: calc(100% - 2px); width: 100%; height: 70px; pointer-events: none; }
   .drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; display: grid; gap: 3px; align-content: end; font-family: var(--log); font-style: var(--log-style); font-size: var(--log-size); line-height: 1.35; color: var(--gui-dim); }
   .drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; }
   .drawer li.new { color: var(--gui-text); }
@@ -343,7 +345,8 @@ function panel() {
 function drawer() {
   return `<h5>Messages, ${RUN.place.toLowerCase()}</h5>
     <ol>${RUN.log.map((l, i) => l.turn ? `<li class="turn">${l.turn}</li>` : `<li class="${l.you ? "you" : i === RUN.log.length - 1 ? "new" : ""}">${l.t}</li>`).join("")}</ol>
-    <div class="hint">m or Esc to push it back up</div>`;
+    <div class="hint">m or Esc to push it back up</div>
+    <canvas class="foot"></canvas>`;
 }
 
 function render() {
@@ -395,6 +398,7 @@ function render() {
   while (msgs().length > 1 && msgs().reduce((h, d) => h + d.offsetHeight, 0) > 3 * LH + 2) msgs()[0].remove();
   const plates = $("desk").querySelector(".plates");
   if (plates) drawPlates(plates);
+  for (const id of ["desk", "phone"]) { const f = $(id).querySelector(".drawer .foot"); if (f) drawerFoot(f); }
 }
 
 // ---- The torn plates ----
@@ -601,6 +605,36 @@ function drawPlates(c) {
     g.restore();
   }
   writeOut();
+}
+
+// The drawer's foot: torn as the plates are, in a band under the drawer (as the corner's edge).
+function drawerFoot(c) {
+  const W = c.parentElement.offsetWidth, H = 70, P = { ...GEN.corner, seed: GEN.corner.seed + 101 }, B = P.band;
+  c.width = W * 2; c.height = H * 2;
+  const g = c.getContext("2d");
+  g.setTransform(2, 0, 0, 2, 0, 0);
+  g.fillStyle = "#000";
+  // The way along: right to left, the drawer above (on its right); points moved about in the band.
+  const pts = caveLine([[W + 30, B / 2], [-30, B / 2]], P, mulberry(P.seed * 7919 + 13));
+  const rnd = mulberry(P.seed * 31 + 7);
+  const waves = (n, f0, f1) => Array.from({ length: n }, () => [f0 + rnd() * (f1 - f0), rnd() * 6.28, 0.5 + rnd()]);
+  const SLOW = waves(4, 0.008, 0.03), QUICK = waves(5, 0.08, 0.22);
+  const noise = (t, w) => w.reduce((s, [f, p, a]) => s + a * Math.sin(t * f + p), 0) / w.reduce((s, [, , a]) => s + a, 0);
+  g.beginPath();
+  let t = 0, first = true;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[i + 1], L = Math.hypot(bx - ax, by - ay);
+    if (L < 0.01) continue;
+    const tx = (bx - ax) / L, ty = (by - ay) / L;
+    for (let d = 0; d < L; d += 3, t += 3) {
+      const x = ax + tx * d, y = ay + ty * d, k = P.tear * (7 * noise(t, SLOW) + 2.2 * noise(t, QUICK) + (rnd() - 0.5) * 2.4);
+      g[first ? "moveTo" : "lineTo"](x - ty * k, Math.max(0, Math.min(B, y + tx * k)));
+      first = false;
+    }
+  }
+  g.lineTo(-30, -1); g.lineTo(W + 30, -1);
+  g.closePath();
+  g.fill();
 }
 
 // ---- The generator's controls ----
