@@ -146,6 +146,7 @@
   .keys-help b { font: 600 13px var(--letter); color: var(--gui-dim); }
   .keys-help .on b, .keys-help .on { color: var(--gui-text); }
   .marks { position: absolute; pointer-events: none; }
+  .edge { position: absolute; top: 0; right: 340px; width: 110px; height: 800px; pointer-events: none; }
   .marks span { position: absolute; font: 700 26px var(--letter); transform: translate(-50%, -100%); }
 
   /* Phone: no room for the sidebar; the top carries your health, the rest opens as a sheet. */
@@ -200,6 +201,10 @@
     <option value="11">11 of 23</option>
     <option value="6">6 of 23 (low)</option>
     <option value="23">23 of 23</option>
+  </select></label>
+  <label>The sidebar's edge <select id="opt-edge">
+    <option value="hatched">hatched</option>
+    <option value="straight">straight</option>
   </select></label>
   <label>Look marks the map <select id="opt-marks">
     <option value="on">with ! and ? over letters</option>
@@ -337,6 +342,7 @@ function render() {
     el.innerHTML = `
       <div class="map" style="background-image:url('ledger/${phone ? "phone" : "desk"}.jpg');${phone ? "background-position:center -150px" : `right:340px;background-size:1280px 800px;background-position:${shift}px 0`}"></div>
       ${marks}
+      ${!phone && opt("edge") === "hatched" ? `<canvas class="edge" width="${EDGE_W * 2}" height="1600"></canvas>` : ""}
       ${top}
       ${phone
         ? `<div class="side ${side ? "open" : ""}"><div class="body" style="border:0;padding:0">${side ? panel() : ""}</div></div>`
@@ -345,6 +351,43 @@ function render() {
       ${phone ? `<div class="keys">${[["e", "Equip"], ["i", "Carried"], ["l", "Look"], ["m", "Log"], ["", "Act"]].map(([k, n]) => `<div class="${k && k === o ? "on" : ""}">${n}</div>`).join("")}</div>` : ""}`;
   }
   for (const b of document.querySelectorAll("[data-open]")) b.setAttribute("aria-pressed", String(b.dataset.open === o));
+  const edge = $("desk").querySelector(".edge");
+  if (edge) hatchEdge(edge);
+}
+
+// The sidebar's edge in hatching: the map ends in groups of short, thick ink strokes, as rock
+// does into unexplored ground, more of them the nearer the sidebar, until all is black.
+const EDGE_W = 110;
+function hatchEdge(c) {
+  const x = c.getContext("2d"), W = EDGE_W, H = 800;
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  x.setTransform(2, 0, 0, 2, 0, 0);
+  x.clearRect(0, 0, W, H);
+  // Solid black for the last stretch, under the strokes, so they end in it.
+  const solid = 26;
+  x.fillStyle = "#000";
+  x.fillRect(W - solid, 0, solid, H);
+  x.lineCap = "round";
+  x.strokeStyle = "#000";
+  for (let y = -10; y < H + 10; y += 7) {
+    for (let cx = 0; cx < W - solid + 10; cx += 9) {
+      const k = (cx + rnd() * 18) / (W - solid);
+      if (rnd() > k * k * 1.15) continue;
+      // A group of three or four parallel strokes, at its own angle, as the hatching's cells.
+      const a = rnd() * Math.PI, n = 3 + (rnd() < 0.4), len = 14 + rnd() * 16, gap = 5.5;
+      const ux = Math.cos(a), uy = Math.sin(a), px = -uy, py = ux;
+      const gx = cx + rnd() * 9, gy = y + rnd() * 7;
+      x.lineWidth = 4 + rnd() * 2.5;
+      for (let i = 0; i < n; i++) {
+        const o = (i - (n - 1) / 2) * gap, l = len * (0.75 + rnd() * 0.25);
+        x.beginPath();
+        x.moveTo(gx + px * o - (ux * l) / 2, gy + py * o - (uy * l) / 2);
+        x.lineTo(gx + px * o + (ux * l) / 2, gy + py * o + (uy * l) / 2);
+        x.stroke();
+      }
+    }
+  }
 }
 
 function open(k) {
@@ -352,7 +395,7 @@ function open(k) {
   render();
 }
 for (const b of document.querySelectorAll("[data-open]")) b.addEventListener("click", () => open(b.dataset.open));
-for (const id of ["log", "status", "hp", "marks"]) $(`opt-${id}`).addEventListener("input", render);
+for (const id of ["log", "status", "hp", "marks", "edge"]) $(`opt-${id}`).addEventListener("input", render);
 addEventListener("keydown", (e) => {
   if (e.target.closest?.("select")) return;
   const k = e.key.toLowerCase();
