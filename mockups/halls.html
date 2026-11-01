@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Halls and Routes</title>
+<style>
+  /* Two parts: kinds of hall for the goblin king's halls (each a small map,
+     drawn as the game draws), and ways round through a level (a level as
+     it is made now, and with more routes dug, the new squares in red). */
+  :root { --desk: #2b221c; --paper: #f7f2e6; --ink: #1b1815; --muted: #6b5f52; --rule: #cfc5b0; --accent: #8c2b1c; --body: Georgia, "Iowan Old Style", serif; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--paper); font: 15px/1.45 var(--body); padding: 16px; }
+  h1, h2 { font-weight: normal; margin: 8px 0; }
+  p { max-width: 70ch; color: #d8cdb8; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  figure { margin: 0; background: var(--paper); color: var(--ink); padding: 8px; border-radius: 3px; }
+  figure canvas { width: 100%; height: auto; display: block; }
+  figcaption { padding: 6px 2px 0; font-size: 14px; }
+  figcaption b { color: var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; align-items: center; }
+  button { font: 14px var(--body); padding: 5px 12px; cursor: pointer; color: var(--paper); background: var(--accent); border: 1px solid var(--ink); border-radius: 2px; }
+  button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
+  table { border-collapse: collapse; font-size: 14px; }
+  td, th { padding: 2px 10px 2px 0; text-align: left; }
+</style>
+</head>
+<body>
+<h1>The goblin king's halls: kinds of hall</h1>
+<p>Each a small map drawn as the game draws it, with the furniture the game already has.</p>
+<div class="grid" id="types"></div>
+<h1>Ways round</h1>
+<div class="controls" id="routeControls"></div>
+<div class="pair" id="routes"></div>
+<div id="numbers"></div>
+<script type="module">
+import { renderMap } from "../js/maprender.js";
+import { generateAreas } from "../js/levelgen.js";
+import { PLACES } from "../js/world.js";
+import { RNG } from "../js/rng.js";
+import { HALL_TYPES } from "./halls-types.js";
+import { measure, addShortcuts, addLoops } from "./halls-routes.js";
+
+const TS = 32, q = new URLSearchParams(location.search);
+const only = q.get("only");
+
+// Kinds of hall.
+const types = document.getElementById("types");
+for (const t of HALL_TYPES) {
+  if (only && only !== "types" && only !== t.id) continue;
+  const fig = document.createElement("figure");
+  fig.id = `hall-${t.id}`;
+  const L = t.make(+(q.get("seed") ?? 3)), c = renderMap(L, TS, 1, 11, { keys: false }).canvas;
+  fig.append(c);
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<b>${t.id}</b> · ${t.name}. ${t.line}`;
+  fig.append(cap);
+  types.append(fig);
+}
+
+// Ways round.
+const OPTIONS = {
+  now: { name: "As now", f: () => [] },
+  more: { name: "More of today's loops", settings: { loops: 0.5 }, f: () => [] },
+  cuts: { name: "Shortcuts through the rock", f: (L, s) => addShortcuts(L, new RNG(s), { count: 5, maxLen: 8, minWalk: 24, ratio: 4 }) },
+  long: { name: "Long loops", f: (L, s) => addLoops(L, new RNG(s), { count: 4 }) },
+  mix: { name: "Long loops and shortcuts", f: (L, s) => [...addLoops(L, new RNG(s), { count: 3 }), ...addShortcuts(L, new RNG(s + 1), { count: 4, maxLen: 8, minWalk: 24, ratio: 4 })] },
+};
+let depth = +(q.get("depth") ?? 1), opt = q.get("opt") ?? "mix", seed = +(q.get("lseed") ?? 4);
+const make = (o) => {
+  const P = PLACES[depth - 1], L = generateAreas(new RNG(seed * 7919 + depth), { from: P.from, to: P.to, up: !!P.up, down: !!P.down, throne: !!P.throne, ...(OPTIONS[o].settings ?? {}) });
+  const before = L.tiles.slice();
+  OPTIONS[o].f(L, seed);
+  return { L, before };
+};
+const draw = ({ L, before }, base) => {
+  const c = renderMap(L, 16, 1, seed, { keys: false }).canvas, g = c.getContext("2d");
+  // The squares dug for the new routes, in red over the drawing.
+  g.fillStyle = "rgba(190, 40, 20, 0.45)";
+  for (let j = 0; j < L.tiles.length; j++) if (L.tiles[j] && !(base ?? before)[j]) g.fillRect((j % L.w) * 16, Math.floor(j / L.w) * 16, 16, 16);
+  // The stairs and the throne room marked.
+  g.strokeStyle = "rgba(40, 90, 160, 0.9)"; g.lineWidth = 3;
+  for (const s of [L.stairsUp, L.stairsDown, L.start].filter(Boolean)) g.strokeRect(s.x * 16 - 4, s.y * 16 - 4, 24, 24);
+  if (L.throneRoom) { const r = L.throneRoom; g.strokeRect(r.x * 16, r.y * 16, r.w * 16, r.h * 16); }
+  return c;
+};
+const fmt = (m) => `<td>${m.loops}</td><td>${Math.round(m.onLoop * 100)}%</td><td>${m.deadEnds}</td><td>${m.forced}</td>`;
+function routes() {
+  const a = make("now"), b = make(opt);
+  // (More of today's loops changes the whole level, so nothing is marked
+  // new on it: the level is made again with more corridors.)
+  const pane = document.getElementById("routes");
+  pane.replaceChildren();
+  for (const [x, label] of [[a, "As now"], [b, OPTIONS[opt].name]]) {
+    const fig = document.createElement("figure");
+    fig.append(draw(x, opt === "more" ? x.L.tiles : null));
+    const cap = document.createElement("figcaption");
+    cap.innerHTML = `<b>${label}</b> · level ${depth}`;
+    fig.append(cap);
+    pane.append(fig);
+  }
+  document.getElementById("numbers").innerHTML = `<table><tr><th></th><th>loops</th><th>rooms on a loop</th><th>dead ends</th><th>rooms you must pass through</th></tr><tr><td>As now</td>${fmt(measure(a.L))}</tr><tr><td>${OPTIONS[opt].name}</td>${fmt(measure(b.L))}</tr></table>`;
+}
+const ctl = document.getElementById("routeControls");
+const btn = (label, on, f) => { const b = document.createElement("button"); b.textContent = label; b.setAttribute("aria-pressed", on); b.onclick = () => { f(); build(); routes(); }; ctl.append(b); };
+function build() {
+  ctl.replaceChildren();
+  for (const d of [1, 2, 3]) btn(`Level ${d}`, depth === d, () => (depth = d));
+  for (const [k, o] of Object.entries(OPTIONS)) if (k !== "now") btn(o.name, opt === k, () => (opt = k));
+  btn("Another level", false, () => seed++);
+}
+if (!only || only === "routes") { build(); routes(); }
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>

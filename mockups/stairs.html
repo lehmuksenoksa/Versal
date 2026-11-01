@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Stairs</title>
+<style>
+  /* Stairs as Dyson draws them: built into the walls. Each design drawn with
+     the game's own map (renderMap: walls, hatching, grid, shadow), the stairs
+     inked over it with the game's pen, up and down side by side, with a
+     plan of the squares it takes. */
+  @font-face { font-family: "IM Fell English"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
+  :root { --desk: #2b221c; --paper: #f7f2e6; --ink: #1b1815; --muted: #6b5f52; --rule: #cfc5b0; --accent: #8c2b1c; color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--paper); font: 15px/1.45 Georgia, serif; padding: 16px; }
+  h1 { font-weight: normal; margin: 0 0 4px; }
+  .intro { color: #cdbfa9; max-width: 70ch; margin: 0 0 20px; }
+  .design { background: var(--paper); color: var(--ink); padding: 14px 16px 16px; margin: 0 0 18px; border-radius: 2px; }
+  .design h2 { margin: 0 0 4px; font-weight: normal; font-size: 21px; }
+  .design h2 b { color: var(--accent); margin-right: 8px; }
+  .design p { margin: 0 0 10px; max-width: 80ch; color: #3d362e; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  figure { margin: 0; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  canvas { display: block; max-width: 100%; height: auto; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+  .foot { font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>Stairs, built into the walls</h1>
+<p class="intro">Each design drawn with the game's own map (its walls, hatching, grid and shadow), the stairs inked over it with the game's pen. Up on the left, down on the right; then a plan of the squares it takes (stairs gold, the square you stand on to take them red).</p>
+<div id="out"></div>
+<script type="module">
+import { renderMap, pen, wallLine, INK, PAPER } from "../js/maprender.js";
+import { T } from "../js/dungeon.js";
+import { RNG } from "../js/rng.js";
+
+const params = new URLSearchParams(location.search);
+const TS = 40;
+let SC = +(params.get("scale") ?? 1);
+const k = TS / 32, TREAD = 1.7;
+
+function levelFrom(rows, features = []) {
+  const h = rows.length, w = rows[0].length, tiles = new Uint8Array(w * h), cave = new Uint8Array(w * h);
+  rows.forEach((r, y) => [...r].forEach((c, x) => {
+    const i = y * w + x;
+    if (c !== "#") tiles[i] = T.FLOOR;
+    if (c === "c" || c === "%") cave[i] = 1;
+  }));
+  return { w, h, tiles, cave, rooms: [], recesses: [], features, doors: [] };
+}
+
+// A scene: the map drawn (and again without its grid, for the stairs' own
+// squares), then `draw` inks the stairs over it.
+function scene(rows, draw, seed, features) {
+  const L = levelFrom(rows, features);
+  const A = renderMap(L, TS, SC, seed, { keys: false });
+  const B = renderMap(L, TS, SC, seed, { keys: false, grid: false });
+  const c = document.createElement("canvas");
+  c.width = A.canvas.width; c.height = A.canvas.height;
+  const g = c.getContext("2d");
+  g.drawImage(A.canvas, 0, 0);
+  g.scale(SC, SC);
+  g.strokeStyle = INK; g.fillStyle = INK; g.lineCap = "round"; g.lineJoin = "round";
+  const rng = new RNG(seed ^ 0x51a1), P = pen(g, rng, k);
+  const api = {
+    g, P, rng, B: B.canvas,
+    // The grid taken out inside `path` (px).
+    bare(path) { g.save(); g.clip(path); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(B.canvas, 0, 0); g.restore(); },
+    // Plain paper inside `path` (hatching and walls gone).
+    paper(path) { g.save(); g.fillStyle = PAPER; g.fill(path); g.restore(); },
+  };
+  draw(api);
+  return c;
+}
+
+const px = (v) => v * TS;
+const rectPath = (x0, y0, x1, y1) => { const p = new Path2D(); p.rect(px(x0), px(y0), px(x1 - x0), px(y1 - y0)); return p; };
+
+// A straight flight: its mouth's middle (mx, my, in squares), the way in
+// (ux, uy), `hw` half its width, `len` long, `n` treads. Down: the treads
+// closing up as they go, the last of them sinking into the ink. `taper`
+// narrows the treads the way down (the old convention).
+function flight(api, { mx, my, ux, uy, hw, len, n, down, taper = false, rough = 0, dark = 0.3, top = true }) {
+  const { g, P, rng } = api, vx = -uy, vy = ux;
+  const at = (s, t) => [px(mx + ux * s + vx * t), px(my + uy * s + vy * t)];
+  const pos = [];
+  for (let i = top ? 0 : 1; i < n; i++) pos.push(down ? len * (1 - Math.pow(1 - i / n, 1.2)) : (len * i) / n);
+  // Down: the treads thicken the deeper they go, each a band of ink from
+  // its edge down to the next, till they run together into the dark.
+  if (down) {
+    const deep = [...pos, len];
+    for (let i = 0; i < pos.length; i++) {
+      const s = pos[i], gap = deep[i + 1] - s, f = Math.pow(Math.max(0, (s / len - dark) / (1 - dark)), 0.8);
+      if (f <= 0.02) continue;
+      const e = s + gap * Math.min(1.05, f), w = hw + 0.06;
+      P.shape([at(s, -w), at(s, w), at(e, w), at(e, -w)], 0, INK);
+    }
+    const last = pos[pos.length - 1];
+    P.shape([at(last, -hw - 0.06), at(last, hw + 0.06), at(len + 0.1, hw + 0.06), at(len + 0.1, -hw - 0.06)], 0, INK);
+  }
+  for (const s of pos) {
+    const t = taper && down ? hw * (1 - (s / len) * 0.5) : taper ? hw * (0.5 + (s / len) * 0.5) : hw;
+    const wob = rough ? rng.range(-rough, rough) : 0, wob2 = rough ? rng.range(-rough, rough) : 0;
+    const a = at(s + wob, -t + 0.02), b = at(s + wob2, t - 0.02);
+    if (rough) {
+      const m = at(s + (wob + wob2) / 2 + rng.range(-rough, rough) * 0.8, rng.range(-0.15, 0.15) * t);
+      P.line(...a, ...m, TREAD); P.line(...m, ...b, TREAD);
+    } else P.line(...a, ...b, TREAD);
+    if (taper) {
+      // The sides, closing in.
+    }
+  }
+  if (taper) {
+    const w0 = down ? hw : hw * 0.5, w1 = down ? hw * 0.5 : hw;
+    for (const sg of [-1, 1]) P.line(...at(0, sg * w0), ...at(len * (1 - 1 / n), sg * (w0 + (w1 - w0) * (1 - 1 / n))), TREAD);
+  }
+}
+
+// A round wall of stone (as the walls are drawn), centred at (cx, cy)
+// squares, radius R, open between angles `gap` [a, b].
+function roundWall(api, cx, cy, R, gap) {
+  const { g, rng } = api, n = 26, shift = 8 * k * 0.4;
+  const inGap = (a) => { const t = ((a - gap[0]) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); return t < ((gap[1] - gap[0]) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); };
+  g.fillStyle = INK;
+  const r = px(R) + shift;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * 2 * Math.PI, a1 = ((i + 1) / n) * 2 * Math.PI;
+    if (inGap((a0 + a1) / 2)) continue;
+    wallLine(g, [px(cx) + Math.cos(a0) * r, px(cy) + Math.sin(a0) * r], [px(cx) + Math.cos(a1) * r, px(cy) + Math.sin(a1) * r], TS, rng);
+  }
+}
+
+// A spiral stair in a round stair-well: a post in the middle, treads
+// fanning out from it around the well, starting by the mouth (angle `a0`)
+// and going round `span`; down, the last of it sinks into the ink (the
+// stair going on under itself).
+function spiral(api, { cx, cy, R, a0, span, n, down }) {
+  const { g, P, rng } = api, post = 0.17;
+  const at = (a, r) => [px(cx) + Math.cos(a) * px(r), px(cy) + Math.sin(a) * px(r)];
+  // Down: the treads thicken round the turn till the last of it is dark.
+  if (down) {
+    const da = span / n;
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + span * (i / n), f = Math.pow(Math.max(0, (i / n - 0.35) / 0.65), 0.85);
+      if (f <= 0.02) continue;
+      const e = a + da * Math.min(1.08, f) * (i === n ? 0 : 1);
+      g.beginPath(); g.moveTo(...at(a, post)); g.arc(px(cx), px(cy), px(R + 0.06), a, e); g.lineTo(...at(e, post)); g.closePath(); g.fill();
+    }
+  }
+  for (let i = 0; i <= n; i++) {
+    const a = a0 + (span * i) / n;
+    P.line(...at(a, post), ...at(a, R - 0.02), TREAD);
+  }
+  P.round(px(cx), px(cy), px(post), 2.2, PAPER);
+}
+
+const circle = (cx, cy, R) => { const p = new Path2D(); p.arc(px(cx), px(cy), px(R), 0, 2 * Math.PI); return p; };
+
+// A low wall (a parapet, a rail): a lighter wall, inked as the furniture's
+// outlines are, a little thick.
+function parapet(api, x0, y0, x1, y1) {
+  const { P } = api;
+  P.line(px(x0), px(y0), px(x1), px(y1), 4.6);
+}
+
+// The pencilled word, as the room numbers are.
+function pencil(api, text, x, y) {
+  const { g } = api;
+  g.save();
+  g.fillStyle = "rgba(60, 55, 50, 0.7)";
+  g.font = `italic ${Math.round(TS * 0.36)}px "IM Fell English", Georgia, serif`;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(text, px(x), px(y));
+  g.restore();
+}
+
+// ---------- the designs ------------------------------------------------------
+
+const ROOM = (top) => top; // (rows given whole below)
+
+const D = [];
+
+D.push({
+  id: "A", name: "A stair passage into the wall",
+  text: "A passage one square wide cut straight back into the rock, the treads across it. Down: the treads close up and sink into ink; up: they run evenly to the passage's end.",
+  rows: [
+    "#############",
+    "#############",
+    "######.######",
+    "######.######",
+    "######.######",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+  ],
+  plan: { stairs: [[6, 2], [6, 3], [6, 4]], use: [6, 2] },
+  foot: "1 × 3 in the wall, behind any room's side with three squares of rock. All walkable; you take them at the far end (or anywhere on them). Needs nothing in the room.",
+  draw(api, down) {
+    api.bare(rectPath(6, 2, 7, 5));
+    flight(api, { mx: 6.5, my: 5, ux: 0, uy: -1, hw: 0.5, len: 3, n: 8, down });
+  },
+});
+
+D.push({
+  id: "B", name: "A broad flight in a recess",
+  text: "The wall stepped back two or three squares wide and two deep, the flight filling it. Reads from far off; suits halls and big rooms.",
+  rows: [
+    "#############",
+    "#############",
+    "#############",
+    "#####...#####",
+    "#####...#####",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+  ],
+  plan: { stairs: [[5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]], use: [6, 3] },
+  foot: "3 × 2 (or 2 × 2) in the wall. All walkable; taken from the back row.",
+  draw(api, down) {
+    api.bare(rectPath(5, 3, 8, 5));
+    flight(api, { mx: 6.5, my: 5, ux: 0, uy: -1, hw: 1.5, len: 2, n: 7, down, dark: 0.2 });
+  },
+});
+
+D.push({
+  id: "C", name: "A spiral stair in a round well",
+  text: "A round stair-well bulging out of the wall, a post in the middle, the treads fanning round it. Down: the far side of the turn thickens into ink, going on under itself. Dyson's spiral stairs, as in his towers.",
+  rows: [
+    "#############",
+    "######.######",
+    "#####...#####",
+    "######.######",
+    "######.######",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+  ],
+  plan: { stairs: [[6, 1], [5, 2], [7, 2], [6, 3]], use: [6, 3], solid: [[6, 2]] },
+  foot: "A round well about 3 × 3 behind the wall, and a doorway into it. You step through the doorway onto the first treads and take them there; the post in the middle is solid.",
+  draw(api, down) {
+    const cx = 6.5, cy = 2.5, R = 1.42;
+    api.bare(rectPath(6, 4, 7, 5));
+    api.paper(circle(cx, cy, R + 0.04));
+    const gapHalf = Math.asin(0.5 / R) + 0.04;
+    roundWall(api, cx, cy, R, [Math.PI / 2 - gapHalf, Math.PI / 2 + gapHalf]);
+    spiral(api, { cx, cy, R, a0: Math.PI / 2 + gapHalf + 0.03, span: 2 * Math.PI - 2 * gapHalf - 0.06, n: 14, down });
+  },
+});
+
+D.push({
+  id: "D", name: "A stair along the wall",
+  text: "A narrow flight running along a room's wall behind a low parapet, entered from one end, going on into the rock at the other. Down: it thickens into ink where it goes under; up: it climbs to its end in the rock.",
+  rows: [
+    "#############",
+    "#############",
+    "#############",
+    "##..........#",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+    "#############",
+  ],
+  plan: { stairs: [[7, 3], [8, 3], [9, 3], [10, 3], [11, 3]], use: [11, 3], wall: [] },
+  foot: "1 × 5 along the room's wall, the last square in the rock. All walkable, but only from its open end (the parapet stands between it and the room). Taken at the far end.",
+  draw(api, down) {
+    api.bare(rectPath(7, 3, 12, 4));
+    flight(api, { mx: 7.0, my: 3.5, ux: 1, uy: 0, hw: 0.5, len: 5, n: 11, down, dark: 0.45 });
+    parapet(api, 7.0, 4.0, 11.0, 4.0);
+    parapet(api, 7.0, 3.92, 7.0, 4.08);
+  },
+});
+
+D.push({
+  id: "E", name: "A turning stair",
+  text: "A flight going into the wall, a landing, and a second flight turning off it. Takes more rock, but looks most built, and its turn hides where it goes.",
+  rows: [
+    "#############",
+    "#############",
+    "######...####",
+    "######.######",
+    "######.######",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+  ],
+  plan: { stairs: [[6, 3], [6, 4], [6, 2], [7, 2], [8, 2]], use: [8, 2] },
+  foot: "An L of 5 squares in the wall (2 up, a landing, 2 across). All walkable; taken at the end of the second flight.",
+  draw(api, down) {
+    api.bare(rectPath(6, 2, 9, 3));
+    api.bare(rectPath(6, 3, 7, 5));
+    flight(api, { mx: 6.5, my: 5, ux: 0, uy: -1, hw: 0.5, len: 2, n: 6, down: false });
+    P_landing(api, 6, 2);
+    flight(api, { mx: 7, my: 2.5, ux: 1, uy: 0, hw: 0.5, len: 2, n: 6, down });
+  },
+});
+function P_landing() {}
+
+D.push({
+  id: "F", name: "A grand stair between columns",
+  text: "A flight three squares wide climbing out of a hall through an opening in its wall, a column at each side of the foot. For the king's halls and the biggest rooms.",
+  rows: [
+    "#############",
+    "#####...#####",
+    "#####...#####",
+    "#####...#####",
+    "####.....####",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+  ],
+  features: [{ type: "post", x: 4.5, y: 4.5, shape: "square" }, { type: "post", x: 8.5, y: 4.5, shape: "square" }],
+  plan: { stairs: [[5, 1], [6, 1], [7, 1], [5, 2], [6, 2], [7, 2], [5, 3], [6, 3], [7, 3], [5, 4], [6, 4], [7, 4]], use: [6, 1], solid: [[4, 4], [8, 4]] },
+  foot: "3 × 4 in the wall, two columns at its foot. All walkable; taken from the top row.",
+  rowsFix: true,
+  draw(api, down) {
+    api.bare(rectPath(5, 1, 8, 5));
+    flight(api, { mx: 6.5, my: 5, ux: 0, uy: -1, hw: 1.5, len: 4, n: 11, down, dark: 0.3 });
+  },
+});
+
+D.push({
+  id: "G", name: "Steps cut in a cave",
+  text: "Rough steps hacked into a cave's passage: treads uneven, crooked, the walls as rough as the cave's. For the caverns.",
+  rows: [
+    "#############",
+    "#############",
+    "######%%#####",
+    "#####%%%#####",
+    "######%%#####",
+    "###%%%%%%%###",
+    "##%%%%%%%%%##",
+    "##%%%%%%%%%##",
+    "###%%%%%%%###",
+    "#############",
+  ],
+  plan: { stairs: [[6, 2], [7, 2], [5, 3], [6, 3], [7, 3], [6, 4], [7, 4]], use: [6, 2] },
+  foot: "A passage of 2 × 3 or so cut into the cave's side. All walkable; taken at its end.",
+  draw(api, down) {
+    const p = new Path2D(); p.rect(px(5.3), px(2.0), px(2.6), px(3.0));
+    api.bare(p);
+    flight(api, { mx: 6.95, my: 5.05, ux: -0.08, uy: -1, hw: 0.8, len: 2.85, n: 7, down, rough: 0.09, dark: 0.3 });
+  },
+});
+
+D.push({
+  id: "H", name: "A stair-well in the floor",
+  text: "Where there's no wall to cut into: an opening in the floor, a low wall round three sides, the treads going down into it (up: a flight rising from the floor to a hole above, its far end dashed). Today's stairs, made to look built.",
+  rows: [
+    "#############",
+    "#############",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "##.........##",
+    "#############",
+    "#############",
+  ],
+  plan: { stairs: [[6, 3], [6, 4], [6, 5]], use: [6, 3], wall: [] },
+  foot: "1 × 3 anywhere on a room's floor (as today, in the middle). Walked into from its open end; the sides are walls.",
+  draw(api, down) {
+    api.bare(rectPath(5.85, 2.85, 7.15, 6.0));
+    flight(api, { mx: 6.5, my: 6, ux: 0, uy: -1, hw: 0.5, len: 3, n: 8, down, dark: 0.25 });
+    if (down) {
+      parapet(api, 6, 2.95, 7, 2.95); parapet(api, 6, 2.95, 6, 6); parapet(api, 7, 2.95, 7, 6);
+    } else {
+      // The sides as stringers, the top end dashed (the opening above).
+      parapet(api, 6, 3.3, 6, 6); parapet(api, 7, 3.3, 7, 6);
+      const g = api.g; g.save(); g.setLineDash([4 * k, 4 * k]); g.lineWidth = 1.6 * k;
+      g.beginPath(); g.rect(px(5.82), px(2.82), px(1.36), px(1.2)); g.stroke(); g.restore();
+    }
+  },
+});
+
+// ---------- plans ------------------------------------------------------------
+
+function plan(d) {
+  const rows = d.rows, s = 16, c = document.createElement("canvas"), g = c.getContext("2d");
+  c.width = rows[0].length * s; c.height = rows.length * s;
+  const has = (list, x, y) => (list ?? []).some(([a, b]) => a === x && b === y);
+  rows.forEach((r, y) => [...r].forEach((ch, x) => {
+    const st = has(d.plan.stairs, x, y);
+    g.fillStyle = has(d.plan.solid, x, y) || has(d.plan.wall, x, y) ? "#6b5f52" : st ? "#d9a53a" : ch === "#" ? "#2b221c" : "#efe7d6";
+    g.fillRect(x * s, y * s, s, s);
+    g.strokeStyle = "rgba(0,0,0,0.15)"; g.strokeRect(x * s + 0.5, y * s + 0.5, s - 1, s - 1);
+  }));
+  const [ux, uy] = d.plan.use;
+  g.fillStyle = "#a3261b"; g.beginPath(); g.arc((ux + 0.5) * s, (uy + 0.5) * s, s * 0.28, 0, 7); g.fill();
+  return c;
+}
+
+// ---------- the page ---------------------------------------------------------
+
+const only = params.get("only");
+await document.fonts.load(`italic 14px "IM Fell English"`);
+const out = document.getElementById("out");
+for (const d of D) {
+  if (only && !only.split(",").includes(d.id)) continue;
+  const sec = document.createElement("section");
+  sec.className = "design"; sec.id = `d-${d.id}`;
+  sec.innerHTML = `<h2><b>${d.id}</b>${d.name}</h2><p>${d.text}</p><div class="row"></div><p class="foot">${d.foot}</p>`;
+  const row = sec.querySelector(".row");
+  for (const down of [false, true]) {
+    const f = document.createElement("figure");
+    f.className = down ? "down" : "up";
+    f.append(scene(d.rows, (api) => d.draw(api, down), 1000 + d.id.charCodeAt(0), d.features ?? []));
+    f.insertAdjacentHTML("beforeend", `<figcaption>${down ? "Down" : "Up"}</figcaption>`);
+    row.append(f);
+  }
+  const f = document.createElement("figure");
+  f.className = "plan";
+  f.append(plan(d));
+  f.insertAdjacentHTML("beforeend", `<figcaption>The squares it takes</figcaption>`);
+  row.append(f);
+  out.append(sec);
+}
+
+// Ways to tell up from down, on design A.
+{
+  const sec = document.createElement("section");
+  sec.className = "design"; sec.id = "d-marks";
+  sec.innerHTML = `<h2><b>+</b>Telling up from down</h2><p>The ink at the foot of a stair going down is the main sign (Dyson's way: stairs going down into the dark). Something more can be added: the old maps' tapering treads, a pencilled word, or a small arrow.</p><div class="row"></div>`;
+  const row = sec.querySelector(".row");
+  const A = D[0];
+  const ways = [
+    ["Ink only", (api, down) => A.draw(api, down)],
+    ["Tapering treads", (api, down) => { api.bare(rectPath(6, 2, 7, 5)); flight(api, { mx: 6.5, my: 5, ux: 0, uy: -1, hw: 0.5, len: 3, n: 9, down, taper: true }); }],
+    ["Pencilled up / dn", (api, down) => { A.draw(api, down); pencil(api, down ? "dn" : "up", 7.45, 5.45); }],
+    ["An arrow", (api, down) => {
+      A.draw(api, down);
+      const g = api.g, y0 = down ? 5.65 : 6.25, y1 = down ? 6.25 : 5.65;
+      g.save(); g.lineWidth = 1.8 * k; g.strokeStyle = "rgba(60,55,50,0.8)";
+      g.beginPath(); g.moveTo(px(6.5), px(y0)); g.lineTo(px(6.5), px(y1)); g.moveTo(px(6.35), px(y1 + (down ? -0.15 : 0.15))); g.lineTo(px(6.5), px(y1)); g.lineTo(px(6.65), px(y1 + (down ? -0.15 : 0.15))); g.stroke(); g.restore();
+    }],
+  ];
+  for (const [name, fn] of ways) for (const down of [false, true]) {
+    const f = document.createElement("figure");
+    const rows = A.rows.slice(0, 8);
+    f.append(scene(rows, (api) => fn(api, down), 1065, []));
+    f.insertAdjacentHTML("beforeend", `<figcaption>${name}: ${down ? "down" : "up"}</figcaption>`);
+    row.append(f);
+  }
+  if (!only) out.append(sec);
+}
+
+// At the game's usual zoom (a square about 19 pixels across), down.
+{
+  const sec = document.createElement("section");
+  sec.className = "design"; sec.id = "d-zoom";
+  sec.innerHTML = `<h2><b>=</b>At the game's zoom</h2><p>Each design going down, as big as the game shows it when a level starts (a square about 19 pixels across, before the screen's own sharpness).</p><div class="row"></div>`;
+  const row = sec.querySelector(".row");
+  SC = 0.48;
+  for (const d of D) {
+    const f = document.createElement("figure");
+    f.append(scene(d.rows, (api) => d.draw(api, true), 1000 + d.id.charCodeAt(0), d.features ?? []));
+    f.insertAdjacentHTML("beforeend", `<figcaption>${d.id}</figcaption>`);
+    row.append(f);
+  }
+  SC = 1;
+  if (!only) out.append(sec);
+}
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>

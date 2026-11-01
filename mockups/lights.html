@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Lights</title>
+<style>
+  /* Layout: a section per light (brazier, hearth, candles), each a wrapping
+     row of cards; every card the light at the game's size and close up,
+     burning and lighting the floor in the game's bands. */
+  :root {
+    --desk: #e6dfcf;
+    --paper: #f7f2e6;
+    --ink: #1b1815;
+    --muted: #6b5f52;
+    --rule: #cfc5b0;
+    --accent: #8c2b1c;
+    --body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.45 var(--body);
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { margin: 0 0 4px; font-size: 26px; font-weight: normal; }
+  h2 { margin: 26px 0 8px; font-size: 21px; font-weight: normal; }
+  header p, section > p { margin: 0 0 12px; max-width: 80ch; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; color: var(--muted); }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  input[type="range"] { width: 130px; accent-color: var(--accent); }
+  .grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+  figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; }
+  figure.now { border-style: dashed; }
+  .pair { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  canvas { display: block; max-width: 100%; height: auto !important; }
+  figcaption { padding: 6px 2px 0; max-width: 420px; }
+  figcaption b { font-weight: normal; font-size: 17px; margin-right: 6px; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Braziers, hearths and candles</h1>
+  <p>Each card shows a light at the game's starting zoom (left) and close up (right), burning and lighting the floor in the game's bands (full, dim, dark). The dashed card is how it is in the game now.</p>
+  <div class="bar">
+    <label><input id="light" type="checkbox" checked> Light bands</label>
+    <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
+    <label>Game zoom <input id="zoom" type="range" min="0.4" max="1.2" step="0.04" value="0.48"></label>
+  </div>
+</header>
+<main id="main"></main>
+
+<script type="module">
+import { pen, PAPER, INK, wallLine } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+import { drawFire } from "../js/fire.js";
+
+const OUT = 2.9, IN = 1.9, BIG = 60;
+const FIRE = "#f2541b", FIRE_MID = "#fba52b", FIRE_IN = "#fde48e";
+const DARK = [59, 57, 54], PAPER_RGB = [247, 242, 230];
+const dpr = Math.min(2, window.devicePixelRatio || 1);
+const $ = (id) => document.getElementById(id);
+const LIGHT = { brazier: { full: 2.5, dim: 1.5, dark: 1.5 }, hearth: { full: 3, dim: 1.5, dark: 1.5 }, candles: { full: 1.25, dim: 1.25, dark: 1.5 } };
+
+// ---- Flames and glows ---------------------------------------------------------
+
+// A tongue of flame standing on (bx, by), `w` wide, `h` tall, its tip leaning
+// `lean`; its sides a little off by `jit`.
+function tongue(g, bx, by, w, h, lean, jit = () => 0) {
+  const tx = bx + lean + jit(), ty = by - h + jit();
+  g.beginPath();
+  g.moveTo(tx, ty);
+  g.bezierCurveTo(bx + lean * 0.4 - w * 0.12 + jit(), by - h * 0.5, bx - w / 2 + jit(), by - h * 0.25, bx - w / 2, by);
+  g.bezierCurveTo(bx - w / 2, by + w * 0.55, bx + w / 2, by + w * 0.55, bx + w / 2, by);
+  g.bezierCurveTo(bx + w / 2 + jit(), by - h * 0.25, bx + lean * 0.4 + w * 0.12 + jit(), by - h * 0.5, tx, ty);
+  g.closePath();
+}
+const sway = (t, f) => ({
+  h: 0.82 + 0.13 * Math.sin(t * f.sp + f.ph) + 0.07 * Math.sin(t * f.sp * 2.3 + f.ph * 1.7),
+  lean: 0.35 * Math.sin(t * f.sp * 0.6 + f.ph) + 0.15 * Math.sin(t * f.sp * 1.9 + f.ph * 0.5),
+});
+// Inked tongues rising from (x, y), warm, outlined in ink: a fire drawn with
+// the map's pen. `n` tongues `spread` apart, `w` wide, `h` tall (squares).
+function inkedFlame(g, x, y, TS, t, { n = 3, w = 0.2, h = 0.5, spread = 0.11, seed = 0, line = 1.4 } = {}) {
+  const k = TS / 32, order = [...Array(n).keys()].sort((a, b) => Math.abs(b - (n - 1) / 2) - Math.abs(a - (n - 1) / 2));
+  for (const i of order) {
+    const mid = 1 - Math.abs(i - (n - 1) / 2) / n, f = { sp: 5 + i * 1.3 + seed, ph: i * 2.1 + seed * 3 };
+    const s = sway(t, f), bx = x + (i - (n - 1) / 2) * spread * TS, tw = w * TS * (0.7 + 0.3 * mid), th = h * TS * mid * s.h;
+    tongue(g, bx, y, tw, th, s.lean * tw);
+    g.fillStyle = FIRE_MID; g.fill();
+    g.lineWidth = line * k; g.strokeStyle = INK; g.lineJoin = "round"; g.stroke();
+    tongue(g, bx + s.lean * tw * 0.2, y, tw * 0.45, th * 0.5, s.lean * tw * 0.3);
+    g.fillStyle = FIRE_IN; g.fill();
+  }
+}
+// A flame seen from above: a ragged ring of tongues licking outward round a
+// pale heart, turning; `r` its reach (squares).
+function flameAbove(g, x, y, TS, t, { r = 0.22, n = 7, seed = 0, line = 1.2 } = {}) {
+  const k = TS / 32, pts = [];
+  for (let i = 0; i < n * 2; i++) {
+    const a = (i / (n * 2)) * 2 * Math.PI + t * 0.6 + seed, tip = i % 2 === 0;
+    const rr = r * TS * (tip ? 0.85 + 0.25 * Math.sin(t * (6 + (i % 3)) + i * 1.7 + seed) : 0.5);
+    pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]);
+  }
+  g.beginPath();
+  pts.forEach(([px, py], i) => { const [qx, qy] = pts[(i + 1) % pts.length]; i ? null : g.moveTo((px + pts.at(-1)[0]) / 2, (py + pts.at(-1)[1]) / 2); g.quadraticCurveTo(px, py, (px + qx) / 2, (py + qy) / 2); });
+  g.closePath();
+  g.fillStyle = FIRE_MID; g.fill();
+  g.lineWidth = line * k; g.strokeStyle = INK; g.lineJoin = "round"; g.stroke();
+  g.beginPath(); g.arc(x, y, r * TS * 0.38 * (1 + 0.1 * Math.sin(t * 9 + seed)), 0, 2 * Math.PI);
+  g.fillStyle = FIRE_IN; g.fill();
+}
+// A warm glow round (x, y), breathing: light itself, drawn soft.
+function glow(g, x, y, TS, t, { r = 0.6, a = 0.55, seed = 0 } = {}) {
+  const f = 1 + 0.06 * Math.sin(t * 7 + seed) + 0.04 * Math.sin(t * 17 + seed * 2), R = r * TS * f;
+  const grad = g.createRadialGradient(x, y, 0, x, y, R);
+  grad.addColorStop(0, `rgba(255, 214, 120, ${a})`);
+  grad.addColorStop(0.45, `rgba(255, 170, 70, ${a * 0.45})`);
+  grad.addColorStop(1, "rgba(255, 150, 60, 0)");
+  g.fillStyle = grad;
+  g.beginPath(); g.arc(x, y, R, 0, 2 * Math.PI); g.fill();
+}
+// Coals in a bed, glowing in turn, outlined in ink: each [dx, dy, r] (squares).
+function coals(g, x, y, pts, TS, t, { line = 1 } = {}) {
+  pts.forEach(([dx, dy, r], i) => {
+    const hot = 0.5 + 0.5 * Math.sin(t * (2 + (i % 3)) + i * 1.7);
+    g.beginPath(); g.arc(x + dx * TS, y + dy * TS, r * TS, 0, 2 * Math.PI);
+    g.fillStyle = `rgb(${Math.round(150 + 100 * hot)}, ${Math.round(50 + 120 * hot)}, ${Math.round(25 + 50 * hot)})`;
+    g.fill();
+    g.lineWidth = line * TS / 32; g.strokeStyle = INK; g.stroke();
+  });
+}
+// Sparks drifting up from (x, y), going out.
+function sparks(g, x, y, TS, t, { n = 5, rise = 0.9, spread = 0.18, seed = 0 } = {}) {
+  for (let i = 0; i < n; i++) {
+    const p = (t * 0.8 + i / n + seed) % 1, cyc = Math.floor(t * 0.8 + i / n + seed);
+    const sx = x + (Math.sin(i * 12.9 + cyc * 7.3) * spread + Math.sin(p * 6 + i) * 0.05) * TS, sy = y - p * rise * TS;
+    g.fillStyle = `rgba(${p < 0.5 ? "230, 120, 40" : "27, 24, 21"}, ${(1 - p) * 0.9})`;
+    const s = Math.max(1, TS * 0.04);
+    g.fillRect(sx - s / 2, sy - s / 2, s, s);
+  }
+}
+// Short ink rays round (x, y), between r0 and r1 (squares), breathing: the
+// mapmaker's sign for a light; `from`/`span` for a fan.
+function rays(g, x, y, TS, t, { n = 10, r0 = 0.32, r1 = 0.55, width = 1.5, from = 0, span = 2 * Math.PI } = {}) {
+  g.lineCap = "round"; g.strokeStyle = INK; g.lineWidth = width * TS / 32;
+  for (let i = 0; i < n; i++) {
+    const a = from + (span === 2 * Math.PI ? (i * span) / n : (i - (n - 1) / 2) * (span / (n - 1))) + 0.15;
+    const L = r0 + (r1 - r0) * (0.75 + 0.25 * Math.sin(t * (5 + (i % 4)) + i * 2.3)) * (i % 2 ? 0.7 : 1);
+    g.beginPath();
+    g.moveTo(x + Math.cos(a) * r0 * TS, y + Math.sin(a) * r0 * TS);
+    g.lineTo(x + Math.cos(a) * L * TS, y + Math.sin(a) * L * TS);
+    g.stroke();
+  }
+}
+
+// ---- Pieces drawn with the map's pen -----------------------------------------
+
+// A bowl on three legs from above: legs splayed out from under it, a foot at
+// the end of each; the rim a double line.
+function tripod(P, x, y, TS, { r = 0.36, legs = 1.45, foot = true, rim = 0.78, turn = 0.5 } = {}) {
+  for (const a of [0, 1, 2].map((i) => turn + Math.PI / 2 + (i * 2 * Math.PI) / 3)) {
+    const ex = x + Math.cos(a) * r * legs * TS, ey = y + Math.sin(a) * r * legs * TS;
+    P.line(x + Math.cos(a) * r * 0.8 * TS, y + Math.sin(a) * r * 0.8 * TS, ex, ey, IN + 0.2);
+    // (A little foot: a short tick across the leg's end.)
+    if (foot) P.line(ex - Math.sin(a) * TS * 0.07, ey + Math.cos(a) * TS * 0.07, ex + Math.sin(a) * TS * 0.07, ey - Math.cos(a) * TS * 0.07, IN);
+  }
+  P.round(x, y, r * TS, OUT, PAPER);
+  if (rim) P.round(x, y, r * rim * TS, IN - 0.5);
+}
+// A stone slab (a hearth's apron, a plinth): a box, its stones' joints.
+function slab(P, x, y, w, h, TS, joints = 2) {
+  P.box(x, y, w * TS, h * TS, 0, IN + 0.3, PAPER);
+  for (let i = 1; i < joints; i++) { const jx = x + (-w / 2 + (w * i) / joints) * TS; P.line(jx, y - (h / 2) * TS, jx, y + (h / 2) * TS, 1.1); }
+}
+// Soot: short close strokes filling a shape (as hatching, finer).
+function soot(g, rng, clip, x0, y0, x1, y1, TS, { gap = 0.07, a = 0.9, width = 1 } = {}) {
+  g.save(); clip(); g.clip();
+  g.strokeStyle = INK; g.lineWidth = width * TS / 32; g.lineCap = "round";
+  const c = Math.cos(a), s = Math.sin(a), L = Math.hypot(x1 - x0, y1 - y0);
+  for (let d = -L; d < L; d += gap * TS) {
+    const mx = (x0 + x1) / 2 + -s * d, my = (y0 + y1) / 2 + c * d;
+    g.beginPath(); g.moveTo(mx - c * L + rng.range(-1, 1), my - s * L); g.lineTo(mx + c * L, my + s * L + rng.range(-1, 1)); g.stroke();
+  }
+  g.restore();
+}
+// A log lying, solid ink with a paper edge, from (ax, ay) to (bx, by).
+function log(g, ax, ay, bx, by, TS, th) {
+  const len = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / len, ny = (bx - ax) / len, r = (th * TS) / 2;
+  const path = () => { g.beginPath(); g.moveTo(ax + nx * r, ay + ny * r); g.lineTo(bx + nx * r, by + ny * r); g.arc(bx, by, r, Math.atan2(ny, nx), Math.atan2(-ny, -nx)); g.lineTo(ax - nx * r, ay - ny * r); g.arc(ax, ay, r, Math.atan2(-ny, -nx), Math.atan2(ny, nx)); g.closePath(); };
+  path(); g.lineWidth = 2.4 * TS / 32; g.strokeStyle = PAPER; g.stroke();
+  path(); g.fillStyle = INK; g.fill();
+}
+// The wall's mouth cut into the rock above wall line `wy`: paper inside
+// `pts`, walls drawn along its sides (each [a, b] a stretch of wall).
+function cut(g, pts) {
+  g.beginPath(); pts.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py))); g.closePath();
+  g.fillStyle = PAPER; g.fill();
+}
+function walls(g, TS, rng, segs) {
+  g.fillStyle = INK; g.strokeStyle = INK;
+  for (const [a, b] of segs) wallLine(g, a, b, TS, rng);
+}
+
+// ---- The lights -----------------------------------------------------------------
+// Each: `base` drawn once with the map (under the light); `live` each frame
+// over the lit map; `scene` "room" (open floor), "wall" (a wall across the top,
+// the light against it) or "altar" (an altar under a wall, the light on it).
+
+const BRAZIERS = [
+  { id: "Now", now: true, name: "As in the game", note: "A small bowl of black coals on three stubby legs, the campfire's flame standing on it.",
+    base: (P, g, x, y, TS) => {
+      const r = TS * 0.27;
+      for (const a of [0.5, 0.5 + (2 * Math.PI) / 3, 0.5 + (4 * Math.PI) / 3].map((a) => a + Math.PI / 2)) P.line(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8, x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45, OUT);
+      P.round(x, y, r, OUT, PAPER); P.round(x, y, r * 0.62, IN, INK);
+    },
+    live: (g, x, y, TS, t) => drawFire(g, x, y, TS, t, 3, 1, 0.62, -0.08) },
+  { id: "A", name: "Tripod bowl, inked flame", note: "A bigger bowl with a rim, long splayed legs ending in feet; glowing coals in it, an inked flame rising from them.",
+    base: (P, g, x, y, TS) => tripod(P, x, y, TS),
+    live: (g, x, y, TS, t) => { coals(g, x, y, [[-0.1, 0.06, 0.07], [0.09, 0.08, 0.065], [0, -0.06, 0.075], [0.12, -0.07, 0.05], [-0.13, -0.08, 0.05]], TS, t); inkedFlame(g, x, y + TS * 0.05, TS, t, { n: 3, w: 0.2, h: 0.55 }); sparks(g, x, y - TS * 0.4, TS, t); } },
+  { id: "B", name: "Tripod bowl, fire from above", note: "The same bowl, its fire seen from above as the map is: a ring of tongues round a pale heart, a warm glow round it.",
+    base: (P, g, x, y, TS) => tripod(P, x, y, TS),
+    live: (g, x, y, TS, t) => { glow(g, x, y, TS, t, { r: 0.75, a: 0.5 }); flameAbove(g, x, y, TS, t, { r: 0.26 }); } },
+  { id: "C", name: "On a stone plinth", note: "A square stone block with the bowl on it: built into the room, like the columns; an inked flame.",
+    base: (P, g, x, y, TS) => { P.box(x, y, TS * 0.86, TS * 0.86, 0.02, OUT, PAPER); P.box(x, y, TS * 0.64, TS * 0.64, 0.02, 1.1); P.round(x, y, TS * 0.27, IN + 0.4, PAPER); },
+    live: (g, x, y, TS, t) => { coals(g, x, y, [[-0.07, 0.05, 0.06], [0.07, 0.06, 0.055], [0, -0.06, 0.065]], TS, t); inkedFlame(g, x, y + TS * 0.04, TS, t, { n: 3, w: 0.18, h: 0.5 }); } },
+  { id: "D", name: "Coals and rays", note: "The tripod bowl full of glowing coals, no flame; short ink rays round it, the mapmaker's sign for a light.",
+    base: (P, g, x, y, TS) => tripod(P, x, y, TS, { legs: 1.3 }),
+    live: (g, x, y, TS, t) => { coals(g, x, y, [[-0.1, 0.07, 0.075], [0.1, 0.08, 0.07], [0, -0.07, 0.08], [0.13, -0.08, 0.055], [-0.14, -0.07, 0.055], [0.0, 0.03, 0.05]], TS, t); rays(g, x, y, TS, t, { r0: 0.62, r1: 0.92, n: 12 }); } },
+];
+
+// A hearth against the wall at wy, its middle at x; `w` its width (squares).
+const HEARTHS = [
+  { id: "Now", now: true, name: "As in the game", note: "A one-square pocket in the wall, two crossed logs, the campfire's flame in it.",
+    base: (P, g, x, y, TS, rng) => {
+      const wy = y, h = TS * 0.9;
+      cut(g, [[x - TS / 2, wy], [x + TS / 2, wy], [x + TS / 2, wy - h], [x - TS / 2, wy - h]]);
+      walls(g, TS, rng, [[[x - 6 * TS, wy], [x - TS / 2, wy]], [[x + TS / 2, wy], [x + 6 * TS, wy]], [[x - TS / 2, wy], [x - TS / 2, wy - h]], [[x + TS / 2, wy], [x + TS / 2, wy - h]], [[x - TS / 2, wy - h], [x + TS / 2, wy - h]]]);
+      const cy = wy - h / 2;
+      P.line(x - TS * 0.62, wy - TS * 0.02, x + TS * 0.62, wy - TS * 0.02, OUT + 0.6);
+      log(g, x - TS * 0.3, cy + TS * 0.3, x + TS * 0.26, cy - TS * 0.12, TS, 0.1); log(g, x + TS * 0.3, cy + TS * 0.3, x - TS * 0.26, cy - TS * 0.12, TS, 0.1);
+      return { fx: x, fy: cy, top: wy - h };
+    },
+    live: (g, x, y, TS, t, at) => drawFire(g, at.fx, at.fy, TS, t, 2, 1, 0.8, 0.05) },
+  { id: "A", name: "Fireplace with a chimney breast", note: "The wall juts out two squares wide; a splayed firebox cut into it, its back black with soot; two logs on the irons, an inked flame; a stone apron in front.",
+    base: (P, g, x, y, TS, rng) => {
+      const wy = y, jut = TS * 0.4, half = TS * 1.2, mouth = TS * 0.62, back = TS * 0.38, deep = TS * 0.95;
+      // (The breast is wall: hatched rock, so the floor stops at its face.)
+      g.fillStyle = PAPER; g.fillRect(x - half, wy - 1, half * 2, jut + 1);
+      const box = [[x - mouth, wy + jut], [x + mouth, wy + jut], [x + back, wy + jut - deep], [x - back, wy + jut - deep]];
+      cut(g, box);
+      soot(g, rng, () => { g.beginPath(); box.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py))); g.closePath(); }, x - mouth, wy + jut - deep, x + mouth, wy + jut - deep * 0.45, TS, { gap: 0.06, a: 0.25 });
+      walls(g, TS, rng, [[[x - 6 * TS, wy], [x - half, wy]], [[x + half, wy], [x + 6 * TS, wy]], [[x - half, wy], [x - half, wy + jut]], [[x + half, wy], [x + half, wy + jut]], [[x - half, wy + jut], [x - mouth, wy + jut]], [[x + mouth, wy + jut], [x + half, wy + jut]]]);
+      g.strokeStyle = INK;
+      P.line(x - mouth, wy + jut, x - back, wy + jut - deep, IN + 0.4); P.line(x + mouth, wy + jut, x + back, wy + jut - deep, IN + 0.4); P.line(x - back, wy + jut - deep, x + back, wy + jut - deep, IN + 0.4);
+      slab(P, x, wy + jut + TS * 0.24, 1.6, 0.42, TS, 3);
+      const fy = wy + jut - TS * 0.32;
+      log(g, x - TS * 0.34, fy + TS * 0.04, x + TS * 0.34, fy + TS * 0.04, TS, 0.11); log(g, x - TS * 0.3, fy + TS * 0.17, x + TS * 0.3, fy + TS * 0.17, TS, 0.1);
+      return { fx: x, fy: fy + TS * 0.16, light: wy + jut, top: wy + jut - deep };
+    },
+    live: (g, x, y, TS, t, at) => { inkedFlame(g, at.fx, at.fy, TS, t, { n: 4, w: 0.19, h: 0.5, spread: 0.13, seed: 1 }); } },
+  { id: "B", name: "Arched hearth of coals", note: "A round-backed recess cut into the wall, a bed of glowing coals with low flames over it, sparks going up the flue; a stone apron.",
+    base: (P, g, x, y, TS, rng) => {
+      const wy = y, r = TS * 0.62;
+      g.beginPath(); g.moveTo(x - r, wy); g.arc(x, wy, r, Math.PI, 0); g.closePath(); g.fillStyle = PAPER; g.fill();
+      soot(g, rng, () => { g.beginPath(); g.moveTo(x - r, wy); g.arc(x, wy, r, Math.PI, 0); g.closePath(); }, x - r, wy - r, x + r, wy - r * 0.35, TS, { gap: 0.06, a: 0.2 });
+      walls(g, TS, rng, [[[x - 6 * TS, wy], [x - r, wy]], [[x + r, wy], [x + 6 * TS, wy]]]);
+      g.fillStyle = INK; g.strokeStyle = INK;
+      for (let i = 0; i < 8; i++) { const a0 = Math.PI + (i / 8) * Math.PI, a1 = Math.PI + ((i + 1) / 8) * Math.PI; wallLine(g, [x + Math.cos(a0) * r, wy + Math.sin(a0) * r], [x + Math.cos(a1) * r, wy + Math.sin(a1) * r], TS, rng); }
+      slab(P, x, wy + TS * 0.24, 1.7, 0.42, TS, 3);
+      return { fx: x, fy: wy - TS * 0.2, light: wy, top: wy - r };
+    },
+    live: (g, x, y, TS, t, at) => { coals(g, at.fx, at.fy, [[-0.26, 0.06, 0.07], [-0.1, 0.1, 0.075], [0.07, 0.08, 0.08], [0.24, 0.06, 0.07], [-0.17, -0.05, 0.06], [0.0, -0.04, 0.07], [0.16, -0.06, 0.06]], TS, t); inkedFlame(g, at.fx, at.fy + TS * 0.04, TS, t, { n: 3, w: 0.16, h: 0.32, spread: 0.15, seed: 2 }); sparks(g, at.fx, at.fy - TS * 0.25, TS, t, { n: 4, rise: 0.4, spread: 0.2 }); } },
+  { id: "C", name: "Kitchen hearth with a pot", note: "Three squares wide, square-mouthed; a black pot hung over the fire on a bar, flames licking round it; a stone apron.",
+    base: (P, g, x, y, TS, rng) => {
+      const wy = y, half = TS * 1.0, deep = TS * 0.85;
+      const box = [[x - half, wy], [x + half, wy], [x + half, wy - deep], [x - half, wy - deep]];
+      cut(g, box);
+      soot(g, rng, () => { g.beginPath(); box.forEach(([px, py], i) => (i ? g.lineTo(px, py) : g.moveTo(px, py))); g.closePath(); }, x - half, wy - deep, x + half, wy - deep * 0.55, TS, { gap: 0.06, a: 0.25 });
+      walls(g, TS, rng, [[[x - 6 * TS, wy], [x - half, wy]], [[x + half, wy], [x + 6 * TS, wy]], [[x - half, wy], [x - half, wy - deep]], [[x + half, wy], [x + half, wy - deep]], [[x - half, wy - deep], [x + half, wy - deep]]]);
+      slab(P, x, wy + TS * 0.24, 2.4, 0.42, TS, 4);
+      return { fx: x, fy: wy - TS * 0.36, light: wy, top: wy - deep };
+    },
+    live: (g, x, y, TS, t, at) => {
+      inkedFlame(g, at.fx - TS * 0.33, at.fy + TS * 0.2, TS, t, { n: 2, w: 0.17, h: 0.4, seed: 3 }); inkedFlame(g, at.fx + TS * 0.33, at.fy + TS * 0.2, TS, t, { n: 2, w: 0.17, h: 0.4, seed: 5 });
+      const P = pen(g, new RNG(9), TS / 32); g.strokeStyle = INK;
+      P.line(at.fx - TS * 0.85, at.fy - TS * 0.02, at.fx + TS * 0.85, at.fy - TS * 0.02, 1.6);
+      P.round(at.fx, at.fy + TS * 0.02, TS * 0.27, OUT, INK); P.round(at.fx, at.fy + TS * 0.02, TS * 0.17, 1.1, "#3a332c");
+    } },
+  { id: "D", name: "Fireplace, coals and rays", note: "The chimney-breast fireplace of A, but coals only and a fan of ink rays out of its mouth: the light drawn as a mapmaker would.",
+    base: (...a) => HEARTHS[1].base(...a),
+    live: (g, x, y, TS, t, at) => { coals(g, at.fx, at.fy - TS * 0.04, [[-0.2, 0.0, 0.07], [-0.05, 0.03, 0.075], [0.1, 0.0, 0.07], [0.22, 0.03, 0.06], [0.03, -0.09, 0.06]], TS, t); rays(g, at.fx, at.light, TS, t, { r0: 0.7, r1: 1.05, n: 7, from: Math.PI / 2, span: Math.PI * 0.75 }); } },
+];
+
+// Candles on an altar under the wall: the altar 2 by 0.9, its middle at (x, y).
+const altar = (P, x, y, TS) => { P.box(x, y, TS * 2, TS * 0.9, 0, OUT, PAPER); P.box(x, y, TS * 1.76, TS * 0.66, 0, IN); };
+const candle = (P, g, x, y, r, TS) => { P.round(x, y, r * TS, 1.5, PAPER); g.fillStyle = INK; g.beginPath(); g.arc(x, y, Math.max(0.8, r * TS * 0.22), 0, 2 * Math.PI); g.fill(); };
+const CANDLES = [
+  { id: "Now", now: true, name: "As in the game", note: "Three small rounds on the altar, a tiny campfire flame on each.",
+    base: (P, g, x, y, TS) => { altar(P, x, y, TS); for (const dx of [-0.5, 0, 0.5]) P.round(x + dx * TS, y + (dx ? 0.04 : -0.12) * TS + TS * 0.04, TS * 0.075, 1.3, PAPER); },
+    live: (g, x, y, TS, t) => { [-0.5, 0, 0.5].forEach((dx, i) => drawFire(g, x + dx * TS, y + (dx ? 0.04 : -0.12) * TS, TS, t, i, 1, 0.2, -0.05)); } },
+  { id: "A", name: "Bigger candles, glowing", note: "Three fat candles, each a round with its wick, a small flame seen from above and a soft warm glow round it.",
+    base: (P, g, x, y, TS) => { altar(P, x, y, TS); for (const dx of [-0.55, 0, 0.55]) candle(P, g, x + dx * TS, y, 0.12, TS); },
+    live: (g, x, y, TS, t) => [-0.55, 0, 0.55].forEach((dx, i) => { glow(g, x + dx * TS, y, TS, t, { r: 0.42, a: 0.6, seed: i }); flameAbove(g, x + dx * TS, y, TS, t, { r: 0.085, n: 5, seed: i, line: 0.9 }); }) },
+  { id: "B", name: "Candlesticks by the altar", note: "Two tall candlesticks standing on the floor at the altar's ends: a round foot, a drip tray, the candle, an inked flame. Plain to see.",
+    base: (P, g, x, y, TS) => { altar(P, x, y, TS); for (const s of [-1, 1]) { const cx = x + s * TS * 1.45, cy = y + TS * 0.05; P.round(cx, cy, TS * 0.24, IN + 0.6, PAPER); P.round(cx, cy, TS * 0.16, 1.1); candle(P, g, cx, cy, 0.09, TS); } },
+    live: (g, x, y, TS, t) => [-1, 1].forEach((s, i) => { glow(g, x + s * TS * 1.45, y, TS, t, { r: 0.5, a: 0.5, seed: i }); inkedFlame(g, x + s * TS * 1.45, y + TS * 0.04, TS, t, { n: 1, w: 0.16, h: 0.42, seed: i * 2, line: 1.1 }); }) },
+  { id: "C", name: "A cluster of candles", note: "Candles of many sizes crowded at the altar's ends, wax run together under them, each its own small inked flame.",
+    base: (P, g, x, y, TS) => {
+      altar(P, x, y, TS);
+      for (const s of [-1, 1]) { const cx = x + s * TS * 0.6; g.beginPath(); g.ellipse(cx, y + TS * 0.03, TS * 0.3, TS * 0.2, 0.2 * s, 0, 2 * Math.PI); g.fillStyle = "#ebe2cd"; g.fill(); g.lineWidth = TS / 32; g.strokeStyle = INK; g.stroke(); }
+      for (const [dx, dy, r] of CLUSTER) candle(P, g, x + dx * TS, y + dy * TS, r, TS);
+    },
+    live: (g, x, y, TS, t) => { glow(g, x - TS * 0.6, y, TS, t, { r: 0.6, a: 0.45 }); glow(g, x + TS * 0.6, y, TS, t, { r: 0.6, a: 0.45, seed: 2 }); CLUSTER.forEach(([dx, dy, r], i) => inkedFlame(g, x + dx * TS, y + dy * TS + TS * 0.02, TS, t, { n: 1, w: r * 1.15, h: r * 3.2, seed: i, line: 0.9 })); } },
+  { id: "D", name: "A candelabrum", note: "A branched candlestick laid on the altar as seen from above: a stem, three arms, a candle at the end of each, inked flames.",
+    base: (P, g, x, y, TS) => {
+      altar(P, x, y, TS);
+      g.strokeStyle = INK; P.round(x, y + TS * 0.1, TS * 0.12, 1.4, PAPER);
+      g.lineWidth = 1.6 * TS / 32; g.beginPath(); g.moveTo(x - TS * 0.6, y - TS * 0.05); g.quadraticCurveTo(x, y + TS * 0.32, x + TS * 0.6, y - TS * 0.05); g.stroke();
+      P.line(x, y + TS * 0.1, x, y - TS * 0.12, 1.6);
+      for (const dx of [-0.6, 0, 0.6]) { P.round(x + dx * TS, y + (dx ? -0.05 : -0.14) * TS, TS * 0.12, 1.3, PAPER); candle(P, g, x + dx * TS, y + (dx ? -0.05 : -0.14) * TS, 0.075, TS); }
+    },
+    live: (g, x, y, TS, t) => [-0.6, 0, 0.6].forEach((dx, i) => { glow(g, x + dx * TS, y - TS * 0.08, TS, t, { r: 0.4, a: 0.5, seed: i }); inkedFlame(g, x + dx * TS, y + (dx ? -0.03 : -0.12) * TS, TS, t, { n: 1, w: 0.14, h: 0.36, seed: i, line: 1 }); }) },
+];
+const CLUSTER = [[-0.72, -0.08, 0.09], [-0.52, 0.06, 0.12], [-0.42, -0.12, 0.07], [-0.74, 0.14, 0.065], [0.52, -0.06, 0.11], [0.72, 0.1, 0.08], [0.66, -0.16, 0.065], [0.42, 0.13, 0.07]];
+
+// ---- Scenes ---------------------------------------------------------------------
+
+const SECTIONS = [
+  { id: "brazier", title: "Braziers", text: "Free-standing in a room, one or two to a room, a row of them down the king's halls.", list: BRAZIERS, scene: "room", game: [9, 7], big: [3, 3] },
+  { id: "hearth", title: "Hearths", text: "Built into a wall of a dining room or barracks: the light stops at the wall.", list: HEARTHS, scene: "wall", game: [9, 6], big: [4, 3] },
+  { id: "candles", title: "Candles", text: "On a shrine's altar, under the wall: a small light.", list: CANDLES, scene: "altar", game: [8, 5], big: [4, 2.5] },
+];
+const scenes = [];
+
+// The paper, a loose grid; for a wall scene, hatched rock above the wall at wy.
+function backdrop(g, TS, rng, C, R, wy) {
+  const k = TS / 32;
+  g.fillStyle = PAPER; g.fillRect(0, 0, C * TS, R * TS);
+  g.strokeStyle = "rgba(27, 24, 21, 0.28)"; g.lineWidth = 0.9 * k;
+  for (let i = 1; i < C; i++) { g.beginPath(); g.moveTo(i * TS + rng.range(-0.6, 0.6) * k, wy ?? 0); g.lineTo(i * TS + rng.range(-0.6, 0.6) * k, R * TS); g.stroke(); }
+  for (let j = 1; j < R + 1; j++) { if (wy != null && j * TS <= wy) continue; g.beginPath(); g.moveTo(0, j * TS + rng.range(-0.6, 0.6) * k); g.lineTo(C * TS, j * TS + rng.range(-0.6, 0.6) * k); g.stroke(); }
+  if (wy != null) {
+    g.fillStyle = PAPER; g.fillRect(0, 0, C * TS, wy);
+    g.strokeStyle = INK; g.lineCap = "round";
+    for (let row = 0; row * TS * 0.42 < wy + TS; row++)
+      for (let cx = -TS * 0.1 + (row % 2) * TS * 0.2; cx < C * TS + TS * 0.3; cx += TS * rng.range(0.34, 0.46)) {
+        const a = rng.range(0.4, 2.7), cy = wy - TS * (0.28 + row * 0.42) + rng.range(-0.06, 0.06) * TS, L = TS * rng.range(0.12, 0.17);
+        for (let m = -1; m <= 1; m++) {
+          const ox = Math.cos(a + Math.PI / 2) * m * TS * 0.085, oy = Math.sin(a + Math.PI / 2) * m * TS * 0.085;
+          g.lineWidth = 1.5 * k;
+          g.beginPath(); g.moveTo(cx + ox - Math.cos(a) * L, cy + oy - Math.sin(a) * L); g.lineTo(cx + ox + Math.cos(a) * L, cy + oy + Math.sin(a) * L); g.stroke();
+        }
+      }
+  }
+}
+
+function makeCard(host, sec, v) {
+  const fig = document.createElement("figure"), pair = document.createElement("div");
+  fig.id = `${sec.id}-${v.id}`;
+  if (v.now) fig.className = "now";
+  pair.className = "pair";
+  const views = ["game", "big"].map((kind) => { const c = document.createElement("canvas"); pair.append(c); return { c, kind }; });
+  fig.append(pair);
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<b>${v.now ? "Now" : `${sec.title.slice(0, -1).replace(/ie$/, "y")} ${v.id}`}</b>${v.now ? "" : v.name}<br><span>${v.note}</span>`;
+  fig.append(cap);
+  host.append(fig);
+  scenes.push({ sec, v, views });
+}
+
+function build(view, sec, v) {
+  const [C, R] = sec[view.kind], TS = view.kind === "big" ? BIG : 40 * +$("zoom").value, W = C * TS, H = R * TS;
+  Object.assign(view, { TS, C, R });
+  view.c.width = Math.round(W * dpr); view.c.height = Math.round(H * dpr);
+  view.c.style.width = `${W}px`; view.c.style.height = `${H}px`;
+  const base = (view.base = document.createElement("canvas"));
+  base.width = view.c.width; base.height = view.c.height;
+  const g = base.getContext("2d");
+  g.scale(dpr, dpr);
+  const rng = new RNG(4242 + sec.id.length * 31 + v.id.charCodeAt(0));
+  const wall = sec.scene !== "room", wy = wall ? TS * (view.kind === "big" ? (sec.scene === "wall" ? 1.15 : 0.6) : sec.scene === "wall" ? 1.6 : 1.2) : null;
+  backdrop(g, TS, rng, C, R, wy);
+  g.strokeStyle = INK; g.lineCap = "round"; g.lineJoin = "round";
+  const P = pen(g, rng, TS / 32);
+  const x = (C / 2) * TS + (C % 2 ? 0 : 0) , cx = Math.floor(C) % 2 ? (Math.floor(C / 2) + 0.5) * TS : (C / 2) * TS;
+  let at;
+  if (sec.scene === "room") { const y = (Math.floor(R / 2) + 0.5) * TS; v.base(P, g, cx, y, TS, rng); at = { x: cx, y, lx: cx, ly: y }; }
+  else if (sec.scene === "wall") {
+    const r = v.base(P, g, cx, wy, TS, rng);
+    at = { x: cx, y: wy, ...r, lx: cx, ly: (r.light ?? wy) - TS * 0.05 };
+  } else {
+    walls(g, TS, rng, [[[-TS, wy], [C * TS + TS, wy]]]);
+    g.strokeStyle = INK;
+    const y = wy + TS * 0.55; v.base(P, g, cx, y, TS, rng); at = { x: cx, y, lx: cx, ly: y };
+  }
+  if (sec.scene === "wall" && !at.fx) at.fx = cx;
+  view.at = at; view.wy = wy;
+}
+
+// The light's bands over the map: full, dim, dark (from the light's middle),
+// the rest unseen; a wall's light stops at the wall.
+function light(g, view, B, t) {
+  const { TS, C, R, at, wy } = view, flick = 1 + 0.015 * Math.sin(t * 9) + 0.01 * Math.sin(t * 23);
+  const mix = (a) => `rgb(${DARK.map((d, i) => Math.round(d + (PAPER_RGB[i] - d) * a)).join(",")})`;
+  g.save();
+  g.globalCompositeOperation = "multiply"; g.fillStyle = mix(0); g.fillRect(0, 0, C * TS, R * TS);
+  g.globalCompositeOperation = "source-over";
+  for (const [r, a] of [[B.full + B.dim + B.dark, 0.2], [B.full + B.dim, 0.75], [B.full, 1]]) {
+    g.save();
+    if (wy != null) { const top = Math.min(wy, at.top ?? wy) - TS * 0.9; g.beginPath(); g.rect(0, top, C * TS, R * TS * 2); g.clip(); }
+    g.beginPath();
+    for (let i = 0; i <= 48; i++) {
+      const ang = (i / 48) * 2 * Math.PI, rr = r * TS * flick * (1 + 0.025 * Math.sin(ang * 7 + r) + 0.015 * Math.sin(ang * 13));
+      g[i ? "lineTo" : "moveTo"](at.lx + Math.cos(ang) * rr, at.ly + Math.sin(ang) * rr);
+    }
+    g.clip();
+    g.drawImage(view.base, 0, 0, C * TS, R * TS);
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = a === 1 ? "rgba(255, 196, 120, 0.22)" : mix(a);
+    g.fillRect(0, 0, C * TS, R * TS);
+    g.restore();
+  }
+  g.restore();
+}
+
+function frame(now) {
+  const t = (now / 1000) * +$("speed").value + 10;
+  for (const s of scenes)
+    for (const view of s.views) {
+      const g = view.c.getContext("2d");
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const { TS, C, R, at } = view;
+      if ($("light").checked) { view.sec = s.sec.id; light(g, view, LIGHT[s.sec.id], t); }
+      else g.drawImage(view.base, 0, 0, C * TS, R * TS);
+      s.v.live(g, at.fx ?? at.x, at.fy ?? at.y, TS, t, at);
+    }
+  requestAnimationFrame(frame);
+}
+
+function rebuild() { for (const s of scenes) for (const view of s.views) build(view, s.sec, s.v); }
+
+const main = $("main");
+for (const sec of SECTIONS) {
+  const el = document.createElement("section");
+  el.innerHTML = `<h2>${sec.title}</h2><p>${sec.text}</p>`;
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  el.append(grid);
+  main.append(el);
+  for (const v of sec.list) makeCard(grid, sec, v);
+}
+rebuild();
+$("zoom").addEventListener("input", rebuild);
+requestAnimationFrame(frame);
+window.ready = true;
+</script>
+</body>
+</html>
