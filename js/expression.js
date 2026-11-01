@@ -535,7 +535,7 @@ export class Expression {
           this.changed = unite(this.changed, [x, y, x + 1, y + 1]);
         }
       }
-    // The pillars stand in the way of the view, so it never reaches inside
+    // The posts stand in the way of the view, so it never reaches inside
     // them: each is seen as well as the ground round it, and goes with the
     // shape of what is seen (so it is drawn whole, and remembered).
     const posts = [];
@@ -625,7 +625,7 @@ export class Expression {
     g.arc(px, py, (far + WALL_BAND) * TS, 0, Math.PI * 2);
     g.clip();
     draw(g, path);
-    // (The pillars seen, whole.)
+    // (The posts seen, whole.)
     g.fillStyle = "#000";
     for (const f of posts) {
       g.beginPath();
@@ -1022,14 +1022,13 @@ export class Expression {
         }
     }
     if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
-    // (Islands of rock, columns and formations, inked right through.)
-    const near = this.nearFloor, band = (WALL_BAND * R) ** 2, isle = this.openGround();
+    const near = this.nearFloor, band = (WALL_BAND * R) ** 2;
     const seenAt = (x, y) => (x >= ox && y >= oy && x < outer[2] && y < outer[3] ? seenW[(y - oy) * ow + (x - ox)] : seen[y * mw + x]);
     const [ax0, ay0, ax1, ay1] = area;
     for (let y = ay0; y < ay1; y++)
       for (let x = ax0; x < ax1; x++) {
         const j = y * mw + x, u = this.coverU[j];
-        this.inkMask[j * 4] = drawnAs(floor[j] ? seen[j] : near.d2[j] < band || isle[j] ? seenAt(near.sx[j], near.sy[j]) : 0);
+        this.inkMask[j * 4] = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenAt(near.sx[j], near.sy[j]) : 0);
         this.inkMask[j * 4 + 1] = floor[j] ? clearOf(seen[j]) : 0;
         this.inkMask[j * 4 + 2] = u < 0 ? 0 : smooth((u - 0.55) / 0.45);
       }
@@ -1126,9 +1125,9 @@ export class Expression {
         }
     }
     if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
-    const near = this.nearFloor, isle = this.openGround();
+    const near = this.nearFloor;
     for (let j = 0; j < n; j++) {
-      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band || isle[j] ? seenW[near.sy[j] * mw + near.sx[j]] : 0);
+      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenW[near.sy[j] * mw + near.sx[j]] : 0);
       img.data[j * 4 + 3] = Math.round(255 * a);
     }
     mask.getContext("2d").putImageData(img, 0, 0);
