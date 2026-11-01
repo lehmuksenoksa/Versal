@@ -102,12 +102,14 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 // where that runs on into wall not yet known: nothing at that end, rising
 // to the full depth (`reach`) over `taper` squares; a wall known all round
 // is full depth. Each casts its depth out behind it (into the rock and
-// ground not known, as far as it reaches; onto the known floor beside it,
-// but no further), each point as deep as the deepest that reaches it; black
+// ground not known, as far as it reaches, onto floor not yet seen only
+// through rock, and never onto the floor of a room or cave some of which is
+// known; onto the known floor beside it, but no further), each
+// point as deep as the deepest that reaches it; black
 // to `full` from the wall, fading out to its depth, the edge ragged by
 // `rag(x, y)` (about 1). Islands of rock in the floor (columns, formations:
 // `isle`) are black inside where any of their walls is known.
-function wallDepth(known, floor, isle, ox, oy, w, h, mw, S, rag, grey, area) {
+function wallDepth(known, floor, isle, roomAt, ox, oy, w, h, mw, S, rag, grey, area) {
   const n = w * h, J = (i) => (((i / w) | 0) + oy) * mw + (i % w) + ox;
   const nb = (i, f) => {
     const x = i % w, y = (i / w) | 0;
@@ -145,10 +147,15 @@ function wallDepth(known, floor, isle, ox, oy, w, h, mw, S, rag, grey, area) {
         return false;
       });
     }
+  // The rooms and caves some of whose floor is known: the rest of their
+  // floor is never hatched (`roomAt`, the room a mask pixel's square is part
+  // of, -1 for none).
+  const D = S.reach * (1 + S.ragged) * R, rooms = new Set();
+  for (let i = 0; i < n; i++) if (known[i] && roomAt(J(i)) >= 0) rooms.add(roomAt(J(i)));
   // Cast out: what is left of each wall's depth (halves of mask pixels, at
   // most the depth at its most ragged), and the share of the full depth of
   // the wall it came from.
-  const D = S.reach * (1 + S.ragged) * R, top = Math.ceil(D * 2), left = new Int16Array(n).fill(-1), share = new Float32Array(n);
+  const top = Math.ceil(D * 2), left = new Int16Array(n).fill(-1), share = new Float32Array(n);
   const queue = Array.from({ length: top + 1 }, () => []);
   for (let i = 0; i < n; i++) {
     if (!kface[i]) continue;
@@ -158,11 +165,17 @@ function wallDepth(known, floor, isle, ox, oy, w, h, mw, S, rag, grey, area) {
     share[i] = t;
     queue[l].push(i);
   }
+  // (Onto floor not yet seen only through a wall's rock: not straight off a
+  // known wall's face, nor out of a column or formation, so none spills onto
+  // ground just past an opening or in a column's shadow; a room behind a
+  // wall is hatched as rock.)
   for (let l = top; l > 0; l--)
     for (const i of queue[l]) {
       if (left[i] !== l || (known[i] && !kface[i])) continue;
+      const ji = J(i), intoFloor = floor[ji] || (!kface[i] && !isle[ji]);
       nb(i, (k, diag) => {
         const nl = l - (diag ? 3 : 2);
+        if (!known[k] && floor[J(k)] && (!intoFloor || rooms.has(roomAt(J(k))))) return false;
         if (nl > left[k]) {
           left[k] = nl;
           share[k] = share[i];
@@ -674,7 +687,7 @@ export class Expression {
     yield;
 
     if (S.depth === "walls") {
-      wallDepth(isKnown, floor, this.openGround(), 0, 0, mw, mh, mw, S, (x, y) => rag(y * mw + x), grey, [0, 0, mw, mh]);
+      wallDepth(isKnown, floor, this.openGround(), this.roomAt(), 0, 0, mw, mh, mw, S, (x, y) => rag(y * mw + x), grey, [0, 0, mw, mh]);
     } else if (S.depth === "distance") {
       // Distance from the known floor; white past openings. Each point looks
       // back to its nearest known floor: rock on the way is a wall it is
@@ -914,7 +927,7 @@ export class Expression {
       // The depth map from the known walls (wallDepth); the cover by distance
       // from the known floor.
       const rag = (x, y) => Math.max(0.1, 1 + S.ragged * (2 * this.noise((x + 0.5) * (TS / R), (y + 0.5) * (TS / R)) - 1));
-      wallDepth(known, floor, this.openGround(), ox, oy, ow, oh, mw, S, rag, this.grey, area);
+      wallDepth(known, floor, this.openGround(), this.roomAt(), ox, oy, ow, oh, mw, S, rag, this.grey, area);
       const [ax0, ay0, ax1, ay1] = area;
       for (let y = ay0; y < ay1; y++)
         for (let x = ax0; x < ax1; x++) {
@@ -1565,6 +1578,13 @@ export class Expression {
     this.sightFrom = [px, py];
     this.sightCasts = (this.sightCasts ?? 0) + 1;
     this.easeUntil = performance.now() + S.reveal * 1500 + 100;
+  }
+
+  // The room or cave mask pixel j's square is part of (the level's
+  // `roomOf`), -1 for none.
+  roomAt() {
+    const L = this.level, W = L.w, mw = this.mw;
+    return (j) => L.roomOf?.[Math.floor(((j / mw) | 0) / R) * W + Math.floor((j % mw) / R)] ?? -1;
   }
 
   // The floor with what stands on it, at mask resolution (made once): the
