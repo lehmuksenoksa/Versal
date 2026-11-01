@@ -223,8 +223,7 @@ export class UI {
         return `<li class="${P ? "pick" : ""}"><span class="key">${P ? key : ""}</span><span class="g">${esc(it.glyph)}</span><span>${esc(ITEMS[it.type].name)}</span><span class="lead"></span><span class="val">${esc(note(it))}</span>
           <span class="acts">${btn("t", where, ITEMS[it.type].cat === "weapon" ? "put away" : "take off")}</span></li>`;
       }).join("");
-      return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Equipment", "e")}<ul class="ledger">${rows}</ul>
-        <div class="sum">Altogether: attack <b>${a0}–${a1}</b>, defence <b>${world.defence()}</b>.</div>`;
+      return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Equipment", "e")}<ul class="ledger">${rows}</ul>`;
     }
     if (this.panel === "i") {
       const inv = p.pack ?? [];
@@ -235,7 +234,6 @@ export class UI {
       }).join("");
       const here = world.itemsAt(p.x, p.y);
       return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Inventory", "i")}<ul class="ledger">${inv.length ? rows : empty("You carry nothing.")}</ul>
-        <div class="sum">Room for <b>${PACK.size - inv.length}</b> more ${PACK.size - inv.length === 1 ? "thing" : "things"}.</div>
         ${here.length ? `<div class="sum">Here: ${here.map((i) => esc(itemName(i.item))).join(", ")}. ${btn("pick", "", "pick up")}</div>` : ""}`;
     }
     if (this.panel === "l") {

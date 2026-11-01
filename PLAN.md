@@ -151,6 +151,22 @@ Every letter is edged in paper (fading with the light), except the undead, edged
 - The king's halls: braziers down the middle aisle, the columns striping the side aisles with shadow.
 - Dousing lights: not yet (see how the shadows play first).
 
+## Feedback on the presentation (being worked on)
+
+From the open questions in the presentation of the visual elements; each visual change gets a
+mockup first.
+
+- **Done:** "Altogether..." taken out of equipment, "Room for..." out of the inventory.
+- **To mock up:** the name page (doesn't look good yet); a divider between health and the
+  character sheet that can't be taken for the experience line; things on the floor fitting neatly
+  inside a square, a tad smaller; the rat's, bat's and spider's letters smaller (small animals);
+  the cultist's lantern as light on the floor, no flame; stairs as in Dyson's maps, built into the
+  walls, bigger than a square if need be ("mock up the hell out of this"); braziers, hearths and
+  candles (none work yet).
+- **Levels:** more alternative routes through the maps; the king's halls varied (they all look
+  the same), the columns not all in rows across.
+- **Backlog:** a real victory page.
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed
