@@ -45,7 +45,7 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   layer over it as sharp as the screen) and puts the map together
   again only twelve times a second while the view stands still.
 - Secret doors: some dungeon doors look like plain wall until found. Each turn the player may spot
-  one in sight within two squares (better next to it); searching with E spends a turn and gives
+  one in sight within two squares (better next to it); searching with Z spends a turn and gives
   much better chances. Once found it is an ordinary door. Goblins don't use them until then.
 - Goblins' noises are written above them as small words that rise and fade: "scuttle" when they
   move, "grr" when aggressive, "zzz" asleep; skeletons "clatter", "hsss" and lie silent but for a
@@ -76,14 +76,22 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000>.
 
-Move with the arrow keys, numpad, `hjkl`/`yubn` or `wasd`; walk into a goblin to whack it, into a
-shut door to open it. Press `c` to close a door next to you, `e` to search for secret doors, `f` to
-put the lamp out (sneak) or light it, and `.` or space to wait a turn.
+Move with the arrow keys, numpad or `wasd`; walk into a monster to attack it, into a shut door to
+open it. Press `c` to close a door next to you, `z` to search for secret doors, `r` to rest until
+healed (stopped by anything coming into sight or chasing near by, or any key), `f` to put the lamp
+out (sneak) or light it, and `.` or space to wait a turn. `m` pulls down every message, `?` shows
+the keys.
+
+The player has 20 hit points. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw
+can make you bleed (a hit point a turn for a few turns; resting stops it). Wounds heal a hit point
+every 20 turns, every 5 resting. At none, the run ends: a page says how, and any key or tap starts
+a new one. The place, its level and the newest three messages are written at the top left of the
+map; on a wide screen the sidebar on the right shows health and anything ailing the player.
 
 With a finger (or the mouse), tap to step once toward it (as the finger lifts), the way by its angle from the player
 (straight up, down and across taking wider wedges than the diagonals); hold to keep walking,
 steered by the finger and sliding round walls, until a goblin comes into sight. On touch screens a
-strip of buttons along the bottom searches (or waits), puts out or lights the lamp, and closes a
+strip of buttons along the bottom searches (or waits), rests, puts out or lights the lamp, and closes a
 door. Pinch with two fingers to zoom. Zoom with the mouse wheel or
 `+`/`-` (`0` resets to 48%). `window.versal` exposes the world and renderer
 in the browser console.
@@ -103,7 +111,8 @@ in the browser console.
 | `mockups/letters.html` | Every letter, the player's and the monsters' to come, under each band of light, with each one's outline (paper or ink) and switches for how letters take the light. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
-| `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); field of view and memory. |
+| `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); blows, health, ailments, healing and death; the message log; field of view and memory. |
+| `js/ui.js` | The words around the map: the place and newest messages, the sidebar, the messages drawer, the help and the end-of-run page. |
 | `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |

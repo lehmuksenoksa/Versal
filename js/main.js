@@ -2,10 +2,10 @@
 
 import { World } from "./world.js";
 import { Renderer, bindZoom } from "./render.js";
+import { UI } from "./ui.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
-  k: [0, -1], j: [0, 1], h: [-1, 0], l: [1, 0], y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
   w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
   Numpad8: [0, -1], Numpad2: [0, 1], Numpad4: [-1, 0], Numpad6: [1, 0],
   Numpad7: [-1, -1], Numpad9: [1, -1], Numpad1: [-1, 1], Numpad3: [1, 1],
@@ -13,6 +13,7 @@ const KEYS = {
 
 const canvas = document.getElementById("view");
 const renderer = new Renderer(canvas);
+const ui = new UI();
 let world = null;
 let lastMove = 0;
 
@@ -23,8 +24,49 @@ function step(dx, dy, repeat) {
   world.playerMove(dx, dy);
 }
 
+// A new run: a new level, the lamp lit.
+function newRun() {
+  stopRest(null);
+  if (world?.sneaking) renderer.toggleLamp();
+  world = new World();
+  renderer.setWorld(world);
+  ui.toggleDrawer(false);
+}
+
+// Resting: a turn every `REST_MS` until healed and well, or until something
+// comes into sight or chases near by, or a key or tap.
+const REST_MS = 60;
+let resting = null;
+function startRest() {
+  if (!world || world.dead || resting) return;
+  const why = world.cantRest();
+  if (why) return world.log(why);
+  world.log("You rest.");
+  resting = setInterval(() => {
+    const p = world.player;
+    if (world.dead) return stopRest(null);
+    if (world.disturbed()) return stopRest("Something stirs. You stop resting.");
+    world.tick(false, true);
+    if (!world.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) stopRest("You feel rested.", "good");
+  }, REST_MS);
+}
+function stopRest(why, kind) {
+  if (!resting) return;
+  clearInterval(resting);
+  resting = null;
+  if (why) world.log(why, kind);
+}
+
 window.addEventListener("keydown", (e) => {
   if (!world || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
+  // (Any key ends a run that's over, stops resting.)
+  if (world.dead) { e.preventDefault(); return newRun(); }
+  if (resting) { e.preventDefault(); return stopRest("You stop resting."); }
+  if (ui.helpOpen) {
+    if (e.key === "?" || e.key === "Escape") { e.preventDefault(); ui.toggleHelp(false); }
+    return;
+  }
   const dir = KEYS[e.code] || KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
   if (dir) {
     e.preventDefault();
@@ -37,16 +79,30 @@ window.addEventListener("keydown", (e) => {
     // Close a door next to the player.
     e.preventDefault();
     world.closeDoor();
-  } else if (e.key === "e" || e.key === "E") {
+  } else if (e.key === "z" || e.key === "Z") {
     // Search for secret doors close by (a turn).
     e.preventDefault();
     world.search();
+  } else if (e.key === "r" || e.key === "R") {
+    e.preventDefault();
+    startRest();
   } else if (e.key === "f" || e.key === "F") {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
-    renderer.toggleLamp();
+    if (!world.dead) renderer.toggleLamp();
+  } else if (e.key === "m" || e.key === "M") {
+    e.preventDefault();
+    ui.toggleDrawer();
+  } else if (e.key === "?") {
+    e.preventDefault();
+    ui.toggleHelp(true);
+  } else if (e.key === "Escape") {
+    ui.toggleDrawer(false);
   }
 });
+// A tap ends a run that's over; the help closes when tapped.
+document.getElementById("death").addEventListener("click", () => world?.dead && newRun());
+document.getElementById("help").addEventListener("click", () => ui.toggleHelp(false));
 
 // Touch and mouse: a tap steps once toward the finger, which way by the
 // angle from the player (straight up, down and across taking more of it
@@ -109,6 +165,7 @@ canvas.addEventListener("pointerdown", (e) => {
   // frame, as in the Claude app, it takes them itself.)
   window.focus();
   if (!world || e.button > 0) return;
+  if (resting) stopRest("You stop resting.");
   e.preventDefault();
   canvas.setPointerCapture?.(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -148,6 +205,7 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 // door; kept up to date each frame.
 const act = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && fn());
 act("act-search", () => world.search());
+act("act-rest", () => (resting ? stopRest("You stop resting.") : startRest()));
 act("act-lamp", () => renderer.toggleLamp());
 act("act-close", () => world.closeDoor());
 function updateActions() {
@@ -169,7 +227,9 @@ const shown = new Set();
 function loop(now) {
   // (A frame that fails doesn't stop the ones after it.)
   try {
+    renderer.insetRight = ui.insetRight;
     renderer.frame(now);
+    if (world) ui.update(world);
     updateActions();
   } catch (err) {
     console.error(err);
@@ -181,7 +241,7 @@ function loop(now) {
 }
 
 // A handle for poking at things from the browser console.
-window.versal = { get world() { return world; }, renderer };
+window.versal = { get world() { return world; }, renderer, ui, newRun };
 
 (async () => {
   try {
@@ -191,8 +251,7 @@ window.versal = { get world() { return world; }, renderer };
   } catch {
     // Fall back to whatever serif is available.
   }
-  world = new World();
-  renderer.setWorld(world);
+  newRun();
   document.body.dataset.started = "1";
   requestAnimationFrame(loop);
 })();

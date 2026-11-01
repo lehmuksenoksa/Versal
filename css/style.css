@@ -3,6 +3,10 @@
 /* Used for the pencilled room numbers on the map. */
 @font-face { font-family: "IM Fell English"; font-style: italic; src: url("../fonts/IMFellEnglish-Italic.woff2") format("woff2"); }
 
+/* The messages' face. */
+@font-face { font-family: "Crimson Pro"; font-weight: 200 900; src: url("../fonts/CrimsonPro-Latin.woff2") format("woff2"); }
+@font-face { font-family: "Crimson Pro"; font-style: italic; font-weight: 200 900; src: url("../fonts/CrimsonPro-Italic-Latin.woff2") format("woff2"); }
+
 html, body { height: 100%; margin: 0; }
 body { background: #000; overflow: hidden; }
 #view { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -37,3 +41,68 @@ body { background: #000; overflow: hidden; }
 
 /* Errors, shown on the page. */
 #errors { position: fixed; left: 8px; right: 8px; top: 8px; z-index: 3; margin: 0; padding: 8px; max-height: 60vh; overflow: auto; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #ffd9d0; background: rgba(90, 10, 0, 0.85); white-space: pre-wrap; word-break: break-word; }
+
+/* ---- The words around the map (the ink ledger, mockups/ledger.html) ---- */
+:root {
+  --gui: #000; --gui-text: #ddd6c6; --gui-dim: #8f877a; --gui-faint: #5d574f; --gui-line: #3a3632;
+  --blood: #c4402e; --poison: #8aa13a; --good: #b9c79a;
+  --letter: Texturina, Georgia, serif; --log: "Crimson Pro", Georgia, serif;
+}
+/* Text set on the map, outlined in black as the letters are. */
+#corner, #corner * { paint-order: stroke fill; }
+#corner { position: fixed; left: 0; top: 0; z-index: 1; padding: 18px 26px; padding-left: max(26px, env(safe-area-inset-left, 0px)); padding-top: max(18px, env(safe-area-inset-top, 0px)); max-width: min(560px, calc(100vw - 32px)); color: var(--gui-text); pointer-events: none; -webkit-text-stroke: 6px #000; }
+#corner .head { display: flex; align-items: baseline; gap: 14px; }
+#corner .place { font: 600 28px/1.1 var(--letter); letter-spacing: 0.02em; }
+#corner .depth { font: 600 17px var(--letter); color: var(--gui-dim); }
+#corner .hpline { margin-left: auto; font: 600 19px var(--letter); }
+#corner .hpline span { color: var(--gui-dim); font-size: 14px; }
+#corner .hpline.low { color: var(--blood); }
+#corner .news { margin-top: 8px; font: 19px/1.35 var(--log); display: grid; gap: 1px; }
+#corner .news .age1 { color: #b3ab9c; }
+#corner .news .age2 { color: #8a8274; }
+#corner .news .hurt { color: #e0705f; }
+#corner .news .age1.hurt, #corner .news .age2.hurt { color: #a5584c; }
+#corner .pull { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 4px; letter-spacing: 0.04em; }
+@media (max-width: 600px) {
+  #corner { padding: 12px 14px; }
+  #corner .place { font-size: 20px; }
+  #corner .depth { font-size: 14px; }
+  #corner .news { font-size: 15px; }
+}
+
+/* The sidebar, on wide screens. */
+#side { position: fixed; right: 0; top: 0; bottom: 0; z-index: 1; width: 340px; box-sizing: border-box; background: var(--gui); color: var(--gui-text); padding: 22px 26px; padding-right: max(26px, env(safe-area-inset-right, 0px)); display: grid; grid-template-rows: auto 1fr auto; gap: 18px; font: 15px var(--log); }
+#side[hidden] { display: none; }
+#side h5, #drawer h5 { margin: 0 0 6px; font: 600 13px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-dim); }
+#side .hp { font: 600 34px/1 var(--letter); font-variant-numeric: tabular-nums; }
+#side .hp span { font-size: 22px; color: var(--gui-dim); }
+#side .hp.low { color: var(--blood); }
+#side .ailments { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font: 600 15px var(--letter); }
+#side .ailments .bleeding { color: var(--blood); }
+#side .ailments .poisoned { color: var(--poison); }
+#side .ailments .none { color: var(--gui-faint); font-weight: 400; }
+#side .foot { grid-row: 3; border-top: 1px solid var(--gui-line); padding-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--gui-faint); }
+#side .foot b { font: 600 13px var(--letter); color: var(--gui-dim); }
+
+/* The messages drawer, pulled down over the map. */
+#drawer { position: fixed; left: 0; top: 0; z-index: 2; height: min(520px, 70vh); box-sizing: border-box; background: #1e1c1a; color: var(--gui-dim); padding: 18px 26px; transform: translateY(-105%); transition: transform 0.25s ease; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; }
+#drawer.open { transform: none; }
+#drawer ol { list-style: none; margin: 0; padding: 0; overflow: auto; font: 19px/1.35 var(--log); }
+#drawer li.turn { font: 600 12px var(--letter); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gui-faint); margin-top: 8px; }
+#drawer li.hurt { color: var(--blood); }
+#drawer li.good { color: var(--good); }
+#drawer li:last-child { color: var(--gui-text); }
+#drawer .hint { font: 600 13px var(--letter); color: var(--gui-faint); }
+
+/* The help, and the end of a run: a card over the dimmed map. */
+#help, #death { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); padding: 16px; }
+#help[hidden], #death[hidden] { display: none; }
+#help .card, #death .card { background: #000; color: var(--gui-text); padding: 26px 32px; max-width: 520px; font: 18px/1.45 var(--log); box-shadow: 0 0 0 1px var(--gui-line); }
+#help h2, #death h2 { margin: 0 0 10px; font: 600 28px var(--letter); }
+#help h2 + dl { margin-top: 0; }
+#help dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 18px; }
+#help dt { font: 600 15px var(--letter); color: var(--gui-text); white-space: nowrap; }
+#help dd { margin: 0; color: var(--gui-dim); }
+#help p, #death p { margin: 0 0 10px; color: var(--gui-dim); }
+#help .hint, #death .hint { font: 600 13px var(--letter); color: var(--gui-faint); margin-top: 16px; }
+#death h2 { color: var(--blood); font-size: 36px; }

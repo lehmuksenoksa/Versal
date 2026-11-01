@@ -462,7 +462,7 @@ export class Renderer {
     const end = (ang) => [start[0] + Math.cos(ang) * d, start[1] + Math.sin(ang) * d - TS * 0.25];
     const flying = this.sounds.filter((o) => o.end && now - o.t0 < o.dur);
     const letters = [...this.world.actors].filter((u) => u === this.world.player || this.inSight((u.x + 0.5) * TS, (u.y + 0.5) * TS)).map((u) => at(this.view(u)));
-    const c = this.drawnCam ?? [-1e9, -1e9], vw = this.vw / this.zoom, vh = (this.vh - (this.inset ?? 0)) / this.zoom;
+    const c = this.drawnCam ?? [-1e9, -1e9], vw = (this.vw - (this.insetRight ?? 0)) / this.zoom, vh = (this.vh - (this.inset ?? 0)) / this.zoom;
     const clash = ([x, y]) => {
       let cost = 0;
       for (const o of flying) cost += Math.max(0, 1.6 * TS - Math.hypot(o.end[0] - x, (o.end[1] - y) * 2.2));
@@ -615,8 +615,9 @@ export class Renderer {
     // (The view above anything along the bottom of the screen, `inset`: the
     // action strip.)
     const fit = (target, view, size) => (size + 64 < view ? (size - view) / 2 : Math.max(-32, Math.min(size - view + 32, target)));
-    const ih = vh - (this.inset ?? 0) / this.zoom;
-    const tx = fit(px - vw / 2, vw, mw), ty = fit(py - ih / 2, ih, mh);
+    // (And left of the sidebar, `insetRight`.)
+    const ih = vh - (this.inset ?? 0) / this.zoom, iw = vw - (this.insetRight ?? 0) / this.zoom;
+    const tx = fit(px - iw / 2, iw, mw), ty = fit(py - ih / 2, ih, mh);
     if (this.cam.snap) { this.cam.x = tx; this.cam.y = ty; this.cam.snap = false; }
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;

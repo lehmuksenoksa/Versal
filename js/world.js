@@ -18,14 +18,26 @@ import { generateAreas } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline } from "./sightline.js";
 
-// The kinds of monster: their letters; their speed (moves for each of the
-// player's); how much they wander when milling about (the goblins' 1); and
-// how many to a pack (in a crypt, `crypt`); and how many hits they take.
+// The kinds of monster: their letters and names; their speed (moves for each
+// of the player's); how much they wander when milling about (the goblins' 1);
+// how many to a pack (in a crypt, `crypt`); their hit points; their blows
+// (the chance to hit, the damage, what it's called, and whether a hard one
+// makes the player bleed).
 export const MONSTERS = {
-  goblin: { glyph: "g", speed: 0.75, wander: 1, pack: [4, 7], hp: [1, 2] },
+  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits" },
   // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
-  skeleton: { glyph: "z", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [3, 4] },
+  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true },
 };
+
+// The player: hit points to start with; the blow (until there are weapons, as
+// a dagger's); healing, a hit point every so many turns, resting and not.
+export const PLAYER = { hp: 20, attack: [1, 4], heal: 20, restHeal: 5 };
+// Ailments: bleeding, from a hard blow (`at` damage or more, by a monster
+// that `bleeds`, half the time), a hit point a turn for a few turns, stopped by
+// resting; poison, a hit point every `every` turns for a while.
+export const AILMENTS = { bleeding: { at: 3, chance: 0.5, turns: [3, 5], every: 1 }, poisoned: { turns: [12, 20], every: 3 } };
+// Where the player is (one place for now).
+export const PLACE = { name: "The old crypts", depth: 1 };
 
 // How the monsters (goblins and skeletons alike) behave.
 const GOBLIN = {
@@ -62,7 +74,14 @@ export class World {
     this.posts = new Set((level.posts ?? []).map(([x, y]) => y * (level.w + 1) + x));
     this.pillars = (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) }));
     this.doors = new Map((level.doors ?? []).map((d) => [d.y * level.w + d.x, d]));
-    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y };
+    this.player = { id: this.nextId++, kind: "player", glyph: "@", x: level.start.x, y: level.start.y, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0 };
+    // The turns gone by, the messages so far (each { text, turn, kind }), and
+    // how the run ended (null while it goes on).
+    this.turn = 0;
+    this.messages = [];
+    this.dead = null;
+    this.place = PLACE;
+    this.log(`You come down into ${PLACE.name.toLowerCase()}.`);
     this.actors = [this.player];
     // Squares in the way though floor (campfires), and squares lit by the
     // level's lights (no sneaking there).
@@ -149,9 +168,16 @@ export class World {
   }
   pack(g) { return this.actors.filter((a) => a !== this.player && a.leader === g.leader); }
 
+  // A message for the log: `kind` "hurt" for harm done to the player, "good"
+  // for the better.
+  log(text, kind = "") {
+    this.messages.push({ text, turn: this.turn, kind });
+  }
+
   // The player steps by (dx, dy): into a monster, a whack; into a shut door,
   // opening it. Returns true if a turn passed.
   playerMove(dx, dy) {
+    if (this.dead) return false;
     const p = this.player, nx = p.x + dx, ny = p.y + dy;
     if (!this.canStep(p.x, p.y, dx, dy)) return false;
     const g = this.actorAt(nx, ny);
@@ -180,6 +206,7 @@ export class World {
   // Close an open door next to the player (none standing in it). Returns
   // true if one was, which takes the turn.
   closeDoor() {
+    if (this.dead) return false;
     const p = this.player;
     for (const [dx, dy] of DIRS8) {
       const d = this.doorAt(p.x + dx, p.y + dy);
@@ -197,6 +224,7 @@ export class World {
 
   // The player spends a turn searching for secret doors.
   search() {
+    if (this.dead) return false;
     this.events.push({ type: "search" });
     return this.tick(true);
   }
@@ -216,6 +244,7 @@ export class World {
       L.doors.push(door);
       this.doors.set(s.y * L.w + s.x, door);
       this.events.push({ type: "secret", door });
+      this.log("You find a secret door.", "good");
     }
   }
 
@@ -225,15 +254,21 @@ export class World {
     this.sight = sight;
     this.updateFov();
     this.events.push({ type: "sneak", on });
+    this.log(on ? "You put out your lamp." : "You light your lamp.");
   }
 
-  // A whack at goblin `g`: it may miss; a goblin out of hits falls. Its pack
+  // The player's blow, as damage from to.
+  attack() { return PLAYER.attack; }
+
+  // A whack at monster `g`: it may miss; one out of hit points falls. Its pack
   // turns on the player, and the noise wakes packs asleep near by.
   whack(g) {
-    const hit = this.rng.chance(WHACK);
-    if (hit) g.hp--;
-    const killed = g.hp <= 0;
-    this.events.push({ type: "whack", target: g, hit, killed });
+    const hit = this.rng.chance(WHACK), dmg = hit ? this.rng.int(...this.attack()) : 0;
+    if (hit) g.hp -= dmg;
+    const killed = g.hp <= 0, name = MONSTERS[g.kind].name;
+    this.events.push({ type: "whack", target: g, hit, killed, dmg });
+    this.log(!hit ? `You miss the ${name}.` : killed ? `You kill the ${name}.` : `You hit the ${name}. (${dmg})`, killed ? "good" : "");
+    if (killed) this.player.kills++;
     for (const a of this.pack(g)) {
       a.state = "aggressive";
       a.calm = 0;
@@ -252,8 +287,11 @@ export class World {
   }
 
   // A turn passes: the goblins act (each as its speed allows), then see
-  // what they notice.
-  tick(searching = false) {
+  // what they notice; the player's ailments and healing take their course.
+  // (`resting`: a turn spent resting: healing quicker, and bleeding stops.)
+  tick(searching = false, resting = false) {
+    if (this.dead) return false;
+    this.turn++;
     this.updateFov();
     this.spot(searching);
     this.chaseMap = null;
@@ -267,7 +305,70 @@ export class World {
     }
     this.updateFov();
     this.notice();
+    if (!this.dead) this.ailing(resting);
     return true;
+  }
+
+  // Ailments take their course, and wounds heal (quicker resting).
+  ailing(resting) {
+    const p = this.player, A = p.ailments;
+    if (A.bleeding && resting) {
+      delete A.bleeding;
+      this.log("Your bleeding stops.");
+    }
+    for (const [name, turns] of Object.entries(A)) {
+      if (this.turn % AILMENTS[name].every === 0) p.hp--;
+      if (turns <= 1) {
+        delete A[name];
+        this.log(name === "bleeding" ? "Your bleeding stops." : "The poison wears off.");
+      } else A[name] = turns - 1;
+      if (p.hp <= 0) return this.die(name === "bleeding" ? "bled to death" : "died of poison");
+    }
+    p.healing += 1 / (resting ? PLAYER.restHeal : PLAYER.heal);
+    if (p.healing >= 1) {
+      p.healing -= 1;
+      if (p.hp < p.maxHp) p.hp++;
+    }
+  }
+
+  // A monster's blow at the player: it may miss; a hard one may make them
+  // bleed; out of hit points, they die.
+  strike(g) {
+    const M = MONSTERS[g.kind], p = this.player, hit = this.rng.chance(M.hit), dmg = hit ? this.rng.int(...M.dmg) : 0;
+    this.events.push({ type: "attack", actor: g, hit, dmg });
+    if (!hit) return this.log(`The ${M.name} misses you.`);
+    p.hp -= dmg;
+    const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance);
+    if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.rng.int(...B.turns));
+    this.log(`The ${M.name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}`, "hurt");
+    if (p.hp <= 0) this.die(`killed by a ${M.name}`);
+  }
+
+  // The run ends: how, where, and what was done.
+  die(how) {
+    const p = this.player;
+    p.hp = Math.min(p.hp, 0);
+    this.dead = { how, place: this.place.name, depth: this.place.depth, turns: this.turn, kills: p.kills };
+    this.log("You die.", "hurt");
+    this.events.push({ type: "death" });
+  }
+
+  // Why the player can't rest now (null if they can): a monster in sight, or
+  // nothing to rest for.
+  cantRest() {
+    if (this.dead) return "dead";
+    if (this.monsterInSight()) return "You can't rest with an enemy in sight.";
+    if (this.player.hp >= this.player.maxHp && !Object.keys(this.player.ailments).length) return "You don't need rest.";
+    return null;
+  }
+  monsterInSight() {
+    return this.actors.some((a) => a !== this.player && this.isVisible(a.x, a.y));
+  }
+  // Is something about that should stop the player resting: a monster in
+  // sight, or one chasing within earshot?
+  disturbed() {
+    const p = this.player;
+    return this.monsterInSight() || this.actors.some((a) => a !== p && a.state === "aggressive" && Math.hypot(a.x - p.x, a.y - p.y) <= 12);
   }
 
   // Goblins that see the player close by turn aggressive, their packs with
@@ -330,7 +431,7 @@ export class World {
   chase(g) {
     const p = this.player, dx = p.x - g.x, dy = p.y - g.y;
     if (Math.max(Math.abs(dx), Math.abs(dy)) === 1 && this.canStep(g.x, g.y, dx, dy) && !this.shut(p.x, p.y)) {
-      this.events.push({ type: "attack", actor: g });
+      if (!this.dead) this.strike(g);
       return;
     }
     const dist = this.chaseSteps(), W = this.level.w, here = dist[g.y * W + g.x];
