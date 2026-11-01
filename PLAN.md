@@ -3,6 +3,42 @@
 The look is roughly done; this is what comes next, in milestones that can each be tried on their own.
 Decided with the player of the game; open questions at the end.
 
+## Decisions (asked and answered)
+
+- **Health:** 20 HP to start; goblins hit for 1–3, skeletons 1–4. Damage shown as numbers in the log.
+- **Death:** a death page over the dimmed map (what killed you, where, turns, kills, level reached);
+  any key or tap starts a new run.
+- **Healing:** r rests until healed or something comes into sight or hearing (1 HP per 5 turns);
+  1 HP per 20 turns anyway.
+- **Ailments:** bleeding from heavy hits (1 HP a turn for a few turns; resting stops it); poison
+  from spider bites (1 HP every few turns, longer). Both wear off.
+- **Character:** the name typed at the start; the class "Adventurer" for now.
+- **Levels:** XP per kill by kind; each new level +4 max HP, +1 attack every other level.
+- **Plates:** exactly `mockups/ledger/plates.json`, scaled to the window, drawn once per size.
+- **Small screens:** today's phone view kept, with health and the newest message on top and the
+  panels over the map (phone layout tabled).
+- **Items:** a few on floors (more and better deeper), sometimes dropped by goblins and cultists.
+  Ten slots a–j, potions of a kind stacking; worn and held don't count. Start with a dagger in hand
+  (1–4) and a potion of healing. Hand, off hand, head, body; the warhammer takes both hands.
+- **Sneaking:** a step with the lamp out takes one and a half turns.
+- **Awareness:** suspicion that builds while a monster sees or hears you (more when close, lit or
+  loud): at a third, suspicious (comes to look, ?); full, alarmed (chases, !); it ebbs.
+- **Sneak attacks:** triple damage on an unaware monster.
+- **Morale:** when half a pack is dead the rest flee out of sight and regroup later; the undead
+  never flee.
+- **Ground:** each level changes gradually from its first kind (by the stairs up) to the next (by
+  the stairs down, on the far side).
+- **Stairs:** one down and one up per level; levels kept as left.
+- **New monsters, each their own way:** rats fast, weak, in packs; bats flit erratically; spiders
+  wait still and bite (poison); zombies slow, tough, relentless; cultists carry lanterns and
+  patrol; trolls slow, huge, healing; warriors lead goblin packs; the king waits with his guard.
+- **Winning:** a victory page with the run's tally, then a new run.
+- **Keys:** WASD, arrows and numpad move (vi keys dropped). e equipment, i inventory, l look,
+  m messages, z search, f lamp, c close, r rest, q drink, W wield, t take off, D drop, , pick up,
+  < > stairs, . or space wait, ? help.
+- **Tones per level:** not now.
+- **Delivery:** milestone by milestone, each pushed and the game artifact updated.
+
 ## Milestone 1: the player can be hurt
 
 - The player has hit points; monsters do damage. Death says so and starts a new run.
