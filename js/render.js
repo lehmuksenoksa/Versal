@@ -26,7 +26,7 @@ const LETTERING = {
   player: { weight: 800, size: 0.9, ink: "#a3261b", darkRing: 0.14, darkInk: "#741a12" },
   monster: { weight: 600, size: 1.05, ink: INK },
   // (Skeletons white, edged in ink, not haloed in paper.)
-  skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK },
+  skeleton: { weight: 600, size: 1.05, ink: "#f7f2e6", edge: INK, edgeWidth: 0.26 },
   bold: 0.025,
   halo: 0.1,
   tilt: 0.06,
@@ -801,7 +801,7 @@ export class Renderer {
       ctx.restore();
     }
     // (A letter with an `edge` has it in place of the halo, always.)
-    ctx.lineWidth = size * LETTERING.halo;
+    ctx.lineWidth = size * (style.edgeWidth ?? LETTERING.halo);
     ctx.strokeStyle = style.edge ?? `rgba(247, 242, 230, ${0.9 * (style.darkRing ? 1 - dark : lit)})`;
     ctx.strokeText(ch, 0, -m.desc);
     // A little extra weight, to stand up to the heavy map lines. (Darker in

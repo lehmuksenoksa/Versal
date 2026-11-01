@@ -1793,6 +1793,7 @@ export class Expression {
     const { S, TS } = this, rag = S.lightRag * TS;
     // The bands' outer edges: full, dim and dark.
     const rFull = (S.lightFull - 0.5) * TS, rad = rFull + S.lightDim * TS, out = this.lightOut() * TS;
+    const lastBox = this.lightBox;
     this.lightBox = null;
     if (!(out > 0)) return;
     const strokes = S.lightFill === "strokes", inked = strokes || S.lightEdge > 0;
@@ -1805,6 +1806,14 @@ export class Expression {
       this.lightFrom = null;
     }
     if (!this.lightFrom || this.lightFrom[0] !== px || this.lightFrom[1] !== py) {
+      // (The light as it was kept, `lightPrev`, for the GPU to fade from as
+      // the player steps: so shadows don't jump.)
+      if (this.lightFrom && lastBox) {
+        const was = this.lightReach;
+        this.lightReach = this.lightReachPrev?.width === size ? this.lightReachPrev : blank(size, size);
+        this.lightReachPrev = was;
+        this.lightPrev = { box: lastBox, from: this.lightFrom, t: performance.now(), casts: this.lightCasts ?? 0 };
+      } else this.lightPrev = null;
       // How much of the light reaches each point: in red, how many of the
       // flame's points see it (each adding 51); in green, the share of the
       // depths past the walls' faces the rim reaches, from the flame's

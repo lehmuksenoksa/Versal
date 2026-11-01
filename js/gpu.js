@@ -23,6 +23,10 @@ const TABLE_W = 1024;
 // The level's lights' warmth, and the map fading into the darkness at its
 // edges (in squares), as Expression's and Renderer's.
 const LAMP_WARMTH = 0.7, EDGE_FADE = 1.5;
+// How long the light cast where the player was takes to fade, as they step
+// (a little longer than the step), and the fade's curve.
+const LIGHT_FADE_MS = 220;
+const smoothK = (k) => k * k * (3 - 2 * k);
 
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
 
@@ -105,10 +109,11 @@ void main() {
 
 const COMPOSE_FS = `#version 300 es
 precision highp float; precision highp int;
-uniform sampler2D uLit, uLayers, uFloor, uMasks, uHatch, uPMasks, uPHatch, uSeen, uSight, uLampSight, uLight, uLamp;
+uniform sampler2D uLit, uLayers, uFloor, uMasks, uHatch, uPMasks, uPHatch, uSeen, uSight, uLampSight, uLight, uLamp, uLightPrev;
 uniform vec2 uCam, uCanvas, uPaper, uMask, uSightSize, uMap;
 uniform float uSc, uScale, uTS, uSightScale, uFade, uFadeK;
 uniform vec4 uLightBox; uniform vec2 uLightC, uLightShift; uniform float uLightK, uBright, uLightSize, uLightOn;
+uniform vec4 uPrevBox; uniform vec2 uPrevC, uPrevShift; uniform float uPrevSize, uPrevK;
 uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC, uSeeMarkC, uSeeWallC, uMemMarkC, uMemWallC, uShadowC;
 uniform float uSeeMark, uSeeWall, uMemMark, uMemWall;
 uniform float uWarmth, uLampWarmth;
@@ -156,6 +161,12 @@ void main() {
   if (uLightOn > 0.5) {
     vec2 q = (p - uLightShift - uLightC) / uLightK + uLightC, uv = (q - uLightBox.xy) * uLightBox.w / uLightSize;
     if (uv.x >= 0.0 && uv.y >= 0.0 && uv.x <= 1.0 && uv.y <= 1.0) lp = texture(uLight, uv).a * uBright;
+    // (As the player steps, fading from the light cast where they were.)
+    if (uPrevK > 0.0) {
+      vec2 q2 = (p - uPrevShift - uPrevC) / uLightK + uPrevC, uv2 = (q2 - uPrevBox.xy) * uPrevBox.w / uPrevSize;
+      float was = uv2.x >= 0.0 && uv2.y >= 0.0 && uv2.x <= 1.0 && uv2.y <= 1.0 ? texture(uLightPrev, uv2).a * uBright : 0.0;
+      lp = mix(lp, was, uPrevK);
+    }
   }
   c = over(c, lit, lp);
   // The level's lights: each fire flickering its own way about it; warmed
@@ -568,6 +579,7 @@ export class GpuMap {
       uLampSight: this.texture("lampSight", E.sightCanvas.lamps, `${E.sightCasts}|${E.sightCanvas.lamps.width}`),
       // (Cast anew when the player moves, and when a door opens or shuts.)
       uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightCasts}|${E.lightReach?.width}`),
+      uLightPrev: this.texture("lightPrev", E.lightPrev ? E.lightReachPrev : E.lit, E.lightPrev ? `${E.lightPrev.casts}|${E.lightReachPrev.width}` : "none"),
       uLamp: this.maskTexture("lamp", E.lampLevel ?? new Float32Array(mw * mh), E.lampLevel),
     };
     const p = this.compose;
@@ -599,6 +611,15 @@ export class GpuMap {
       const [lx, ly] = E.lightFrom ?? [light.x, light.y];
       u("uLightC", lx, ly);
       u("uLightShift", light.x - lx, light.y - ly);
+      // (The light cast where the player was, faded out over a step.)
+      const pv = E.lightPrev, k = pv ? 1 - Math.min(1, (performance.now() - pv.t) / LIGHT_FADE_MS) : 0;
+      u("uPrevK", k > 0 ? smoothK(k) : 0);
+      if (pv && k > 0) {
+        u("uPrevBox", pv.box.x, pv.box.y, pv.box.w, pv.box.res);
+        u("uPrevSize", E.lightReachPrev.width);
+        u("uPrevC", pv.from[0], pv.from[1]);
+        u("uPrevShift", light.x - pv.from[0], light.y - pv.from[1]);
+      }
     }
     u("uDark", ...hex(S.darkColor)); u("uOut", ...hex(S.outColor)); u("uWarm", 1, 196 / 255, 120 / 255);
     u("uWarmth", S.warmth); u("uLampWarmth", LAMP_WARMTH);
