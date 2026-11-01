@@ -518,8 +518,8 @@ function keepInBand(name, P, x, y) {
 function plateShapes() {
   const C = GEN.corner, S = GEN.side;
   const corner = caveLine(stepsLine(SPACE.rects, C.band / 2), C, mulberry(C.seed * 7919 + 13));
-  const mid = [];
-  for (let y = 830; y >= -30; y -= 20) mid.push([sideX(S, y) - S.band / 2, y]);
+  // (One straight, leaning line down the middle of the band: the points go along it.)
+  const mid = [[sideX(S, 830) - S.band / 2, 830], [sideX(S, -30) - S.band / 2, -30]];
   const side = caveLine(mid, S, mulberry(S.seed * 7919 + 29));
   return { corner: [...corner, [-30, -30]], side: [...side, [1300, -30], [1300, 830]] };
 }
