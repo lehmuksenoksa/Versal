@@ -31,7 +31,7 @@ Chosen so far (the "ink ledger", `mockups/ledger.html`; still being refined):
   pyramid of leaning boxes, the sidebar wider at the top) and a band in which the edge is drawn
   as cave walls are, then torn. The shapes chosen are in `mockups/ledger/plates.json`.
 - No fade at the level's edge (done); the sidebar has no line of its own.
-- Not settled: the phone layout; where search, lamp, close and rest go there.
+- Tabled for now: the phone layout (and where search, lamp, close and rest go there).
 - Stats kept few: health, attack (from the weapon), defence (from armour), speed.
 
 ## Milestone 3: items
