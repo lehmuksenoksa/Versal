@@ -32,10 +32,11 @@
   .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; color: var(--muted); }
   .bar label { display: flex; align-items: center; gap: 6px; }
   input[type="range"] { width: 130px; accent-color: var(--accent); }
+  output { color: var(--ink); font-variant-numeric: tabular-nums; min-width: 12ch; }
   .grid { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
   figure { margin: 0; background: var(--paper); border: 1px solid var(--rule); padding: 8px; max-width: 100%; }
   .pair { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
-  canvas { display: block; }
+  canvas { display: block; max-width: 100%; height: auto !important; }
   figcaption { padding: 6px 2px 0; max-width: 360px; }
   figcaption b { font-weight: normal; font-size: 17px; margin-right: 6px; }
   figcaption span { color: var(--muted); font-size: 13px; }
@@ -47,6 +48,8 @@
   <p>The game's flame (G1) over a teepee of solid logs, in place of the ring of stones; the flame can be turned off to see the logs alone. Each card shows it at game size (the default zoom) and close up, lit by its own light in the game's bands. S2 is the stones as they are now, for comparison.</p>
   <div class="bar">
     <label><input id="flame" type="checkbox"> Flame</label>
+    <label>Flame stands <input id="foot" type="range" min="-0.3" max="0.4" step="0.02" value="0.24"><output id="foot-v"></output></label>
+    <label>Flame size <input id="fsize" type="range" min="0.4" max="1.4" step="0.05" value="1"><output id="fsize-v"></output></label>
     <label><input id="light" type="checkbox" checked> Light bands</label>
     <label>Speed <input id="speed" type="range" min="0" max="2" step="0.1" value="1"></label>
     <label>Close-up <input id="big" type="range" min="40" max="120" step="8" value="80"></label>
@@ -430,7 +433,7 @@ const FIRES = [
   ...BUNDLES.map((v) => ({ ...v, base: (P, rng, x, y, TS, g) => v.under?.(g, x, y, TS) })),
   { id: "S2", name: "Stones (now)", note: "The ring of stones round a heap of logs, as in the game now.", base: (P, rng, x, y, TS, g) => { lumps(g, rng, ring(rng, x, y, TS), TS); heap(P, rng, x, y, TS); } },
 ].map((v) => ({ ...v, flame: (g, x, y, TS, t) => {
-  if ($("flame").checked) drawFire(g, x, y, TS, t, 0, 1, ...(v.fire ?? []));
+  if ($("flame").checked) drawFire(g, x, y, TS, t, 0, 1, +$("fsize").value, +$("foot").value);
   if (v.front) { g.save(); g.strokeStyle = INK; g.lineCap = "round"; v.front(pen(g, new RNG(77), TS / 32), x, y, TS); g.restore(); }
 } }));
 
@@ -556,6 +559,14 @@ function frame(now) {
 }
 
 FIRES.forEach((v) => makeScene($("fires"), v, false));
+// (The flame's place, in squares below the middle of its square, and its size.)
+const showFlame = () => {
+  const f = +$("foot").value;
+  $("foot-v").textContent = f >= 0 ? `${f.toFixed(2)} below the middle` : `${(-f).toFixed(2)} above the middle`;
+  $("fsize-v").textContent = `× ${(+$("fsize").value).toFixed(2)}`;
+};
+for (const id of ["foot", "fsize"]) $(id).addEventListener("input", () => { $("flame").checked = true; showFlame(); });
+showFlame();
 const rebuild = () => scenes.forEach((s) => s.views.forEach((view) => build(view, s.v, s.torch)));
 $("big").addEventListener("input", rebuild);
 rebuild();
