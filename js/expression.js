@@ -535,10 +535,39 @@ export class Expression {
           this.changed = unite(this.changed, [x, y, x + 1, y + 1]);
         }
       }
+    // The pillars stand in the way of the view, so it never reaches inside
+    // them: each is seen as well as the ground round it, and goes with the
+    // shape of what is seen (so it is drawn whole, and remembered).
+    const posts = [];
+    for (const f of this.level.features ?? []) {
+      if (f.type !== "post" || Math.abs(f.x * TS - px) > (reach + 1) * TS || Math.abs(f.y * TS - py) > (reach + 1) * TS) continue;
+      let v = 0, now = 0;
+      for (let i = 0; i < 8; i++) {
+        const mx = Math.floor((f.x + 0.42 * Math.cos((i * Math.PI) / 4)) * R), my = Math.floor((f.y + 0.42 * Math.sin((i * Math.PI) / 4)) * R);
+        if (mx < x0 || my < y0 || mx >= x1 || my >= y1 || !touched[(my - y0) * bw + (mx - x0)]) continue;
+        v = Math.max(v, level(my * mw + mx));
+        now = Math.max(now, vis[my * mw + mx]);
+      }
+      if (!(v > 0.01)) continue;
+      posts.push(f);
+      const r = Math.ceil(0.32 * R);
+      for (let my = Math.floor(f.y * R) - r; my <= Math.floor(f.y * R) + r; my++)
+        for (let mx = Math.floor(f.x * R) - r; mx <= Math.floor(f.x * R) + r; mx++) {
+          if (mx < 0 || my < 0 || mx >= mw || my >= mh || Math.hypot(mx + 0.5 - f.x * R, my + 0.5 - f.y * R) > 0.32 * R) continue;
+          const j = my * mw + mx;
+          vis[j] = Math.max(vis[j], now);
+          visRock[j] = Math.max(visRock[j], v);
+          if (v > seen[j]) {
+            if (v - seen[j] > 0.15 || (seen[j] < 0.5 && v >= 0.5)) grew = true;
+            seen[j] = v;
+            this.changed = unite(this.changed, [mx, my, mx + 1, my + 1]);
+          }
+        }
+    }
     const key = `${tx},${ty},${far},${S.flame},${this.doorsChanged ?? 0}`;
     if (!this.viewpoints) this.viewpoints = new Map();
     if (!this.viewpoints.has(key)) {
-      const v = { path, px, py, far, lamps: this.lampView };
+      const v = { path, px, py, far, lamps: this.lampView, posts };
       this.viewpoints.set(key, v);
       this.addShape(v);
     }
@@ -568,7 +597,7 @@ export class Expression {
   // Add one view to `seenShape`: the floor seen from (px, py) out to `far`
   // tiles, and the rock in a band all round it (where the walls' ink is,
   // however edge-on the walls are seen).
-  addShape({ path, px, py, far, lamps }) {
+  addShape({ path, px, py, far, lamps, posts = [] }) {
     // (`lamps`: the far view, cut to where the lights reach.)
     if (!this.seenShape) return;
     const TS = this.TS;
@@ -596,6 +625,14 @@ export class Expression {
     g.arc(px, py, (far + WALL_BAND) * TS, 0, Math.PI * 2);
     g.clip();
     draw(g, path);
+    // (The pillars seen, whole.)
+    g.fillStyle = "#000";
+    for (const f of posts) {
+      g.beginPath();
+      for (const [x, y] of postOutline(f, TS)) g.lineTo(f.x * TS + (x - f.x * TS) * 1.3, f.y * TS + (y - f.y * TS) * 1.3);
+      g.closePath();
+      g.fill();
+    }
     g.restore();
     // Further off, what lights light: the far view cut to where they reach.
     if (lamps && this.lampSight) {
@@ -985,13 +1022,14 @@ export class Expression {
         }
     }
     if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
-    const near = this.nearFloor, band = (WALL_BAND * R) ** 2;
+    // (Islands of rock, columns and formations, inked right through.)
+    const near = this.nearFloor, band = (WALL_BAND * R) ** 2, isle = this.openGround();
     const seenAt = (x, y) => (x >= ox && y >= oy && x < outer[2] && y < outer[3] ? seenW[(y - oy) * ow + (x - ox)] : seen[y * mw + x]);
     const [ax0, ay0, ax1, ay1] = area;
     for (let y = ay0; y < ay1; y++)
       for (let x = ax0; x < ax1; x++) {
         const j = y * mw + x, u = this.coverU[j];
-        this.inkMask[j * 4] = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenAt(near.sx[j], near.sy[j]) : 0);
+        this.inkMask[j * 4] = drawnAs(floor[j] ? seen[j] : near.d2[j] < band || isle[j] ? seenAt(near.sx[j], near.sy[j]) : 0);
         this.inkMask[j * 4 + 1] = floor[j] ? clearOf(seen[j]) : 0;
         this.inkMask[j * 4 + 2] = u < 0 ? 0 : smooth((u - 0.55) / 0.45);
       }
@@ -1088,9 +1126,9 @@ export class Expression {
         }
     }
     if (!this.nearFloor) this.nearFloor = nearestSeeds(floor, mw, mh);
-    const near = this.nearFloor;
+    const near = this.nearFloor, isle = this.openGround();
     for (let j = 0; j < n; j++) {
-      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band ? seenW[near.sy[j] * mw + near.sx[j]] : 0);
+      const a = drawnAs(floor[j] ? seen[j] : near.d2[j] < band || isle[j] ? seenW[near.sy[j] * mw + near.sx[j]] : 0);
       img.data[j * 4 + 3] = Math.round(255 * a);
     }
     mask.getContext("2d").putImageData(img, 0, 0);

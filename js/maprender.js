@@ -89,6 +89,29 @@ export function renderMap(level, TS, scale, seed, {
   ctx.restore();
 
   if (walls) {
+    // Columns (a square of rock standing alone in a built room, floor all
+    // round it) filled solid, under their walls.
+    const cols = new Path2D();
+    let any = false;
+    for (let y = 1; y < H - 1; y++)
+      for (let x = 1; x < W - 1; x++) {
+        if (open(x, y) || caveAt(x, y)) continue;
+        let alone = true;
+        for (let k = 0; k < 9 && alone; k++) if (k !== 4 && !open(x + (k % 3) - 1, y + ((k / 3) | 0) - 1)) alone = false;
+        if (!alone) continue;
+        cols.rect((x - 0.25) * TS, (y - 0.25) * TS, 1.5 * TS, 1.5 * TS);
+        any = true;
+      }
+    if (any) {
+      ctx.save();
+      const rock = new Path2D();
+      rock.rect(-TS, -TS, (W + 2) * TS, (H + 2) * TS);
+      rock.addPath(floor);
+      ctx.clip(rock, "evenodd");
+      ctx.fillStyle = INK;
+      ctx.fill(cols);
+      ctx.restore();
+    }
     drawWalls(ctx, loops, TS, seed);
   }
   if (doors && level.doors) drawDoors(ctx, level.doors, TS, seed);
