@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>Your choices: round 7</h1>
-    <p>The rats' nest once more: round 6's C, with your changes. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The one I'd pick is marked <i>my pick</i>.</p>
+    <h1>Your choices: round 8</h1>
+    <p>The rats' nest and flooded rooms are in the game. These are from your Dyson examples: the stairs, telling up from down, and the king's dais. Click one to choose it (where it says so, you can pick several), and write anything you'd change in the box beneath. Everything saves as you go. The ones I'd pick are marked <i>my pick</i>.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,14 +88,28 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "infested4", title: "The rats' nest: C, changed", said: "I like C best thus far. Some changes needed: the debris can go on top of walls. The debris fill could be brown as well. The strokes still need to be thicker. As thick as the outline of the larger debris pieces.", how: "Round 6's C with the strokes as thick as the outlined stones' edges, the stones filled brown, and the debris free to lie over the walls. Each at the game's zoom, then close.", tile: "420px",
-    why: "<b>B</b>: pushed against the wall, the heap spills over it, which says rats come and go through it; the lighter brown keeps the stones' outlines readable.",
+  { id: "stairs3", title: "Stairs, from Dyson's examples", said: "None of these are perfect. Some of them are ok ideas, bad execution. Ask me for examples from Dyson.", how: "Each cut into a real room's wall: the walls, hatching and grid are the game's own, drawn round the cut; the steps inked over, shaded deeper toward the foot, with a D and an arrow at the mouth, as Dyson letters them. Going down; close, then at the game's zoom. Pick one or more: a level could have more than one kind.", multi: 1, tile: "420px",
+    why: "<b>A</b> for most stairs (it reads at once, even at the game's zoom, and fits any wall), <b>C</b> now and then for something grander.",
     opts: [
-      { k: "Before", n: "Round 6's C", d: "As it was, for comparison.", img: ["nest3_C", "nest3_C_close"] },
-      { k: "A", n: "As asked", d: "Thicker strokes, brown stones, debris over the wall where it falls.", img: ["nest4_A", "nest4_A_close"] },
-      { k: "B", n: "Against the wall", d: "As A, the heap pushed half onto the wall.", img: ["nest4_B", "nest4_B_close"], rec: 1 },
-      { k: "C", n: "Darker brown", d: "As A, the heap and stones a darker brown.", img: ["nest4_C", "nest4_C_close"] },
-      { k: "D", n: "Against the wall, fewer strokes", d: "As B, with fewer strokes in the heap.", img: ["nest4_D", "nest4_D_close"] },
+      { k: "A", n: "A passage", d: "A square wide, three long, cut into the wall; nine steps.", img: ["st8_A_down_close", "st8_A_down_game"], rec: 1 },
+      { k: "B", n: "A broad flight", d: "Three squares wide, two deep, the room's wall stepped back for it.", img: ["st8_B_down_close", "st8_B_down_game"] },
+      { k: "C", n: "A round turret", d: "A half-round built out of the wall, the steps fanned round a post.", img: ["st8_C_down_close", "st8_C_down_game"], rec: 1 },
+      { k: "D", n: "Narrowing", d: "Three squares wide at the room, one at the far end, as the flight leaving Dyson's map.", img: ["st8_D_down_close", "st8_D_down_game"] },
+    ] },
+  { id: "updown", title: "Telling up from down", said: "", how: "Two signs, as in Dyson's maps: the steps shaded deeper toward the foot (the far end going down, the mouth going up), and a letter, D or U, with a small arrow into the stairs. Left, down; right, up.", tile: "420px",
+    why: "<b>Both</b>: the shading alone is too quiet at the game's zoom to tell at a glance, and the letter alone loses the depth.",
+    opts: [
+      { k: "Both", n: "Shading and letter", d: "As shown.", img: ["st8_A_down_close", "st8_A_up_close"], rec: 1 },
+      { k: "Shade", n: "Shading only", d: "No letter; the dark end shows which way is down.", img: [] },
+      { k: "Letter", n: "Letter only", d: "D or U and the arrow; the steps evenly shaded.", img: [] },
+    ] },
+  { id: "dais", title: "The goblin king's throne, on a dais", said: "I'll try to find examples from Dyson for this as well.", how: "From your example: a raised floor with a thin outline and its shadow, the front corners cut, steps up the front, the throne on it; in the throne room's apse between its two braziers. Close, then at the game's zoom. (The king left out to show the throne.)", tile: "420px",
+    why: "<b>A</b>, as your example: the small flight at the front points the way to the king.",
+    opts: [
+      { k: "Now", n: "As today", d: "The king's seat is just floor.", img: ["th8_Now_close", "th8_Now_game"] },
+      { k: "A", n: "As the example", d: "The dais, a small flight at the front's middle.", img: ["th8_A_close", "th8_A_game"], rec: 1 },
+      { k: "B", n: "A broad step", d: "A step the dais's width along its front.", img: ["th8_B_close", "th8_B_game"] },
+      { k: "C", n: "Two tiers", d: "A smaller dais on the first, the flight up both.", img: ["th8_C_close", "th8_C_game"] },
     ] },
 ];
 
