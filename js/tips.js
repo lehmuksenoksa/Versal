@@ -3,7 +3,7 @@
 // chosen (mockups/choices.html, round 3: A, a torn black plate beside it, a
 // thin ink ring round what it's about); and the words for a monster's state
 // and wounds, and the rooms' names, used by the look and the log too.
-import { MONSTERS, ITEMS, itemName, monName, an } from "./world.js";
+import { MONSTERS, ITEMS, itemName, monName, an, unsure, shownTrait } from "./world.js";
 import { ITEM_TRAITS, MONSTER_TRAITS, ROOM_TRAITS } from "./traits.js";
 
 // How a monster's state reads.
@@ -32,7 +32,7 @@ const ABOUT = {
 };
 
 // What each trait does, in a few words (after the line about the kind).
-const ITEM_SAYS = { heavy: "Hits a tenth less often.", sharp: "A hard blow makes the living bleed.", "goblin-bane": "Bites 3 harder on goblins.", padded: "Hard blows make you bleed half as often.", spiked: "Cuts what hits you." };
+const ITEM_SAYS = { cursed: "Won't come off; an altar may lift it.", heavy: "Hits a tenth less often.", sharp: "A hard blow makes the living bleed.", "goblin-bane": "Bites 3 harder on goblins.", padded: "Hard blows make you bleed half as often.", spiked: "Cuts what hits you." };
 const MONSTER_SAYS = { savage: "Savage: hits harder, never flees.", timid: "Timid: flees when hurt.", sleepy: "Sleepy: hears little.", watchful: "Watchful: sees far in the dark.", swift: "Swift.", starving: "Starving: weak, but never gives up a chase.", crumbling: "Crumbling: breaks easily.", venomous: "Venomous: poisons often and long.", veteran: "A veteran: hits hard and often." };
 
 // A room's name, for the rooms worth naming (null for the rest).
@@ -57,7 +57,7 @@ export function roomAt(level, x, y) {
 // A thing's numbers with its trait: its blow, what it takes off, what it
 // heals.
 export function itemStats(it) {
-  const d = ITEMS[it.type], T = ITEM_TRAITS[it.trait] ?? {};
+  const d = ITEMS[it.type], T = ITEM_TRAITS[shownTrait(it)] ?? {};
   const lo = d.dmg ? Math.max(1, d.dmg[0] + (T.dmg?.[0] ?? 0)) : 0;
   return { dmg: d.dmg ? [lo, Math.max(lo, d.dmg[1] + (T.dmg?.[1] ?? 0))] : null, def: d.def !== undefined ? Math.max(0, d.def + (T.def ?? 0)) : null, heal: T.heal ?? d.heal ?? null };
 }
@@ -79,8 +79,9 @@ export function tipFor(w, x, y, shown) {
     const it = floor[floor.length - 1].item, d = ITEMS[it.type], S = itemStats(it);
     const what = d.cat === "weapon" ? `Blow ${S.dmg[0]}–${S.dmg[1]}, ${d.hands === 2 ? "two hands" : "one hand"}`
       : d.cat === "armour" ? `Worn on the ${d.slot}; takes off up to ${S.def}`
+      : it.trait === "murky" ? (it.known ? (it.brew ? "Heals 12–18" : "Poisons") : "Heals well, or poisons")
       : S.heal ? `Heals ${S.heal[0]}–${S.heal[1]}` : "";
-    return { at: { x, y }, title: cap(itemName(it, false)), lines: what ? [[[what, ""]]] : [], about: [ITEM_SAYS[it.trait], floor.length > 1 ? `And ${floor.length - 1} more beneath.` : ""].filter(Boolean).join(" ") };
+    return { at: { x, y }, title: cap(itemName(it, false)), lines: what ? [[[what, ""]]] : [], about: [unsure(it) ? "Not yet used: it might be cursed." : ITEM_SAYS[shownTrait(it)], it.trait === "murky" && !it.known ? "Drink one to know." : "", floor.length > 1 ? `And ${floor.length - 1} more beneath.` : ""].filter(Boolean).join(" ") };
   }
   const L = w.level;
   for (const [st, name] of [[L.stairsDown, "Stairs down"], [L.stairsUp, "Stairs up"]]) if (st && st.x === x && st.y === y) return { at: { x, y }, title: name, lines: [], about: "" };

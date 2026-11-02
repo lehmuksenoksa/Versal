@@ -226,7 +226,7 @@ export class UI {
       return d.cat === "weapon" ? `attack ${S.dmg[0]}–${S.dmg[1]}${d.hands === 2 ? ", two hands" : ""}` : d.cat === "armour" ? `defence ${S.def}` : it.n > 1 ? `${it.n}` : "";
     };
     // (Its name with its trait, without the count.)
-    const named = (it) => { const d = ITEMS[it.type]; return `${it.trait ? `${it.trait} ` : ""}${it.n > 1 ? d.plural ?? d.name : d.name}`; };
+    const named = (it) => itemName(it, false).replace(/^\d+ /, "");
     const btn = (verb, key, label) => `<button type="button" class="act" data-act="${verb}" data-key="${key}">${label}</button>`;
     if (this.panel === "e") {
       const eq = p.equip ?? {}, slots = [["hand", "hand", "a"], ["off", "off hand", "b"], ["head", "head", "c"], ["body", "body", "d"]];

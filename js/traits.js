@@ -19,7 +19,19 @@ export const ITEM_TRAITS = {
   spiked: { on: ["helmet"], good: true, spikes: 1 },
   strong: { on: ["potion"], good: true, heal: [12, 18] },
   watered: { on: ["potion"], good: false, heal: [3, 6] },
+  // Hidden (round 4): a cursed thing is 1 worse and won't come off till the
+  // curse is lifted (standing at an altar, CURSE); found out on wielding or
+  // wearing it, till then named with a question mark ("a sword?"). Murky
+  // potions all heal well or all poison, a run's luck (MURKY), found out on
+  // drinking one. `weight`: how much commoner (or rarer) than the rest.
+  cursed: { on: ["dagger", "sword", "axe", "warhammer", "helmet", "chainmail"], good: false, hidden: true, dmg: [-1, -1], def: -1, sticks: true, weight: 0.6 },
+  murky: { on: ["potion"], good: false, weight: 0.8 },
 };
+// A murky potion that heals: as a strong one; one that poisons: poisoned
+// for so many turns, and this much harm at once.
+export const MURKY = { heal: [12, 18], poison: [12, 20], harm: [1, 3] };
+// Lifting a curse: so many turns in a row next to an altar.
+export const CURSE = { turns: 3 };
 // How often a thing found has a trait; how the bad and good are weighed by
 // the level's depth (1 to 3).
 export const ITEM_TRAIT = { chance: 1 / 3, bad: [3, 2, 1], good: [1, 1.5, 2] };

@@ -91,6 +91,10 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   venomous, veteran), and two to four rooms a level (a cursed crypt, where the dead rise again once
   and nothing heals; a hallowed shrine, where resting heals twice as fast and the undead keep out;
   an echoing hall or gallery, where sounds carry twice as far; a looted or a stocked storeroom).
+  Two are hidden: a cursed weapon or armour is a little worse and won't come off, found out on
+  wielding or wearing it (until then any weapon or armour not yet used is named with a question
+  mark, "a sword?"), and lifted by standing three turns next to an altar; murky potions all heal
+  well or all poison, a run's luck, found out by drinking one.
 
 ## Running it
 

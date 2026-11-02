@@ -190,6 +190,15 @@ Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
   looted/stocked, infested. Built: all but the flooded and infested rooms (they need drawing:
   mockups first, round 4) and the hidden traits (a way to find them out first: round 4).
 
+## Round 4 (choices page)
+
+- **Hidden traits:** cursed things and murky potions; found out on using them (A); a curse lifted
+  by standing a few turns at any altar (B). Built.
+- **Flooded rooms:** the water's edge (D) with a bluish-grey wash over the whole room, a few more
+  ripples: mockups again.
+- **Infested rooms:** the nest (A), but drawn at the furniture's line weight; the lines were too
+  faint: mockups again.
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed

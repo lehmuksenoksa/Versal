@@ -18,7 +18,7 @@ import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
 import { roomAt, roomName } from "./tips.js";
-import { ITEM_TRAITS, ITEM_TRAIT, GOBLINS, MONSTER_BLEED, MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
+import { MURKY, CURSE, ITEM_TRAITS, ITEM_TRAIT, GOBLINS, MONSTER_BLEED, MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
 
 // The kinds of monster: their letters and names; their speed (moves for each
 // of the player's); how much they wander when milling about (the goblins' 1);
@@ -75,11 +75,18 @@ export const PACK = { size: 10, letters: "abcdefghij", bare: [1, 2], perRooms: 2
 export const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 // A thing's name, its trait first ("a rusty sword", "3 strong potions of
 // healing").
+// (A weapon or armour not yet used that might be cursed has a question
+// mark, its curse unsaid: "a sword?"; a murky potion found out says what it
+// does.)
+export const unsure = (it) => ["weapon", "armour"].includes(ITEMS[it.type].cat) && !it.known && (!it.trait || ITEM_TRAITS[it.trait]?.hidden);
+export const shownTrait = (it) => (it.trait && !(ITEM_TRAITS[it.trait]?.hidden && !it.known) ? it.trait : null);
 export const itemName = (it, article = true) => {
-  const D = ITEMS[it.type], t = it.trait ? `${it.trait} ` : "";
-  return it.n > 1 ? `${it.n} ${t}${D.plural ?? `${D.name}s`}` : article ? an(t + D.name) : t + D.name;
+  // (A murky potion is no potion of healing that anyone knows of.)
+  const D = it.trait === "murky" ? { name: "potion", plural: "potions" } : ITEMS[it.type], st = shownTrait(it), t = st ? `${st} ` : "", q = unsure(it) ? "?" : "";
+  const brew = it.trait === "murky" && it.known ? (it.brew ? " (heals)" : " (poison)") : "";
+  return (it.n > 1 ? `${it.n} ${t}${D.plural ?? `${D.name}s`}` : article ? an(t + D.name) : t + D.name) + q + brew;
 };
-const makeItem = (type, n = 1, trait = null) => ({ type, glyph: ITEMS[type].glyph, n, ...(trait ? { trait } : {}) });
+const makeItem = (type, n = 1, trait = null, known = false) => ({ type, glyph: ITEMS[type].glyph, n, ...(trait ? { trait } : {}), ...(known ? { known } : {}) });
 // A monster's name, its trait first ("savage goblin warrior").
 export const monName = (g) => `${g.trait ? `${g.trait} ` : ""}${MONSTERS[g.kind]?.name ?? g.kind}`;
 // What a thing's trait does (an empty one for none).
@@ -145,7 +152,9 @@ export class World {
     this.nextId = 1;
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: 0, y: 0, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
       // What's held and worn, by where; what's carried, each with its letter.
-      equip: { hand: makeItem("dagger"), off: null, head: null, body: null }, pack: [] };
+      equip: { hand: makeItem("dagger", 1, null, true), off: null, head: null, body: null }, pack: [] };
+    // (This run's murky potions: all heal, or all poison; not known till one's drunk.)
+    this.murky = { good: this.rng.chance(0.5), known: false };
     this.stow(makeItem("potion"));
     // The turns gone by, the messages so far (each { text, turn, kind }), and
     // how the run ended (null while it goes on: died, or won).
@@ -522,14 +531,16 @@ export class World {
     let r = this.rng.next() * kinds.reduce((s, [, d]) => s + d.weight, 0);
     let type = "potion";
     for (const [t, d] of kinds) if ((r -= d.weight) < 0) { type = t; break; }
-    return makeItem(type, 1, this.rng.chance(ITEM_TRAIT.chance) ? this.itemTraitFor(type) : null);
+    const item = makeItem(type, 1, this.rng.chance(ITEM_TRAIT.chance) ? this.itemTraitFor(type) : null);
+    if (item.trait === "murky") Object.assign(item, { brew: this.murky.good, known: this.murky.known });
+    return item;
   }
   // A trait for a thing of `type` found here (null if none fits): the bad
   // ones commoner near the top, the good deeper.
   itemTraitFor(type) {
     const depth = this.place.depth, fit = Object.entries(ITEM_TRAITS).filter(([, T]) => T.on.includes(type) && (T.depth ?? 1) <= depth);
     if (!fit.length) return null;
-    const weight = ([, T]) => (T.good ? ITEM_TRAIT.good : ITEM_TRAIT.bad)[Math.min(depth, 3) - 1];
+    const weight = ([, T]) => (T.good ? ITEM_TRAIT.good : ITEM_TRAIT.bad)[Math.min(depth, 3) - 1] * (T.weight ?? 1);
     let r = this.rng.next() * fit.reduce((a, t) => a + weight(t), 0);
     for (const t of fit) if ((r -= weight(t)) < 0) return t[0];
     return fit[0][0];
@@ -573,12 +584,32 @@ export class World {
   drink(key) {
     const it = this.packItem(key), d = it && ITEMS[it.type];
     if (!it || d.cat !== "potion") return false;
-    const p = this.player, heal = this.rng.int(...(itemTrait(it).heal ?? d.heal)), before = p.hp;
+    const p = this.player, before = p.hp, name = itemName({ ...it, n: 1 });
+    if (--it.n <= 0) this.player.pack.splice(this.player.pack.indexOf(it), 1);
+    // (A murky one: this run's luck, found out now.)
+    if (it.trait === "murky") {
+      const knew = this.murky.known;
+      this.learnMurky();
+      if (!this.murky.good) {
+        p.hp -= this.rng.int(...MURKY.harm);
+        p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, this.rng.int(...MURKY.poison));
+        this.log(`You drink ${name}. ${knew ? "Poison, as you knew." : "It's poison!"} You are poisoned. (${p.hp - before})`, "hurt");
+        if (p.hp <= 0) this.die("poisoned by a murky potion");
+        return this.tick();
+      }
+    }
+    const heal = this.rng.int(...(it.trait === "murky" ? MURKY.heal : itemTrait(it).heal ?? d.heal));
     p.hp = Math.min(p.maxHp, p.hp + heal);
     if (p.ailments.bleeding) delete p.ailments.bleeding;
-    if (--it.n <= 0) this.player.pack.splice(this.player.pack.indexOf(it), 1);
-    this.log(`You drink ${itemName({ ...it, n: 1 })}. You feel better. (+${p.hp - before})`, "good");
+    this.log(`You drink ${name}. You feel ${it.trait === "murky" ? "much " : ""}better. (+${p.hp - before})`, "good");
     return this.tick();
+  }
+  // This run's murky potions found out: every one, here and on the levels
+  // left, named for what it does.
+  learnMurky() {
+    this.murky.known = true;
+    const all = [...this.player.pack, ...this.places.flatMap((st) => st.items ?? []).map((f) => f.item), ...this.items.map((f) => f.item)];
+    for (const it of all) if (it.trait === "murky") it.known = true;
   }
   // Wield a weapon or put on armour from the pack (a turn); what was there
   // goes into the pack in its place (a two-handed weapon frees the off hand).
@@ -586,17 +617,25 @@ export class World {
     const it = this.packItem(key), d = it && ITEMS[it.type];
     if (!it || (d.cat !== "weapon" && d.cat !== "armour")) return false;
     const p = this.player, where = d.cat === "weapon" ? "hand" : d.slot;
+    // (What's cursed won't come off to make room.)
+    const stuck = [p.equip[where], d.hands === 2 ? p.equip.off : null].find((o) => o && itemTrait(o).sticks);
+    if (stuck) { this.log(`Your cursed ${ITEMS[stuck.type].name} won't come off.`); return false; }
     const item = this.unpack(it), old = p.equip[where], extra = d.hands === 2 ? p.equip.off : null;
     p.equip[where] = item;
     if (extra) p.equip.off = null;
     for (const o of [old, extra]) if (o && !this.stow(o)) this.drop(o, true);
-    this.log(d.cat === "weapon" ? `You wield the ${itemName(item, false)}.` : `You put on the ${itemName(item, false)}.`);
+    // (Using it, its trait comes to light: a curse with it.)
+    const was = itemName(item, false).replace(/\?$/, "");
+    item.known = true;
+    this.log(d.cat === "weapon" ? `You wield the ${was}.` : `You put on the ${was}.`);
+    if (item.trait === "cursed") this.log(`It's cursed! ${d.cat === "weapon" ? "Your hand won't let go of it." : "It won't come off."} (At an altar, it may be lifted.)`, "hurt");
     return this.tick();
   }
   // Take off what's held or worn there (a turn), into the pack.
   takeOff(where) {
     const p = this.player, it = p.equip[where];
     if (!it) return false;
+    if (itemTrait(it).sticks) { this.log(`The cursed ${ITEMS[it.type].name} won't come off.`); return false; }
     if (p.pack.length >= PACK.size) { this.log("Your pack is full."); return false; }
     p.equip[where] = null;
     this.stow(it);
@@ -704,6 +743,21 @@ export class World {
     }
   }
 
+  // A curse lifted: standing next to an altar CURSE.turns turns in a row,
+  // wearing or holding something cursed.
+  atAltar() {
+    const p = this.player, cursed = Object.values(p.equip).filter((it) => it && itemTrait(it).sticks);
+    const near = cursed.length && (this.level.features ?? []).some((f) => f.type === "altar" && Math.abs(p.x + 0.5 - f.x) <= (f.w ?? 1) / 2 + 1 && Math.abs(p.y + 0.5 - f.y) <= (f.h ?? 1) / 2 + 1);
+    if (!near) { p.altar = 0; return; }
+    if (!p.altar) this.log("You stand before the altar. The curse stirs.");
+    if (++p.altar < CURSE.turns) return;
+    p.altar = 0;
+    for (const it of cursed) {
+      delete it.trait;
+      this.log(`The curse lifts from your ${ITEMS[it.type].name}.`, "good");
+    }
+  }
+
   // Monsters bleeding (a sharp blade's work), a hit point a turn; the
   // undead of cursed rooms rising when it's time.
   monstersTurn() {
@@ -761,6 +815,7 @@ export class World {
       this.ailing(resting);
       if (!this.ended) this.monstersTurn();
     }
+    this.atAltar();
     return true;
   }
 
