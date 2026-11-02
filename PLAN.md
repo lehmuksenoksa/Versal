@@ -17,6 +17,9 @@ Decided with the player of the game; open questions at the end.
 - **Each new visual element gets a slide** in the presentation of the visual elements
   (https://claude.ai/artifact/WCzvGZbKDgWCHNNdtuyaGv): what it is, a picture of it from the game,
   who decided what, and what is open for their say.
+- **One visual language** (`VISUAL_LANGUAGE.md`): every mockup and every new element keeps to it,
+  drawn with the game's own drawing code (the pen, the wall strokes, the shadow layer), not
+  imitations of it.
 - Options are offered with a recommendation; decisions are asked with a tool that shows each
   decision and its options.
 

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Visual Language</title>
+<style>
+  /* Each rule of the visual language (VISUAL_LANGUAGE.md) shown as it is
+     broken and as it is kept, drawn with the game's own pen
+     (js/maprender.js), at a close zoom. Screenshots of each panel go to the
+     choices page. */
+  :root { --paper: #f7f2e6; --ink: #1b1815; --dim: #6b5f52; color-scheme: light; }
+  body { margin: 0; background: #2b221c; color: var(--paper); font: 16px/1.4 Georgia, serif; }
+  main { display: grid; gap: 28px; padding: 24px; }
+  section { display: grid; gap: 8px; }
+  h2 { margin: 0; font-size: 20px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  figure { margin: 0; display: grid; gap: 4px; }
+  figcaption { font-size: 14px; color: #cfc5b0; }
+  canvas { display: block; background: var(--paper); }
+</style>
+</head>
+<body>
+<main id="main"></main>
+<script type="module">
+import { pen, wallLine, drawPaper, INK, PAPER } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+
+const TS = 48, k = TS / 32, OUT = 2.9, IN = 1.9, STONE = 2.7, WALLW = 8;
+const SHADOW_RGB = "rgb(70, 62, 55)", SHADOW_ALPHA = 0.3;
+const main = document.getElementById("main");
+
+// A panel `w` by `h` squares, its paper and floor grid drawn as the game does
+// (the grid a hairline, each edge bowed, now and then broken).
+function panel(sec, id, caption, w, h, draw, { grid = true } = {}) {
+  const dpr = devicePixelRatio, c = document.createElement("canvas");
+  c.width = w * TS * dpr; c.height = h * TS * dpr; c.style.width = `${w * TS}px`; c.style.height = `${h * TS}px`; c.id = id;
+  const g = c.getContext("2d");
+  g.scale(dpr, dpr);
+  drawPaper(g, w * TS, h * TS, new RNG(7));
+  if (grid) drawGridHere(g, w, h, new RNG(3));
+  const rng = new RNG(id.split("").reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0);
+  g.lineCap = "round"; g.lineJoin = "round"; g.strokeStyle = INK; g.fillStyle = INK;
+  draw(g, pen(g, rng, k), rng);
+  const f = document.createElement("figure");
+  f.append(c, Object.assign(document.createElement("figcaption"), { textContent: caption }));
+  sec.querySelector(".row").append(f);
+}
+function drawGridHere(g, w, h, rng) {
+  g.save(); g.strokeStyle = "rgba(27, 24, 21, 0.75)"; g.lineCap = "round";
+  const edge = (x0, y0, x1, y1) => {
+    const ux = (x1 - x0) / TS, uy = (y1 - y0) / TS, nx = -uy, ny = ux, wob = 0.8 * k;
+    const a = rng.chance(0.35) ? rng.range(1, 3.5) * k : -0.4, b = TS - (rng.chance(0.35) ? rng.range(1, 3.5) * k : -0.4);
+    const s0 = rng.range(-0.5, 0.5) * wob, s1 = rng.range(-0.5, 0.5) * wob, bow = rng.range(-1, 1) * wob, m = (a + b) / 2, sm = (s0 + s1) / 2 + bow;
+    g.lineWidth = rng.range(0.6, 1.05) * k;
+    g.beginPath(); g.moveTo(x0 + ux * a + nx * s0, y0 + uy * a + ny * s0); g.quadraticCurveTo(x0 + ux * m + nx * sm, y0 + uy * m + ny * sm, x0 + ux * b + nx * s1, y0 + uy * b + ny * s1); g.stroke();
+  };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (x + 1 < w) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS); if (y + 1 < h) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS); }
+  g.restore();
+}
+const section = (title) => {
+  const s = document.createElement("section");
+  s.innerHTML = `<h2>${title}</h2><div class="row"></div>`;
+  main.append(s);
+  return s;
+};
+const sq = (v) => v * TS;
+
+// The one shadow, as drawShadow lays it: what's raised laid out solid, moved
+// down and right by its height, the raised things themselves cut out of it,
+// then the whole of it toned at once (overlaps never darker).
+// `cast`: [{ path: (g) => void (traces the outline), lift: squares }].
+function shadow(g, cast) {
+  // (Each thing's shadow cut by the things as high as it or higher, so an
+  // upper tier's falls on the lower; then all of them together, toned once.)
+  const blank = () => { const c = document.createElement("canvas"); c.width = g.canvas.width; c.height = g.canvas.height; const x = c.getContext("2d"); x.setTransform(g.getTransform()); x.fillStyle = "#000"; return [c, x]; };
+  const [c, s] = blank(), height = (it) => it.height ?? it.lift;
+  for (const it of cast) {
+    const [c1, s1] = blank();
+    s1.save(); s1.translate(sq(it.lift), sq(it.lift)); s1.beginPath(); it.path(s1); s1.fill(); s1.restore();
+    s1.globalCompositeOperation = "destination-out";
+    for (const o of cast) if (o.cut !== false && height(o) >= height(it)) { s1.beginPath(); o.path(s1); s1.fill(); }
+    s.save(); s.setTransform(1, 0, 0, 1, 0, 0); s.drawImage(c1, 0, 0); s.restore();
+  }
+  s.globalCompositeOperation = "source-in"; s.setTransform(1, 0, 0, 1, 0, 0); s.fillStyle = SHADOW_RGB; s.fillRect(0, 0, c.width, c.height);
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = SHADOW_ALPHA; g.drawImage(c, 0, 0); g.restore();
+}
+// A closed outline through points (in squares).
+const trace = (pts) => (g) => pts.forEach(([x, y], i) => (i ? g.lineTo(sq(x), sq(y)) : g.moveTo(sq(x), sq(y))));
+
+// ---- 1. Lines ----
+let s = section("1. Every line is a pen stroke");
+panel(s, "vl_lines_wrong", "Not: ruled lines, square corners, every width the same", 5, 3, (g) => {
+  g.lineWidth = OUT * k; g.fillStyle = PAPER;
+  g.fillRect(sq(0.6), sq(0.6), sq(1.2), sq(1.2)); g.strokeRect(sq(0.6), sq(0.6), sq(1.2), sq(1.2));
+  g.lineWidth = IN * k; g.beginPath(); g.moveTo(sq(0.75), sq(0.75)); g.lineTo(sq(1.65), sq(1.65)); g.moveTo(sq(1.65), sq(0.75)); g.lineTo(sq(0.75), sq(1.65)); g.stroke();
+  g.lineWidth = OUT * k; g.fillRect(sq(2.4), sq(0.5), sq(2.2), sq(1.0)); g.strokeRect(sq(2.4), sq(0.5), sq(2.2), sq(1.0));
+  g.lineWidth = OUT * k; for (let i = 0; i <= 6; i++) { g.beginPath(); g.moveTo(sq(2.4), sq(1.9 + i * 0.15)); g.lineTo(sq(4.6), sq(1.9 + i * 0.15)); g.stroke(); }
+});
+panel(s, "vl_lines_right", "But: the game's pen, each line a little bowed, ends over- or under-shooting, widths a touch uneven", 5, 3, (g, P) => {
+  const c = P.box(sq(1.2), sq(1.2), sq(1.2), sq(1.2), 0.04, OUT, PAPER), m = [sq(1.2), sq(1.2)], i = c.map(([x, y]) => [x + (m[0] - x) * 0.16, y + (m[1] - y) * 0.16]);
+  P.line(...i[0], ...i[2], IN); P.line(...i[1], ...i[3], IN);
+  P.box(sq(3.5), sq(1.0), sq(2.2), sq(1.0), -0.02, OUT, PAPER);
+  for (let j = 0; j <= 6; j++) P.line(sq(2.4), sq(1.9 + j * 0.15), sq(4.6), sq(1.9 + j * 0.15), OUT);
+});
+
+// ---- 2. Weights ----
+s = section("2. One weight for each kind of line (in 32nds of a square)");
+panel(s, "vl_weights", "Walls 8 · outlines of things 2.9 · stones 2.7 · lines inside things 1.9 · floor grid a hairline, three-quarters ink", 7, 3, (g, P, rng) => {
+  // (A wall as drawWalls lays it: strokes about a third of a square, each
+  // ending a little off the line.)
+  let pts = [[sq(0.5), sq(0.6)]];
+  for (let at = 0.3 * rng.range(0.7, 1.3); at < 5.85; at += 0.3 * rng.range(0.7, 1.3)) pts.push([sq(0.5 + at), sq(0.6) + rng.range(-1, 1) * 1.2 * k]);
+  pts.push([sq(6.5), sq(0.6)]);
+  for (let i = 0; i < pts.length - 1; i++) wallLine(g, pts[i], pts[i + 1], TS, rng);
+  P.box(sq(1.2), sq(1.8), sq(1.1), sq(0.8), 0, OUT, PAPER);
+  P.lump([[sq(2.6), sq(1.6)], [sq(2.95), sq(1.5)], [sq(3.1), sq(1.85)], [sq(2.8), sq(2.1)], [sq(2.55), sq(1.95)]], STONE, PAPER);
+  P.line(sq(3.6), sq(1.8), sq(4.8), sq(1.8), IN);
+  g.font = `italic 13px Georgia, serif`; g.fillStyle = INK;
+  [["8", 6.6, 1.05], ["2.9", 0.95, 2.6], ["2.7", 2.6, 2.6], ["1.9", 4.0, 2.25], ["grid", 5.6, 2.6]].forEach(([t, x, y]) => g.fillText(t, sq(x), sq(y)));
+});
+
+// ---- 3. Fills ----
+s = section("3. A fill is the outline's own shape, laid under its ink");
+panel(s, "vl_fill_wrong", "Not: a fill cut to a ruled rectangle under a wobbling outline: paper or tone shows past the ink, or the floor shows inside it", 5, 3, (g, P) => {
+  g.fillStyle = "rgba(70, 62, 55, 0.3)"; g.fillRect(sq(0.55), sq(0.55), sq(1.9), sq(1.9));
+  P.box(sq(1.5), sq(1.5), sq(1.7), sq(1.7), 0.06, OUT, null);
+  g.fillStyle = PAPER; g.fillRect(sq(3.0), sq(0.65), sq(1.5), sq(1.5));
+  P.box(sq(3.8), sq(1.45), sq(1.75), sq(1.75), -0.05, OUT, null);
+});
+panel(s, "vl_fill_right", "But: the fill follows the same pen points as the outline, so the ink always covers its edge", 5, 3, (g, P) => {
+  shadow(g, [{ path: trace([[0.65, 0.65], [2.35, 0.65], [2.35, 2.35], [0.65, 2.35]]), lift: 0.11 }, { path: trace([[2.95, 0.6], [4.65, 0.6], [4.65, 2.3], [2.95, 2.3]]), lift: 0.11 }]);
+  P.box(sq(1.5), sq(1.5), sq(1.7), sq(1.7), 0.06, OUT, PAPER);
+  P.box(sq(3.8), sq(1.45), sq(1.7), sq(1.7), -0.05, OUT, PAPER);
+});
+
+// ---- 4. Height: the one shadow ----
+s = section("4. Anything raised casts the one shadow, down and right, by its height");
+const dais = (x, y, w, h, c) => [[x + c, y], [x + w, y], [x + w, y + h], [x + c, y + h], [x, y + h - c], [x, y + c]];
+panel(s, "vl_height_wrong", "Not: a raised dais drawn flat, as if a line on the floor", 6, 4, (g, P) => {
+  P.shape(dais(1.0, 0.6, 3.6, 2.8, 0.5).map(([x, y]) => [sq(x), sq(y)]), IN, null);
+  P.shape([[0.4, 1.5], [1.0, 1.5], [1.0, 2.5], [0.4, 2.5]].map(([x, y]) => [sq(x), sq(y)]), IN, null);
+});
+panel(s, "vl_height_right", "But: the dais and its steps each cast the shadow (a step's height: 0.11 of a square, as furniture); the floor's grid runs on across it, as in your example", 6, 4, (g, P) => {
+  const d = dais(1.0, 0.6, 3.6, 2.8, 0.5), st = [[0.4, 1.5], [1.0, 1.5], [1.0, 2.5], [0.4, 2.5]];
+  shadow(g, [{ path: trace(d), lift: 0.11, height: 1 }, { path: trace(st), lift: 0.06, height: 0.5 }]);
+  P.shape(d.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.shape(st.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.line(sq(0.7), sq(1.5), sq(0.7), sq(2.5), IN);
+});
+panel(s, "vl_height_long", "Longer: the same, the shadow a step casts 0.18 of a square (and walls' 0.3), nearer Dyson's", 6, 4, (g, P) => {
+  const d = dais(1.0, 0.6, 3.6, 2.8, 0.5), st = [[0.4, 1.5], [1.0, 1.5], [1.0, 2.5], [0.4, 2.5]];
+  shadow(g, [{ path: trace(d), lift: 0.18, height: 1 }, { path: trace(st), lift: 0.1, height: 0.5 }]);
+  P.shape(d.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.shape(st.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.line(sq(0.7), sq(1.5), sq(0.7), sq(2.5), IN);
+});
+panel(s, "vl_tiers_long", "Two tiers, the longer shadow", 6, 4, (g, P) => {
+  const d1 = dais(0.8, 0.5, 4.4, 3.0, 0.5), d2 = dais(1.8, 1.0, 2.6, 2.0, 0.35);
+  shadow(g, [{ path: trace(d1), lift: 0.18, height: 1 }, { path: trace(d2), lift: 0.18, height: 2 }]);
+  P.shape(d1.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.shape(d2.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+});
+panel(s, "vl_tiers_right", "Tiers: each casts onto the one below; where shadows overlap they're still the one tone", 6, 4, (g, P) => {
+  const d1 = dais(0.8, 0.5, 4.4, 3.0, 0.5), d2 = dais(1.8, 1.0, 2.6, 2.0, 0.35);
+  shadow(g, [{ path: trace(d1), lift: 0.11, height: 1 }, { path: trace(d2), lift: 0.11, height: 2 }]);
+  P.shape(d1.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+  P.shape(d2.map(([x, y]) => [sq(x), sq(y)]), OUT, null);
+});
+
+// ---- 5. Depth: stairs ----
+s = section("5. Going down is shown step by step, never by a soft fade");
+const flight = (g, P, down, soft) => {
+  // A flight a square and a half wide, eight steps, going away (up the page).
+  const x0 = 1.0, x1 = 2.5, y0 = 3.6, y1 = 0.4, n = 8;
+  if (soft) {
+    const gr = g.createLinearGradient(0, sq(y0), 0, sq(y1)); gr.addColorStop(0, down ? "rgba(27,24,21,0.04)" : "rgba(27,24,21,0.46)"); gr.addColorStop(1, down ? "rgba(27,24,21,0.46)" : "rgba(27,24,21,0.04)");
+    g.fillStyle = gr; g.fillRect(sq(x0) + 3, sq(y1) + 3, sq(x1 - x0) - 6, sq(y0 - y1) - 6);
+    for (let i = 0; i <= n; i++) { const y = y0 + (y1 - y0) * i / n; g.lineWidth = OUT * k; g.beginPath(); g.moveTo(sq(x0), sq(y)); g.lineTo(sq(x1), sq(y)); g.stroke(); }
+    return;
+  }
+  // Each riser is a drop: the lower step gets a band of the one shadow
+  // beside it (beyond the riser going down, before it going up).
+  const band = 0.13, step = (y1 - y0) / n, cast = [];
+  for (let i = 0; i <= n; i++) {
+    const y = y0 + step * i;
+    if (down ? i === n : i === 0) continue;
+    const yb = down ? y - band : y + band;
+    cast.push({ path: trace([[x0, y], [x1, y], [x1, yb], [x0, yb]]), lift: 0, cut: false });
+  }
+  shadow(g, cast);
+  for (let i = 0; i <= n; i++) { const y = y0 + (y1 - y0) * i / n; P.line(sq(x0), sq(y), sq(x1), sq(y), OUT); }
+};
+panel(s, "vl_stairs_wrong", "Not: a soft fade over the whole flight; it smears the steps and leaves a light edge", 3.5, 4, (g, P) => flight(g, P, true, true), { grid: false });
+panel(s, "vl_stairs_down", "But, going down: a band of the one shadow under each riser, on the step below it", 3.5, 4, (g, P) => flight(g, P, true, false), { grid: false });
+panel(s, "vl_stairs_up", "Going up: the bands on the other side of each riser", 3.5, 4, (g, P) => flight(g, P, false, false), { grid: false });
+
+// ---- 6. One tone ----
+s = section("6. One shadow tone, laid once");
+panel(s, "vl_tone_wrong", "Not: shadows laid one over another, darker where they cross", 5, 3, (g, P) => {
+  g.fillStyle = "rgba(70, 62, 55, 0.3)";
+  g.fillRect(sq(0.75), sq(0.75), sq(2.0), sq(1.2)); g.fillRect(sq(1.85), sq(1.15), sq(2.0), sq(1.2));
+  P.box(sq(1.65), sq(1.25), sq(2.0), sq(1.2), 0, OUT, PAPER); P.box(sq(2.75), sq(1.65), sq(2.0), sq(1.2), 0, OUT, PAPER);
+});
+panel(s, "vl_tone_right", "But: all of it laid out first, then toned at once", 5, 3, (g, P) => {
+  shadow(g, [{ path: trace([[0.65, 0.65], [2.65, 0.65], [2.65, 1.85], [0.65, 1.85]]), lift: 0.11 }, { path: trace([[1.75, 1.05], [3.75, 1.05], [3.75, 2.25], [1.75, 2.25]]), lift: 0.11 }]);
+  P.box(sq(1.65), sq(1.25), sq(2.0), sq(1.2), 0, OUT, PAPER); P.box(sq(2.75), sq(1.65), sq(2.0), sq(1.2), 0, OUT, PAPER);
+});
+document.body.dataset.done = "1";
+</script>
+</body>
+</html>
