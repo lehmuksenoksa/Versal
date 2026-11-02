@@ -170,6 +170,26 @@ From the open questions in the presentation of the visual elements; chosen on th
   Telling up from down: ink only (chosen), once the stairs are.
 - **Backlog:** a real victory page.
 
+## Round 3: getting about, tips, things with character (choices page)
+
+Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
+
+- **Quality of life, built:** click to walk (1), explore with x (3), click a monster (5), a thing
+  (6) or a door (7), room names (11), wounds in words (12), the whole level on Tab (13), repeats
+  folded in the log (14), potions picked up by walking (16), resting searches (17), walks stop
+  when hurt and won't start below a third of health (18). Not taken: walk to the stairs, run,
+  comparing before wielding, "wield it?", last words on the death page, keeping the run.
+- **Click to walk:** the way shown as a dotted ink trail and a cross (B). Phones as they were: a
+  tap steps, a hold walks; click to walk with a mouse only (A).
+- **Tips:** a torn black plate beside the thing, a thin ink ring round it (A). They say: name and
+  trait, awake or not, wounds, what it does, a thing's numbers, furniture, the room on its floor.
+  Not: comparing with yours, remembered things, a danger rating.
+- **Traits:** items, monsters, rooms and hidden ones all wanted. Items: rusty, sharp, heavy,
+  goblin-bane, sturdy, padded, spiked, strong, watered. Monsters: savage, timid, sleepy, watchful,
+  swift, starving, crumbling, venomous, veteran. Rooms: flooded, cursed, hallowed, echoing,
+  looted/stocked, infested. Built: all but the flooded and infested rooms (they need drawing:
+  mockups first, round 4) and the hidden traits (a way to find them out first: round 4).
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed
