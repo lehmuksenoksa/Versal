@@ -9,6 +9,7 @@
 // canvas, redone only when something they show has changed.
 
 import { ordinal, ITEMS, PACK, itemName, MONSTERS } from "./world.js";
+import { STATE, THINGS, wounds } from "./tips.js";
 import { drawPlates, drawDrawer } from "./plates.js";
 
 // How wide the screen must be for the sidebar; how wide the sidebar is.
@@ -35,12 +36,9 @@ const KEYS_HELP = [
   ["i", "inventory"],
   ["l", "look at what's in sight"],
   ["m", "all the messages"],
+  ["Tab", "the whole level, as far as you've seen it"],
   ["?", "this help"],
 ];
-// How a monster's state reads in the look.
-const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed", fleeing: "fleeing" };
-// Things worth naming in the look (the rest of the furniture too common to).
-const THINGS = { stairs: "stairs", campfire: "a campfire", altar: "an altar", coffin: "a coffin", sarcophagus: "a sarcophagus", table: "a table", bed: "a bed", shelf: "shelves", bench: "a bench", crate: "a crate", barrel: "a barrel", chair: "a chair", brazier: "a brazier", candles: "candles" };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const NAME_KEY = "versal-name";
@@ -140,8 +138,8 @@ export class UI {
   update(world) {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
-    const stamp = [world.place.depth, !!this.asking, p.name, !!world.won, world.messages.length, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
-      window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}`).join() + world.turn : ""].join("|");
+    const stamp = [world.place.depth, !!this.asking, p.name, !!world.won, world.messages.length, world.messages[world.messages.length - 1]?.n, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
+      window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}${a.hp}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;
     const wide = this.wide;
@@ -255,7 +253,7 @@ export class UI {
         if (!THINGS[f.type] || !world.isVisible(Math.floor(f.x), Math.floor(f.y))) continue;
         things.set(f.type, (things.get(f.type) ?? 0) + 1);
       }
-      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(MONSTERS[a.kind]?.name ?? a.kind)}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}</span></li>`).join("");
+      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(MONSTERS[a.kind]?.name ?? a.kind)}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}${wounds(a) === "unhurt" ? "" : `, ${wounds(a)}`}</span></li>`).join("");
       return `${head("In sight", "l")}
         <div><h5>Creatures</h5><ul class="ledger">${creatures || empty("none")}</ul></div>
         <div><h5>Things</h5><ul class="ledger">${things.size ? [...things].map(([t, n]) => row("", n > 1 ? `${THINGS[t].replace(/^an? /, "")} (${n})` : THINGS[t])).join("") : empty("nothing of note")}</ul></div>

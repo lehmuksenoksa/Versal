@@ -306,6 +306,24 @@ export class Renderer {
     this.buildMap();
   }
 
+  // The whole of what's been seen of the level (`box`, in squares: x0, y0,
+  // x1, y1), zoomed out to fit, on its middle; null, back as it was.
+  showWhole(box) {
+    const TS = this.TS;
+    if (box) {
+      if (!this.whole) this.zoomBefore = this.zoom;
+      this.whole = { x: ((box.x0 + box.x1 + 1) / 2) * TS, y: ((box.y0 + box.y1 + 1) / 2) * TS };
+      const w = Math.max(1, this.vw - (this.insetRight ?? 0)), h = Math.max(1, this.vh - (this.inset ?? 0));
+      this.zoom = Math.max(0.12, Math.min(this.zoomBefore, w / ((box.x1 - box.x0 + 7) * TS), h / ((box.y1 - box.y0 + 7) * TS)));
+    } else {
+      if (!this.whole) return;
+      this.whole = null;
+      this.zoom = this.zoomBefore;
+    }
+    clearTimeout(this.rescale);
+    if (this.world) this.rescale = setTimeout(() => this.buildMap(), 300);
+  }
+
   // Zoom the view. The map is redrawn at the new resolution once zooming
   // pauses; until then the old drawing is scaled.
   setZoom(z) {
@@ -719,7 +737,8 @@ export class Renderer {
     const fit = (target) => target;
     // (And left of the sidebar, `insetRight`.)
     const ih = vh - (this.inset ?? 0) / this.zoom, iw = vw - (this.insetRight ?? 0) / this.zoom;
-    const tx = fit(px - iw / 2, iw, mw), ty = fit(py - ih / 2, ih, mh);
+    // (Showing the whole level, on its middle.)
+    const tx = this.whole ? this.whole.x - iw / 2 : fit(px - iw / 2, iw, mw), ty = this.whole ? this.whole.y - ih / 2 : fit(py - ih / 2, ih, mh);
     if (this.cam.snap) { this.cam.x = tx; this.cam.y = ty; this.cam.snap = false; }
     const f = 1 - Math.exp(-dt * 7);
     this.cam.x += (tx - this.cam.x) * f;
@@ -832,6 +851,17 @@ export class Renderer {
     }
     // Where a click would walk (main.js): a dotted trail and a cross.
     if (this.preview) this.drawPreview(lc, this.preview);
+    // What a tip is about (main.js, tips.js): a thin ink ring round it.
+    if (this.tipRing) {
+      lc.save();
+      lc.strokeStyle = INK;
+      lc.globalAlpha = 0.75;
+      lc.lineWidth = 2 / this.zoom;
+      lc.beginPath();
+      lc.arc((this.tipRing.x + 0.5) * TS, (this.tipRing.y + 0.5) * TS, TS * 0.575, 0, Math.PI * 2);
+      lc.stroke();
+      lc.restore();
+    }
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
       // Goblins show only while in sight, fading in and out.

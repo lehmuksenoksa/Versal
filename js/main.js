@@ -4,6 +4,7 @@ import { World, ITEMS, MONSTERS } from "./world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
 import { wayTo, wayToExplore, WALK } from "./travel.js";
+import { tipFor, tipHtml } from "./tips.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -74,6 +75,10 @@ window.addEventListener("keydown", (e) => {
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
   // (Any key stops a walk.)
   if (walking) { e.preventDefault(); return stopWalk(); }
+  // Tab: the whole level, as far as it's been seen; Tab again, or any other
+  // key, back.
+  if (e.key === "Tab") { e.preventDefault(); return toggleWhole(); }
+  if (renderer.whole) renderer.showWhole(null);
   // (Any key ends a run that's over, stops resting.)
   if (world.ended) { e.preventDefault(); return newRun(); }
   if (resting) { e.preventDefault(); return stopRest("You stop resting."); }
@@ -305,6 +310,47 @@ function updatePreview() {
   renderer.preview = way && way.length ? { way, end: way[way.length - 1] } : null;
 }
 
+// The tip (tips.js) for what the mouse has rested on a moment: a plate
+// beside it (flipped to its left by the screen's edge), a ring round it.
+const TIP_DELAY = 250;
+const tipEl = document.getElementById("tip");
+function updateTip(now) {
+  let t = null;
+  if (hover && world && !walking && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
+    t = tipFor(world, hover.x, hover.y, (a) => renderer.inSight((a.x + 0.5) * renderer.TS, (a.y + 0.5) * renderer.TS));
+  renderer.tipRing = t?.at ?? null;
+  if (!t) {
+    if (!tipEl.hidden) tipEl.hidden = true;
+    return;
+  }
+  const html = tipHtml(t);
+  if (html !== tipEl.dataset.html) { tipEl.innerHTML = html; tipEl.dataset.html = html; }
+  tipEl.hidden = false;
+  const c = renderer.drawnCam, S = renderer.TS * renderer.zoom, r = canvas.getBoundingClientRect();
+  const ax = t.at ? r.left + ((t.at.x + 0.5) * renderer.TS - c[0]) * renderer.zoom : hover.cx, ay = t.at ? r.top + ((t.at.y + 0.5) * renderer.TS - c[1]) * renderer.zoom : hover.cy;
+  const gap = t.at ? S * 0.7 : 18, w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  let left = ax + gap, top = ay - (t.at ? S * 0.2 + 14 : -14);
+  if (left + w > window.innerWidth - (ui.insetRight ?? 0) - 8) left = ax - gap - w;
+  top = Math.max(8, Math.min(window.innerHeight - h - 8, top));
+  tipEl.style.left = `${Math.round(left)}px`;
+  tipEl.style.top = `${Math.round(top)}px`;
+}
+
+// The whole level as far as it's been seen (Tab), or back.
+function toggleWhole() {
+  if (renderer.whole) return renderer.showWhole(null);
+  const L = world.level, W = L.w;
+  let x0 = W, y0 = L.h, x1 = -1, y1 = -1;
+  for (let y = 0; y < L.h; y++) for (let x = 0; x < W; x++) {
+    if (!world.seen[y * W + x]) continue;
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  if (x1 >= 0) renderer.showWhole({ x0, y0, x1, y1 });
+}
+
 // (A tap steps as the finger lifts, so that a second finger coming down,
 // a pinch to zoom, takes no step. Two fingers zoom by how far apart they
 // are; the view stays on the player, as with the wheel.)
@@ -325,6 +371,7 @@ canvas.addEventListener("pointerdown", (e) => {
     if (resting) return stopRest("You stop resting.");
     const t = tileUnder(e.clientX, e.clientY);
     if (t && !world.ended) clickAt(t.x, t.y);
+    if (renderer.whole) renderer.showWhole(null);
     return;
   }
   if (resting) stopRest("You stop resting.");
@@ -374,7 +421,7 @@ canvas.addEventListener("pointermove", (e) => {
   if (e.pointerType !== "mouse") return;
   const t = tileUnder(e.clientX, e.clientY);
   if (!t) return;
-  if (!hover || hover.x !== t.x || hover.y !== t.y) hover = { x: t.x, y: t.y };
+  if (!hover || hover.x !== t.x || hover.y !== t.y) hover = { x: t.x, y: t.y, since: performance.now() };
   Object.assign(hover, { cx: e.clientX, cy: e.clientY });
 });
 canvas.addEventListener("pointerleave", () => { hover = null; renderer.preview = null; });
@@ -416,6 +463,7 @@ function loop(now) {
     renderer.insetRight = ui.insetRight;
     renderer.lookMarks = ui.panel === "l";
     updatePreview();
+    updateTip(now);
     renderer.frame(now);
     if (world) ui.update(world);
     updateActions();
@@ -429,7 +477,7 @@ function loop(now) {
 }
 
 // A handle for poking at things from the browser console.
-window.versal = { get world() { return world; }, renderer, ui, newRun };
+window.versal = { get world() { return world; }, get walking() { return walking; }, renderer, ui, newRun };
 
 (async () => {
   try {

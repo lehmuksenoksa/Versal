@@ -17,6 +17,7 @@ import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
 import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
+import { roomAt, roomName } from "./tips.js";
 
 // The kinds of monster: their letters and names; their speed (moves for each
 // of the player's); how much they wander when milling about (the goblins' 1);
@@ -185,6 +186,9 @@ export class World {
     const L = this.level, at = via === "up" ? L.stairsDown ?? L.start : L.stairsUp ?? L.start;
     this.player.x = at.x;
     this.player.y = at.y;
+    // (The room arrived in needs no naming on the first step.)
+    const r0 = roomAt(L, at.x, at.y);
+    if (r0) r0.entered = true;
     this.actors = [this.player, ...st.actors];
     if (fresh) this.furnish(st);
     this.updateFov();
@@ -324,8 +328,18 @@ export class World {
 
   // A message for the log: `kind` "hurt" for harm done to the player, "good"
   // for the better.
+  // (The same message again straight after folds into it: "You miss the
+  // rat. ×3"; the numbers at the end of each kept, "You hit the rat. ×2 (3, 1)".)
   log(text, kind = "") {
-    this.messages.push({ text, turn: this.turn, kind });
+    const [, base, num] = /^(.*?)(?: \(([^()]*)\))?$/.exec(text), last = this.messages[this.messages.length - 1];
+    if (last && last.base === base && last.kind === kind) {
+      last.n++;
+      if (num !== undefined) last.nums.push(num);
+      last.turn = this.turn;
+      last.text = `${base} ×${last.n}${last.nums.length ? ` (${last.nums.join(", ")})` : ""}`;
+      return;
+    }
+    this.messages.push({ text, turn: this.turn, kind, base, n: 1, nums: num !== undefined ? [num] : [] });
   }
 
   // The player steps by (dx, dy): into a monster, a whack; into a shut door,
@@ -358,6 +372,13 @@ export class World {
     const L = this.level;
     if (L.stairsDown && L.stairsDown.x === nx && L.stairsDown.y === ny) this.log("There are stairs down here (>).");
     if (L.stairsUp && L.stairsUp.x === nx && L.stairsUp.y === ny) this.log("There are stairs up here (<).");
+    // (Coming into a room worth naming the first time, its name.)
+    const room = roomAt(L, nx, ny);
+    if (room && !room.entered && isOpen(this.tileAt(nx, ny))) {
+      room.entered = true;
+      const name = roomName(room, L);
+      if (name) this.log(`You come into ${name}.`);
+    }
     // (Sneaking, a step is slower, and quieter.)
     this.makeNoise(this.sneaking ? "sneak" : "step");
     return this.tick(false, false, this.sneaking ? SNEAK_STEP : 1);
