@@ -345,6 +345,14 @@ export class World {
       return this.tick();
     }
     this.moveActor(p, nx, ny);
+    // (Potions are picked up on the way, when there's room.)
+    for (const floor of this.itemsAt(nx, ny)) {
+      if (ITEMS[floor.item.type].cat !== "potion") continue;
+      const it = this.stow(floor.item);
+      if (!it) continue;
+      this.items.splice(this.items.indexOf(floor), 1);
+      this.log(`You pick up ${itemName(floor.item)} (${it.key}).`);
+    }
     const here = this.itemsAt(nx, ny);
     if (here.length) this.log(`You see ${here.map((i) => itemName(i.item)).join(" and ")} here.`);
     const L = this.level;
@@ -381,6 +389,14 @@ export class World {
       return this.tick();
     }
     return false;
+  }
+
+  // Close the open door at (x, y), next to the player (none standing in it).
+  closeDoorAt(x, y) {
+    const p = this.player, d = this.doorAt(x, y);
+    if (this.ended || !d || !d.open || this.actorAt(x, y) || Math.max(Math.abs(x - p.x), Math.abs(y - p.y)) !== 1) return false;
+    this.setDoor(d, false, p);
+    return this.tick();
   }
 
   setDoor(door, open, by) {

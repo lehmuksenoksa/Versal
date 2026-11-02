@@ -1,8 +1,9 @@
 // Bootstrap: fonts, input and the animation loop.
 
-import { World, ITEMS } from "./world.js";
+import { World, ITEMS, MONSTERS } from "./world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
+import { wayTo, wayToExplore, WALK } from "./travel.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -28,6 +29,7 @@ function step(dx, dy, repeat) {
 // (the last one offered).
 function newRun() {
   stopRest(null);
+  stopWalk();
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
@@ -55,7 +57,8 @@ function startRest() {
     const p = world.player;
     if (world.ended) return stopRest(null);
     if (world.disturbed()) return stopRest("Something stirs. You stop resting.");
-    world.tick(false, true);
+    // (Resting, the player looks about for secret doors as searching does.)
+    world.tick(true, true);
     if (!world.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) stopRest("You feel rested.", "good");
   }, REST_MS);
 }
@@ -69,6 +72,8 @@ function stopRest(why, kind) {
 window.addEventListener("keydown", (e) => {
   if (!world || e.ctrlKey || e.metaKey || e.altKey || ui.asking) return;
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
+  // (Any key stops a walk.)
+  if (walking) { e.preventDefault(); return stopWalk(); }
   // (Any key ends a run that's over, stops resting.)
   if (world.ended) { e.preventDefault(); return newRun(); }
   if (resting) { e.preventDefault(); return stopRest("You stop resting."); }
@@ -106,6 +111,10 @@ window.addEventListener("keydown", (e) => {
     // Close a door next to the player.
     e.preventDefault();
     world.closeDoor();
+  } else if (e.key === "x" || e.key === "X") {
+    // Explore: walk to the nearest place not yet seen, and on.
+    e.preventDefault();
+    startWalk({ explore: true });
   } else if (e.key === "z" || e.key === "Z") {
     // Search for secret doors close by (a turn).
     e.preventDefault();
@@ -201,7 +210,7 @@ function walk() {
   if (d) {
     stepToward(d, true);
     const now = goblinsInSight();
-    if ([...now].some((id) => !hold.seen.has(id))) return endHold();
+    if ([...now].some((id) => !hold.seen.has(id)) || world.player.hp < hold.hp) return endHold();
     hold.seen = now;
   }
   hold.timer = setTimeout(walk, HOLD.every);
@@ -210,6 +219,90 @@ function walk() {
 function endHold() {
   if (hold) clearTimeout(hold.timer);
   hold = null;
+}
+
+// Walking by itself (travel.js): to a square clicked, or exploring (x). A
+// step every `WALK.every` ms, the way found afresh each step; stopped by a
+// monster not in sight before coming into it, a hit point lost, something
+// underfoot (not what it was walking to), a key or a click. `to`: the square;
+// `near`: stop next to it (a monster); `then`: what to do on getting there.
+let walking = null;
+const tooHurt = () => world.player.hp < world.player.maxHp * WALK.tooHurt;
+
+function startWalk(opts) {
+  stopWalk();
+  // (No exploring with a monster in sight that's after you.)
+  const after = opts.explore && world.actors.find((a) => a !== world.player && world.isVisible(a.x, a.y) && (a.state === "aggressive" || a.state === "suspicious"));
+  if (after) return world.log(`Not with ${an(MONSTERS[after.kind]?.name ?? after.kind)} about.`);
+  const way = opts.explore ? wayToExplore(world) : wayTo(world, opts.to.x, opts.to.y);
+  if (!way) return world.log(opts.explore ? "There's nothing left to explore that you can reach." : "You can't see a way there.");
+  if (way.length > 1 && tooHurt()) return world.log("You're too hurt to go far. Rest first (r).");
+  walking = { ...opts, seen: goblinsInSight(), hp: world.player.hp, from: { x: world.player.x, y: world.player.y } };
+  renderer.preview = null;
+  walkStep();
+}
+
+function stopWalk() {
+  if (!walking) return;
+  clearTimeout(walking.timer);
+  walking = null;
+}
+
+function walkStep() {
+  const W = walking;
+  if (!W || !world || world.ended || ui.blocking) return stopWalk();
+  const p = world.player;
+  const way = W.explore ? wayToExplore(world) : wayTo(world, W.to.x, W.to.y);
+  const there = way && (W.near ? way.length <= 1 : way.length === 0);
+  if (!way || there) {
+    stopWalk();
+    if (!way && W.explore) world.log("There's nothing left to explore that you can reach.");
+    if (there) W.then?.();
+    return;
+  }
+  const s = way[0];
+  if (!world.playerMove(s.x - p.x, s.y - p.y)) return stopWalk();
+  // (Stopped by what's come into sight, a hurt, or something underfoot.)
+  const now = goblinsInSight(), fresh = world.actors.find((a) => now.has(a.id) && !W.seen.has(a.id));
+  if (fresh) {
+    world.log(`You stop: ${an(MONSTERS[fresh.kind]?.name ?? fresh.kind)} comes into sight.`);
+    return stopWalk();
+  }
+  W.seen = now;
+  if (p.hp < W.hp || world.ended) return stopWalk();
+  const atEnd = !W.explore && p.x === W.to.x && p.y === W.to.y;
+  if (!atEnd && world.itemsAt(p.x, p.y).length) return stopWalk();
+  W.timer = setTimeout(walkStep, WALK.every);
+}
+const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
+
+// A click on the map (a mouse): on a monster next to you, strike it; further
+// off, walk up to it. On an open door next to you, close it (a shut one, a
+// step opens it). On a thing, walk to it and pick it up (on your own square,
+// pick it up). Anywhere else seen, walk there.
+function clickAt(tx, ty) {
+  const p = world.player, dx = tx - p.x, dy = ty - p.y, d = Math.max(Math.abs(dx), Math.abs(dy));
+  if (d === 0) return world.itemsAt(p.x, p.y).length ? world.pickUp() : undefined;
+  const g = world.actorAt(tx, ty);
+  if (g && g !== p && world.isVisible(tx, ty)) return d === 1 ? world.playerMove(dx, dy) : startWalk({ to: { x: tx, y: ty }, near: true });
+  const door = world.doorAt(tx, ty);
+  if (door && d === 1) return door.open ? world.closeDoorAt(tx, ty) : world.playerMove(dx, dy);
+  const things = world.seen[ty * world.level.w + tx] && world.itemsAt(tx, ty).length;
+  startWalk({ to: { x: tx, y: ty }, then: things ? () => world.pickUp() : null });
+}
+
+// Where a click would take you, shown while the mouse rests on the map: the
+// way as a dotted trail (renderer.preview), found again as things change.
+let hover = null;
+function updatePreview() {
+  if (!hover || !world || walking || ui.blocking || world.ended) { renderer.preview = null; return; }
+  const key = `${hover.x},${hover.y},${world.turn},${world.player.x},${world.player.y}`;
+  if (key === hover.key) return;
+  hover.key = key;
+  const p = world.player, g = world.actorAt(hover.x, hover.y), mon = g && g !== p && world.isVisible(hover.x, hover.y);
+  let way = wayTo(world, hover.x, hover.y);
+  if (way && mon) way = way.slice(0, -1);
+  renderer.preview = way && way.length ? { way, end: way[way.length - 1] } : null;
 }
 
 // (A tap steps as the finger lifts, so that a second finger coming down,
@@ -224,8 +317,17 @@ canvas.addEventListener("pointerdown", (e) => {
   // frame, as in the Claude app, it takes them itself.)
   window.focus();
   if (!world || e.button > 0 || ui.asking) return;
-  if (resting) stopRest("You stop resting.");
   e.preventDefault();
+  // (A click or tap stops a walk, and does nothing else.)
+  if (walking) return stopWalk();
+  // (A mouse clicks to walk, strike, pick up or close; a finger, as below.)
+  if (e.pointerType === "mouse") {
+    if (resting) return stopRest("You stop resting.");
+    const t = tileUnder(e.clientX, e.clientY);
+    if (t && !world.ended) clickAt(t.x, t.y);
+    return;
+  }
+  if (resting) stopRest("You stop resting.");
   canvas.setPointerCapture?.(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   endHold();
@@ -234,9 +336,11 @@ canvas.addEventListener("pointerdown", (e) => {
     return;
   }
   if (fingers.size > 2 || pinch) return;
-  hold = { x: e.clientX, y: e.clientY, seen: goblinsInSight(), tap: true };
+  hold = { x: e.clientX, y: e.clientY, seen: goblinsInSight(), tap: true, hp: world.player.hp };
   hold.timer = setTimeout(() => {
     if (!hold) return;
+    // (Too hurt, no walking: the tap still steps.)
+    if (tooHurt()) return world.log("You're too hurt to go far. Rest first (r).");
     hold.tap = false;
     walk();
   }, HOLD.delay);
@@ -258,6 +362,22 @@ const lift = (e) => {
   if (!fingers.size) pinch = null;
 };
 for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) canvas.addEventListener(type, lift);
+
+// The square under a point on the screen, as drawn.
+function tileUnder(clientX, clientY) {
+  const r = canvas.getBoundingClientRect(), c = renderer.drawnCam;
+  if (!c) return null;
+  return { x: Math.floor(((clientX - r.left) / renderer.zoom + c[0]) / renderer.TS), y: Math.floor(((clientY - r.top) / renderer.zoom + c[1]) / renderer.TS) };
+}
+// (The mouse resting on the map: what a click would do, shown.)
+canvas.addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse") return;
+  const t = tileUnder(e.clientX, e.clientY);
+  if (!t) return;
+  if (!hover || hover.x !== t.x || hover.y !== t.y) hover = { x: t.x, y: t.y };
+  Object.assign(hover, { cx: e.clientX, cy: e.clientY });
+});
+canvas.addEventListener("pointerleave", () => { hover = null; renderer.preview = null; });
 canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // The action strip (touch screens): search (or wait), the lamp, closing a
@@ -295,6 +415,7 @@ function loop(now) {
   try {
     renderer.insetRight = ui.insetRight;
     renderer.lookMarks = ui.panel === "l";
+    updatePreview();
     renderer.frame(now);
     if (world) ui.update(world);
     updateActions();

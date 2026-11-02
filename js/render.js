@@ -830,6 +830,8 @@ export class Renderer {
       const ink = ITEM_INK[it.item.type] ?? INK;
       this.drawGlyph(lc, it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
     }
+    // Where a click would walk (main.js): a dotted trail and a cross.
+    if (this.preview) this.drawPreview(lc, this.preview);
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
       // Goblins show only while in sight, fading in and out.
@@ -1007,6 +1009,33 @@ export class Renderer {
     const x = v.fx + (v.x - v.fx) * e, y = v.fy + (v.y - v.fy) * e;
     if (k < 1) p.oy -= Math.sin(Math.PI * k) * (bones ? 0 : goblin ? 0.32 : 0.08) * motion;
     return { cx: (x + 0.5 + p.ox) * this.TS, cy: (y + 0.5 + p.oy) * this.TS, bx: (x + 0.5) * this.TS, baseY: (y + 0.5) * this.TS, p };
+  }
+
+  // The way a click would walk, as chosen (mockups/choices.html, round 3,
+  // B): ink dots along it, a cross where it stops.
+  drawPreview(ctx, { way, end }) {
+    const TS = this.TS, r = Math.max(TS * 0.07, 2 / this.zoom);
+    ctx.save();
+    ctx.fillStyle = INK;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    for (const s of way.slice(0, -1)) {
+      ctx.moveTo((s.x + 0.5) * TS + r, (s.y + 0.5) * TS);
+      ctx.arc((s.x + 0.5) * TS, (s.y + 0.5) * TS, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    const k = TS / 32, x0 = end.x * TS, y0 = end.y * TS;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.6 * k;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x0 + 9 * k, y0 + 9.5 * k);
+    ctx.lineTo(x0 + 23 * k, y0 + 22.5 * k);
+    ctx.moveTo(x0 + 22.5 * k, y0 + 9 * k);
+    ctx.lineTo(x0 + 9.5 * k, y0 + 23 * k);
+    ctx.stroke();
+    ctx.restore();
   }
 
   drawActor(ctx, a, v, now, t, motion) {
