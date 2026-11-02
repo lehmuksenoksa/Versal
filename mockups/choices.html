@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>Your choices: round 5</h1>
-    <p>The hidden traits are in the game (cursed things and murky potions; a curse lifted at an altar). These two are the drawings again, as you asked. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The ones I'd pick are marked <i>my pick</i>. The stairs and the throne wait for your examples from Dyson.</p>
+    <h1>Your choices: round 6</h1>
+    <p>Flooded rooms are in the game (the light wash, A). One left: the rats' nest, round 4's A refined as you asked. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The one I'd pick is marked <i>my pick</i>.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,23 +88,14 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "flooded2", title: "Flooded rooms, again", said: "I liked the idea of a bluish grey wash over the whole room, together with the option D. Maybe a tad more ripples. Mock up please.", how: "Round 4's D (the water's edge) with a bluish-grey wash over the whole room, the ink and the grid showing through it, and more ripples. A storeroom from the game, at the game's zoom.", tile: "300px",
-    why: "<b>A</b>: the wash says water at once without darkening the room much, and the ripples fill it without crowding the furniture.",
+  { id: "infested3", title: "The rats' nest: round 4's A, refined", said: "I liked the Round 4's A, brownish blob with strokes representing debris. But the strokes were too thin. And I'd add similar kind of rubble we have on cave floors. Refinement, not completely new avenues.", how: "Round 4's A with the debris drawn at the furniture's weights, and stones as the rubble on cave floors: a few outlined pebbles, smaller filled ones, grit. The same storeroom, at the game's zoom.", tile: "300px",
+    why: "<b>A</b>: the debris as heavy as the crates' braces reads clearly without turning to a black tangle, and the stones tie it to the rubble elsewhere on the map.",
     opts: [
-      { k: "D", n: "Round 4's D", d: "The edge and ripples, no wash, for comparison.", img: ["flood2_Before"] },
-      { k: "A", n: "Light wash", d: "A light bluish-grey wash, ripples on most squares.", img: ["flood2_A"], rec: 1 },
-      { k: "B", n: "Deeper wash", d: "A darker wash, ripples on nearly every square.", img: ["flood2_B"] },
-      { k: "C", n: "Two edges", d: "The light wash, and a second, dashed edge inside the first, like a tide line.", img: ["flood2_C"] },
-      { k: "E", n: "Deeper in the middle", d: "The wash light by the walls and darker toward the middle.", img: ["flood2_D"] },
-    ] },
-  { id: "infested2", title: "The rats' nest, again", said: "I like the nest idea, but this visualization is not there yet. The lines are too faint. The outlines of furniture is the line weight we want to use. Mock ups please.", how: "Each nest outlined at the furniture's weight (as the crates and shelves), filled with paper, with the straw inside at the weight of the crates' braces. The same storeroom.", tile: "300px",
-    why: "<b>A</b> reads as one heap of straw, like the furniture beside it; B's bones could be mistaken for things to pick up, C's hollow for a hole in the floor.",
-    opts: [
-      { k: "Before", n: "Round 4's A", d: "The nest as it was, for comparison.", img: ["nest_A"] },
-      { k: "A", n: "A heap of straw", d: "A rounded heap, straw inside.", img: ["nest2_A"], rec: 1 },
-      { k: "B", n: "Straw and bones", d: "A rougher heap, gnawed bones in the straw.", img: ["nest2_B"] },
-      { k: "C", n: "A nest with a hollow", d: "A ring of straw round a dark hollow.", img: ["nest2_C"] },
-      { k: "D", n: "Small heaps", d: "Three small heaps along the wall.", img: ["nest2_D"] },
+      { k: "Before", n: "Round 4's A", d: "As it was, for comparison.", img: ["nest_A"] },
+      { k: "A", n: "Braces' weight", d: "The debris at the weight of the crates' braces; a few stones round it.", img: ["nest3_A"], rec: 1 },
+      { k: "B", n: "Outlines' weight", d: "Fewer, heavier strokes, at the weight of the furniture's outlines.", img: ["nest3_B"] },
+      { k: "C", n: "Spilling out", d: "A browner heap, the stones and grit spilling wider round it.", img: ["nest3_C"] },
+      { k: "D", n: "A bigger heap", d: "A third bigger, more debris and stones.", img: ["nest3_D"] },
     ] },
 ];
 
