@@ -193,6 +193,9 @@ Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
   looted/stocked, infested. Built: all but the flooded and infested rooms (they need drawing:
   mockups first, round 4) and the hidden traits (a way to find them out first: round 4).
 
+- **Later:** tips, the walk trail and click to walk only while Shift is held; a plain click steps
+  toward the pointer and, held, walks, as before.
+
 ## Round 4 (choices page)
 
 - **Hidden traits:** cursed things and murky potions; found out on using them (A); a curse lifted

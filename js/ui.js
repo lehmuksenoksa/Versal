@@ -19,7 +19,9 @@ const DRAWER_GREY = "#1e1c1a";
 // The keys, for the help.
 const KEYS_HELP = [
   ["WASD, arrows, numpad", "move; into a monster, attack; into a door, open it"],
-  ["click", "walk there; a monster, attack it; a thing, pick it up; a door by you, close it"],
+  ["click", "step toward it; hold to keep walking"],
+  ["Shift", "held: what's under the mouse, and the way there"],
+  ["Shift+click", "walk there; a monster, attack it; a thing, pick it up; a door by you, close it"],
   ["x", "explore: walk to where you haven't been"],
   ["z", "search for secret doors"],
   ["r", "rest until healed"],

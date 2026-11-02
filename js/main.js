@@ -299,8 +299,15 @@ function clickAt(tx, ty) {
 // Where a click would take you, shown while the mouse rests on the map: the
 // way as a dotted trail (renderer.preview), found again as things change.
 let hover = null;
+// (Shown, and clicks walking, only while Shift is held: `shift`, kept from
+// the keys and the mouse.)
+let shift = false;
+const setShift = (on) => { if (shift !== on) { shift = on; if (hover) hover.since = performance.now(); } };
+window.addEventListener("keydown", (e) => e.key === "Shift" && setShift(true), true);
+window.addEventListener("keyup", (e) => e.key === "Shift" && setShift(false), true);
+window.addEventListener("blur", () => setShift(false));
 function updatePreview() {
-  if (!hover || !world || walking || ui.blocking || world.ended) { renderer.preview = null; return; }
+  if (!hover || !shift || !world || walking || ui.blocking || world.ended) { renderer.preview = null; return; }
   const key = `${hover.x},${hover.y},${world.turn},${world.player.x},${world.player.y}`;
   if (key === hover.key) return;
   hover.key = key;
@@ -316,7 +323,7 @@ const TIP_DELAY = 250;
 const tipEl = document.getElementById("tip");
 function updateTip(now) {
   let t = null;
-  if (hover && world && !walking && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
+  if (hover && shift && world && !walking && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
     t = tipFor(world, hover.x, hover.y, (a) => renderer.inSight((a.x + 0.5) * renderer.TS, (a.y + 0.5) * renderer.TS));
   renderer.tipRing = t?.at ?? null;
   if (!t) {
@@ -366,8 +373,10 @@ canvas.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   // (A click or tap stops a walk, and does nothing else.)
   if (walking) return stopWalk();
-  // (A mouse clicks to walk, strike, pick up or close; a finger, as below.)
-  if (e.pointerType === "mouse") {
+  // (With Shift held, a mouse click walks, strikes, picks up or closes;
+  // without, it steps and holds to walk, as a finger, below.)
+  setShift(e.shiftKey);
+  if (e.pointerType === "mouse" && e.shiftKey) {
     if (resting) return stopRest("You stop resting.");
     const t = tileUnder(e.clientX, e.clientY);
     if (t && !world.ended) clickAt(t.x, t.y);
@@ -421,6 +430,7 @@ canvas.addEventListener("pointermove", (e) => {
   if (e.pointerType !== "mouse") return;
   const t = tileUnder(e.clientX, e.clientY);
   if (!t) return;
+  setShift(e.shiftKey);
   if (!hover || hover.x !== t.x || hover.y !== t.y) hover = { x: t.x, y: t.y, since: performance.now() };
   Object.assign(hover, { cx: e.clientX, cy: e.clientY });
 });

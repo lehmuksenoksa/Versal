@@ -71,7 +71,8 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   drawn more faintly, without the floor grid or the furniture, on a floor toned toward the stone; ground never seen is black,
   fading in through thickening strokes. They carry a candle whose flame casts shadows, sharp near a
   wall and softer away from it, with darkness outside its light.
-- Getting about with a mouse (`js/travel.js`): a click walks to a seen square by the shortest way
+- Getting about with a mouse (`js/travel.js`), with Shift held (a plain click steps toward the
+  pointer, held it walks, as a finger does): a click walks to a seen square by the shortest way
   through what's known, strikes a monster next to you or walks up to one further off, walks to a
   thing and picks it up, closes an open door next to you; while the mouse rests on the map the way
   shows as a dotted ink trail with a cross where it stops. `x` explores: to the nearest place not
@@ -80,7 +81,7 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   than a step won't start. On touch screens a tap steps and a hold walks, as before. Resting
   searches for secret doors; potions are picked up by walking over them. Tab zooms out to the
   whole of what's been seen of the level.
-- Tips (`js/tips.js`): resting the mouse on a monster, a thing on the floor, furniture or a named
+- Tips (`js/tips.js`), with Shift held: resting the mouse on a monster, a thing on the floor, furniture or a named
   room's floor shows a torn black plate beside it, a thin ink ring round what it's about: the
   name, a monster's state and wounds in words, what it does, a thing's numbers. Rooms worth naming
   say so as the player first comes in ("You come into a cursed crypt."). The same message again
