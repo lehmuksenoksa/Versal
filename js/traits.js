@@ -73,6 +73,10 @@ export const ROOM_TRAITS = {
   cursed: { kinds: ["crypt"], about: "The dead rise again here, and nothing heals.", rise: [3, 6] },
   hallowed: { kinds: ["shrine"], about: "Rest heals twice as fast; the undead keep out." },
   echoing: { kinds: ["hall", "gallery", "halls"], about: "Every sound carries twice as far." },
+  // (Flooded: every step wades, `slow` times as long, monsters' too, and
+  // heard twice as far; drawn as chosen in round 5, A: a light bluish-grey
+  // wash, the water's edge inside the walls, ripples.)
+  flooded: { kinds: ["store", "plain", "I", "collapsed"], about: "Every step wades: slow, and loud.", slow: 1.5 },
   looted: { kinds: ["store", "I"], about: "Picked clean." },
   stocked: { kinds: ["store", "I"], about: "Well stocked.", more: 2 },
 };
@@ -80,4 +84,4 @@ export const ROOM_TRAITS = {
 export const ROOM_TRAIT = { count: [2, 4] };
 
 // A room's kind for the table above (a hall of the king's by its plan).
-export const roomKind = (r) => (r.halls ? (r.hallKind === "I" ? "I" : "halls") : r.kind);
+export const roomKind = (r) => (r.halls ? (r.hallKind === "I" ? "I" : "halls") : r.collapsed ? "collapsed" : r.kind);

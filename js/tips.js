@@ -41,7 +41,8 @@ const KINDS = { store: "storeroom", gallery: "gallery", hall: "pillared hall", c
 export function roomName(r, level) {
   if (!r) return null;
   if (r === level.throneRoom) return "the throne room";
-  const kind = r.halls ? (r.hallKind === "I" ? "storeroom" : "great hall") : r.cave || r.collapsed ? null : KINDS[r.kind];
+  // (A room of no kind worth naming is named for its trait, if it has one.)
+  const kind = (r.halls ? (r.hallKind === "I" ? "storeroom" : "great hall") : r.cave || r.collapsed ? null : KINDS[r.kind]) ?? (r.trait ? "room" : null);
   return kind ? an(r.trait ? `${r.trait} ${kind}` : kind) : null;
 }
 // The room the square (x, y) is in, if any (the smallest whose box it's in).

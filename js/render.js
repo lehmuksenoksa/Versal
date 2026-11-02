@@ -46,6 +46,9 @@ const LETTERING = {
 
 // Things' ink, where not black.
 const ITEM_INK = { potion: "#b5302a" };
+// Water in a flooded room: its wash, how far in from the walls its edge
+// runs (squares), the share of squares with ripples.
+const WATER = { wash: "rgba(112, 136, 150, 0.3)", inset: 0.18, ripples: 0.7 };
 
 // Idle motion. Offsets are in tiles; t in seconds.
 const POSES = {
@@ -857,6 +860,8 @@ export class Renderer {
       const ink = ITEM_INK[it.item.type] ?? INK;
       this.drawGlyph(lc, it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
     }
+    // Flooded rooms' water, under everything on the floor.
+    this.drawWater(lc, view);
     // Where a click would walk (main.js): a dotted trail and a cross.
     if (this.preview) this.drawPreview(lc, this.preview);
     // What a tip is about (main.js, tips.js): a thin ink ring round it.
@@ -1047,6 +1052,85 @@ export class Renderer {
     const x = v.fx + (v.x - v.fx) * e, y = v.fy + (v.y - v.fy) * e;
     if (k < 1) p.oy -= Math.sin(Math.PI * k) * (bones ? 0 : goblin ? 0.32 : 0.08) * motion;
     return { cx: (x + 0.5 + p.ox) * this.TS, cy: (y + 0.5 + p.oy) * this.TS, bx: (x + 0.5) * this.TS, baseY: (y + 0.5) * this.TS, p };
+  }
+
+  // The water in a flooded room (traits.js), as chosen (mockups/choices.html,
+  // round 5, A): a light bluish-grey wash over the room, a wavy line of the
+  // water's edge just inside the walls, ripples on most squares; in sight
+  // only (as the grid), and as lit as the floor (the wash laid by half
+  // squares, each as the light there).
+  drawWater(ctx, view) {
+    const w = this.world, L = w.level, TS = this.TS;
+    for (const r of L.rooms) {
+      if (r.trait !== "flooded") continue;
+      if ((r.x + r.w) * TS < view.x || (r.y + r.h) * TS < view.y || r.x * TS > view.x + view.w || r.y * TS > view.y + view.h) continue;
+      const W = (r.water ??= this.waterOf(r));
+      ctx.save();
+      ctx.fillStyle = WATER.wash;
+      for (const [x, y] of W.squares) {
+        if (!w.isVisible(x, y)) continue;
+        for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) {
+          const px = (x + i / 2) * TS, py = (y + j / 2) * TS, a = this.exp.lightAt(px + TS / 4, py + TS / 4);
+          if (a < 0.02) continue;
+          ctx.globalAlpha = a;
+          ctx.fillRect(px, py, TS / 2 + 0.5, TS / 2 + 0.5);
+        }
+      }
+      ctx.strokeStyle = INK;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const lit = (x, y) => (w.isVisible(Math.floor(x), Math.floor(y)) ? this.exp.lightAt(x * TS, y * TS) : 0);
+      ctx.lineWidth = TS * 0.06;
+      for (let i = 0; i < W.edge.length; i++) {
+        const [ax, ay] = W.edge[i], [bx, by] = W.edge[(i + 1) % W.edge.length], a = lit((ax + bx) / 2, (ay + by) / 2);
+        if (a < 0.02) continue;
+        ctx.globalAlpha = 0.8 * a;
+        ctx.beginPath();
+        ctx.moveTo(ax * TS, ay * TS);
+        ctx.lineTo(bx * TS, by * TS);
+        ctx.stroke();
+      }
+      ctx.lineWidth = TS * 0.05;
+      for (const [cx, cy, len] of W.ripples) {
+        const a = lit(cx, cy);
+        if (a < 0.02) continue;
+        ctx.globalAlpha = 0.72 * a;
+        ctx.beginPath();
+        for (let k = 0; k <= 16; k++) {
+          const t = k / 16;
+          ctx.lineTo((cx + (t - 0.5) * len) * TS, (cy + Math.sin(t * Math.PI * 3) * 0.05) * TS);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // A flooded room's water, laid out once (by the room's place, so it's the
+  // same each time): its squares, the edge's points, the ripples (in
+  // squares: middle and length).
+  waterOf(r) {
+    const w = this.world, L = w.level;
+    let seed = (r.x * 7919 + r.y * 104729) % 2147483647 || 1;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const squares = [];
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (w.walkable(x, y) || (L.features ?? []).some((f) => Math.floor(f.x) === x && Math.floor(f.y) === y)) squares.push([x, y]);
+    const free = (x, y) => w.walkable(x, y) && !(L.features ?? []).some((f) => f.type !== "post" && Math.floor(f.x) === x && Math.floor(f.y) === y);
+    const edge = [], k = WATER.inset, x0 = r.x + k, y0 = r.y + k, x1 = r.x + r.w - k, y1 = r.y + r.h - k;
+    const side = (ax, ay, bx, by) => {
+      const n = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / 0.25));
+      for (let i = 0; i < n; i++) edge.push([ax + ((bx - ax) * i) / n + (rnd() - 0.5) * 0.06, ay + ((by - ay) * i) / n + (rnd() - 0.5) * 0.06]);
+    };
+    side(x0, y0, x1, y0);
+    side(x1, y0, x1, y1);
+    side(x1, y1, x0, y1);
+    side(x0, y1, x0, y0);
+    const ripples = [];
+    for (const [x, y] of squares) {
+      if (!free(x, y) || rnd() > WATER.ripples) continue;
+      for (let i = rnd() < 0.3 ? 2 : 1; i > 0; i--) ripples.push([x + 0.25 + rnd() * 0.5, y + 0.25 + rnd() * 0.5, 0.36 + rnd() * 0.14]);
+    }
+    return { squares, edge, ripples };
   }
 
   // The way a click would walk, as chosen (mockups/choices.html, round 3,

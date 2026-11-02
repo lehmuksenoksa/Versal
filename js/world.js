@@ -425,15 +425,17 @@ export class World {
       const name = roomName(room, L);
       if (name) this.log(`You come into ${name}.`);
     }
-    // (Sneaking, a step is slower, and quieter.)
+    // (Sneaking, a step is slower, and quieter; wading, slower still.)
     this.makeNoise(this.sneaking ? "sneak" : "step");
-    return this.tick(false, false, this.sneaking ? SNEAK_STEP : 1);
+    const wade = this.roomTraitAt(nx, ny) === "flooded" ? ROOM_TRAITS.flooded.slow : 1;
+    return this.tick(false, false, (this.sneaking ? SNEAK_STEP : 1) * wade);
   }
 
   // A noise the player makes, at their square, heard this turn.
   makeNoise(kind, x = this.player.x, y = this.player.y) {
-    // (In an echoing room, twice as far.)
-    (this.noises ??= []).push({ x, y, r: NOISE[kind][0] * (this.roomTraitAt(x, y) === "echoing" ? 2 : 1), loud: NOISE[kind][1] });
+    // (In an echoing room, or wading, twice as far.)
+    const R = this.roomTraitAt(x, y);
+    (this.noises ??= []).push({ x, y, r: NOISE[kind][0] * (R === "echoing" || R === "flooded" ? 2 : 1), loud: NOISE[kind][1] });
   }
 
   // Is there an open door next to the player to close (none standing in it)?
@@ -1114,6 +1116,8 @@ export class World {
   moveActor(a, x, y) {
     // (The undead won't come into a hallowed room.)
     if (a !== this.player && MONSTERS[a.kind]?.undead && this.roomTraitAt(x, y) === "hallowed" && this.roomTraitAt(a.x, a.y) !== "hallowed") return;
+    // (Wading, a monster's step takes longer too.)
+    if (a !== this.player && this.roomTraitAt(x, y) === "flooded") a.energy -= ROOM_TRAITS.flooded.slow - 1;
     this.events.push({ type: "move", actor: a });
     a.x = x;
     a.y = y;

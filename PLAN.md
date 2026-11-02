@@ -199,6 +199,13 @@ Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
 - **Infested rooms:** the nest (A), but drawn at the furniture's line weight; the lines were too
   faint: mockups again.
 
+## Round 5 (choices page)
+
+- **Flooded rooms:** the light wash with the water's edge and ripples (A). Built.
+- **Infested rooms:** none of round 5's; back to round 4's A (a brownish heap with strokes for
+  debris), the strokes heavier, with stones like the rubble on cave floors. A refinement, not new
+  ideas: mockups again.
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed

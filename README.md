@@ -90,7 +90,9 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   potions), one monster pack in four (savage, timid, sleepy, watchful, swift, starving, crumbling,
   venomous, veteran), and two to four rooms a level (a cursed crypt, where the dead rise again once
   and nothing heals; a hallowed shrine, where resting heals twice as fast and the undead keep out;
-  an echoing hall or gallery, where sounds carry twice as far; a looted or a stocked storeroom).
+  an echoing hall or gallery, where sounds carry twice as far; a looted or a stocked storeroom; a
+  flooded room, where every step wades, slow and loud, drawn with a light bluish-grey wash, the
+  water's edge inside the walls and ripples).
   Two are hidden: a cursed weapon or armour is a little worse and won't come off, found out on
   wielding or wearing it (until then any weapon or armour not yet used is named with a question
   mark, "a sword?"), and lifted by standing three turns next to an altar; murky potions all heal
