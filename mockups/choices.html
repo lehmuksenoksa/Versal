@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>Your choices: round 6</h1>
-    <p>Flooded rooms are in the game (the light wash, A). One left: the rats' nest, round 4's A refined as you asked. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The one I'd pick is marked <i>my pick</i>.</p>
+    <h1>Your choices: round 7</h1>
+    <p>The rats' nest once more: round 6's C, with your changes. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The one I'd pick is marked <i>my pick</i>.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,14 +88,14 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "infested3", title: "The rats' nest: round 4's A, refined", said: "I liked the Round 4's A, brownish blob with strokes representing debris. But the strokes were too thin. And I'd add similar kind of rubble we have on cave floors. Refinement, not completely new avenues.", how: "Round 4's A with the debris drawn at the furniture's weights, and stones as the rubble on cave floors: a few outlined pebbles, smaller filled ones, grit. The same storeroom, at the game's zoom.", tile: "300px",
-    why: "<b>A</b>: the debris as heavy as the crates' braces reads clearly without turning to a black tangle, and the stones tie it to the rubble elsewhere on the map.",
+  { id: "infested4", title: "The rats' nest: C, changed", said: "I like C best thus far. Some changes needed: the debris can go on top of walls. The debris fill could be brown as well. The strokes still need to be thicker. As thick as the outline of the larger debris pieces.", how: "Round 6's C with the strokes as thick as the outlined stones' edges, the stones filled brown, and the debris free to lie over the walls. Each at the game's zoom, then close.", tile: "420px",
+    why: "<b>B</b>: pushed against the wall, the heap spills over it, which says rats come and go through it; the lighter brown keeps the stones' outlines readable.",
     opts: [
-      { k: "Before", n: "Round 4's A", d: "As it was, for comparison.", img: ["nest_A"] },
-      { k: "A", n: "Braces' weight", d: "The debris at the weight of the crates' braces; a few stones round it.", img: ["nest3_A"], rec: 1 },
-      { k: "B", n: "Outlines' weight", d: "Fewer, heavier strokes, at the weight of the furniture's outlines.", img: ["nest3_B"] },
-      { k: "C", n: "Spilling out", d: "A browner heap, the stones and grit spilling wider round it.", img: ["nest3_C"] },
-      { k: "D", n: "A bigger heap", d: "A third bigger, more debris and stones.", img: ["nest3_D"] },
+      { k: "Before", n: "Round 6's C", d: "As it was, for comparison.", img: ["nest3_C", "nest3_C_close"] },
+      { k: "A", n: "As asked", d: "Thicker strokes, brown stones, debris over the wall where it falls.", img: ["nest4_A", "nest4_A_close"] },
+      { k: "B", n: "Against the wall", d: "As A, the heap pushed half onto the wall.", img: ["nest4_B", "nest4_B_close"], rec: 1 },
+      { k: "C", n: "Darker brown", d: "As A, the heap and stones a darker brown.", img: ["nest4_C", "nest4_C_close"] },
+      { k: "D", n: "Against the wall, fewer strokes", d: "As B, with fewer strokes in the heap.", img: ["nest4_D", "nest4_D_close"] },
     ] },
 ];
 
