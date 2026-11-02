@@ -7,6 +7,9 @@ import { T, isOpen } from "./dungeon.js";
 import { RNG } from "./rng.js";
 import { hatchRock, hatchSettings, distanceTransform } from "./hatching.js";
 
+// A brazier's bowl, its radius in squares (render.js draws its near rim
+// again over the flame).
+export const BRAZIER_BOWL = 0.35;
 export const INK = "#1b1815";
 
 // Random numbers of their own for a place: seeded by `seed` and the numbers
@@ -484,8 +487,8 @@ function drawShadow(ctx, level, TS, floor, seed) {
   g.restore();
   const things = (mode) => {
     // (No shadow for a campfire's teepee, nor for stairs, flat on the floor,
-    // nor a hearth in its wall, nor candles.)
-    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => !["campfire", "stairs", "hearth", "candles"].includes(f.type) : null);
+    // nor candles.)
+    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => !["campfire", "stairs", "candles"].includes(f.type) : null);
     if (level.rubble) drawRubble(g, level, TS, new RNG(seed ^ 0x2bb1e), mode);
   };
   things("cast");
@@ -698,21 +701,13 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
       P.line(x - s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
       P.line(x + s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
     } else if (f.type === "brazier") {
-      // A round bowl of coals on three short legs. (The flame is drawn over
-      // it as it burns.)
-      const r = TS * 0.27;
+      // A round bowl of coals on three short legs, big enough to hold its
+      // fire. (The flame is drawn over it as it burns, down inside the bowl:
+      // render.js.)
+      const r = TS * BRAZIER_BOWL;
       for (const a of [0.5, 0.5 + (2 * Math.PI) / 3, 0.5 + (4 * Math.PI) / 3].map((a) => a + Math.PI / 2)) P.line(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8, x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45, OUT);
       P.round(x, y, r, OUT, PAPER);
       P.round(x, y, r * 0.62, IN, INK);
-    } else if (f.type === "hearth") {
-      // A fireplace cut into the wall: a hearthstone along its mouth and two
-      // logs crossed in it. (The flame is drawn over them.)
-      P.line(...turn(-TS * 0.5, -TS * 0.62), ...turn(-TS * 0.5, TS * 0.62), OUT + 0.6);
-      for (const s of [-1, 1]) {
-        const a = turn(-TS * 0.32, s * TS * 0.3), b = turn(TS * 0.12, -s * TS * 0.26), len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        const nx = (-(b[1] - a[1]) / len) * TS * 0.05, ny = ((b[0] - a[0]) / len) * TS * 0.05;
-        P.shape([[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]], 0, INK);
-      }
     } else if (f.type === "candles") {
       // Three fat candles standing on an altar, seen from above: a round
       // each, its wick a dot. (Their flames and glows are drawn over them

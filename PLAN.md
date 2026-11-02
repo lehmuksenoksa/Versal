@@ -145,7 +145,7 @@ Every letter is edged in paper (fading with the light), except the undead, edged
 
 ## Light and shadow (done, first version)
 
-- Lit rooms lit by lights of their own that suit them (candles, braziers, hearths), not evenly;
+- Lit rooms lit by lights of their own that suit them (candles, braziers), not evenly;
   columns, posts and big furniture throw shadows from them; lit rooms more often have columns.
 - Rock formations round campfires placed to make dark lanes past the camp or up to it.
 - The king's halls: braziers down the middle aisle, the columns striping the side aisles with shadow.
@@ -163,7 +163,9 @@ From the open questions in the presentation of the visual elements; chosen on th
   the hatching never meets it; candles as three fat candles; routes R4 (long loops, then short
   tunnels); the king's halls varied by kind (columned either way, a forest of columns, round, a
   crossing, split, round an uncut core, a storeroom, half dug, the throne room with an apse).
-- **Round 2, to choose:** braziers (the flame lower and bigger), hearths (more ideas), the throne.
+- **Round 2:** braziers D (a bowl a third bigger, the flame burning down inside it) in the game;
+  hearths set aside for now (none of two rounds worked; in the backlog); the throne to redo from
+  the player's examples of Dyson's maps, as the stairs.
 - **Stairs:** none of the mockups right yet; to redo from the player's examples of Dyson's maps.
   Telling up from down: ink only (chosen), once the stairs are.
 - **Backlog:** a real victory page.

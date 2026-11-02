@@ -3,6 +3,8 @@
 Ideas set aside for later, roughly in the order they came up.
 
 ## Map
+- Hearths: set aside after two rounds of mockups (`mockups/lights.html`, `mockups/lights2.html`)
+  found none that worked; dining halls and barracks have a brazier meanwhile.
 - Doors (were drawn as slabs that swing open; need redrawing to suit the heavier walls).
 - Pillars in large rooms.
 - Floor details: cracks and rubble.

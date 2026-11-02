@@ -71,7 +71,7 @@ const joinRect = (a, b) => {
   const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
   return [x, y, Math.max(a[0] + a[2], b[0] + b[2]) - x, Math.max(a[1] + a[3], b[1] + b[3]) - y];
 };
-// Lights in the level (campfires, braziers, hearths, candles): their bands,
+// Lights in the level (campfires, braziers, candles): their bands,
 // in squares from the light, like the candle's (levelgen.js's LIGHTS); and
 // how far off the player sees what they light.
 const LAMPS = LIGHTS;

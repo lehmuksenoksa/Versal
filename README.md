@@ -28,8 +28,8 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   in: goblin campfires in the caverns (a pack always round them; a flame burning over a teepee of
   three logs, redrawn on twos), with rock formations set round them so their shadows make a dark
   way past the camp or up to it; in lit dungeon rooms, lights that suit them (candles on a
-  shrine's altar, a brazier at one end of a crypt, a hearth cut into the wall of a dining hall or
-  barracks, braziers in the middle of the rest, a lit room more often held up by columns); braziers
+  shrine's altar, a brazier at one end of a crypt, a dining hall or a barracks, braziers in the
+  middle of the rest, a lit room more often held up by columns); braziers
   down the middle aisle of the king's halls, between the rows of columns (either side of the king
   in the throne room); and stretches of corridor lit throughout. Lit places are seen from far off,
   in line of sight, and a sneaking player standing in the light (a light's full and dim bands) is

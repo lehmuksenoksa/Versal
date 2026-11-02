@@ -42,12 +42,13 @@ const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
 // dark one as dark, though the map shows it faintly. And the flame's size
 // (times a campfire's) and where it stands (squares below the light's
 // middle). Campfires in caves; braziers (a bowl of coals on legs, in the way)
-// in rooms and the king's halls; a hearth cut into a wall; candles on an
+// in rooms and the king's halls; candles on an
 // altar (three candles, each a small flame).
 export const LIGHTS = {
   fire: { full: 3.5, dim: 2, dark: 2, flame: 1.15, foot: 0.1 },
-  brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 0.62, foot: -0.08 },
-  hearth: { full: 3, dim: 1.5, dark: 1.5, flame: 0.8, foot: 0.05 },
+  // (A brazier's flame burning down inside its bowl, as chosen in
+  // mockups/choices.html; the bowl's near rim drawn over its foot.)
+  brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 1.0, foot: 0.17 },
   // (A cultist's lantern, carried: light, no flame; as far as it shows them
   // the player, as chosen in mockups/choices.html.)
   lantern: { full: 2, dim: 1, dark: 1.5, flame: 0, foot: 0 },
@@ -1111,27 +1112,6 @@ function tryAreas(S, rng) {
         roomLights.push({ x: bestSq.x + 0.5, y: bestSq.y + 0.5, kind: "brazier", block: idx(bestSq.x, bestSq.y) });
         features.push({ type: "brazier", x: bestSq.x + 0.5, y: bestSq.y + 0.5 });
       };
-      // A hearth cut into the middle of one of the room's walls (`sides`),
-      // where the rock is whole; burning in the way.
-      const hearth = (sides) => {
-        for (const sd of rng.shuffle([...sides])) {
-          const L = sd.len(r);
-          for (const u of [Math.floor((L - 1) / 2), Math.ceil((L - 1) / 2), Math.floor((L - 1) / 2) - 1, Math.ceil((L - 1) / 2) + 1]) {
-            if (u < 1 || u > L - 2 || !solid(r, sd, u - 1, u + 1, 0, 1)) continue;
-            const [ix, iy] = sd.at(r, u, -1);
-            if (!free(ix, iy)) continue;
-            hollow(r, sd, u, 0);
-            niches.add(sd.at(r, u, 0).join());
-            take(ix, iy);
-            const [x, y] = mid(r, sd, u, 0);
-            roomLights.push({ x, y, kind: "hearth", block: idx(Math.floor(x), Math.floor(y)) });
-            features.push({ type: "hearth", x, y, hx: -sd.into[0], hy: -sd.into[1] });
-            return true;
-          }
-        }
-        return false;
-      };
-      const shortSides = SIDES.filter((sd) => !longSides.includes(sd));
       if (kind === "shrine") {
         // Candles on the altar (which then throws no shadow of its own).
         const altar = features.findLast((f) => f.type === "altar");
@@ -1147,10 +1127,10 @@ function tryAreas(S, rng) {
         if (lo(r) >= 5) brazier(rng.chance(0.5) ? 1 : A - 2, (B - 1) / 2);
         else brazier((A - 1) / 2, (B - 1) / 2);
       } else if (kind === "dining" || kind === "barracks") {
-        // A hearth: in a short wall of a dining hall (the tables throwing
-        // their shadows down the room), the end of a barracks (between the
-        // rows of beds); a brazier if no wall will take one.
-        if (!hearth(shortSides.length ? shortSides : SIDES) && !hearth(SIDES)) brazier((A - 1) / 2, (B - 1) / 2);
+        // A brazier at one end of a dining hall (the tables throwing their
+        // shadows down the room), of a barracks (between the rows of beds).
+        // (Hearths are set aside for now: see BACKLOG.md.)
+        brazier(rng.chance(0.5) ? 1 : A - 2, (B - 1) / 2);
       } else if (kind === "gallery") {
         // Braziers down the middle, between the rows of posts.
         const [a0, n] = spread(A, 1, 5);
