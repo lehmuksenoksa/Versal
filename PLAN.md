@@ -184,7 +184,7 @@ Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
   comparing before wielding, "wield it?", last words on the death page, keeping the run.
 - **Click to walk:** the way shown as a dotted ink trail and a cross (B). Phones as they were: a
   tap steps, a hold walks; click to walk with a mouse only (A).
-- **Tips:** a torn black plate beside the thing, a thin ink ring round it (A). They say: name and
+- **Tips:** a torn black plate beside the thing (A); no ring round it (asked later). They say: name and
   trait, awake or not, wounds, what it does, a thing's numbers, furniture, the room on its floor.
   Not: comparing with yours, remembered things, a danger rating.
 - **Traits:** items, monsters, rooms and hidden ones all wanted. Items: rusty, sharp, heavy,

@@ -871,17 +871,6 @@ export class Renderer {
     this.drawNests(lc, view);
     // Where a click would walk (main.js): a dotted trail and a cross.
     if (this.preview) this.drawPreview(lc, this.preview);
-    // What a tip is about (main.js, tips.js): a thin ink ring round it.
-    if (this.tipRing) {
-      lc.save();
-      lc.strokeStyle = INK;
-      lc.globalAlpha = 0.75;
-      lc.lineWidth = 2 / this.zoom;
-      lc.beginPath();
-      lc.arc((this.tipRing.x + 0.5) * TS, (this.tipRing.y + 0.5) * TS, TS * 0.575, 0, Math.PI * 2);
-      lc.stroke();
-      lc.restore();
-    }
     for (const a of [...w.actors].sort((a, b) => a.y - b.y)) {
       const v = this.view(a);
       // Goblins show only while in sight, fading in and out.

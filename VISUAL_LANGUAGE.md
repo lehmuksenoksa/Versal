@@ -77,7 +77,6 @@ lettering, as small as reads at the game's zoom.
 ## Already in the game that break these (to bring into line)
 
 - The walk trail's dots and cross (`drawPreview`, render.js): perfect circles, ruled lines.
-- The tip's ring (render.js): a perfect circle.
 - Flooded rooms (`drawWater`): the water's edge in ruled segments, the ripples perfect waves;
   the wash laid by half squares by their light, so its edge steps.
 - The rats' nest (`drawNests`): the debris strokes plain curves of one width.

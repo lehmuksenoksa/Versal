@@ -82,7 +82,7 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   searches for secret doors; potions are picked up by walking over them. Tab zooms out to the
   whole of what's been seen of the level.
 - Tips (`js/tips.js`), with Shift held: resting the mouse on a monster, a thing on the floor, furniture or a named
-  room's floor shows a torn black plate beside it, a thin ink ring round what it's about: the
+  room's floor shows a torn black plate beside it: the
   name, a monster's state and wounds in words, what it does, a thing's numbers. Rooms worth naming
   say so as the player first comes in ("You come into a cursed crypt."). The same message again
   straight after folds into one ("You miss the rat. ×3").

@@ -1,7 +1,7 @@
 // What things are, in words: the tips shown while the mouse rests on
 // something (a monster, a thing on the floor, furniture, a room's floor), as
-// chosen (mockups/choices.html, round 3: A, a torn black plate beside it, a
-// thin ink ring round what it's about); and the words for a monster's state
+// chosen (mockups/choices.html, round 3: A, a torn black plate beside it;
+// no ring round the thing, asked later); and the words for a monster's state
 // and wounds, and the rooms' names, used by the look and the log too.
 import { MONSTERS, ITEMS, itemName, monName, an, unsure, shownTrait } from "./world.js";
 import { ITEM_TRAITS, MONSTER_TRAITS, ROOM_TRAITS } from "./traits.js";

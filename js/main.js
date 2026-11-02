@@ -318,14 +318,13 @@ function updatePreview() {
 }
 
 // The tip (tips.js) for what the mouse has rested on a moment: a plate
-// beside it (flipped to its left by the screen's edge), a ring round it.
+// beside it (flipped to its left by the screen's edge).
 const TIP_DELAY = 250;
 const tipEl = document.getElementById("tip");
 function updateTip(now) {
   let t = null;
   if (hover && shift && world && !walking && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
     t = tipFor(world, hover.x, hover.y, (a) => renderer.inSight((a.x + 0.5) * renderer.TS, (a.y + 0.5) * renderer.TS));
-  renderer.tipRing = t?.at ?? null;
   if (!t) {
     if (!tipEl.hidden) tipEl.hidden = true;
     return;
