@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>Your choices: round 4</h1>
-    <p>Round 3 is in the game, all but these: the flooded and infested rooms need drawing, and the hidden traits need a way to find them out. Each question shows its options; the drawings are over the game itself. Click one to choose it (where it says so, you can pick several), and write anything you'd change in the box beneath. Everything saves as you go. The ones I'd pick are marked <i>my pick</i>. The stairs and the throne wait for your examples from Dyson.</p>
+    <h1>Your choices: round 5</h1>
+    <p>The hidden traits are in the game (cursed things and murky potions; a curse lifted at an altar). These two are the drawings again, as you asked. Click one to choose it, and write anything you'd change in the box beneath. Everything saves as you go. The ones I'd pick are marked <i>my pick</i>. The stairs and the throne wait for your examples from Dyson.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,46 +88,23 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "flooded", title: "Flooded rooms: the water", said: "", how: "A storeroom from the game, the water drawn over it in ink, as the map would; at the game's zoom. Every step in it wades: a turn and a half, for monsters too, and heard twice as far.", tile: "300px",
-    why: "<b>A</b>: ripples read as water at a glance, in the map's own ink, and the floor grid and furniture stay clear under them.",
+  { id: "flooded2", title: "Flooded rooms, again", said: "I liked the idea of a bluish grey wash over the whole room, together with the option D. Maybe a tad more ripples. Mock up please.", how: "Round 4's D (the water's edge) with a bluish-grey wash over the whole room, the ink and the grid showing through it, and more ripples. A storeroom from the game, at the game's zoom.", tile: "300px",
+    why: "<b>A</b>: the wash says water at once without darkening the room much, and the ripples fill it without crowding the furniture.",
     opts: [
-      { k: "Now", n: "Dry", d: "The room as it is today.", img: ["flood_Now"] },
-      { k: "A", n: "Ripples", d: "A short wavy stroke or two to a square.", img: ["flood_A"], rec: 1 },
-      { k: "B", n: "A grey wash", d: "The floor toned grey-green, a few ripples.", img: ["flood_B"] },
-      { k: "C", n: "Level lines", d: "Short straight lines in twos and threes, as Dyson draws still water.", img: ["flood_C"] },
-      { k: "D", n: "The water's edge", d: "A wavy line just inside the walls, the floor paler, a few ripples.", img: ["flood_D"] },
+      { k: "D", n: "Round 4's D", d: "The edge and ripples, no wash, for comparison.", img: ["flood2_Before"] },
+      { k: "A", n: "Light wash", d: "A light bluish-grey wash, ripples on most squares.", img: ["flood2_A"], rec: 1 },
+      { k: "B", n: "Deeper wash", d: "A darker wash, ripples on nearly every square.", img: ["flood2_B"] },
+      { k: "C", n: "Two edges", d: "The light wash, and a second, dashed edge inside the first, like a tide line.", img: ["flood2_C"] },
+      { k: "E", n: "Deeper in the middle", d: "The wash light by the walls and darker toward the middle.", img: ["flood2_D"] },
     ] },
-  { id: "infested", title: "Infested rooms: the rats' nest", said: "", how: "The same storeroom. Rats come back a while after being killed.", tile: "300px",
-    why: "<b>D</b>: the nest says rats live here, and the holes say where they come from; neither covers much floor.",
+  { id: "infested2", title: "The rats' nest, again", said: "I like the nest idea, but this visualization is not there yet. The lines are too faint. The outlines of furniture is the line weight we want to use. Mock ups please.", how: "Each nest outlined at the furniture's weight (as the crates and shelves), filled with paper, with the straw inside at the weight of the crates' braces. The same storeroom.", tile: "300px",
+    why: "<b>A</b> reads as one heap of straw, like the furniture beside it; B's bones could be mistaken for things to pick up, C's hollow for a hole in the floor.",
     opts: [
-      { k: "Now", n: "Clean", d: "The room as it is today.", img: ["nest_Now"] },
-      { k: "A", n: "A nest", d: "A heap of straw and rags in a corner.", img: ["nest_A"] },
-      { k: "B", n: "Gnawed holes", d: "Dark holes at the foot of the walls.", img: ["nest_B"] },
-      { k: "C", n: "Droppings and bones", d: "Scattered over the floor.", img: ["nest_C"] },
-      { k: "D", n: "Nest and holes", d: "The nest in a corner, two holes.", img: ["nest_D"], rec: 1 },
-    ] },
-  { id: "hidden", title: "Hidden traits: which?", said: "You picked “some hidden till used” in round 3.", how: "Pick the ones to have. A hidden one shows in the name with a question mark (“a sword?”) until it's found out.", multi: 1, tile: "260px",
-    why: "<b>Cursed things</b> and <b>murky potions</b>: a real gamble each, without making every find a guess.",
-    opts: [
-      { k: "items", n: "All item traits", d: "Every trait on a thing hidden until found out: a sword might be rusty or sharp.", img: [] },
-      { k: "cursed", n: "Cursed things", d: "A new trait: a cursed weapon or armour is 1 worse and won't come off until the curse is lifted.", img: [], rec: 1 },
-      { k: "murky", n: "Murky potions", d: "A new trait: a murky potion heals well or poisons, half and half, until one's been drunk.", img: [], rec: 1 },
-      { k: "monsters", n: "Monster traits", d: "A monster's trait hidden until it fights you (or you watch it a while).", img: [] },
-    ] },
-  { id: "findout", title: "Hidden traits: finding them out", said: "", how: "How a hidden trait comes to light.", tile: "300px",
-    why: "<b>A</b>: you learn by taking the risk, at once; it's the simplest to follow.",
-    opts: [
-      { k: "A", n: "On using it", d: "Wielding or wearing a thing tells you its trait at once; drinking a potion tells you that kind.", img: [], rec: 1 },
-      { k: "B", n: "After a while", d: "A weapon after a few blows, armour after a few hits taken.", img: [] },
-      { k: "C", n: "At an altar", d: "Laying a thing on a shrine's altar for a turn tells you its trait (using it still does too).", img: [] },
-    ] },
-  { id: "curse", title: "Lifting a curse", said: "", how: "If cursed things are taken: how to be rid of one.", tile: "300px",
-    why: "<b>A</b> ties the curse to the hallowed shrines you already have: a reason to go back to one.",
-    opts: [
-      { k: "A", n: "A hallowed shrine", d: "Resting in a hallowed shrine lifts every curse on what you wear and hold.", img: [], rec: 1 },
-      { k: "B", n: "Any altar", d: "Standing at any shrine's altar for a few turns lifts it.", img: [] },
-      { k: "C", n: "A potion", d: "A new potion, of cleansing, lifts it.", img: [] },
-      { k: "D", n: "It wears off", d: "A curse lifts by itself after a few hundred turns.", img: [] },
+      { k: "Before", n: "Round 4's A", d: "The nest as it was, for comparison.", img: ["nest_A"] },
+      { k: "A", n: "A heap of straw", d: "A rounded heap, straw inside.", img: ["nest2_A"], rec: 1 },
+      { k: "B", n: "Straw and bones", d: "A rougher heap, gnawed bones in the straw.", img: ["nest2_B"] },
+      { k: "C", n: "A nest with a hollow", d: "A ring of straw round a dark hollow.", img: ["nest2_C"] },
+      { k: "D", n: "Small heaps", d: "Three small heaps along the wall.", img: ["nest2_D"] },
     ] },
 ];
 
