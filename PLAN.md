@@ -206,6 +206,12 @@ Proposals in `PROPOSALS.md`; answers on the choices page, round 3.
   debris), the strokes heavier, with stones like the rubble on cave floors. A refinement, not new
   ideas: mockups again.
 
+## Rounds 6 and 7 (choices page)
+
+- **The rats' nest:** round 6's C changed (round 7, B): the heap against the wall, debris as thick
+  as the stones' outlines, the stones brown; then, from round 7's comment, nothing over the wall or
+  rock and more debris on the floor. Built, with infested rooms.
+
 ## Not now
 
 Throwing stones, shoving, kicking doors, dousing campfires, monsters facing a direction, telegraphed

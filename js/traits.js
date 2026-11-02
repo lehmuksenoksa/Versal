@@ -79,6 +79,12 @@ export const ROOM_TRAITS = {
   flooded: { kinds: ["store", "plain", "I", "collapsed"], about: "Every step wades: slow, and loud.", slow: 1.5 },
   looted: { kinds: ["store", "I"], about: "Picked clean." },
   stocked: { kinds: ["store", "I"], about: "Well stocked.", more: 2 },
+  // (Infested: a rats' nest against a wall; its rats, `rats` of them, come
+  // back `back` turns after the last is killed, while the nest's out of
+  // sight. Drawn as chosen in round 7, B: a brown heap against the wall,
+  // debris as thick as the stones' outlines, brown stones, more debris on
+  // the floor, none over the wall.)
+  infested: { kinds: ["store", "barracks", "I"], about: "A rats' nest: kill them, and more come.", rats: [3, 5], back: [40, 80] },
 };
 // How many rooms a level has with a trait.
 export const ROOM_TRAIT = { count: [2, 4] };

@@ -278,6 +278,21 @@ export class World {
       const spot = this.freeSpotIn(room);
       if (spot) this.items.push({ x: spot.x, y: spot.y, item: this.randomItem() });
     }
+    // An infested room's nest, against a wall (a free square with rock
+    // beyond it, not by a way in), and its rats.
+    for (const room of level.rooms.filter((r) => r.trait === "infested")) {
+      const spots = [];
+      for (let y = room.y; y < room.y + room.h; y++) for (let x = room.x; x < room.x + room.w; x++) {
+        if (!this.isFree(x, y) || (level.features ?? []).some((f) => Math.abs(f.x - x - 0.5) < (f.w ?? 1) / 2 + 1.2 && Math.abs(f.y - y - 0.5) < (f.h ?? 1) / 2 + 1.2)) continue;
+        if (DIRS8.some(([dx, dy]) => this.doorAt(x + dx, y + dy) || (isOpen(this.tileAt(x + dx, y + dy)) && !(x + dx >= room.x && y + dy >= room.y && x + dx < room.x + room.w && y + dy < room.y + room.h)))) continue;
+        // (Along a wall, not in a corner: open either side along it.)
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!isOpen(this.tileAt(x + dx, y + dy)) && isOpen(this.tileAt(x + dy, y + dx)) && isOpen(this.tileAt(x - dy, y - dx))) spots.push({ x, y, dx, dy });
+      }
+      if (!spots.length) { delete room.trait; continue; }
+      room.nest = this.rng.pick(spots);
+      this.spawnPack({ x: room.nest.x - 1, y: room.nest.y - 1, w: 3, h: 3 }, this.rng.int(...ROOM_TRAITS.infested.rats), null, "rat");
+      for (const a of this.actors) if (a.kind === "rat" && !a.home && Math.abs(a.x - room.nest.x) <= 1 && Math.abs(a.y - room.nest.y) <= 1) a.home = room;
+    }
     for (const room of level.rooms.filter((r) => r.trait === "stocked")) {
       for (let k = 0; k < ROOM_TRAITS.stocked.more; k++) {
         const spot = this.freeSpotIn(room);
@@ -763,6 +778,15 @@ export class World {
   // Monsters bleeding (a sharp blade's work), a hit point a turn; the
   // undead of cursed rooms rising when it's time.
   monstersTurn() {
+    // (A nest whose rats are all dead fills again a while later, out of sight.)
+    for (const room of this.level.rooms) {
+      if (room.trait !== "infested" || !room.nest || this.actors.some((a) => a.home === room)) continue;
+      room.back ??= this.turn + this.rng.int(...ROOM_TRAITS.infested.back);
+      if (this.turn < room.back || this.isVisible(room.nest.x, room.nest.y)) continue;
+      room.back = null;
+      this.spawnPack({ x: room.nest.x - 1, y: room.nest.y - 1, w: 3, h: 3 }, this.rng.int(...ROOM_TRAITS.infested.rats), "neutral", "rat");
+      for (const a of this.actors) if (a.kind === "rat" && !a.home && Math.abs(a.x - room.nest.x) <= 1 && Math.abs(a.y - room.nest.y) <= 1) a.home = room;
+    }
     for (const g of this.actors.filter((a) => a !== this.player && a.bleed > 0)) {
       g.bleed--;
       if (--g.hp > 0) continue;

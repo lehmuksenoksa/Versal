@@ -92,7 +92,9 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   and nothing heals; a hallowed shrine, where resting heals twice as fast and the undead keep out;
   an echoing hall or gallery, where sounds carry twice as far; a looted or a stocked storeroom; a
   flooded room, where every step wades, slow and loud, drawn with a light bluish-grey wash, the
-  water's edge inside the walls and ripples).
+  water's edge inside the walls and ripples; an infested storeroom or barracks, with a rats' nest
+  against a wall, a brown heap of debris and stones spilling over the floor, whose rats come back a
+  while after the last is killed).
   Two are hidden: a cursed weapon or armour is a little worse and won't come off, found out on
   wielding or wearing it (until then any weapon or armour not yet used is named with a question
   mark, "a sword?"), and lifted by standing three turns next to an altar; murky potions all heal

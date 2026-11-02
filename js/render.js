@@ -6,6 +6,7 @@ import { INK, PAPER, BRAZIER_BOWL } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire, drawCandle } from "./fire.js";
 import { LIGHTS } from "./levelgen.js";
+import { isOpen } from "./dungeon.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
@@ -46,6 +47,11 @@ const LETTERING = {
 
 // Things' ink, where not black.
 const ITEM_INK = { potion: "#b5302a" };
+// A rats' nest: the heap's colour and size (squares), its strokes' weight
+// (a 32nd of a square: the stones' outlines'), how many strokes, stones
+// outlined (brown), small stones and grit (the more spread over the floor).
+const NEST = { heap: "rgba(112, 90, 62, 0.5)", stone: "#a88a64", size: 0.95, weight: 2.7, strokes: 40, big: 8, small: 26, grit: 50 };
+const isOpenAt = (w, x, y) => x >= 0 && y >= 0 && x < w.level.w && y < w.level.h && isOpen(w.level.get(x, y));
 // Water in a flooded room: its wash, how far in from the walls its edge
 // runs (squares), the share of squares with ripples.
 const WATER = { wash: "rgba(112, 136, 150, 0.3)", inset: 0.18, ripples: 0.7 };
@@ -860,8 +866,9 @@ export class Renderer {
       const ink = ITEM_INK[it.item.type] ?? INK;
       this.drawGlyph(lc, it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
     }
-    // Flooded rooms' water, under everything on the floor.
+    // Flooded rooms' water, rats' nests, under everything on the floor.
     this.drawWater(lc, view);
+    this.drawNests(lc, view);
     // Where a click would walk (main.js): a dotted trail and a cross.
     if (this.preview) this.drawPreview(lc, this.preview);
     // What a tip is about (main.js, tips.js): a thin ink ring round it.
@@ -1104,6 +1111,76 @@ export class Renderer {
       }
       ctx.restore();
     }
+  }
+
+  // A rats' nest (an infested room's, traits.js), as chosen
+  // (mockups/choices.html, round 7, B): a brown heap against the wall,
+  // debris strokes as thick as the stones' outlines, brown stones outlined,
+  // small ones and grit in ink, more debris over the floor round it; kept to
+  // the room's floor (none over the wall). In sight, as lit as the floor.
+  drawNests(ctx, view) {
+    const w = this.world, TS = this.TS;
+    for (const r of w.level.rooms) {
+      if (r.trait !== "infested" || !r.nest) continue;
+      const N = r.nest;
+      if ((N.x + 3) * TS < view.x || (N.y + 3) * TS < view.y || (N.x - 3) * TS > view.x + view.w || (N.y - 3) * TS > view.y + view.h) continue;
+      if (!w.isVisible(N.x, N.y)) continue;
+      const a = this.exp.lightAt((N.x + 0.5) * TS, (N.y + 0.5) * TS);
+      if (a < 0.02) continue;
+      const A = (r.nestArt ??= this.nestOf(r)), k = TS / 32;
+      ctx.save();
+      ctx.beginPath();
+      for (const [x, y] of A.floor) ctx.rect(x * TS - 0.5, y * TS - 0.5, TS + 1, TS + 1);
+      ctx.clip();
+      ctx.globalAlpha = a;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      const poly = (pts) => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * TS, y * TS) : ctx.moveTo(x * TS, y * TS))); ctx.closePath(); };
+      ctx.fillStyle = NEST.heap;
+      poly(A.heap);
+      ctx.fill();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = NEST.weight * k;
+      for (const [x0, y0, mx, my, x1, y1] of A.strokes) {
+        ctx.beginPath();
+        ctx.moveTo(x0 * TS, y0 * TS);
+        ctx.quadraticCurveTo(mx * TS, my * TS, x1 * TS, y1 * TS);
+        ctx.stroke();
+      }
+      ctx.fillStyle = NEST.stone;
+      for (const p of A.big) { poly(p); ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = INK;
+      for (const p of A.small) { poly(p); ctx.fill(); }
+      for (const [x, y, q] of A.grit) ctx.fillRect(x * TS - (q * k) / 2, y * TS - (q * k) / 2, q * k, q * k);
+      ctx.restore();
+    }
+  }
+
+  // A nest laid out once (by its place, so the same each time), in squares:
+  // the room's floor (to keep to), the heap's outline, the debris strokes
+  // (start, bend, end), the stones (outlines), the grit (place and size).
+  nestOf(r) {
+    const w = this.world, N = r.nest;
+    let seed = (N.x * 7919 + N.y * 104729 + 17) % 2147483647 || 1;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const floor = [];
+    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (isOpenAt(w, x, y)) floor.push([x, y]);
+    // (Its middle half a square in from the wall, some of it beyond, cut off there.)
+    const cx = N.x + 0.5 + N.dx * 0.05, cy = N.y + 0.5 + N.dy * 0.05, R = NEST.size;
+    const heap = [];
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2, q = R * (0.85 + rnd() * 0.3); heap.push([cx + Math.cos(a) * q, cy + Math.sin(a) * q * 0.8]); }
+    const strokes = [];
+    for (let i = 0; i < NEST.strokes; i++) {
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * R * 0.9, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.8, t = rnd() * Math.PI, l = R * (0.2 + rnd() * 0.28);
+      strokes.push([x - (Math.cos(t) * l) / 2, y - (Math.sin(t) * l) / 2, x + (rnd() - 0.5) * l * 0.4, y + (rnd() - 0.5) * l * 0.4, x + (Math.cos(t) * l) / 2, y + (Math.sin(t) * l) / 2]);
+    }
+    const pebble = (x, y, q) => { const m = 5 + Math.floor(rnd() * 3), a0 = rnd() * 6.28, pts = []; for (let i = 0; i < m; i++) { const a = a0 + (i / m) * 6.28 + (rnd() - 0.5) * 0.6, d = q * (0.7 + rnd() * 0.5); pts.push([x + Math.cos(a) * d, y + Math.sin(a) * d]); } return pts; };
+    const at = (spread) => { const a = rnd() * 6.28, d = Math.sqrt(rnd()) * R * spread; return [cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8]; };
+    const big = [], small = [], grit = [];
+    for (let i = 0; i < NEST.big; i++) big.push(pebble(...at(1.7), 0.08 + rnd() * 0.08));
+    for (let i = 0; i < NEST.small; i++) small.push(pebble(...at(i < 14 ? 1.7 : 2.8), 0.04 + rnd() * 0.05));
+    for (let i = 0; i < NEST.grit; i++) grit.push([...at(i < 24 ? 1.7 : 3), 0.8 + rnd()]);
+    return { floor, heap, strokes, big, small, grit };
   }
 
   // A flooded room's water, laid out once (by the room's place, so it's the
