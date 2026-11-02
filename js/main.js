@@ -1,6 +1,6 @@
 // Bootstrap: fonts, input and the animation loop.
 
-import { World, ITEMS, MONSTERS } from "./world.js";
+import { World, ITEMS, MONSTERS, monName } from "./world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
 import { wayTo, wayToExplore, WALK } from "./travel.js";
@@ -238,7 +238,7 @@ function startWalk(opts) {
   stopWalk();
   // (No exploring with a monster in sight that's after you.)
   const after = opts.explore && world.actors.find((a) => a !== world.player && world.isVisible(a.x, a.y) && (a.state === "aggressive" || a.state === "suspicious"));
-  if (after) return world.log(`Not with ${an(MONSTERS[after.kind]?.name ?? after.kind)} about.`);
+  if (after) return world.log(`Not with ${an(monName(after))} about.`);
   const way = opts.explore ? wayToExplore(world) : wayTo(world, opts.to.x, opts.to.y);
   if (!way) return world.log(opts.explore ? "There's nothing left to explore that you can reach." : "You can't see a way there.");
   if (way.length > 1 && tooHurt()) return world.log("You're too hurt to go far. Rest first (r).");
@@ -270,7 +270,7 @@ function walkStep() {
   // (Stopped by what's come into sight, a hurt, or something underfoot.)
   const now = goblinsInSight(), fresh = world.actors.find((a) => now.has(a.id) && !W.seen.has(a.id));
   if (fresh) {
-    world.log(`You stop: ${an(MONSTERS[fresh.kind]?.name ?? fresh.kind)} comes into sight.`);
+    world.log(`You stop: ${an(monName(fresh))} comes into sight.`);
     return stopWalk();
   }
   W.seen = now;

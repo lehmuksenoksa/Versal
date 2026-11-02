@@ -3,7 +3,8 @@
 // chosen (mockups/choices.html, round 3: A, a torn black plate beside it, a
 // thin ink ring round what it's about); and the words for a monster's state
 // and wounds, and the rooms' names, used by the look and the log too.
-import { MONSTERS, ITEMS, itemName } from "./world.js";
+import { MONSTERS, ITEMS, itemName, monName, an } from "./world.js";
+import { ITEM_TRAITS, MONSTER_TRAITS, ROOM_TRAITS } from "./traits.js";
 
 // How a monster's state reads.
 export const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed", fleeing: "fleeing" };
@@ -30,14 +31,18 @@ const ABOUT = {
   troll: "Slow and huge. Heals as it fights.",
 };
 
+// What each trait does, in a few words (after the line about the kind).
+const ITEM_SAYS = { heavy: "Hits a tenth less often.", sharp: "A hard blow makes the living bleed.", "goblin-bane": "Bites 3 harder on goblins.", padded: "Hard blows make you bleed half as often.", spiked: "Cuts what hits you." };
+const MONSTER_SAYS = { savage: "Savage: hits harder, never flees.", timid: "Timid: flees when hurt.", sleepy: "Sleepy: hears little.", watchful: "Watchful: sees far in the dark.", swift: "Swift.", starving: "Starving: weak, but never gives up a chase.", crumbling: "Crumbling: breaks easily.", venomous: "Venomous: poisons often and long.", veteran: "A veteran: hits hard and often." };
+
 // A room's name, for the rooms worth naming (null for the rest).
-const KINDS = { store: "a storeroom", gallery: "a gallery", hall: "a pillared hall", crypt: "a crypt", jail: "a jail", barracks: "a barracks", dining: "a dining hall", shrine: "a shrine" };
+// (Its trait first: "a cursed crypt".)
+const KINDS = { store: "storeroom", gallery: "gallery", hall: "pillared hall", crypt: "crypt", jail: "jail", barracks: "barracks", dining: "dining hall", shrine: "shrine" };
 export function roomName(r, level) {
   if (!r) return null;
   if (r === level.throneRoom) return "the throne room";
-  if (r.halls) return r.hallKind === "I" ? "a storeroom" : "a great hall";
-  if (r.cave || r.collapsed) return null;
-  return KINDS[r.kind] ?? null;
+  const kind = r.halls ? (r.hallKind === "I" ? "storeroom" : "great hall") : r.cave || r.collapsed ? null : KINDS[r.kind];
+  return kind ? an(r.trait ? `${r.trait} ${kind}` : kind) : null;
 }
 // The room the square (x, y) is in, if any (the smallest whose box it's in).
 export function roomAt(level, x, y) {
@@ -49,6 +54,14 @@ export function roomAt(level, x, y) {
   return best;
 }
 
+// A thing's numbers with its trait: its blow, what it takes off, what it
+// heals.
+export function itemStats(it) {
+  const d = ITEMS[it.type], T = ITEM_TRAITS[it.trait] ?? {};
+  const lo = d.dmg ? Math.max(1, d.dmg[0] + (T.dmg?.[0] ?? 0)) : 0;
+  return { dmg: d.dmg ? [lo, Math.max(lo, d.dmg[1] + (T.dmg?.[1] ?? 0))] : null, def: d.def !== undefined ? Math.max(0, d.def + (T.def ?? 0)) : null, heal: T.heal ?? d.heal ?? null };
+}
+
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // The tip for the square (x, y), or null: { at: the square to ring (null for
@@ -58,23 +71,23 @@ export function tipFor(w, x, y, shown) {
   if (!w.isVisible(x, y)) return null;
   const a = w.actorAt(x, y);
   if (a && a !== w.player && shown(a)) {
-    const M = MONSTERS[a.kind], hurt = wounds(a);
-    return { at: { x, y }, title: cap(M.name), lines: [[[STATE[a.state] ?? a.state, "st"], [hurt, hurt === "unhurt" ? "" : "bad"]]], about: ABOUT[a.kind] ?? "" };
+    const hurt = wounds(a);
+    return { at: { x, y }, title: cap(monName(a)), lines: [[[STATE[a.state] ?? a.state, "st"], [hurt, hurt === "unhurt" ? "" : "bad"]]], about: [ABOUT[a.kind], MONSTER_SAYS[a.trait]].filter(Boolean).join(" ") };
   }
   const floor = w.itemsAt(x, y);
   if (floor.length) {
-    const it = floor[floor.length - 1].item, d = ITEMS[it.type];
-    const what = d.cat === "weapon" ? `Blow ${d.dmg[0]}–${d.dmg[1]}, ${d.hands === 2 ? "two hands" : "one hand"}`
-      : d.cat === "armour" ? `Worn on the ${d.slot}; takes off up to ${d.def}`
-      : d.heal ? `Heals ${d.heal[0]}–${d.heal[1]}` : "";
-    return { at: { x, y }, title: cap(itemName(it, false)), lines: what ? [[[what, ""]]] : [], about: floor.length > 1 ? `And ${floor.length - 1} more beneath.` : "" };
+    const it = floor[floor.length - 1].item, d = ITEMS[it.type], S = itemStats(it);
+    const what = d.cat === "weapon" ? `Blow ${S.dmg[0]}–${S.dmg[1]}, ${d.hands === 2 ? "two hands" : "one hand"}`
+      : d.cat === "armour" ? `Worn on the ${d.slot}; takes off up to ${S.def}`
+      : S.heal ? `Heals ${S.heal[0]}–${S.heal[1]}` : "";
+    return { at: { x, y }, title: cap(itemName(it, false)), lines: what ? [[[what, ""]]] : [], about: [ITEM_SAYS[it.trait], floor.length > 1 ? `And ${floor.length - 1} more beneath.` : ""].filter(Boolean).join(" ") };
   }
   const L = w.level;
   for (const [st, name] of [[L.stairsDown, "Stairs down"], [L.stairsUp, "Stairs up"]]) if (st && st.x === x && st.y === y) return { at: { x, y }, title: name, lines: [], about: "" };
   const f = (L.features ?? []).find((f) => THINGS[f.type] && Math.floor(f.x) === x && Math.floor(f.y) === y);
   if (f) return { at: { x, y }, title: cap(THINGS[f.type]), lines: [], about: "" };
-  const name = roomName(roomAt(L, x, y), L);
-  if (name && w.walkable(x, y)) return { at: null, title: cap(name), lines: [], about: "" };
+  const room = roomAt(L, x, y), name = roomName(room, L);
+  if (name && w.walkable(x, y)) return { at: null, title: cap(name), lines: [], about: ROOM_TRAITS[room.trait]?.about ?? "" };
   return null;
 }
 

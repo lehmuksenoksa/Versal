@@ -8,8 +8,8 @@
 // on torn black plates (js/plates.js). Plain page elements over the map's
 // canvas, redone only when something they show has changed.
 
-import { ordinal, ITEMS, PACK, itemName, MONSTERS } from "./world.js";
-import { STATE, THINGS, wounds } from "./tips.js";
+import { ordinal, ITEMS, PACK, itemName, MONSTERS, monName } from "./world.js";
+import { STATE, THINGS, wounds, itemStats } from "./tips.js";
 import { drawPlates, drawDrawer } from "./plates.js";
 
 // How wide the screen must be for the sidebar; how wide the sidebar is.
@@ -222,16 +222,18 @@ export class UI {
       D: () => true,
     };
     const note = (it) => {
-      const d = ITEMS[it.type];
-      return d.cat === "weapon" ? `attack ${d.dmg[0]}–${d.dmg[1]}${d.hands === 2 ? ", two hands" : ""}` : d.cat === "armour" ? `defence ${d.def}` : it.n > 1 ? `${it.n}` : "";
+      const d = ITEMS[it.type], S = itemStats(it);
+      return d.cat === "weapon" ? `attack ${S.dmg[0]}–${S.dmg[1]}${d.hands === 2 ? ", two hands" : ""}` : d.cat === "armour" ? `defence ${S.def}` : it.n > 1 ? `${it.n}` : "";
     };
+    // (Its name with its trait, without the count.)
+    const named = (it) => { const d = ITEMS[it.type]; return `${it.trait ? `${it.trait} ` : ""}${it.n > 1 ? d.plural ?? d.name : d.name}`; };
     const btn = (verb, key, label) => `<button type="button" class="act" data-act="${verb}" data-key="${key}">${label}</button>`;
     if (this.panel === "e") {
       const eq = p.equip ?? {}, slots = [["hand", "hand", "a"], ["off", "off hand", "b"], ["head", "head", "c"], ["body", "body", "d"]];
       const rows = slots.map(([where, label, key]) => {
         const it = eq[where], two = where === "off" && eq.hand && ITEMS[eq.hand.type].hands === 2;
         if (!it) return empty(two ? "off hand: the two-handed weapon" : `${label}: nothing`);
-        return `<li class="${P ? "pick" : ""}"><span class="key">${P ? key : ""}</span><span class="g">${esc(it.glyph)}</span><span>${esc(ITEMS[it.type].name)}</span><span class="lead"></span><span class="val">${esc(note(it))}</span>
+        return `<li class="${P ? "pick" : ""}"><span class="key">${P ? key : ""}</span><span class="g">${esc(it.glyph)}</span><span>${esc(named(it))}</span><span class="lead"></span><span class="val">${esc(note(it))}</span>
           <span class="acts">${btn("t", where, ITEMS[it.type].cat === "weapon" ? "put away" : "take off")}</span></li>`;
       }).join("");
       return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Equipment", "e")}<ul class="ledger">${rows}</ul>`;
@@ -241,7 +243,7 @@ export class UI {
       const rows = inv.map((it) => {
         const d = ITEMS[it.type], ok = !P || can[P.verb](d);
         const acts = [d.cat === "potion" ? btn("q", it.key, "drink") : btn("W", it.key, d.cat === "weapon" ? "wield" : "wear"), btn("D", it.key, "drop")].join("");
-        return `<li class="${P ? (ok ? "pick" : "dim") : ""}"><span class="key">${it.key}</span><span class="g" style="${d.ink ? `color:${d.ink}` : ""}">${esc(it.glyph)}</span><span>${esc(it.n > 1 ? d.plural ?? d.name : d.name)}</span><span class="lead"></span><span class="val">${esc(note(it))}</span><span class="acts">${acts}</span></li>`;
+        return `<li class="${P ? (ok ? "pick" : "dim") : ""}"><span class="key">${it.key}</span><span class="g" style="${d.ink ? `color:${d.ink}` : ""}">${esc(it.glyph)}</span><span>${esc(named(it))}</span><span class="lead"></span><span class="val">${esc(note(it))}</span><span class="acts">${acts}</span></li>`;
       }).join("");
       const here = world.itemsAt(p.x, p.y);
       return `${P ? `<div class="panel-head ask"><h4>${P.title}</h4><small>Esc to cancel</small></div>` : head("Inventory", "i")}<ul class="ledger">${inv.length ? rows : empty("You carry nothing.")}</ul>
@@ -253,7 +255,7 @@ export class UI {
         if (!THINGS[f.type] || !world.isVisible(Math.floor(f.x), Math.floor(f.y))) continue;
         things.set(f.type, (things.get(f.type) ?? 0) + 1);
       }
-      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(MONSTERS[a.kind]?.name ?? a.kind)}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}${wounds(a) === "unhurt" ? "" : `, ${wounds(a)}`}</span></li>`).join("");
+      const creatures = seen.map((a) => `<li><span></span><span class="g">${esc(a.glyph)}</span><span>${esc(monName(a))}</span><span class="lead"></span><span class="st ${a.state}">${STATE[a.state] ?? a.state}${wounds(a) === "unhurt" ? "" : `, ${wounds(a)}`}</span></li>`).join("");
       return `${head("In sight", "l")}
         <div><h5>Creatures</h5><ul class="ledger">${creatures || empty("none")}</ul></div>
         <div><h5>Things</h5><ul class="ledger">${things.size ? [...things].map(([t, n]) => row("", n > 1 ? `${THINGS[t].replace(/^an? /, "")} (${n})` : THINGS[t])).join("") : empty("nothing of note")}</ul></div>

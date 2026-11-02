@@ -18,6 +18,7 @@ import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
 import { roomAt, roomName } from "./tips.js";
+import { ITEM_TRAITS, ITEM_TRAIT, GOBLINS, MONSTER_BLEED, MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
 
 // The kinds of monster: their letters and names; their speed (moves for each
 // of the player's); how much they wander when milling about (the goblins' 1);
@@ -71,9 +72,20 @@ export const ITEMS = {
 // how many things lie about a level (for every so many rooms); the chance a
 // goblin drops something when it falls.
 export const PACK = { size: 10, letters: "abcdefghij", bare: [1, 2], perRooms: 2.5, drop: 0.15 };
-const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
-export const itemName = (it, article = true) => (it.n > 1 ? `${it.n} ${ITEMS[it.type].plural ?? `${ITEMS[it.type].name}s`}` : article ? an(ITEMS[it.type].name) : ITEMS[it.type].name);
-const makeItem = (type, n = 1) => ({ type, glyph: ITEMS[type].glyph, n });
+export const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
+// A thing's name, its trait first ("a rusty sword", "3 strong potions of
+// healing").
+export const itemName = (it, article = true) => {
+  const D = ITEMS[it.type], t = it.trait ? `${it.trait} ` : "";
+  return it.n > 1 ? `${it.n} ${t}${D.plural ?? `${D.name}s`}` : article ? an(t + D.name) : t + D.name;
+};
+const makeItem = (type, n = 1, trait = null) => ({ type, glyph: ITEMS[type].glyph, n, ...(trait ? { trait } : {}) });
+// A monster's name, its trait first ("savage goblin warrior").
+export const monName = (g) => `${g.trait ? `${g.trait} ` : ""}${MONSTERS[g.kind]?.name ?? g.kind}`;
+// What a thing's trait does (an empty one for none).
+const itemTrait = (it) => (it?.trait && ITEM_TRAITS[it.trait]) || {};
+// What a monster's trait does.
+const monTrait = (g) => (g.trait && MONSTER_TRAITS[g.trait]) || {};
 
 // The places, one a level: each changes from one kind of ground to the next
 // across it (levelgen.js), with its monsters by the ground of their room
@@ -241,10 +253,27 @@ export class World {
     }
     // The goblin king on his throne, his guard round him.
     if (level.throneRoom) this.spawnPack(level.throneRoom, 5, "neutral", "warrior", "king");
-    // Things lying about: a few in the rooms (not the one the player starts in).
-    for (const room of this.rng.shuffle(level.rooms.filter(away)).slice(0, Math.round(level.rooms.length / PACK.perRooms))) {
+    // Rooms with a trait (traits.js): a few, each a trait picked first (of
+    // those with a room to fit), then a room of a kind it fits.
+    for (let n = this.rng.int(...ROOM_TRAIT.count); n > 0; n--) {
+      const free = (t) => level.rooms.filter((r) => away(r) && !r.trait && ROOM_TRAITS[t].kinds.includes(roomKind(r)));
+      const traits = Object.keys(ROOM_TRAITS).filter((t) => free(t).length);
+      if (!traits.length) break;
+      // (Ones not used yet on this level first.)
+      const fresh = traits.filter((t) => !level.rooms.some((r) => r.trait === t)), t = this.rng.pick(fresh.length ? fresh : traits);
+      this.rng.pick(free(t)).trait = t;
+    }
+    // Things lying about: a few in the rooms (not the one the player starts
+    // in, nor a looted one); more in a stocked one.
+    for (const room of this.rng.shuffle(level.rooms.filter((r) => away(r) && r.trait !== "looted")).slice(0, Math.round(level.rooms.length / PACK.perRooms))) {
       const spot = this.freeSpotIn(room);
       if (spot) this.items.push({ x: spot.x, y: spot.y, item: this.randomItem() });
+    }
+    for (const room of level.rooms.filter((r) => r.trait === "stocked")) {
+      for (let k = 0; k < ROOM_TRAITS.stocked.more; k++) {
+        const spot = this.freeSpotIn(room);
+        if (spot) this.items.push({ x: spot.x, y: spot.y, item: this.randomItem() });
+      }
     }
   }
 
@@ -289,13 +318,19 @@ export class World {
   // a goblin warrior; the goblin king, in the middle of the room).
   spawnPack(room, n, state = null, kind = "goblin", leaderKind = null) {
     let leader = null;
+    // (A trait for the whole pack, now and then; its leader may have its own.)
+    const traitOf = (k) => { const fit = Object.keys(MONSTER_TRAITS).filter((t) => MONSTER_TRAITS[t].on.includes(k)); return fit.length ? this.rng.pick(fit) : null; };
+    const packTrait = kind !== "king" && this.rng.chance(MONSTER_TRAIT.chance) ? traitOf(kind) : null;
+    const leaderTrait = leaderKind && leaderKind !== "king" && this.rng.chance(MONSTER_TRAIT.leader) ? traitOf(leaderKind) : null;
+    if (packTrait && MONSTER_TRAITS[packTrait].sleepy && state !== "neutral") state = "sleeping";
     state ??= this.rng.chance(0.35) && !MONSTERS[kind].patrol ? "sleeping" : "neutral";
     for (let k = 0; k < n; k++) {
       const kk = k === 0 && leaderKind ? leaderKind : kind;
       const spot = kk === "king" ? (room.seat ?? { x: room.cx, y: room.cy }) : this.freeSpotIn(room);
       if (!spot || !this.isFree(spot.x, spot.y)) continue;
-      const hp = this.rng.int(...MONSTERS[kk].hp);
-      const g = { id: this.nextId++, kind: kk, glyph: MONSTERS[kk].glyph, x: spot.x, y: spot.y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next() };
+      const trait = k === 0 && leaderKind ? leaderTrait : packTrait;
+      const hp = Math.max(1, Math.round(this.rng.int(...MONSTERS[kk].hp) * ((trait && MONSTER_TRAITS[trait].hp) || 1)));
+      const g = { id: this.nextId++, kind: kk, glyph: MONSTERS[kk].glyph, x: spot.x, y: spot.y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next(), ...(trait ? { trait } : {}) };
       g.leader = leader || g;
       leader = g.leader;
       this.actors.push(g);
@@ -313,6 +348,8 @@ export class World {
   }
 
   tileAt(x, y) { return this.level.get(x, y); }
+  // The trait of the room the square (x, y) is in (null if none).
+  roomTraitAt(x, y) { return roomAt(this.level, x, y)?.trait ?? null; }
   actorAt(x, y) { return this.actors.find((a) => a.x === x && a.y === y); }
   isFree(x, y) { return this.walkable(x, y) && !this.shut(x, y) && !this.actorAt(x, y); }
   walkable(x, y) { return isWalkable(this.tileAt(x, y)) && !this.blocks.has(y * this.level.w + x); }
@@ -386,7 +423,8 @@ export class World {
 
   // A noise the player makes, at their square, heard this turn.
   makeNoise(kind, x = this.player.x, y = this.player.y) {
-    (this.noises ??= []).push({ x, y, r: NOISE[kind][0], loud: NOISE[kind][1] });
+    // (In an echoing room, twice as far.)
+    (this.noises ??= []).push({ x, y, r: NOISE[kind][0] * (this.roomTraitAt(x, y) === "echoing" ? 2 : 1), loud: NOISE[kind][1] });
   }
 
   // Is there an open door next to the player to close (none standing in it)?
@@ -464,27 +502,43 @@ export class World {
   // The player's blow, as damage from to: their weapon's (bare hands') and
   // better every other level.
   attack() {
-    const b = Math.floor((this.player.level - 1) / 2), w = this.player.equip.hand, d = w ? ITEMS[w.type].dmg : PACK.bare;
-    return [d[0] + b, d[1] + b];
+    const b = Math.floor((this.player.level - 1) / 2), w = this.player.equip.hand, d = w ? ITEMS[w.type].dmg : PACK.bare, t = itemTrait(w).dmg ?? [0, 0];
+    const lo = Math.max(1, d[0] + t[0] + b);
+    return [lo, Math.max(lo, d[1] + t[1] + b)];
   }
   // How much of a blow the player's armour can take off (up to this).
   defence() {
-    return Object.values(this.player.equip).reduce((s, it) => s + (it ? ITEMS[it.type].def ?? 0 : 0), 0);
+    return Object.values(this.player.equip).reduce((s, it) => s + (it ? Math.max(0, (ITEMS[it.type].def ?? 0) + (itemTrait(it).def ?? 0)) : 0), 0);
   }
+
+  // The traits of what the player holds and wears, together: `key` of each
+  // that has it.
+  worn(key) { return Object.values(this.player.equip).map((it) => itemTrait(it)[key]).filter(Boolean); }
 
   // ---- Things ----
   // A thing for this place: of those found this deep, by how common.
   randomItem() {
     const kinds = Object.entries(ITEMS).filter(([, d]) => d.depth <= this.place.depth);
     let r = this.rng.next() * kinds.reduce((s, [, d]) => s + d.weight, 0);
-    for (const [type, d] of kinds) if ((r -= d.weight) < 0) return makeItem(type);
-    return makeItem("potion");
+    let type = "potion";
+    for (const [t, d] of kinds) if ((r -= d.weight) < 0) { type = t; break; }
+    return makeItem(type, 1, this.rng.chance(ITEM_TRAIT.chance) ? this.itemTraitFor(type) : null);
+  }
+  // A trait for a thing of `type` found here (null if none fits): the bad
+  // ones commoner near the top, the good deeper.
+  itemTraitFor(type) {
+    const depth = this.place.depth, fit = Object.entries(ITEM_TRAITS).filter(([, T]) => T.on.includes(type) && (T.depth ?? 1) <= depth);
+    if (!fit.length) return null;
+    const weight = ([, T]) => (T.good ? ITEM_TRAIT.good : ITEM_TRAIT.bad)[Math.min(depth, 3) - 1];
+    let r = this.rng.next() * fit.reduce((a, t) => a + weight(t), 0);
+    for (const t of fit) if ((r -= weight(t)) < 0) return t[0];
+    return fit[0][0];
   }
   itemsAt(x, y) { return this.items.filter((i) => i.x === x && i.y === y); }
   // Into the pack: potions of a kind together, else the first free letter.
   // False if there's no room.
   stow(item) {
-    const pack = this.player.pack, same = ITEMS[item.type].cat === "potion" && pack.find((i) => i.type === item.type);
+    const pack = this.player.pack, same = ITEMS[item.type].cat === "potion" && pack.find((i) => i.type === item.type && (i.trait ?? null) === (item.trait ?? null));
     if (same) { same.n += item.n; return same; }
     if (pack.length >= PACK.size) return false;
     const key = [...PACK.letters].find((k) => !pack.some((i) => i.key === k));
@@ -519,11 +573,11 @@ export class World {
   drink(key) {
     const it = this.packItem(key), d = it && ITEMS[it.type];
     if (!it || d.cat !== "potion") return false;
-    const p = this.player, heal = this.rng.int(...d.heal), before = p.hp;
+    const p = this.player, heal = this.rng.int(...(itemTrait(it).heal ?? d.heal)), before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + heal);
     if (p.ailments.bleeding) delete p.ailments.bleeding;
     if (--it.n <= 0) this.player.pack.splice(this.player.pack.indexOf(it), 1);
-    this.log(`You drink ${an(d.name)}. You feel better. (+${p.hp - before})`, "good");
+    this.log(`You drink ${itemName({ ...it, n: 1 })}. You feel better. (+${p.hp - before})`, "good");
     return this.tick();
   }
   // Wield a weapon or put on armour from the pack (a turn); what was there
@@ -536,7 +590,7 @@ export class World {
     p.equip[where] = item;
     if (extra) p.equip.off = null;
     for (const o of [old, extra]) if (o && !this.stow(o)) this.drop(o, true);
-    this.log(d.cat === "weapon" ? `You wield the ${d.name}.` : `You put on the ${d.name}.`);
+    this.log(d.cat === "weapon" ? `You wield the ${itemName(item, false)}.` : `You put on the ${itemName(item, false)}.`);
     return this.tick();
   }
   // Take off what's held or worn there (a turn), into the pack.
@@ -546,7 +600,7 @@ export class World {
     if (p.pack.length >= PACK.size) { this.log("Your pack is full."); return false; }
     p.equip[where] = null;
     this.stow(it);
-    this.log(ITEMS[it.type].cat === "weapon" ? `You put away the ${ITEMS[it.type].name}.` : `You take off the ${ITEMS[it.type].name}.`);
+    this.log(ITEMS[it.type].cat === "weapon" ? `You put away the ${itemName(it, false)}.` : `You take off the ${itemName(it, false)}.`);
     return this.tick();
   }
   // Drop a thing from the pack where the player stands (a turn); or, `item`
@@ -579,51 +633,98 @@ export class World {
   }
 
   // A whack at monster `g`: it may miss; one out of hit points falls. Its pack
-  // turns on the player, and the noise wakes packs asleep near by.
+  // turns on the player, and the noise wakes packs asleep near by. (The
+  // weapon's trait: a better or worse chance to hit, more against goblins,
+  // a sharp blade's hard blow making the living bleed; a timid monster flees
+  // when first hurt.)
   whack(g) {
-    const unaware = g.state === "sleeping" || g.state === "neutral";
-    const hit = unaware || this.rng.chance(WHACK), dmg = hit ? this.rng.int(...this.attack()) * (unaware ? SNEAK_HIT : 1) : 0;
-    if (hit) g.hp -= dmg;
-    const killed = g.hp <= 0, name = MONSTERS[g.kind].name;
+    const unaware = g.state === "sleeping" || g.state === "neutral", T = itemTrait(this.player.equip.hand);
+    const hit = unaware || this.rng.chance(WHACK + (T.hit ?? 0));
+    let dmg = 0;
+    if (hit) {
+      dmg = (this.rng.int(...this.attack()) + (T.bane && GOBLINS.has(g.kind) ? T.bane : 0)) * (unaware ? SNEAK_HIT : 1);
+      g.hp -= dmg;
+    }
+    const killed = g.hp <= 0, name = monName(g);
     this.events.push({ type: "whack", target: g, hit, killed, dmg, sneak: unaware });
     this.makeNoise("blow");
     const what = unaware ? `the unaware ${name}` : `the ${name}`;
-    this.log(!hit ? `You miss ${what}.` : killed ? `You kill ${what}.${unaware ? ` (${dmg})` : ""}` : `You ${unaware ? "strike" : "hit"} ${what}. (${dmg})`, killed ? "good" : "");
-    if (killed) {
-      this.player.kills++;
-      this.gainXp(MONSTERS[g.kind].xp);
-      if (MONSTERS[g.kind].boss) {
-        const p = this.player;
-        this.won = { name: p.name, cls: p.cls, level: p.level, turns: this.turn, kills: p.kills, place: this.place.name };
-        this.log(`The ${name} falls. You have won!`, "good");
-        this.events.push({ type: "won" });
-      }
-      // (Goblins sometimes drop what they carried.)
-      if (MONSTERS[g.kind].drops && this.rng.chance(PACK.drop)) {
-        const item = this.randomItem();
-        this.items.push({ x: g.x, y: g.y, item });
-        this.log(`The ${name} drops ${itemName(item)}.`);
-      }
-    }
+    const bleeds = hit && !killed && T.bleed && dmg >= MONSTER_BLEED.at && !MONSTERS[g.kind].undead;
+    if (bleeds) g.bleed = Math.max(g.bleed ?? 0, MONSTER_BLEED.turns);
+    this.log(!hit ? `You miss ${what}.` : killed ? `You kill ${what}.${unaware ? ` (${dmg})` : ""}` : `You ${unaware ? "strike" : "hit"} ${what}. (${dmg})${bleeds ? " It bleeds." : ""}`, killed ? "good" : "");
     for (const a of this.pack(g)) {
       if (a.state === "fleeing") continue;
       a.state = "aggressive";
       a.calm = 0;
       a.aware = 1;
     }
-    if (killed) {
-      this.actors.splice(this.actors.indexOf(g), 1);
-      // (A pack whose leader falls follows another.)
-      const rest = this.pack(g);
-      if (g.leader === g) for (const a of rest) a.leader = rest[0];
-      // (Half the pack gone, the rest flee: the undead never.)
-      const L = rest[0]?.leader;
-      if (L && !MONSTERS[g.kind].undead && !L.broken && rest.length <= (g.packSize ?? 1) / 2) {
-        L.broken = true;
-        for (const a of rest) { a.state = "fleeing"; a.fear = this.rng.int(...MORALE.flee); }
-        this.log(rest.length > 1 ? `The ${name}s flee!` : `The ${name} flees!`, "good");
-        this.events.push({ type: "flee", actor: rest[0] });
-      }
+    if (killed) return this.fall(g);
+    if (hit && monTrait(g).timid) {
+      g.state = "fleeing";
+      g.fear = this.rng.int(...MORALE.flee);
+      this.log(`The ${name} flees!`, "good");
+      this.events.push({ type: "flee", actor: g });
+    }
+  }
+
+  // Monster `g` falls (struck down, bled out, cut on spikes): experience
+  // for it (the king, and the run is won), sometimes what it carried; the
+  // undead in a cursed room to rise again; its pack's morale.
+  fall(g) {
+    const M = MONSTERS[g.kind], name = monName(g);
+    this.player.kills++;
+    this.gainXp(Math.round(M.xp * (monTrait(g).xp ?? 1)));
+    if (M.boss) {
+      const p = this.player;
+      this.won = { name: p.name, cls: p.cls, level: p.level, turns: this.turn, kills: p.kills, place: this.place.name };
+      this.log(`The ${name} falls. You have won!`, "good");
+      this.events.push({ type: "won" });
+    }
+    // (Goblins sometimes drop what they carried.)
+    if (M.drops && this.rng.chance(PACK.drop)) {
+      const item = this.randomItem();
+      this.items.push({ x: g.x, y: g.y, item });
+      this.log(`The ${name} drops ${itemName(item)}.`);
+    }
+    // (The undead falling in a cursed room rise again, once.)
+    const R = this.roomTraitAt(g.x, g.y);
+    if (R === "cursed" && M.undead && !g.risen) (this.rising ??= []).push({ g, depth: this.place.depth, x: g.x, y: g.y, at: this.turn + this.rng.int(...ROOM_TRAITS.cursed.rise) });
+    this.actors.splice(this.actors.indexOf(g), 1);
+    // (A pack whose leader falls follows another.)
+    const rest = this.pack(g);
+    if (g.leader === g) for (const a of rest) a.leader = rest[0];
+    // (Half the pack gone, the rest flee: the undead never, nor the savage.)
+    const L = rest[0]?.leader, scared = rest.filter((a) => !monTrait(a).brave);
+    if (L && !M.undead && !L.broken && scared.length && rest.length <= (g.packSize ?? 1) / 2) {
+      L.broken = true;
+      for (const a of scared) { a.state = "fleeing"; a.fear = this.rng.int(...MORALE.flee); }
+      const kind = MONSTERS[scared[0].kind].name;
+      this.log(scared.length > 1 ? `The ${kind}s flee!` : `The ${monName(scared[0])} flees!`, "good");
+      this.events.push({ type: "flee", actor: scared[0] });
+    }
+  }
+
+  // Monsters bleeding (a sharp blade's work), a hit point a turn; the
+  // undead of cursed rooms rising when it's time.
+  monstersTurn() {
+    for (const g of this.actors.filter((a) => a !== this.player && a.bleed > 0)) {
+      g.bleed--;
+      if (--g.hp > 0) continue;
+      this.log(`The ${monName(g)} bleeds to death.`, "good");
+      this.events.push({ type: "fall", target: g });
+      this.fall(g);
+    }
+    for (const r of [...(this.rising ?? [])]) {
+      if (this.turn < r.at || r.depth !== this.place.depth) continue;
+      // (Where it fell, or the nearest free square; later if none.)
+      const spot = [[0, 0], ...DIRS8].map(([dx, dy]) => ({ x: r.x + dx, y: r.y + dy })).find((q) => this.isFree(q.x, q.y));
+      if (!spot) continue;
+      this.rising.splice(this.rising.indexOf(r), 1);
+      const g = r.g;
+      Object.assign(g, { x: spot.x, y: spot.y, hp: Math.max(1, Math.ceil(g.maxHp / 2)), risen: true, state: "aggressive", aware: 1, calm: 0, bleed: 0 });
+      g.leader = g;
+      this.actors.push(g);
+      if (this.isVisible(g.x, g.y)) this.log(`The ${monName(g)} rises again!`, "hurt");
     }
   }
 
@@ -644,7 +745,7 @@ export class World {
       if (g === this.player) continue;
       const M = MONSTERS[g.kind];
       if (M.regen && g.hp < g.maxHp) g.hp = Math.min(g.maxHp, g.hp + M.regen * cost);
-      g.energy += M.speed * cost;
+      g.energy += M.speed * (monTrait(g).speed ?? 1) * cost;
       while (g.energy >= 1 && !this.ended && this.actors.includes(g)) {
         g.energy -= 1;
         if (g.state === "aggressive") this.chase(g);
@@ -656,7 +757,10 @@ export class World {
     this.updateFov();
     this.notice();
     this.noises = [];
-    for (let t = before; t < this.turn && !this.dead; t++) this.ailing(resting);
+    for (let t = before; t < this.turn && !this.dead; t++) {
+      this.ailing(resting);
+      if (!this.ended) this.monstersTurn();
+    }
     return true;
   }
 
@@ -712,7 +816,11 @@ export class World {
       } else A[name] = turns - 1;
       if (p.hp <= 0) return this.die(name === "bleeding" ? "bled to death" : "died of poison");
     }
-    p.healing += 1 / (resting ? PLAYER.restHeal : PLAYER.heal);
+    // (Nothing heals in a cursed room; resting heals twice as fast in a
+    // hallowed one.)
+    const R = this.roomTraitAt(p.x, p.y);
+    if (R === "cursed") return;
+    p.healing += (1 / (resting ? PLAYER.restHeal : PLAYER.heal)) * (resting && R === "hallowed" ? 2 : 1);
     if (p.healing >= 1) {
       p.healing -= 1;
       if (p.hp < p.maxHp) p.hp++;
@@ -722,21 +830,32 @@ export class World {
   // A monster's blow at the player: it may miss; a hard one may make them
   // bleed; out of hit points, they die.
   strike(g) {
-    const M = MONSTERS[g.kind], p = this.player, hit = this.rng.chance(M.hit);
-    let dmg = hit ? this.rng.int(...M.dmg) : 0;
+    const M = MONSTERS[g.kind], T = monTrait(g), p = this.player, name = monName(g), hit = this.rng.chance(M.hit + (T.hit ?? 0));
+    let dmg = hit ? this.rng.int(...M.dmg) + (T.dmg ?? 0) : 0;
     this.events.push({ type: "attack", actor: g, hit, dmg });
-    if (!hit) return this.log(`The ${M.name} misses you.`);
+    if (!hit) return this.log(`The ${name} misses you.`);
     // (Armour takes some of the blow off, up to its defence.)
     const saved = Math.min(dmg, this.rng.int(0, this.defence()));
-    if (saved >= dmg) return this.log(`The ${M.name} ${M.verb} you, but your armour holds.`);
+    if (saved >= dmg) return this.log(`The ${name} ${M.verb} you, but your armour holds.`);
     dmg -= saved;
     p.hp -= dmg;
-    const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance);
+    // (Padded armour: hard blows make you bleed half as often.)
+    const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance * (this.worn("padded").length ? 0.5 : 1));
     if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.rng.int(...B.turns));
-    const poison = M.poison && this.rng.chance(M.poison);
-    if (poison) p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, this.rng.int(...AILMENTS.poisoned.turns));
-    this.log(`The ${M.name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}${poison ? " You are poisoned." : ""}`, "hurt");
-    if (p.hp <= 0) this.die(`killed by a ${M.name}`);
+    const poison = M.poison && this.rng.chance(M.poison + (T.poison ?? 0));
+    if (poison) p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, Math.round(this.rng.int(...AILMENTS.poisoned.turns) * (T.poisonFor ?? 1)));
+    this.log(`The ${name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}${poison ? " You are poisoned." : ""}`, "hurt");
+    if (p.hp <= 0) return this.die(`killed by ${an(name)}`);
+    // (Spikes on the helmet cut what hits you.)
+    const spikes = this.worn("spikes").reduce((a, b) => a + b, 0);
+    if (spikes && this.actors.includes(g)) {
+      g.hp -= spikes;
+      if (g.hp <= 0) {
+        this.log(`The ${name} is cut on your spikes and falls.`, "good");
+        this.events.push({ type: "fall", target: g });
+        this.fall(g);
+      }
+    }
   }
 
   // The run ends: how, where, and what was done.
@@ -754,6 +873,7 @@ export class World {
     if (this.ended) return "over";
     if (this.monsterInSight()) return "You can't rest with an enemy in sight.";
     if (this.player.hp >= this.player.maxHp && !Object.keys(this.player.ailments).length) return "You don't need rest.";
+    if (this.roomTraitAt(this.player.x, this.player.y) === "cursed" && !this.player.ailments.bleeding) return "Nothing heals here.";
     return null;
   }
   monsterInSight() {
@@ -779,12 +899,14 @@ export class World {
       const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), sees = this.inView[g.y * W + g.x] === 1;
       g.sees = sees;
       if (g.state === "aggressive" || g.state === "fleeing") continue;
-      const S = SENSES[g.state] ?? SENSES.neutral;
+      const S = SENSES[g.state] ?? SENSES.neutral, T = monTrait(g);
+      // (A watchful monster sees further in the dark; a sleepy one hears less.)
+      const far = lit ? range : range * (T.see ?? 1);
       let gain = 0;
-      if (sees && d <= range) gain += ((lit ? AWARE.sight : AWARE.sightDark) * (1 - (d - 1) / range) + (d <= 1 ? (lit ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
+      if (sees && d <= far) gain += ((lit ? AWARE.sight : AWARE.sightDark) * (1 - (d - 1) / far) + (d <= 1 ? (lit ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
       for (const n of this.noises ?? []) {
         const dn = Math.hypot(g.x - n.x, g.y - n.y);
-        if (dn <= n.r) gain += AWARE.hear * n.loud * (1 - dn / (n.r + 1)) * S.hear;
+        if (dn <= n.r) gain += AWARE.hear * n.loud * (1 - dn / (n.r + 1)) * S.hear * (T.hear ?? 1);
       }
       if (g.wary) gain *= AWARE.wary;
       if (gain > 0) {
@@ -812,7 +934,7 @@ export class World {
         if (a.state !== "aggressive") continue;
         a.calm = calm;
         // (Zombies never give up.)
-        if (MONSTERS[a.kind].relentless && !far) continue;
+        if ((MONSTERS[a.kind].relentless || monTrait(a).relentless) && !far) continue;
         if (far || calm >= GOBLIN.calm) {
           a.state = "suspicious";
           a.aware = 0.6;
@@ -935,6 +1057,8 @@ export class World {
   }
 
   moveActor(a, x, y) {
+    // (The undead won't come into a hallowed room.)
+    if (a !== this.player && MONSTERS[a.kind]?.undead && this.roomTraitAt(x, y) === "hallowed" && this.roomTraitAt(a.x, a.y) !== "hallowed") return;
     this.events.push({ type: "move", actor: a });
     a.x = x;
     a.y = y;

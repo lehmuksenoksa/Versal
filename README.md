@@ -71,6 +71,26 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   drawn more faintly, without the floor grid or the furniture, on a floor toned toward the stone; ground never seen is black,
   fading in through thickening strokes. They carry a candle whose flame casts shadows, sharp near a
   wall and softer away from it, with darkness outside its light.
+- Getting about with a mouse (`js/travel.js`): a click walks to a seen square by the shortest way
+  through what's known, strikes a monster next to you or walks up to one further off, walks to a
+  thing and picks it up, closes an open door next to you; while the mouse rests on the map the way
+  shows as a dotted ink trail with a cross where it stops. `x` explores: to the nearest place not
+  yet seen, again and again. Every walk stops when a monster not in sight before comes into it, at
+  a hit point lost, or on something underfoot; below a third of the player's health a walk of more
+  than a step won't start. On touch screens a tap steps and a hold walks, as before. Resting
+  searches for secret doors; potions are picked up by walking over them. Tab zooms out to the
+  whole of what's been seen of the level.
+- Tips (`js/tips.js`): resting the mouse on a monster, a thing on the floor, furniture or a named
+  room's floor shows a torn black plate beside it, a thin ink ring round what it's about: the
+  name, a monster's state and wounds in words, what it does, a thing's numbers. Rooms worth naming
+  say so as the player first comes in ("You come into a cursed crypt."). The same message again
+  straight after folds into one ("You miss the rat. ×3").
+- Traits (`js/traits.js`): a word before a name that changes how a thing plays. About one thing
+  found in three (rusty, sharp, heavy, goblin-bane, sturdy, padded, spiked; strong and watered
+  potions), one monster pack in four (savage, timid, sleepy, watchful, swift, starving, crumbling,
+  venomous, veteran), and two to four rooms a level (a cursed crypt, where the dead rise again once
+  and nothing heals; a hallowed shrine, where resting heals twice as fast and the undead keep out;
+  an echoing hall or gallery, where sounds carry twice as far; a looted or a stocked storeroom).
 
 ## Running it
 
@@ -164,6 +184,9 @@ in the browser console.
 | `js/render.js` | Per-frame drawing: camera and zoom, the map (on the GPU via `js/gpu.js`, or with canvases via `js/expression.js`), glyph poses and tweens. |
 | `mockups/speed.html` | The same level drawn on the GPU and with canvases side by side, with timings; also stroke stamps, a worker, the flicker. |
 | `js/main.js` | Input and the main loop. |
+| `js/travel.js` | Walking by itself: the way to a square clicked through what's been seen, and to the nearest place not yet seen (exploring). |
+| `js/tips.js` | What things are in words: the tips, a monster's state and wounds, the rooms' names. |
+| `js/traits.js` | The traits of things, monsters and rooms, and what each does. |
 
 ## Fonts
 

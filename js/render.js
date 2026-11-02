@@ -514,6 +514,12 @@ export class Renderer {
           this.ghosts.push({ glyph: e.target.glyph, kind: e.target.kind, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
           this.views.delete(e.target.id);
         }
+      } else if (e.type === "fall") {
+        // (Fallen without a blow: bled out, or cut on spikes.)
+        const v = this.view(e.target);
+        this.hear(e.target, "fall", now, null, this.world.player);
+        this.ghosts.push({ glyph: e.target.glyph, kind: e.target.kind, x: v.x, y: v.y, t0: now, tilt: Math.random() < 0.5 ? -1 : 1 });
+        this.views.delete(e.target.id);
       } else if (e.type === "level") {
         // The player took the stairs: this level's map (kept from before, if
         // they've been here), and the last one's kept.
@@ -541,13 +547,15 @@ export class Renderer {
     const S = SOUNDS[kind], p = this.world.player, TS = this.TS, pick = (w) => w[Math.floor(Math.random() * w.length)];
     if (BLOWS.has(kind)) this.lastBlow = now;
     if (BACKGROUND.has(kind) && this.fighting(now)) return;
+    // (Heard twice as far from an echoing room.)
+    const range = S.range * (this.world.roomTraitAt?.(a.x, a.y) === "echoing" ? 2 : 1);
     const d = Math.hypot(a.x - p.x, a.y - p.y), seen = this.inSight((a.x + 0.5) * TS, (a.y + 0.5) * TS);
-    if (!seen && d > S.range) return;
+    if (!seen && d > range) return;
     const v = this.view(a), j = (r) => (Math.random() - 0.5) * 2 * r;
     const s = {
       text: text ?? pick(WORDS[(kind === "attack" ? by : a)?.kind]?.[kind] ?? S.words), kind, t0: now, dur: S.dur * 1000,
       x: (v.x + 0.5 + j(0.25)) * TS, y: (v.y + 0.1) * TS, rot: j(0.18),
-      alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / S.range),
+      alpha: seen ? 1 : 0.9 * (1 - (0.45 * d) / range),
     };
     if (FLYING.has(kind)) this.place(s, v, by && this.view(by), now);
     this.sounds.push(s);
