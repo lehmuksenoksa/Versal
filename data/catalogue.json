@@ -2100,7 +2100,11 @@
    "comment": "",
    "themes": [
     "pests"
-   ]
+   ],
+   "role": "Swarm",
+   "answer": "Light holds them off; alone they're weak",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "bat",
@@ -2117,7 +2121,11 @@
    "comment": "",
    "themes": [
     "beasts"
-   ]
+   ],
+   "role": "Alarm-raiser",
+   "answer": "Startled by light, they shriek and wake others: pass in the dark",
+   "answerKind": "Darkness",
+   "proposal": "keep"
   },
   {
    "id": "spider",
@@ -2135,7 +2143,11 @@
    "comment": "",
    "themes": [
     "pests"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Waits still by its web; light shows it",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "giant-spider",
@@ -2148,7 +2160,11 @@
     "caverns",
     "underwood"
    ],
-   "comment": ""
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Fire drives it off",
+   "answerKind": "Fire",
+   "proposal": "keep"
   },
   {
    "id": "skeleton",
@@ -2165,7 +2181,11 @@
    "comment": "",
    "themes": [
     "the-dead"
-   ]
+   ],
+   "role": "Soldier",
+   "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
+   "answerKind": "Timing",
+   "proposal": "keep"
   },
   {
    "id": "zombie",
@@ -2182,7 +2202,11 @@
    "comment": "",
    "themes": [
     "the-dead"
-   ]
+   ],
+   "role": "Brute",
+   "answer": "Slow but never stops: outpace it, shut doors behind you",
+   "answerKind": "Distance",
+   "proposal": "keep"
   },
   {
    "id": "goblin",
@@ -2199,7 +2223,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Pack",
+   "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
+   "answerKind": "Distraction",
+   "proposal": "keep"
   },
   {
    "id": "goblin-warrior",
@@ -2214,7 +2242,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Leader",
+   "answer": "Fell it and its pack falters",
+   "answerKind": "Fell the leader",
+   "proposal": "keep"
   },
   {
    "id": "goblin-king",
@@ -2228,7 +2260,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Boss",
+   "answer": "Waits with his guard: get past, or kill him",
+   "answerKind": "Get past",
+   "proposal": "keep"
   },
   {
    "id": "cultist",
@@ -2244,7 +2280,11 @@
    "comment": "",
    "themes": [
     "cult"
-   ]
+   ],
+   "role": "Soldier",
+   "answer": "Its lantern shows it coming: keep out of its light",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "troll",
@@ -2261,7 +2301,11 @@
    "comment": "",
    "themes": [
     "beasts"
-   ]
+   ],
+   "role": "Brute",
+   "answer": "Heals as it goes; fire stops that",
+   "answerKind": "Fire",
+   "proposal": "keep"
   },
   {
    "id": "cave-cat",
@@ -2278,7 +2322,11 @@
    "comment": "",
    "themes": [
     "beasts"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Stalks you in the dark; your lamp keeps it off",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "wolf",
@@ -2296,7 +2344,11 @@
    "themes": [
     "goblins",
     "beasts"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Follows your scent: water breaks the trail",
+   "answerKind": "Water",
+   "proposal": "keep"
   },
   {
    "id": "giant-centipede",
@@ -2313,7 +2365,12 @@
    "comment": "",
    "themes": [
     "pests"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Under rubble; light shows it",
+   "answerKind": "Light",
+   "proposal": "cut",
+   "proposalWhy": "Same role and answer as the spider, in rubble instead of webs"
   },
   {
    "id": "cave-bear",
@@ -2328,7 +2385,11 @@
    "comment": "",
    "themes": [
     "beasts"
-   ]
+   ],
+   "role": "Brute",
+   "answer": "Asleep: don't wake it",
+   "answerKind": "Silence",
+   "proposal": "keep"
   },
   {
    "id": "burrower",
@@ -2362,7 +2423,11 @@
    "themes": [
     "beasts",
     "drowned"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Strikes from deep water: keep out of it",
+   "answerKind": "Water",
+   "proposal": "keep"
   },
   {
    "id": "cave-crab",
@@ -2378,7 +2443,11 @@
    "comment": "",
    "themes": [
     "beasts"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Waits in the shallows; slow on land, so go round",
+   "answerKind": "Distance",
+   "proposal": "keep"
   },
   {
    "id": "leeches",
@@ -2394,7 +2463,11 @@
    "themes": [
     "pests",
     "drowned"
-   ]
+   ],
+   "role": "Swarm",
+   "answer": "In still water: don't linger in it",
+   "answerKind": "Water",
+   "proposal": "keep"
   },
   {
    "id": "bat-swarm",
@@ -2425,7 +2498,11 @@
     "caverns",
     "rift"
    ],
-   "comment": ""
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Hunts by the ground's tremor: stand still and it passes",
+   "answerKind": "Silence",
+   "proposal": "keep"
   },
   {
    "id": "ghoul",
@@ -2450,7 +2527,11 @@
    "comment": "",
    "themes": [
     "the-dead"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Sees in the dark; holy ground keeps it out",
+   "answerKind": "Holy ground",
+   "proposal": "keep"
   },
   {
    "id": "ghost",
@@ -2464,7 +2545,11 @@
     "archive",
     "drowned"
    ],
-   "comment": ""
+   "comment": "",
+   "role": "Wanderer",
+   "answer": "Through walls; holy ground keeps it out",
+   "answerKind": "Holy ground",
+   "proposal": "keep"
   },
   {
    "id": "wraith",
@@ -2480,7 +2565,11 @@
    "comment": "",
    "themes": [
     "the-dead"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Darkness that moves; light hurts it",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "drowned-dead",
@@ -2495,7 +2584,11 @@
    "comment": "",
    "themes": [
     "drowned"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Rise from water: keep from the edge",
+   "answerKind": "Water",
+   "proposal": "keep"
   },
   {
    "id": "bone-heap",
@@ -2511,7 +2604,11 @@
    "comment": "",
    "themes": [
     "the-dead"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
+   "answerKind": "Distraction",
+   "proposal": "keep"
   },
   {
    "id": "banshee",
@@ -2523,7 +2620,12 @@
     "bones",
     "hold"
    ],
-   "comment": ""
+   "comment": "",
+   "role": "Alarm-raiser",
+   "answer": "Its wail wakes the level: stay out of its sight",
+   "answerKind": "Cover",
+   "proposal": "cut",
+   "proposalWhy": "The shrieker already wakes the level, and its answer (the dark) is clearer"
   },
   {
    "id": "goblin-archer",
@@ -2538,7 +2640,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Soldier",
+   "answer": "Shoots what it sees: get into cover, then close",
+   "answerKind": "Cover",
+   "proposal": "keep"
   },
   {
    "id": "goblin-shaman",
@@ -2553,7 +2659,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Caster",
+   "answer": "Lights and puts out fires: take it unaware first",
+   "answerKind": "Strike first",
+   "proposal": "keep"
   },
   {
    "id": "bandit",
@@ -2568,7 +2678,11 @@
    "comment": "",
    "themes": [
     "outlaws"
-   ]
+   ],
+   "role": "Soldier",
+   "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
+   "answerKind": "Cover",
+   "proposal": "keep"
   },
   {
    "id": "cult-priest",
@@ -2583,7 +2697,11 @@
    "comment": "",
    "themes": [
     "cult"
-   ]
+   ],
+   "role": "Caster",
+   "answer": "Raises the dead: kill it first, or keep its dead apart from it",
+   "answerKind": "Strike first",
+   "proposal": "keep"
   },
   {
    "id": "thief",
@@ -2599,7 +2717,11 @@
    "comment": "",
    "themes": [
     "outlaws"
-   ]
+   ],
+   "role": "Thief",
+   "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
+   "answerKind": "Darkness",
+   "proposal": "keep"
   },
   {
    "id": "rival-adventurers",
@@ -2646,7 +2768,11 @@
    "comment": "",
    "themes": [
     "goblins"
-   ]
+   ],
+   "role": "Brute",
+   "answer": "Smells you: water or wind hides your scent; it's slow",
+   "answerKind": "Water",
+   "proposal": "keep"
   },
   {
    "id": "slime",
@@ -2663,7 +2789,11 @@
    "comment": "",
    "themes": [
     "pests"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Drops from the ceiling; light shows it, fire burns it",
+   "answerKind": "Light",
+   "proposal": "keep"
   },
   {
    "id": "mimic",
@@ -2677,7 +2807,11 @@
    "comment": "",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "A chest that isn't: search before you open, or throw something at it",
+   "answerKind": "Searching",
+   "proposal": "keep"
   },
   {
    "id": "lurker",
@@ -2710,7 +2844,11 @@
    "comment": "",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Swarm",
+   "answer": "Clouds of spores: keep your distance; fire",
+   "answerKind": "Distance",
+   "proposal": "keep"
   },
   {
    "id": "shrieker",
@@ -2726,7 +2864,11 @@
    "comment": "",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Alarm-raiser",
+   "answer": "Screams when light falls on it: pass in the dark",
+   "answerKind": "Darkness",
+   "proposal": "keep"
   },
   {
    "id": "watcher",
@@ -2742,7 +2884,11 @@
    "comment": "Floating eye, yes. Effects could be other.",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Alarm-raiser",
+   "answer": "Sees far: break its line of sight",
+   "answerKind": "Cover",
+   "proposal": "keep"
   },
   {
    "id": "lake-thing",
@@ -2758,7 +2904,12 @@
    "themes": [
     "deep",
     "drowned"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Tentacles from deep water: keep from the edge",
+   "answerKind": "Water",
+   "proposal": "cut",
+   "proposalWhy": "The eel already makes deep water a danger; or keep it as the drowned's boss"
   },
   {
    "id": "gargoyle",
@@ -2774,7 +2925,12 @@
    "comment": "",
    "themes": [
     "dwarves"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Stone until you pass: tracks in the dust give it away",
+   "answerKind": "Searching",
+   "proposal": "change",
+   "proposalWhy": "Close to the animated armour (still until you pass, in the dwarves' theme too); give it a different answer, or cut one"
   },
   {
    "id": "golem",
@@ -2790,7 +2946,11 @@
    "comment": "Why blind?",
    "themes": [
     "dwarves"
-   ]
+   ],
+   "role": "Brute",
+   "answer": "Goes by sound: sneak past it in silence",
+   "answerKind": "Silence",
+   "proposal": "keep"
   },
   {
    "id": "animated-armour",
@@ -2806,7 +2966,11 @@
    "comment": "",
    "themes": [
     "dwarves"
-   ]
+   ],
+   "role": "Ambusher",
+   "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
+   "answerKind": "Distance",
+   "proposal": "keep"
   },
   {
    "id": "will-o-wisp",
@@ -2823,7 +2987,11 @@
    "comment": "Things of the deep, surely. A spirit that shines a small light.",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Lure",
+   "answer": "Shines a small light that shows you to others: don't follow it",
+   "answerKind": "Searching",
+   "proposal": "keep"
   },
   {
    "id": "shadow",
@@ -2839,7 +3007,12 @@
    "comment": "Things of the deep, surely.",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Strong in the dark, gone in light",
+   "answerKind": "Light",
+   "proposal": "cut",
+   "proposalWhy": "Same as the wraith: darkness that moves, beaten by light"
   },
   {
    "id": "bandit-chief",
@@ -2853,7 +3026,11 @@
    "comment": "Your addition (round 15)",
    "themes": [
     "outlaws"
-   ]
+   ],
+   "role": "Leader",
+   "answer": "Fell it and the outlaws falter",
+   "answerKind": "Fell the leader",
+   "proposal": "keep"
   },
   {
    "id": "dark-elf",
@@ -2870,7 +3047,11 @@
    "comment": "Maybe a dark elf or two.",
    "themes": [
     "deep"
-   ]
+   ],
+   "role": "Hunter",
+   "answer": "Sees in the dark and thinks: bright light blinds it",
+   "answerKind": "Light",
+   "proposal": "keep"
   }
  ],
  "tags": [
@@ -3972,5 +4153,84 @@
    "name": "Delvers",
    "state": "maybe"
   }
+ ],
+ "roles": [
+  {
+   "id": "soldier",
+   "name": "Soldier",
+   "state": "proposed"
+  },
+  {
+   "id": "wanderer",
+   "name": "Wanderer"
+  },
+  {
+   "id": "pack",
+   "name": "Pack"
+  },
+  {
+   "id": "swarm",
+   "name": "Swarm"
+  },
+  {
+   "id": "ambusher",
+   "name": "Ambusher"
+  },
+  {
+   "id": "hunter",
+   "name": "Hunter"
+  },
+  {
+   "id": "alarm-raiser",
+   "name": "Alarm-raiser"
+  },
+  {
+   "id": "brute",
+   "name": "Brute"
+  },
+  {
+   "id": "caster",
+   "name": "Caster"
+  },
+  {
+   "id": "leader",
+   "name": "Leader"
+  },
+  {
+   "id": "lure",
+   "name": "Lure"
+  },
+  {
+   "id": "thief",
+   "name": "Thief"
+  },
+  {
+   "id": "breeder",
+   "name": "Breeder"
+  },
+  {
+   "id": "boss",
+   "name": "Boss"
+  }
+ ],
+ "answerKinds": [
+  "Light",
+  "Darkness",
+  "Silence",
+  "Fire",
+  "Holy ground",
+  "Water",
+  "Timing",
+  "Distance",
+  "Cover",
+  "Distraction",
+  "Strike first",
+  "Fell the leader",
+  "Searching",
+  "Get past"
+ ],
+ "duties": [
+  "Guard a post",
+  "Walk a round"
  ]
 }

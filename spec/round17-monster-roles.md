@@ -29,6 +29,18 @@ duties, the skeleton, the cultist, the bandit and the goblin archer need a role,
 
 How many of each, as proposed: ambusher 11, hunter 8, brute 5, alarm-raiser 4, soldier 4, swarm 3, leader 2, caster 2, pack 1, boss 1, wanderer 1, thief 1, lure 1.
 
+## Asked by role and by cell
+
+You asked for the big picture rather than one monster at a time. The grid is on the catalogue page
+(Roles: each monster by role and kind of answer). On the choices page:
+- each role, with its monsters and their answers;
+- each crowded cell (two or more with the same role and the same kind of answer): keep both if
+  they're in different themes (they seldom meet), change one, or cut one;
+- the empty breeder role (your worms);
+- the four cuts.
+
+The full list stays below for reference.
+
 ## Each monster
 
 Agree, change (say how in the comment), or cut.

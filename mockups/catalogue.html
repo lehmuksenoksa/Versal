@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Versal Catalogue</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,15 +70,24 @@
   td .st { font-size: 13px; color: var(--dim); }
   .note { color: var(--dim); max-width: 80ch; margin: 0; }
   section { display: grid; gap: 14px; }
+  table.grid { font-size: 14px; }
+  table.grid th.k { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding: 8px 4px; text-align: left; vertical-align: bottom; }
+  table.grid th.r { white-space: nowrap; color: var(--paper); text-transform: none; letter-spacing: 0; font-size: 15px; }
+  table.grid td.g { min-width: 70px; border-left: 1px solid var(--line); }
+  table.grid td.g .c { display: inline-block; margin: 2px 2px; font-size: 13px; }
+  table.grid td.twice { background: rgba(217, 165, 58, 0.14); box-shadow: inset 0 0 0 1px var(--amber); }
+  .c.cut { text-decoration: line-through; text-decoration-color: var(--blood); color: var(--dim); }
+  .c.change { border: 1px dashed var(--amber); }
 </style>
 
 <main>
   <header>
     <h1>The catalogue</h1>
-    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 15), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 17), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
   </header>
   <nav class="bar" aria-label="Views">
     <a href="#regions">By region</a>
+    <a href="#roles">Roles</a>
     <a href="#themes">Themes</a>
     <a href="#holes">Holes</a>
     <a href="#monsters">Monsters</a>
@@ -100,7 +110,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let C = null;
 const KIND = { world: "The world", region: "Region", transition: "Transition", themed: "Themed area" };
-const VIEWS = ["regions", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
+const VIEWS = ["regions", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
 
 function shown(x) {
   if (x.state === "maybe") return $("#show-maybe").checked;
@@ -135,6 +145,22 @@ function regionsView() {
           <div class="col"><h3>Rooms</h3>${chips(rooms)}</div>
         </div></article>`;
     }).join("")}</section>`;
+}
+
+function rolesView() {
+  const ms = C.monsters.filter((m) => shown(m) && m.role);
+  const kinds = C.answerKinds, roles = C.roles.map((r) => r.name);
+  const cell = (role, kind) => ms.filter((m) => m.role === role && m.answerKind === kind);
+  const mchip = (m) => `<span class="c ${cls(m)} ${m.proposal === "cut" ? "cut" : ""} ${m.proposal === "change" ? "change" : ""}" title="${esc(m.answer + (m.proposalWhy ? " · " + m.proposalWhy : ""))}">${esc(m.name)}</span>`;
+  const head = `<tr><th>Role, by answer</th>${kinds.map((k) => `<th class="k">${esc(k)}</th>`).join("")}<th class="k">All</th></tr>`;
+  const rows = roles.map((r) => {
+    const all = ms.filter((m) => m.role === r);
+    return `<tr><th class="r">${esc(r)}${r === "Soldier" ? ` <span class="st">proposed</span>` : ""}</th>${kinds.map((k) => { const c = cell(r, k); const live = c.filter((m) => m.proposal !== "cut");
+      return `<td class="g ${live.length > 1 ? "twice" : ""}">${c.map(mchip).join("")}</td>`; }).join("")}<td class="n ${all.length ? "" : "zero"}">${all.length}</td></tr>`;
+  }).join("");
+  const totals = `<tr><th class="r">All</th>${kinds.map((k) => { const n = ms.filter((m) => m.answerKind === k).length; return `<td class="n ${n ? "" : "zero"}">${n}</td>`; }).join("")}<td class="n">${ms.length}</td></tr>`;
+  return `<section><p class="note">Each monster by its role (what it does to you) and the kind of its answer (what gets you past it), as proposed for round 17. Two in one cell (amber) do the same thing the same way: one is likely a cut. A role or answer with none is a hole. Struck through in red: proposed cuts; dashed amber: proposed changes. Hover a name for its answer. Guard and patrol are duties given by placement, not roles.</p>
+    <div class="wrap"><table class="grid">${head}${rows}${totals}</table></div></section>`;
 }
 
 function themesView() {
@@ -186,6 +212,7 @@ function render() {
   document.querySelectorAll("nav.bar a").forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
   $("#view").innerHTML = {
     regions: regionsView,
+    roles: rolesView,
     themes: themesView,
     holes: holesView,
     monsters: () => listView(C.monsters, [["Monster", named], ["What", (x) => esc(x.line)], ["Kind", (x) => esc(x.group)], ["Fits", (x) => esc(regionNames(x))]]),
