@@ -6,22 +6,27 @@ play?", and the cull: two monsters with the same role and the same answer are on
 
 ## The roles
 
-- Wanderer
-- Pack
-- Swarm
-- Guard
-- Patroller
-- Ambusher
-- Tracker
-- Hunter
-- Alarm-raiser
-- Brute
-- Caster
-- Leader
-- Lure
-- Thief
-- Water hazard
-- Boss
+A role is what a monster does to you, seen from a sneaking player's side: how it finds you, and
+what kind of trouble it is once it has.
+
+| Role | What it does | How it plays | For example |
+|---|---|---|---|
+| **Wanderer** | Roams the level with no post or route | The unplanned meeting: it can turn up anywhere, so no place is safe for long | Ghost |
+| **Pack** | Several together, round a leader or a fire | Hard to fight, easy to see coming: their camp is a fixed obstacle to sneak round or lure away | Goblins |
+| **Swarm** | Many weak ones acting as one | Dangerous in numbers, not one by one; held off by something (light, staying out of the water) rather than fought | Rats, leeches |
+| **Guard** | Keeps one post and watches it | A fixed puzzle: find its blind side, distract it, or go another way | Golem, archer |
+| **Patroller** | Walks a set round | A puzzle of timing: learn the round, slip through behind it | Skeleton, cultist |
+| **Ambusher** | Waits still or hidden until you're close | Danger you don't see coming; the answer is noticing it first (light, tracks, searching) | Spider, mimic |
+| **Tracker** | Follows the trail you leave | Hiding isn't enough, because it follows where you've been; you have to break the trail | Wolf |
+| **Hunter** | Seeks you out on its own, alone | Pressure: it comes looking, so you can't wait it out; each has one thing that drives it off | Cave cat, wraith |
+| **Alarm-raiser** | Not dangerous itself, but calls others | Getting seen by it is what costs you: it brings the danger to you | Shrieker, bat |
+| **Brute** | Big, slow and hits very hard | Never fight it face to face; it's easy to outpace or avoid, and deadly if it corners you | Troll, ogre |
+| **Caster** | Uses magic that changes things | It changes the rules nearby (lights fires, raises the dead), so it's the one to deal with first | Goblin shaman, cult priest |
+| **Leader** | Leads a pack | Kill or avoid it and the pack falters or scatters | Goblin warrior, bandit chief |
+| **Lure** | Draws you toward danger | A trap with a face: it tempts you off the safe way | Will-o'-wisp |
+| **Thief** | Takes something and runs | It costs you things, not health; it avoids a fight | Thief |
+| **Water hazard** | Lives in water and strikes from it | Makes water a place to think twice about, rather than a monster you meet | Eel |
+| **Boss** | Guards the way out of a region | The region's last test: get past it or kill it (round 2) | Goblin king |
 
 How many of each, as proposed: ambusher 7, hunter 7, alarm-raiser 4, brute 4, guard 4, swarm 3, patroller 3, leader 2, water hazard 2, caster 2, pack 1, boss 1, tracker 1, wanderer 1, thief 1, lure 1.
 
