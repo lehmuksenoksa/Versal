@@ -73,6 +73,7 @@ Each part's state is one of:
 | 7 | More friendly strangers, shallow ([`round7-strangers.md`](round7-strangers.md)); what to explore next | answered |
 | 8 | Regions or areas; the same regions every run? ([`round8-regions-areas.md`](round8-regions-areas.md)) | answered |
 | 9 | Monsters, shallow ([`round9-monsters.md`](round9-monsters.md)) | answered |
+| 10 | Monsters described by tags, your idea ([`round10-tags.md`](round10-tags.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
