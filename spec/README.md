@@ -37,6 +37,13 @@ make the key decisions. When the whole of it is written and you say go, building
    one of round 1's questions.)
 6. **The visual decisions stay yours**, as before (`PLAN.md`, "How we work").
 
+## The catalogue
+
+Everything the brainstorms kept is in one data file, `data/catalogue.json`: regions, places,
+strangers, monsters, tags, features, ways to tell the story, and surprises. From round 11 on it is
+the source; the round files are its history. The game will later load its content from data like
+it. A page to browse it, by region and with the holes shown: `mockups/catalogue.html`.
+
 ## The spec's parts
 
 Each part's state is one of:

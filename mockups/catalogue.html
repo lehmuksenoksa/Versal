@@ -1,0 +1,184 @@
+<title>Versal Catalogue</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Texturina:opsz,wght@12..72,500;12..72,600;12..72,700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  /* Layout: a ledger of the spec's catalogue (data/catalogue.json). Views
+     by region (each region's places, monsters and strangers side by side),
+     the holes (counts per region, thin ones marked), and each list. One
+     dark look, as the game's ink ledger and the choices page. */
+  :root {
+    --ground: #0d0c0b;
+    --card: #15130f;
+    --chip: #1f1b16;
+    --paper: #f4eee2;
+    --text: #ddd6c6;
+    --dim: #8f877a;
+    --faint: #5d574f;
+    --line: #2e2a25;
+    --amber: #d9a53a;
+    --blood: #c0392b;
+    --moss: #7f9a5a;
+    --letter: Texturina, Georgia, serif;
+    --log: "Crimson Pro", Georgia, serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--text); font: 17px/1.45 var(--log); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
+  main { max-width: 1280px; margin: 0 auto; padding-block: 32px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+  header { display: grid; gap: 8px; }
+  h1 { font: 600 clamp(30px, 5vw, 44px)/1.05 var(--letter); margin: 0; color: var(--paper); text-wrap: balance; }
+  header p { margin: 0; color: var(--dim); max-width: 75ch; }
+  nav.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--ground); padding-block: 10px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; border-bottom: 1px solid var(--line); }
+  nav.bar a { font: 600 15px var(--letter); color: var(--dim); text-decoration: none; padding: 4px 10px; border-radius: 3px; }
+  nav.bar a[aria-current="page"] { color: var(--ground); background: var(--paper); }
+  nav.bar a:focus-visible, label:focus-within { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .show { margin-left: auto; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 14px; color: var(--dim); }
+  .show label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+  h2 { margin: 0; font: 600 24px/1.15 var(--letter); color: var(--paper); text-wrap: balance; }
+  h3 { margin: 0; font: 600 13px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  .region { background: var(--card); border-radius: 6px; padding: 18px 20px; display: grid; gap: 12px; }
+  .region .head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  .region .head p { margin: 0; color: var(--dim); flex-basis: 100%; }
+  .role { font: 600 11px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--faint); color: var(--text); }
+  .role.region-r { background: var(--paper); color: var(--ground); border-color: var(--paper); }
+  .role.either-r { border-color: var(--amber); color: var(--amber); }
+  .game { font-size: 13px; color: var(--moss); }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 22px; }
+  .col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .c { font-size: 15px; padding: 1px 8px; border-radius: 3px; background: var(--chip); color: var(--text); border: 1px solid transparent; cursor: default; }
+  .c.maybe { border-style: dashed; border-color: var(--faint); background: transparent; }
+  .c.unmarked { color: var(--faint); background: transparent; border-color: var(--line); }
+  .c.drop { color: var(--faint); text-decoration: line-through; background: transparent; }
+  .c.ingame { border-color: var(--moss); }
+  .none { color: var(--blood); font-size: 15px; font-style: italic; }
+  .more { color: var(--faint); font-size: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 14px; color: var(--dim); align-items: center; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 600 13px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  td.n { font-variant-numeric: tabular-nums; text-align: right; width: 4.5em; }
+  td.n.zero { color: var(--blood); font-weight: 600; }
+  td.n.thin { color: var(--amber); }
+  td .st { font-size: 13px; color: var(--dim); }
+  .note { color: var(--dim); max-width: 80ch; margin: 0; }
+  section { display: grid; gap: 14px; }
+</style>
+
+<main>
+  <header>
+    <h1>The catalogue</h1>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 11), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+  </header>
+  <nav class="bar" aria-label="Views">
+    <a href="#regions">By region</a>
+    <a href="#holes">Holes</a>
+    <a href="#monsters">Monsters</a>
+    <a href="#strangers">Strangers</a>
+    <a href="#places">Places</a>
+    <a href="#tags">Tags</a>
+    <a href="#more">Features, story, surprises</a>
+    <span class="show" role="group" aria-label="Show">
+      <label><input type="checkbox" id="show-maybe" checked> maybe</label>
+      <label><input type="checkbox" id="show-unmarked"> unmarked</label>
+      <label><input type="checkbox" id="show-drop"> dropped</label>
+    </span>
+  </nav>
+  <div class="legend"><span class="c">kept</span><span class="c ingame">in the game</span><span class="c maybe">maybe</span><span class="c unmarked">unmarked</span><span class="c drop">dropped</span></div>
+  <div id="view"><p class="note">Loading the catalogue…</p></div>
+</main>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+let C = null;
+const ROLE = { region: "Region", either: "Region or area", area: "Area" };
+const VIEWS = ["regions", "holes", "monsters", "strangers", "places", "tags", "more"];
+
+function shown(x) {
+  if (x.state === "maybe") return $("#show-maybe").checked;
+  if (x.state === "unmarked") return $("#show-unmarked").checked;
+  if (x.state === "drop") return $("#show-drop").checked;
+  return true;
+}
+const cls = (x) => ({ "in game": "ingame", maybe: "maybe", unmarked: "unmarked", drop: "drop" })[x.state] ?? "";
+const tip = (x) => [x.line ?? x.why ?? x.plays, x.comment && `“${x.comment}”`].filter(Boolean).join(" · ");
+const chip = (x) => `<span class="c ${cls(x)}" title="${esc(tip(x))}">${esc(x.name)}</span>`;
+const chips = (list) => (list.length ? `<div class="chips">${list.map(chip).join("")}</div>` : `<span class="none">none yet</span>`);
+const fitsIn = (list, id) => list.filter((x) => shown(x) && x.fits?.includes(id));
+const anywhere = (list) => list.filter((x) => shown(x) && x.fits?.includes("anywhere"));
+
+function regionsView() {
+  const order = ["region", "either", "area"];
+  const rs = [...C.regions].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
+  const any = { p: anywhere(C.places).length, m: anywhere(C.monsters).length, s: anywhere(C.strangers).length };
+  return `<section><p class="note">Each region's places, monsters and strangers side by side. Hover a name for its line and your comments. Not repeated under each region, as they fit anywhere: ${any.p} ${any.p === 1 ? "place" : "places"}, ${any.m} ${any.m === 1 ? "monster" : "monsters"}, ${any.s} ${any.s === 1 ? "stranger" : "strangers"}.</p>
+    ${rs.map((r) => {
+      const areas = fitsIn(C.places, r.id).filter((p) => p.size === "area"), rooms = fitsIn(C.places, r.id).filter((p) => p.size === "room");
+      return `<article class="region" id="r-${r.id}"><div class="head"><h2>${esc(r.name)}</h2><span class="role ${r.role}-r">${ROLE[r.role]}</span>${r.inGame ? `<span class="game">in the game</span>` : ""}<p>${esc(r.line)}</p></div>
+        <div class="cols">
+          <div class="col"><h3>Monsters</h3>${chips(fitsIn(C.monsters, r.id))}</div>
+          <div class="col"><h3>Strangers</h3>${chips(fitsIn(C.strangers, r.id))}</div>
+          <div class="col"><h3>Areas</h3>${chips(areas)}</div>
+          <div class="col"><h3>Rooms</h3>${chips(rooms)}</div>
+        </div></article>`;
+    }).join("")}</section>`;
+}
+
+function holesView() {
+  const n = (v) => `<td class="n ${v === 0 ? "zero" : v <= 2 ? "thin" : ""}">${v}</td>`;
+  const rows = C.regions.map((r) => {
+    const p = fitsIn(C.places, r.id);
+    return `<tr><td>${esc(r.name)} <span class="st">${ROLE[r.role]}</span></td>${n(fitsIn(C.monsters, r.id).length)}${n(fitsIn(C.strangers, r.id).length)}${n(p.filter((x) => x.size === "area").length)}${n(p.filter((x) => x.size === "room").length)}</tr>`;
+  }).join("");
+  const unplaced = [...C.monsters, ...C.strangers, ...C.places].filter((x) => shown(x) && !(x.fits ?? []).length);
+  return `<section><p class="note">How much each region has of its own, by what's shown above. Red: none; amber: one or two. Things that fit anywhere aren't counted.</p>
+    <div class="wrap"><table><thead><tr><th>Region</th><th>Monsters</th><th>Strangers</th><th>Areas</th><th>Rooms</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h2>Not placed anywhere</h2>${chips(unplaced)}</section>`;
+}
+
+function listView(list, cols) {
+  const rs = list.filter(shown);
+  return `<section><div class="wrap"><table><thead><tr>${cols.map((c) => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>
+    ${rs.map((x) => `<tr>${cols.map((c) => `<td>${c[1](x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
+}
+const regionNames = (x) => (x.fits ?? []).map((f) => (f === "anywhere" ? "anywhere" : C.regions.find((r) => r.id === f)?.name.replace(/^The /, ""))).join(", ");
+const named = (x) => chip(x) + (x.comment ? `<div class="st">“${esc(x.comment)}”</div>` : "");
+
+function tagsView() {
+  const sorts = [...new Set(C.tags.map((t) => t.sort))];
+  return `<section><p class="note">As cleaned in spec/tags.md. Which are a type's own and which extras, and which monsters carry which, come later.</p>
+    ${sorts.map((s) => `<div class="region"><h2>${esc(s)}</h2><div class="chips">${C.tags.filter((t) => t.sort === s && shown(t)).map(chip).join("")}</div></div>`).join("")}</section>`;
+}
+function moreView() {
+  const block = (title, list) => `<div class="region"><h2>${title}</h2>${chips(list.filter(shown))}</div>`;
+  return `<section>${block("Features", C.features)}${block("Ways to tell the story", C.story)}${block("Surprises", C.surprises)}</section>`;
+}
+
+function render() {
+  if (!C) return;
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "regions";
+  document.querySelectorAll("nav.bar a").forEach((a) => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
+  $("#view").innerHTML = {
+    regions: regionsView,
+    holes: holesView,
+    monsters: () => listView(C.monsters, [["Monster", named], ["What", (x) => esc(x.line)], ["Kind", (x) => esc(x.group)], ["Fits", (x) => esc(regionNames(x))]]),
+    strangers: () => listView(C.strangers, [["Stranger", named], ["Why down here", (x) => esc(x.why)], ["Company", (x) => esc(x.company)], ["Fits", (x) => esc(regionNames(x))]]),
+    places: () => listView(C.places, [["Place", named], ["Size", (x) => esc(x.size)], ["Allows", (x) => esc(x.plays)], ["Tells", (x) => esc(x.tells)], ["Fits", (x) => esc(regionNames(x))]]),
+    tags: tagsView,
+    more: moreView,
+  }[v]();
+}
+for (const id of ["show-maybe", "show-unmarked", "show-drop"]) $("#" + id).addEventListener("change", render);
+window.addEventListener("hashchange", render);
+(async () => {
+  for (const url of ["catalogue.json", "../data/catalogue.json"]) {
+    try { const r = await fetch(url); if (r.ok) { C = await r.json(); break; } } catch {}
+  }
+  if (!C) { $("#view").innerHTML = `<p class="note">The catalogue couldn't be loaded.</p>`; return; }
+  render();
+})();
+</script>

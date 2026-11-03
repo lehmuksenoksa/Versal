@@ -1,6 +1,6 @@
 # Round 9: monsters, shallow
 
-**Answered:** 29 kept, 3 maybe, 9 dropped, 2 left unmarked. Comments:
+**Answered:** 27 kept, 3 maybe, 9 dropped, 2 left unmarked. Comments:
 - **Watcher:** "Floating eye, yes. Effects could be other."
 - **Golem:** "Why blind?" Answer: so that not every guard reads the same senses (some see, some
   hear). It isn't needed, and is a detail for later.

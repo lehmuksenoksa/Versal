@@ -1,0 +1,3423 @@
+{
+ "about": "Everything kept so far from the spec's brainstorms (rounds 4 to 11), in one place. From here on this file is the source: culling and new brainstorms change it, and the spec's round files stay as their history. Fits of monsters and strangers to regions are proposals, to be culled region by region. The game will load its content from data like this.",
+ "regions": [
+  {
+   "id": "dungeon",
+   "name": "The dungeon",
+   "line": "Built rooms and corridors",
+   "role": "region",
+   "inGame": true
+  },
+  {
+   "id": "collapsed",
+   "name": "The collapsed rooms",
+   "line": "Built rooms fallen in",
+   "role": "either",
+   "inGame": true
+  },
+  {
+   "id": "caverns",
+   "name": "The caverns",
+   "line": "Natural caves",
+   "role": "either",
+   "inGame": true
+  },
+  {
+   "id": "halls",
+   "name": "The goblin king's halls",
+   "line": "Rough-hewn halls of columns",
+   "role": "area",
+   "inGame": true
+  },
+  {
+   "id": "drowned",
+   "name": "The drowned city",
+   "line": "Ruins half under black water",
+   "role": "region",
+   "inGame": false
+  },
+  {
+   "id": "sewers",
+   "name": "The sewers",
+   "line": "Channels and cisterns under a city",
+   "role": "either",
+   "inGame": false
+  },
+  {
+   "id": "warrens",
+   "name": "The goblin warrens",
+   "line": "Cramped dug tunnels and dens",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "glowing",
+   "name": "The glowing deep",
+   "line": "Caves lit by fungus",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "webs",
+   "name": "The webs",
+   "line": "Caves strung with webs",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "mines",
+   "name": "The mines",
+   "line": "An abandoned mine",
+   "role": "either",
+   "inGame": false
+  },
+  {
+   "id": "hold",
+   "name": "The dwarven hold",
+   "line": "A fallen dwarf city: gates, halls, stairways",
+   "role": "region",
+   "inGame": false
+  },
+  {
+   "id": "forge",
+   "name": "The forge",
+   "line": "Furnaces and lava (part of the dwarven keep or near the mines)",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "vents",
+   "name": "The sulphur vents",
+   "line": "Fumes and hot springs",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "rift",
+   "name": "The rift",
+   "line": "A chasm crossed by bridges",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "archive",
+   "name": "The archive",
+   "line": "A buried library",
+   "role": "either",
+   "inGame": false
+  },
+  {
+   "id": "bones",
+   "name": "The bone field",
+   "line": "A vast cave of ancient bones",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "underwood",
+   "name": "The underwood",
+   "line": "Giant roots, a pale forest underground",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "pits",
+   "name": "The pits",
+   "line": "Beast cages and a fighting pit",
+   "role": "area",
+   "inGame": false
+  },
+  {
+   "id": "bandits",
+   "name": "The bandits' hold",
+   "line": "A hideout under a ruin",
+   "role": "region",
+   "inGame": false
+  },
+  {
+   "id": "sanctum",
+   "name": "The cult's sanctum",
+   "line": "A carved temple",
+   "role": "region",
+   "inGame": false
+  }
+ ],
+ "places": [
+  {
+   "id": "a-spider-nest",
+   "name": "A spider nest",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "webs"
+   ],
+   "plays": "A nest to avoid or burn; cocoons with things in them",
+   "tells": "What the spiders caught",
+   "comment": ""
+  },
+  {
+   "id": "a-flooded-wing",
+   "name": "A flooded wing",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold",
+    "sewers"
+   ],
+   "plays": "Wading, slow and loud; swimming under",
+   "tells": "A flood long ago",
+   "comment": ""
+  },
+  {
+   "id": "a-collapsed-wing",
+   "name": "A collapsed wing",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum",
+    "sewers"
+   ],
+   "plays": "Rubble for cover; things buried",
+   "tells": "A disaster, and who it caught",
+   "comment": ""
+  },
+  {
+   "id": "a-guard-post",
+   "name": "A guard post",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold",
+    "sanctum",
+    "warrens"
+   ],
+   "plays": "A watched narrow way, and the ways round it",
+   "tells": "What they guard against",
+   "comment": ""
+  },
+  {
+   "id": "a-prison-block",
+   "name": "A prison block",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "sanctum"
+   ],
+   "plays": "Prisoners to free; keys; cells to hide in",
+   "tells": "Who was kept, and why",
+   "comment": ""
+  },
+  {
+   "id": "a-temple",
+   "name": "A temple",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Altars (curses lifted); holy ground",
+   "tells": "A faith, old or the cult's",
+   "comment": ""
+  },
+  {
+   "id": "a-crypt-row",
+   "name": "A crypt row",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "The dead asleep; graves to rob",
+   "tells": "Families, names on tombs",
+   "comment": ""
+  },
+  {
+   "id": "a-river-crossing",
+   "name": "A river crossing",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "drowned",
+    "sewers",
+    "underwood"
+   ],
+   "plays": "A bridge to hold or slip past; the water covers your steps",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-mushroom-grove",
+   "name": "A mushroom grove",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood"
+   ],
+   "plays": "Cover; glow; spores",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-crystal-grotto",
+   "name": "A crystal grotto",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "mines"
+   ],
+   "plays": "Light carries far off crystal; treasure",
+   "tells": "Why miners came",
+   "comment": ""
+  },
+  {
+   "id": "a-cave-in-maze",
+   "name": "A cave-in maze",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "collapsed",
+    "mines"
+   ],
+   "plays": "Tight ways, easy to lose pursuers (or yourself)",
+   "tells": "Miners trapped",
+   "comment": ""
+  },
+  {
+   "id": "a-sinkhole",
+   "name": "A sinkhole",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "caverns",
+    "collapsed",
+    "glowing",
+    "rift",
+    "underwood",
+    "vents",
+    "webs"
+   ],
+   "plays": "A way down without the stairs: a fall, one way",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-hot-spring",
+   "name": "A hot spring",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "hold",
+    "vents"
+   ],
+   "plays": "A place to rest; steam hides you",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-smugglers-stash",
+   "name": "A smugglers' stash",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "sewers"
+   ],
+   "plays": "Hidden rooms behind a false wall; loot",
+   "tells": "Who hid it",
+   "comment": ""
+  },
+  {
+   "id": "a-hermits-hollow",
+   "name": "A hermit's hollow",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood"
+   ],
+   "plays": "A friendly character",
+   "tells": "Someone who stayed down here",
+   "comment": ""
+  },
+  {
+   "id": "an-adventurers-last-camp",
+   "name": "An adventurers' last camp",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "plays": "Their things, their notes, a warning",
+   "tells": "Who came before, and what killed them",
+   "comment": ""
+  },
+  {
+   "id": "a-ruined-chapel",
+   "name": "A ruined chapel",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "collapsed",
+    "drowned",
+    "dungeon"
+   ],
+   "plays": "A broken altar; holy ground",
+   "tells": "A faith fallen",
+   "comment": ""
+  },
+  {
+   "id": "a-breach",
+   "name": "A breach",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "plays": "A back way between two kinds of ground",
+   "tells": "Someone dug in, or out",
+   "comment": ""
+  },
+  {
+   "id": "a-dry-well",
+   "name": "A dry well",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum",
+    "sewers"
+   ],
+   "plays": "A shaft up and down between levels",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-stair-tower",
+   "name": "A stair tower",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "Another way between levels",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "a-trapped-corridor",
+   "name": "A trapped corridor",
+   "size": "area",
+   "state": "maybe",
+   "fits": [
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Traps, and light to see them",
+   "tells": "What it protects",
+   "comment": ""
+  },
+  {
+   "id": "a-great-stairway",
+   "name": "A great stairway",
+   "size": "area",
+   "state": "maybe",
+   "fits": [
+    "hold"
+   ],
+   "plays": "A grand way down, open and watched",
+   "tells": "\"Part of a great dwarven keep\"",
+   "comment": ""
+  },
+  {
+   "id": "a-ledge-path",
+   "name": "A ledge path",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "mines",
+    "rift"
+   ],
+   "plays": "Ledges, drops, shoving",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "beast-pens",
+   "name": "Beast pens",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "halls",
+    "pits",
+    "warrens"
+   ],
+   "plays": "Beasts to let loose on foes, or that get loose",
+   "tells": "Who keeps beasts, and for what",
+   "comment": ""
+  },
+  {
+   "id": "a-statue-gallery",
+   "name": "A statue gallery",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Hide among statues; one that isn't",
+   "tells": "Heroes or kings remembered",
+   "comment": ""
+  },
+  {
+   "id": "a-sealed-wing",
+   "name": "A sealed wing",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "Untouched loot, old danger; reached by digging or a hidden way",
+   "tells": "Why it was sealed",
+   "comment": ""
+  },
+  {
+   "id": "a-mine-head",
+   "name": "A mine-head",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "hold",
+    "mines"
+   ],
+   "plays": "Winch, carts, a shaft down; a pickaxe",
+   "tells": "The mine's life",
+   "comment": ""
+  },
+  {
+   "id": "a-market",
+   "name": "A market",
+   "size": "area",
+   "state": "maybe",
+   "fits": [
+    "anywhere"
+   ],
+   "plays": "Trade with friendly folk (not goblins)",
+   "tells": "Who still lives down here",
+   "comment": ""
+  },
+  {
+   "id": "storeroom",
+   "name": "Storeroom",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "halls",
+    "hold",
+    "sanctum",
+    "sewers",
+    "warrens"
+   ],
+   "plays": "Things to find",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "gallery",
+   "name": "Gallery",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "archive",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "Long sight lines",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "pillared-hall",
+   "name": "Pillared hall",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Columns casting shadow",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "crypt",
+   "name": "Crypt",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "bones",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "The dead",
+   "tells": "Who lies here",
+   "comment": ""
+  },
+  {
+   "id": "jail",
+   "name": "Jail",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls"
+   ],
+   "plays": "Cells",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "barracks",
+   "name": "Barracks",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold"
+   ],
+   "plays": "Many sleepers",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "dining-hall",
+   "name": "Dining hall",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold"
+   ],
+   "plays": "Many at once",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "shrine",
+   "name": "Shrine",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "An altar (curses lifted)",
+   "tells": "A faith",
+   "comment": ""
+  },
+  {
+   "id": "throne-room",
+   "name": "Throne room",
+   "size": "room",
+   "state": "in game",
+   "fits": [
+    "halls"
+   ],
+   "plays": "The king and his guard",
+   "tells": "The goblin kingdom",
+   "comment": ""
+  },
+  {
+   "id": "campfire-camp",
+   "name": "Campfire camp",
+   "size": "area",
+   "state": "in game",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood"
+   ],
+   "plays": "A pack round its fire; lanes of shadow",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "armoury",
+   "name": "Armoury",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold"
+   ],
+   "plays": "Weapons and armour, guarded",
+   "tells": "Who armed, for what",
+   "comment": ""
+  },
+  {
+   "id": "kitchen",
+   "name": "Kitchen",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold",
+    "warrens"
+   ],
+   "plays": "A fire (light); cooks at work",
+   "tells": "Daily life",
+   "comment": ""
+  },
+  {
+   "id": "larder",
+   "name": "Larder",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold",
+    "warrens"
+   ],
+   "plays": "Rats; hiding among what hangs",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "wine-cellar",
+   "name": "Wine cellar",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "Casks for cover; drunk guards",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "library",
+   "name": "Library",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Scrolls, notes, spells; reading needs light; fire is a danger",
+   "tells": "Lore, the story's thread",
+   "comment": ""
+  },
+  {
+   "id": "alchemists-room",
+   "name": "Alchemist's room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "dungeon",
+    "sanctum"
+   ],
+   "plays": "Potions; finding out unknown ones",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "treasury",
+   "name": "Treasury",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "dungeon",
+    "halls",
+    "hold"
+   ],
+   "plays": "Great loot behind locks and traps",
+   "tells": "Whose wealth",
+   "comment": ""
+  },
+  {
+   "id": "torture-chamber",
+   "name": "Torture chamber",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "sanctum"
+   ],
+   "plays": "A prisoner; dread",
+   "tells": "Cruelty, and to whom",
+   "comment": ""
+  },
+  {
+   "id": "guardroom",
+   "name": "Guardroom",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "halls",
+    "hold",
+    "sanctum",
+    "sewers"
+   ],
+   "plays": "Guards at rest; keys",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "bedchamber",
+   "name": "Bedchamber",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "hold"
+   ],
+   "plays": "A chest; someone asleep",
+   "tells": "Whose room",
+   "comment": ""
+  },
+  {
+   "id": "bath",
+   "name": "Bath",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "Water; a place to rest",
+   "tells": "Luxury lost",
+   "comment": ""
+  },
+  {
+   "id": "well-room",
+   "name": "Well room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum",
+    "sewers"
+   ],
+   "plays": "Water; a shaft",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "cistern",
+   "name": "Cistern",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "hold",
+    "sewers"
+   ],
+   "plays": "Deep water to swim",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "ossuary",
+   "name": "Ossuary",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "dungeon",
+    "sanctum"
+   ],
+   "plays": "Bones that crunch; the dead",
+   "tells": "So many dead",
+   "comment": ""
+  },
+  {
+   "id": "sarcophagus-chamber",
+   "name": "Sarcophagus chamber",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "One great tomb: its loot, and who wakes",
+   "tells": "Who lies here",
+   "comment": ""
+  },
+  {
+   "id": "reliquary",
+   "name": "Reliquary",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "dungeon",
+    "hold",
+    "sanctum"
+   ],
+   "plays": "Holy things (wards against the dead)",
+   "tells": "A saint or a relic",
+   "comment": ""
+  },
+  {
+   "id": "chapel",
+   "name": "Chapel",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "An altar; holy ground to rest",
+   "tells": "A faith",
+   "comment": ""
+  },
+  {
+   "id": "sacrifice-room",
+   "name": "Sacrifice room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "halls",
+    "sanctum"
+   ],
+   "plays": "A victim to save, or too late",
+   "tells": "The cult at work",
+   "comment": ""
+  },
+  {
+   "id": "summoning-circle",
+   "name": "Summoning circle",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "sanctum"
+   ],
+   "plays": "Something summoned, or to summon",
+   "tells": "The cult's aim",
+   "comment": ""
+  },
+  {
+   "id": "map-room",
+   "name": "Map room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "hold"
+   ],
+   "plays": "Fills in your map of the level (your idea)",
+   "tells": "The hold as it was",
+   "comment": ""
+  },
+  {
+   "id": "workshop",
+   "name": "Workshop",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "forge",
+    "hold",
+    "mines"
+   ],
+   "plays": "Tools (a pickaxe, picks for locks)",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "smithy",
+   "name": "Smithy",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "forge",
+    "halls",
+    "hold"
+   ],
+   "plays": "Mending or bettering gear",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "winch-room",
+   "name": "Winch room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "hold",
+    "mines"
+   ],
+   "plays": "A lift down a shaft",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "gatehouse",
+   "name": "Gatehouse",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "halls",
+    "hold"
+   ],
+   "plays": "A portcullis to drop between you and them",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "nursery",
+   "name": "Nursery",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens",
+    "webs"
+   ],
+   "plays": "A choice: spare them or not; angry mothers",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "mushroom-farm",
+   "name": "Mushroom farm",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "glowing",
+    "hold",
+    "warrens"
+   ],
+   "plays": "Glow; spores",
+   "tells": "Who farms down here",
+   "comment": ""
+  },
+  {
+   "id": "pool-room",
+   "name": "Pool room",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "drowned",
+    "glowing",
+    "sanctum"
+   ],
+   "plays": "Dark water, something under",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "feast-hall",
+   "name": "Feast hall",
+   "size": "room",
+   "state": "maybe",
+   "fits": [
+    "bandits",
+    "halls",
+    "hold"
+   ],
+   "plays": "Many asleep, drunk",
+   "tells": "\"If we get the looks right\"",
+   "comment": ""
+  },
+  {
+   "id": "fighting-pit",
+   "name": "Fighting pit",
+   "size": "room",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "halls",
+    "pits"
+   ],
+   "plays": "A fight for a prize, watched",
+   "tells": "",
+   "comment": ""
+  },
+  {
+   "id": "barricaded-room",
+   "name": "A barricaded room",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bandits",
+    "collapsed",
+    "drowned",
+    "dungeon",
+    "hold",
+    "sanctum",
+    "sewers"
+   ],
+   "plays": "Someone holed up, door blocked from inside",
+   "tells": "",
+   "comment": "",
+   "who": "survivor, refugees"
+  },
+  {
+   "id": "lost-partys-camp",
+   "name": "A lost party's camp",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "plays": "A camp still lived in, not only a last one",
+   "tells": "",
+   "comment": "",
+   "who": "fellow adventurers, treasure hunters"
+  },
+  {
+   "id": "peddlers-stall",
+   "name": "A peddler's stall",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "plays": "At a crossing of ways, with a lamp lit",
+   "tells": "",
+   "comment": "",
+   "who": "peddler"
+  },
+  {
+   "id": "miners-pocket",
+   "name": "A miners' pocket",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "collapsed",
+    "mines"
+   ],
+   "plays": "A space cut off by a cave-in",
+   "tells": "",
+   "comment": "",
+   "who": "lost miners"
+  },
+  {
+   "id": "kept-shrine",
+   "name": "A kept shrine",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "A shrine with a candle always lit",
+   "tells": "",
+   "comment": "",
+   "who": "priest"
+  },
+  {
+   "id": "pilgrims-rest",
+   "name": "A pilgrims' rest",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "plays": "A resting place on the way to a holy place",
+   "tells": "",
+   "comment": "",
+   "who": "pilgrims"
+  },
+  {
+   "id": "hideout-in-a-crack",
+   "name": "A hideout in a crack",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "halls",
+    "warrens"
+   ],
+   "plays": "A narrow hidden place to hide in",
+   "tells": "",
+   "comment": "",
+   "who": "escaped slave, deserter"
+  },
+  {
+   "id": "scholars-dig",
+   "name": "A scholar's dig",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "drowned",
+    "hold"
+   ],
+   "plays": "Ruins being dug out, with tools and notes",
+   "tells": "",
+   "comment": "",
+   "who": "scholar"
+  },
+  {
+   "id": "trappers-den",
+   "name": "A trapper's den",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "underwood",
+    "webs"
+   ],
+   "plays": "Traps, hides, a fire",
+   "tells": "",
+   "comment": "",
+   "who": "trapper"
+  },
+  {
+   "id": "smugglers-hole",
+   "name": "A smugglers' hole",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "caverns",
+    "sewers"
+   ],
+   "plays": "Goods stacked in a hidden cave",
+   "tells": "",
+   "comment": "",
+   "who": "smugglers"
+  }
+ ],
+ "strangers": [
+  {
+   "id": "a-fellow-adventurer",
+   "name": "A fellow adventurer",
+   "why": "Came for the same reason you did",
+   "company": "alone, or a party",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-lone-survivor",
+   "name": "A lone survivor",
+   "why": "The rest of their party died",
+   "company": "alone",
+   "state": "maybe",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-prisoner",
+   "name": "A prisoner",
+   "why": "Taken by goblins, bandits or the cult",
+   "company": "alone, or a few in a cell",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "dungeon",
+    "halls",
+    "sanctum",
+    "warrens"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "an-escaped-slave",
+   "name": "An escaped slave",
+   "why": "Got away from the goblins, and hiding",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "halls",
+    "mines",
+    "warrens"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-lost-miner",
+   "name": "A lost miner",
+   "why": "Cut off by a cave-in",
+   "company": "alone, or a crew",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "collapsed",
+    "mines"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-hermit",
+   "name": "A hermit",
+   "why": "Fled the world above",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "an-exile",
+   "name": "An exile",
+   "why": "Sent down as a punishment",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "sewers",
+    "underwood"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-pilgrim",
+   "name": "A pilgrim",
+   "why": "Come to a holy place below",
+   "company": "alone, or a band",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-priest",
+   "name": "A priest",
+   "why": "Keeps a shrine down here",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-scholar",
+   "name": "A scholar",
+   "why": "Studying the ruins",
+   "company": "alone, with a guard or two",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "drowned",
+    "hold",
+    "sanctum"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-mapmaker",
+   "name": "A mapmaker",
+   "why": "Mapping the deep, and selling maps",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-peddler",
+   "name": "A peddler",
+   "why": "Follows adventurers down to buy their finds and sell them what they need",
+   "company": "alone, with a pack beast",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-treasure-hunter",
+   "name": "A treasure hunter",
+   "why": "After the tombs and vaults",
+   "company": "alone, or a crew",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-smuggler",
+   "name": "A smuggler",
+   "why": "Uses the deep ways to move goods",
+   "company": "a few",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "drowned",
+    "sewers"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-trapper",
+   "name": "A trapper",
+   "why": "Hunts the caves for pelts and beasts",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "webs"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-deserter",
+   "name": "A deserter",
+   "why": "Ran from the bandits or the cult",
+   "company": "alone",
+   "state": "unmarked",
+   "fits": [
+    "bandits",
+    "sanctum"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-searcher",
+   "name": "A searcher",
+   "why": "Come down to find someone",
+   "company": "alone",
+   "state": "unmarked",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-sellsword",
+   "name": "A sellsword",
+   "why": "Will follow you, for pay",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "the-last-dwarf",
+   "name": "The last dwarf",
+   "why": "Of the fallen hold",
+   "company": "alone",
+   "state": "maybe",
+   "fits": [
+    "forge",
+    "hold",
+    "mines"
+   ],
+   "comment": "A friendly undead dwarf could be a nice twist.",
+   "round": 6
+  },
+  {
+   "id": "a-kindly-ghost",
+   "name": "A kindly ghost",
+   "why": "One of the dead who isn't hostile",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "drowned",
+    "dungeon",
+    "hold"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "refugees",
+   "name": "Refugees",
+   "why": "Fled something above, and hiding",
+   "company": "a group",
+   "state": "unmarked",
+   "fits": [
+    "caverns",
+    "collapsed"
+   ],
+   "comment": "",
+   "round": 6
+  },
+  {
+   "id": "a-party-of-adventurers",
+   "name": "A party of adventurers",
+   "why": "Friendly rivals, after the same as you (your idea)",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-dwarven-expedition",
+   "name": "A dwarven expedition",
+   "why": "Come to take back a lost keep (your idea)",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "forge",
+    "hold",
+    "mines"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-rescue-party",
+   "name": "A rescue party",
+   "why": "Come down after someone taken",
+   "company": "group",
+   "state": "unmarked",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-scholars-expedition",
+   "name": "A scholars' expedition",
+   "why": "Scholars with porters and guards, digging out ruins",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "drowned",
+    "hold"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-miners-crew",
+   "name": "A miners' crew",
+   "why": "Prospecting a new seam",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "mines"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "monster-hunters",
+   "name": "Monster hunters",
+   "why": "Hunting one beast for its bounty",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "rift",
+    "underwood",
+    "webs"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "holy-warriors",
+   "name": "Holy warriors",
+   "why": "Come to put the dead to rest",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "dungeon",
+    "sanctum"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "ratcatchers",
+   "name": "Ratcatchers",
+   "why": "Paid to clear the vermin from the upper levels",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "collapsed",
+    "dungeon",
+    "sewers"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "tomb-wardens",
+   "name": "Tomb wardens",
+   "why": "Sworn to keep the old tombs",
+   "company": "group",
+   "state": "unmarked",
+   "fits": [
+    "bones",
+    "dungeon",
+    "hold"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "escaped-prisoners",
+   "name": "Escaped prisoners",
+   "why": "Fled the pens together",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "halls",
+    "sanctum",
+    "warrens"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "deep-folk-travellers",
+   "name": "Deep-folk travellers",
+   "why": "A small band of some deep folk, passing through",
+   "company": "group",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "rift",
+    "underwood"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-surveying-party",
+   "name": "A surveying party",
+   "why": "Mapping the deep for someone above",
+   "company": "group",
+   "state": "unmarked",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "turncoats",
+   "name": "Turncoats",
+   "why": "A few of the cult who've turned against it",
+   "company": "group",
+   "state": "unmarked",
+   "fits": [
+    "sanctum"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "an-undead-dwarf",
+   "name": "An undead dwarf",
+   "why": "The last of the hold, risen but still themselves (your twist)",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "forge",
+    "hold",
+    "mines"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-wounded-knight",
+   "name": "A wounded knight",
+   "why": "Can't go on; would give you their quest, or their gear",
+   "company": "alone",
+   "state": "unmarked",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-golem",
+   "name": "A golem",
+   "why": "Still keeping its last order, and not against you",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "hold"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-bound-spirit",
+   "name": "A bound spirit",
+   "why": "Trapped here, asking to be freed",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "archive",
+    "bones",
+    "sanctum"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-talking-raven",
+   "name": "A talking raven",
+   "why": "Someone's familiar, outliving its master",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-dog",
+   "name": "A dog",
+   "why": "Left behind by its master; follows whoever feeds it",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-chained-beast",
+   "name": "A chained beast",
+   "why": "A captive monster who'd fight its captors if freed",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "halls",
+    "pits"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-madman",
+   "name": "A madman",
+   "why": "Been down too long; useful truths among the ravings",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-cook",
+   "name": "A cook",
+   "why": "Feeds the bandits or the goblins, and wants out",
+   "company": "alone",
+   "state": "unmarked",
+   "fits": [
+    "bandits",
+    "halls"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-runaway-apprentice",
+   "name": "A runaway apprentice",
+   "why": "Fled a wizard's service with a stolen book",
+   "company": "alone",
+   "state": "unmarked",
+   "fits": [
+    "archive",
+    "caverns"
+   ],
+   "comment": "",
+   "round": 7
+  },
+  {
+   "id": "a-bard",
+   "name": "A bard",
+   "why": "Come down for a song worth singing",
+   "company": "alone",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": "",
+   "round": 7
+  }
+ ],
+ "monsters": [
+  {
+   "id": "rat",
+   "name": "Rat",
+   "line": "Fast, weak, in packs",
+   "group": "Beasts",
+   "state": "in game",
+   "fits": [
+    "dungeon",
+    "collapsed",
+    "caverns",
+    "sewers",
+    "warrens",
+    "bandits"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "bat",
+   "name": "Bat",
+   "line": "Flits erratically",
+   "group": "Beasts",
+   "state": "in game",
+   "fits": [
+    "caverns",
+    "rift",
+    "mines",
+    "glowing"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "spider",
+   "name": "Spider",
+   "line": "Waits still and bites; poison",
+   "group": "Beasts",
+   "state": "in game",
+   "fits": [
+    "caverns",
+    "webs",
+    "collapsed",
+    "underwood",
+    "glowing"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "giant-spider",
+   "name": "Giant spider",
+   "line": "A great spider",
+   "group": "Beasts",
+   "state": "in game",
+   "fits": [
+    "webs",
+    "caverns",
+    "underwood"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "skeleton",
+   "name": "Skeleton",
+   "line": "Slow, stiff; alone or in pairs, packs in crypts",
+   "group": "The dead",
+   "state": "in game",
+   "fits": [
+    "dungeon",
+    "bones",
+    "hold",
+    "sanctum"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "zombie",
+   "name": "Zombie",
+   "line": "Slow, tough, relentless",
+   "group": "The dead",
+   "state": "in game",
+   "fits": [
+    "dungeon",
+    "bones",
+    "sanctum",
+    "drowned"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "goblin",
+   "name": "Goblin",
+   "line": "Hops; packs round a leader and a campfire",
+   "group": "People and goblinkin",
+   "state": "in game",
+   "fits": [
+    "caverns",
+    "halls",
+    "warrens",
+    "mines"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "goblin-warrior",
+   "name": "Goblin warrior",
+   "line": "Leads goblin packs",
+   "group": "People and goblinkin",
+   "state": "in game",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "goblin-king",
+   "name": "Goblin king",
+   "line": "Waits with his guard",
+   "group": "People and goblinkin",
+   "state": "in game",
+   "fits": [
+    "halls"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "cultist",
+   "name": "Cultist",
+   "line": "Carries a lantern and patrols",
+   "group": "People and goblinkin",
+   "state": "in game",
+   "fits": [
+    "dungeon",
+    "sanctum",
+    "archive"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "troll",
+   "name": "Troll",
+   "line": "Slow, huge, healing",
+   "group": "People and goblinkin",
+   "state": "in game",
+   "fits": [
+    "caverns",
+    "halls",
+    "rift",
+    "underwood"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "cave-cat",
+   "name": "Cave cat",
+   "line": "Hunts alone, sees well in the dark",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "rift"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "wolf",
+   "name": "Wolf",
+   "line": "Goblins' hounds: packs that follow your scent",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens",
+    "bandits",
+    "caverns"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "giant-centipede",
+   "name": "Giant centipede",
+   "line": "Fast; hides under rubble",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "collapsed",
+    "caverns",
+    "mines",
+    "vents"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "cave-bear",
+   "name": "Cave bear",
+   "line": "Asleep most of the time; terrible awake",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "caverns",
+    "underwood"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "burrower",
+   "name": "Burrower",
+   "line": "Hears steps through the ground and comes up under you",
+   "group": "Beasts",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "giant-beetle",
+   "name": "Giant beetle",
+   "line": "Armoured and slow",
+   "group": "Beasts",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "eel",
+   "name": "Eel",
+   "line": "In deep water",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "cave-crab",
+   "name": "Cave crab",
+   "line": "In the shallows, armoured",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "sewers",
+    "vents"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "leeches",
+   "name": "Leeches",
+   "line": "A swarm in still water",
+   "group": "Beasts",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "bat-swarm",
+   "name": "Bat swarm",
+   "line": "A cloud that puts out your lamp",
+   "group": "Beasts",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "basilisk",
+   "name": "Basilisk",
+   "line": "Its gaze turns you to stone, if you meet it in the light",
+   "group": "Beasts",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "deep-worm",
+   "name": "Deep worm",
+   "line": "Huge; digs through rock; hunts by sound",
+   "group": "Beasts",
+   "state": "maybe",
+   "fits": [
+    "mines",
+    "caverns",
+    "rift"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "ghoul",
+   "name": "Ghoul",
+   "line": "Eats the dead; quick; its touch numbs",
+   "group": "The dead",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "wight",
+   "name": "Wight",
+   "line": "Sees in the dark; drains strength",
+   "group": "The dead",
+   "state": "keep",
+   "fits": [
+    "dungeon",
+    "bones",
+    "hold"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "ghost",
+   "name": "Ghost",
+   "line": "Passes through walls",
+   "group": "The dead",
+   "state": "keep",
+   "fits": [
+    "dungeon",
+    "hold",
+    "archive",
+    "drowned"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "wraith",
+   "name": "Wraith",
+   "line": "Darkness that moves; fears light",
+   "group": "The dead",
+   "state": "keep",
+   "fits": [
+    "sanctum",
+    "bones",
+    "rift"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "drowned-dead",
+   "name": "Drowned dead",
+   "line": "Rise from water",
+   "group": "The dead",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "bone-heap",
+   "name": "Bone heap",
+   "line": "Lies as loose bones until something comes near",
+   "group": "The dead",
+   "state": "keep",
+   "fits": [
+    "bones",
+    "dungeon",
+    "sanctum"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "banshee",
+   "name": "Banshee",
+   "line": "Its wail wakes the level",
+   "group": "The dead",
+   "state": "unmarked",
+   "fits": [
+    "bones",
+    "hold"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "goblin-archer",
+   "name": "Goblin archer",
+   "line": "Shoots from the dark",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "goblin-shaman",
+   "name": "Goblin shaman",
+   "line": "Magic; lights and puts out fires",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "bandit",
+   "name": "Bandit",
+   "line": "Carries a lantern and a crossbow",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "sewers"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "cult-priest",
+   "name": "Cult priest",
+   "line": "Raises the dead",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "sanctum",
+    "dungeon"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "thief",
+   "name": "Thief",
+   "line": "Steals from you and runs",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "bandits",
+    "sewers",
+    "dungeon"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "rival-adventurers",
+   "name": "Rival adventurers",
+   "line": "A hostile party, after the same as you",
+   "group": "People and goblinkin",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "kobold",
+   "name": "Kobold",
+   "line": "Small; sets traps",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "mines",
+    "warrens",
+    "collapsed"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "grey-dwarf",
+   "name": "Grey dwarf",
+   "line": "A dwarf gone bad: sees in the dark, hates light",
+   "group": "People and goblinkin",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "ogre",
+   "name": "Ogre",
+   "line": "Big and slow-witted; smells you",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "bandits",
+    "caverns"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "slime",
+   "name": "Slime",
+   "line": "Drops from the ceiling",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "sewers",
+    "caverns",
+    "drowned",
+    "glowing"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "mimic",
+   "name": "Mimic",
+   "line": "A chest that isn't",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "anywhere"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "lurker",
+   "name": "Lurker",
+   "line": "Lies flat on the ceiling, drops on you",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "cloaker",
+   "name": "Cloaker",
+   "line": "Like a cloak in the dark; smothers lights",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [],
+   "comment": ""
+  },
+  {
+   "id": "spore-folk",
+   "name": "Spore-folk",
+   "line": "Walking fungus; clouds of spores",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "glowing",
+    "underwood"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "shrieker",
+   "name": "Shrieker",
+   "line": "A mushroom that screams when light falls on it",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "glowing",
+    "underwood",
+    "caverns"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "watcher",
+   "name": "Watcher",
+   "line": "A floating eye that sees far and calls others",
+   "group": "Deep things",
+   "state": "maybe",
+   "fits": [
+    "archive",
+    "sanctum",
+    "rift"
+   ],
+   "comment": "Floating eye, yes. Effects could be other."
+  },
+  {
+   "id": "lake-thing",
+   "name": "Lake thing",
+   "line": "Tentacles from deep water",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "drowned",
+    "caverns"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "gargoyle",
+   "name": "Gargoyle",
+   "line": "Stone until you pass",
+   "group": "Made and bound",
+   "state": "keep",
+   "fits": [
+    "hold",
+    "sanctum",
+    "archive"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "golem",
+   "name": "Golem",
+   "line": "A guard that never sleeps; blind, it goes by sound",
+   "group": "Made and bound",
+   "state": "maybe",
+   "fits": [
+    "hold",
+    "forge",
+    "archive"
+   ],
+   "comment": "Why blind?"
+  },
+  {
+   "id": "animated-armour",
+   "name": "Animated armour",
+   "line": "Stands in a row of empty suits",
+   "group": "Made and bound",
+   "state": "keep",
+   "fits": [
+    "hold",
+    "dungeon",
+    "forge"
+   ],
+   "comment": ""
+  },
+  {
+   "id": "will-o-wisp",
+   "name": "Will-o'-wisp",
+   "line": "A light that leads you into danger",
+   "group": "Deep things",
+   "state": "keep",
+   "fits": [
+    "glowing",
+    "underwood",
+    "drowned",
+    "rift"
+   ],
+   "comment": "Things of the deep, surely. A spirit that shines a small light."
+  },
+  {
+   "id": "shadow",
+   "name": "Shadow",
+   "line": "A living shadow: strong in the dark, gone in light",
+   "group": "Deep things",
+   "state": "unmarked",
+   "fits": [
+    "sanctum",
+    "rift",
+    "archive"
+   ],
+   "comment": "Things of the deep, surely."
+  }
+ ],
+ "tags": [
+  {
+   "id": "beast",
+   "name": "Beast",
+   "sort": "What it is",
+   "line": "An animal",
+   "state": "keep"
+  },
+  {
+   "id": "undead",
+   "name": "Undead",
+   "sort": "What it is",
+   "line": "Risen from death; never flees (also the extra)",
+   "state": "keep"
+  },
+  {
+   "id": "spirit",
+   "name": "Spirit",
+   "sort": "What it is",
+   "line": "Without a body",
+   "state": "keep"
+  },
+  {
+   "id": "people",
+   "name": "People",
+   "sort": "What it is",
+   "line": "Human folk",
+   "state": "keep"
+  },
+  {
+   "id": "goblinkin",
+   "name": "Goblinkin",
+   "sort": "What it is",
+   "line": "Goblins and their kin",
+   "state": "keep"
+  },
+  {
+   "id": "deep-thing",
+   "name": "Deep thing",
+   "sort": "What it is",
+   "line": "Born of the deep",
+   "state": "keep"
+  },
+  {
+   "id": "fungus",
+   "name": "Fungus",
+   "sort": "What it is",
+   "line": "A walking or growing mushroom",
+   "state": "keep"
+  },
+  {
+   "id": "made",
+   "name": "Made",
+   "sort": "What it is",
+   "line": "Built, not born",
+   "state": "keep"
+  },
+  {
+   "id": "tiny",
+   "name": "Tiny",
+   "sort": "Size",
+   "line": "Hard to hit",
+   "state": "keep"
+  },
+  {
+   "id": "small",
+   "name": "Small",
+   "sort": "Size",
+   "line": "Fits through gaps",
+   "state": "keep"
+  },
+  {
+   "id": "large",
+   "name": "Large",
+   "sort": "Size",
+   "line": "Hits hard; can't fit everywhere",
+   "state": "keep"
+  },
+  {
+   "id": "huge",
+   "name": "Huge",
+   "sort": "Size",
+   "line": "Fills a passage",
+   "state": "keep"
+  },
+  {
+   "id": "alone",
+   "name": "Alone",
+   "sort": "Company",
+   "line": "Keeps to itself",
+   "state": "keep"
+  },
+  {
+   "id": "pack",
+   "name": "Pack",
+   "sort": "Company",
+   "line": "Moves and fights as a group; calls for help",
+   "state": "keep"
+  },
+  {
+   "id": "swarm",
+   "name": "Swarm",
+   "sort": "Company",
+   "line": "Many as one",
+   "state": "keep"
+  },
+  {
+   "id": "leader",
+   "name": "Leader",
+   "sort": "Company",
+   "line": "Leads a pack",
+   "state": "keep"
+  },
+  {
+   "id": "guard",
+   "name": "Guard",
+   "sort": "Company",
+   "line": "Keeps a post",
+   "state": "keep"
+  },
+  {
+   "id": "patrol",
+   "name": "Patrol",
+   "sort": "Company",
+   "line": "Walks a round",
+   "state": "keep"
+  },
+  {
+   "id": "sight",
+   "name": "Sight",
+   "sort": "Senses",
+   "line": "Sees by light",
+   "state": "keep"
+  },
+  {
+   "id": "dark-sight",
+   "name": "Dark-sight",
+   "sort": "Senses",
+   "line": "Sees in the dark",
+   "state": "keep"
+  },
+  {
+   "id": "blind",
+   "name": "Blind",
+   "sort": "Senses",
+   "line": "Doesn't see",
+   "state": "keep"
+  },
+  {
+   "id": "keen-ears",
+   "name": "Keen ears",
+   "sort": "Senses",
+   "line": "Hears far",
+   "state": "keep"
+  },
+  {
+   "id": "deaf",
+   "name": "Deaf",
+   "sort": "Senses",
+   "line": "Doesn't hear",
+   "state": "keep"
+  },
+  {
+   "id": "light-shy",
+   "name": "Light-shy",
+   "sort": "Light",
+   "line": "Keeps out of light (name open)",
+   "state": "keep"
+  },
+  {
+   "id": "light-bane",
+   "name": "Light-bane",
+   "sort": "Light",
+   "line": "Hurt by light (name open)",
+   "state": "keep"
+  },
+  {
+   "id": "light-seeker",
+   "name": "Light-seeker",
+   "sort": "Light",
+   "line": "Drawn to light",
+   "state": "keep"
+  },
+  {
+   "id": "light-source",
+   "name": "Light source",
+   "sort": "Light",
+   "line": "Gives light: small or large (merge open)",
+   "state": "keep"
+  },
+  {
+   "id": "snuffer",
+   "name": "Snuffer",
+   "sort": "Light",
+   "line": "Puts lights out (name open)",
+   "state": "keep"
+  },
+  {
+   "id": "fast",
+   "name": "Fast",
+   "sort": "How it moves",
+   "line": "Moves quickly",
+   "state": "keep"
+  },
+  {
+   "id": "slow",
+   "name": "Slow",
+   "sort": "How it moves",
+   "line": "Moves slowly",
+   "state": "keep"
+  },
+  {
+   "id": "swift",
+   "name": "Swift",
+   "sort": "How it moves",
+   "line": "A little faster than its kind",
+   "state": "keep"
+  },
+  {
+   "id": "flits",
+   "name": "Flits",
+   "sort": "How it moves",
+   "line": "Moves erratically",
+   "state": "keep"
+  },
+  {
+   "id": "flies",
+   "name": "Flies",
+   "sort": "How it moves",
+   "line": "Over water and pits",
+   "state": "keep"
+  },
+  {
+   "id": "swims",
+   "name": "Swims",
+   "sort": "How it moves",
+   "line": "In deep water",
+   "state": "keep"
+  },
+  {
+   "id": "through-walls",
+   "name": "Through walls",
+   "sort": "How it moves",
+   "line": "Passes through stone",
+   "state": "keep"
+  },
+  {
+   "id": "still",
+   "name": "Still",
+   "sort": "How it moves",
+   "line": "Doesn't move until it strikes",
+   "state": "keep"
+  },
+  {
+   "id": "wanders",
+   "name": "Wanders",
+   "sort": "How it moves",
+   "line": "Roams the level",
+   "state": "keep"
+  },
+  {
+   "id": "mindless",
+   "name": "Mindless",
+   "sort": "Mind",
+   "line": "Follows its nature",
+   "state": "keep"
+  },
+  {
+   "id": "animal",
+   "name": "Animal",
+   "sort": "Mind",
+   "line": "Clever as a beast",
+   "state": "keep"
+  },
+  {
+   "id": "intelligent",
+   "name": "Intelligent",
+   "sort": "Mind",
+   "line": "Opens doors, uses things, calls for help",
+   "state": "keep"
+  },
+  {
+   "id": "peaceful",
+   "name": "Peaceful",
+   "sort": "Temper",
+   "line": "Doesn't attack unless attacked",
+   "state": "keep"
+  },
+  {
+   "id": "wary",
+   "name": "Wary",
+   "sort": "Temper",
+   "line": "Keeps its distance",
+   "state": "keep"
+  },
+  {
+   "id": "territorial",
+   "name": "Territorial",
+   "sort": "Temper",
+   "line": "Attacks only near its lair",
+   "state": "keep"
+  },
+  {
+   "id": "hostile",
+   "name": "Hostile",
+   "sort": "Temper",
+   "line": "Attacks on sight",
+   "state": "keep"
+  },
+  {
+   "id": "savage",
+   "name": "Savage",
+   "sort": "Temper",
+   "line": "Attacks harder, never flees",
+   "state": "keep"
+  },
+  {
+   "id": "timid",
+   "name": "Timid",
+   "sort": "Temper",
+   "line": "Flees when hurt",
+   "state": "keep"
+  },
+  {
+   "id": "relentless",
+   "name": "Relentless",
+   "sort": "Temper",
+   "line": "Never gives up a chase",
+   "state": "keep"
+  },
+  {
+   "id": "starving",
+   "name": "Starving",
+   "sort": "Temper",
+   "line": "Weaker, but relentless",
+   "state": "keep"
+  },
+  {
+   "id": "sleepy",
+   "name": "Sleepy",
+   "sort": "Temper",
+   "line": "Often asleep, deeply",
+   "state": "keep"
+  },
+  {
+   "id": "venomous",
+   "name": "Venomous",
+   "sort": "Attacks",
+   "line": "Poisons",
+   "state": "keep"
+  },
+  {
+   "id": "bleeds",
+   "name": "Bleeds",
+   "sort": "Attacks",
+   "line": "Its blows make you bleed",
+   "state": "keep"
+  },
+  {
+   "id": "drains",
+   "name": "Drains",
+   "sort": "Attacks",
+   "line": "Takes strength",
+   "state": "keep"
+  },
+  {
+   "id": "numbs",
+   "name": "Numbs",
+   "sort": "Attacks",
+   "line": "Its touch slows you",
+   "state": "keep"
+  },
+  {
+   "id": "knocks-back",
+   "name": "Knocks back",
+   "sort": "Attacks",
+   "line": "Throws you a square",
+   "state": "keep"
+  },
+  {
+   "id": "reach",
+   "name": "Reach",
+   "sort": "Attacks",
+   "line": "Strikes from two squares",
+   "state": "keep"
+  },
+  {
+   "id": "shoots",
+   "name": "Shoots",
+   "sort": "Attacks",
+   "line": "Attacks from afar",
+   "state": "keep"
+  },
+  {
+   "id": "cloud",
+   "name": "Cloud",
+   "sort": "Attacks",
+   "line": "Breathes spores, smoke or gas",
+   "state": "keep"
+  },
+  {
+   "id": "steals",
+   "name": "Steals",
+   "sort": "Attacks",
+   "line": "Takes something and runs",
+   "state": "keep"
+  },
+  {
+   "id": "veteran",
+   "name": "Veteran",
+   "sort": "Attacks",
+   "line": "Hits more often and harder",
+   "state": "keep"
+  },
+  {
+   "id": "armoured",
+   "name": "Armoured",
+   "sort": "Defence",
+   "line": "Shrugs off light blows",
+   "state": "keep"
+  },
+  {
+   "id": "tough",
+   "name": "Tough",
+   "sort": "Defence",
+   "line": "More health",
+   "state": "keep"
+  },
+  {
+   "id": "weak",
+   "name": "Weak",
+   "sort": "Defence",
+   "line": "Less health",
+   "state": "keep"
+  },
+  {
+   "id": "regenerates",
+   "name": "Regenerates",
+   "sort": "Defence",
+   "line": "Heals as it goes",
+   "state": "keep"
+  },
+  {
+   "id": "immune-to-poison",
+   "name": "Immune to poison",
+   "sort": "Defence",
+   "line": "Poison does nothing",
+   "state": "keep"
+  },
+  {
+   "id": "fears-fire",
+   "name": "Fears fire",
+   "sort": "Defence",
+   "line": "Fire drives it off",
+   "state": "keep"
+  },
+  {
+   "id": "magic-user",
+   "name": "Magic user",
+   "sort": "Magic",
+   "line": "Casts spells",
+   "state": "keep"
+  },
+  {
+   "id": "raises-the-dead",
+   "name": "Raises the dead",
+   "sort": "Magic",
+   "line": "Brings the fallen back",
+   "state": "keep"
+  },
+  {
+   "id": "heals-others",
+   "name": "Heals others",
+   "sort": "Magic",
+   "line": "Mends its allies",
+   "state": "keep"
+  },
+  {
+   "id": "blinks",
+   "name": "Blinks",
+   "sort": "Magic",
+   "line": "Steps a few squares at once",
+   "state": "keep"
+  },
+  {
+   "id": "darkens",
+   "name": "Darkens",
+   "sort": "Magic",
+   "line": "Makes a patch of dark",
+   "state": "keep"
+  },
+  {
+   "id": "never-sleeps",
+   "name": "Never sleeps",
+   "sort": "Life",
+   "line": "Always awake",
+   "state": "keep"
+  },
+  {
+   "id": "rises-again",
+   "name": "Rises again",
+   "sort": "Life",
+   "line": "Comes back once after falling",
+   "state": "keep"
+  },
+  {
+   "id": "breeds",
+   "name": "Breeds",
+   "sort": "Life",
+   "line": "More of them over time",
+   "state": "keep"
+  },
+  {
+   "id": "disguised",
+   "name": "Disguised",
+   "sort": "Deceit",
+   "line": "Looks like a thing",
+   "state": "keep"
+  },
+  {
+   "id": "stone-still",
+   "name": "Stone-still",
+   "sort": "Deceit",
+   "line": "Looks like a statue",
+   "state": "keep"
+  },
+  {
+   "id": "unseen-in-the-dark",
+   "name": "Unseen in the dark",
+   "sort": "Deceit",
+   "line": "Can't be seen outside light",
+   "state": "keep"
+  },
+  {
+   "id": "giant",
+   "name": "Giant",
+   "sort": "Extras that change what it is",
+   "line": "A great one of its kind",
+   "state": "keep"
+  },
+  {
+   "id": "ghostly",
+   "name": "Ghostly",
+   "sort": "Extras that change what it is",
+   "line": "Without a body",
+   "state": "keep"
+  },
+  {
+   "id": "rotting",
+   "name": "Rotting",
+   "sort": "Extras that change what it is",
+   "line": "Diseased; its bite sickens",
+   "state": "keep"
+  },
+  {
+   "id": "feral",
+   "name": "Feral",
+   "sort": "Extras that change what it is",
+   "line": "Gone wild",
+   "state": "keep"
+  },
+  {
+   "id": "splits",
+   "name": "Splits",
+   "sort": "Defence",
+   "line": "Becomes two when hit",
+   "state": "maybe"
+  }
+ ],
+ "features": [
+  {
+   "id": "other-ways-between-levels",
+   "name": "Other ways between levels",
+   "line": "Sinkholes, wells, shafts, lifts, stair towers: falls one way, climbs the other",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "digging",
+   "name": "Digging",
+   "line": "A pickaxe to dig new tunnels and reach sealed places (your idea)",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "friendly-characters",
+   "name": "Friendly characters",
+   "line": "People to meet who aren't foes",
+   "state": "keep",
+   "comment": "A group of friendly adventurers, a dwarven expedition to a lost keep. We need more."
+  },
+  {
+   "id": "trade",
+   "name": "Trade",
+   "line": "Buying and selling with someone",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "freeing-prisoners",
+   "name": "Freeing prisoners",
+   "line": "Prisoners who help, guide or follow once freed",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "maps",
+   "name": "Maps",
+   "line": "A map room or a found map fills in your map of the level (your idea)",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "beasts-let-loose",
+   "name": "Beasts let loose",
+   "line": "Monsters set on other monsters",
+   "state": "keep",
+   "comment": "Monsters of different types aren't friendly. Player should be able to lure monsters to fight each other."
+  },
+  {
+   "id": "mending-and-bettering-gear",
+   "name": "Mending and bettering gear",
+   "line": "At a smithy or workshop",
+   "state": "maybe",
+   "comment": "Maybe a one time thing: enhance a weapon or armor."
+  },
+  {
+   "id": "brewing",
+   "name": "Brewing",
+   "line": "Making or finding out potions at an alchemist's",
+   "state": "drop",
+   "comment": ""
+  },
+  {
+   "id": "places-to-rest",
+   "name": "Places to rest",
+   "line": "Somewhere rest is safer or better",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "gates",
+   "name": "Gates",
+   "line": "A portcullis or door to drop between you and them",
+   "state": "keep",
+   "comment": "But it can't block progress"
+  },
+  {
+   "id": "a-fight-for-a-prize",
+   "name": "A fight for a prize",
+   "line": "An arena fight you can choose to take",
+   "state": "maybe",
+   "comment": ""
+  },
+  {
+   "id": "choices-with-a-cost",
+   "name": "Choices with a cost",
+   "line": "Spare or not, save or not, take or leave",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "light-that-carries",
+   "name": "Light that carries",
+   "line": "Crystal or water throwing light further",
+   "state": "maybe",
+   "comment": "If we can make it look good"
+  },
+  {
+   "id": "guardians-of-special-rooms",
+   "name": "Guardians of special rooms",
+   "line": "A strong foe in one room, less than a boss",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "places-reached-only-by-hidden-ways",
+   "name": "Places reached only by hidden ways",
+   "line": "Rooms behind false walls and secret doors",
+   "state": "keep",
+   "comment": "It'd be nice if they were hinted somehow. Rubble filled corridor. Marks on the floor going through a wall, etc."
+  },
+  {
+   "id": "monsters-at-each-other",
+   "name": "Monsters at each other",
+   "line": "Two kinds that fight when they meet",
+   "state": "keep",
+   "comment": ""
+  }
+ ],
+ "story": [
+  {
+   "id": "remains",
+   "name": "Remains",
+   "line": "Bodies and camps of those who came before, with their things",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "names",
+   "name": "Names",
+   "line": "Names on tombs, signs over doors, words cut in walls",
+   "state": "maybe",
+   "comment": ""
+  },
+  {
+   "id": "carvings",
+   "name": "Carvings",
+   "line": "Murals and carvings showing what happened here",
+   "state": "unmarked",
+   "comment": ""
+  },
+  {
+   "id": "rooms-left-as-they-were",
+   "name": "Rooms left as they were",
+   "line": "A feast left mid-meal, tools dropped in a cave-in",
+   "state": "maybe",
+   "comment": ""
+  },
+  {
+   "id": "talk",
+   "name": "Talk",
+   "line": "Friendly characters with something to say",
+   "state": "keep",
+   "comment": ""
+  },
+  {
+   "id": "your-past-runs",
+   "name": "Your past runs",
+   "line": "Your earlier characters' remains, found in later runs (the roll of the dead)",
+   "state": "drop",
+   "comment": ""
+  },
+  {
+   "id": "the-threads-marks",
+   "name": "The thread's marks",
+   "line": "Signs of the story's thread in every region",
+   "state": "drop",
+   "comment": "No real story here."
+  }
+ ],
+ "surprises": [
+  {
+   "id": "a-hidden-treasure-room",
+   "name": "A hidden treasure room",
+   "line": "Behind a secret door",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-friendly-face",
+   "name": "A friendly face",
+   "line": "A trader, hermit or prisoner met by chance",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-rare-find",
+   "name": "A rare find",
+   "line": "A named weapon or charm with a story",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-shortcut-down",
+   "name": "A shortcut down",
+   "line": "A sinkhole or lift past part of a level",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-safe-haven",
+   "name": "A safe haven",
+   "line": "A holy room or a spring to rest in",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "monsters-at-war",
+   "name": "Monsters at war",
+   "line": "Two kinds fighting, and you slip by",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-boss-asleep",
+   "name": "A boss asleep",
+   "line": "Caught napping",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-blessing",
+   "name": "A blessing",
+   "line": "A shrine's gift for the rest of the run",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-map-found",
+   "name": "A map found",
+   "line": "The level shown",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "a-store-of-oil",
+   "name": "A store of oil",
+   "line": "Light for a while",
+   "state": "keep",
+   "comment": "",
+   "kind": "good"
+  },
+  {
+   "id": "an-ambush",
+   "name": "An ambush",
+   "line": "They were waiting",
+   "state": "keep",
+   "comment": "",
+   "kind": "bad"
+  },
+  {
+   "id": "a-stranger-from-deeper",
+   "name": "A stranger from deeper",
+   "line": "A strong monster far from its region",
+   "state": "keep",
+   "comment": "",
+   "kind": "bad"
+  },
+  {
+   "id": "a-cave-in-behind-you",
+   "name": "A cave-in behind you",
+   "line": "The way back shut",
+   "state": "keep",
+   "comment": "",
+   "kind": "bad"
+  },
+  {
+   "id": "rising-water",
+   "name": "Rising water",
+   "line": "A part of the level flooding",
+   "state": "maybe",
+   "comment": "",
+   "kind": "bad"
+  },
+  {
+   "id": "the-lights-go-out",
+   "name": "The lights go out",
+   "line": "Every light on the level, at once",
+   "state": "maybe",
+   "comment": "If we get the light as a gameplay feature working",
+   "kind": "bad"
+  },
+  {
+   "id": "a-cursed-find",
+   "name": "A cursed find",
+   "line": "Something good that isn't",
+   "state": "keep",
+   "comment": "",
+   "kind": "bad"
+  },
+  {
+   "id": "a-level-with-a-twist",
+   "name": "A level with a twist",
+   "line": "All dark, all flooded, or full of one kind of monster",
+   "state": "keep",
+   "comment": "",
+   "kind": "either"
+  },
+  {
+   "id": "a-place-out-of-its-region",
+   "name": "A place out of its region",
+   "line": "A dwarven vault in the dungeon, a temple in the caves",
+   "state": "maybe",
+   "comment": "",
+   "kind": "either"
+  },
+  {
+   "id": "your-own-past",
+   "name": "Your own past",
+   "line": "A character from an earlier run, dead, or risen",
+   "state": "unmarked",
+   "comment": "",
+   "kind": "either"
+  }
+ ]
+}
