@@ -46,6 +46,13 @@ strangers, monsters, tags, features, ways to tell the story, and surprises. From
 the source; the round files are its history. The game will later load its content from data like
 it. A page to browse it, by region and with the holes shown: `mockups/catalogue.html`.
 
+## The content model
+
+What the plan for monsters, places and regions is for, and what we need to know about each:
+`content-model.md`. The aim: every run assembles itself from the catalogue into regions that feel
+and play differently, foes that each ask something different of a sneaking player, everything
+where it makes sense, at a scope we can draw and balance.
+
 ## The spec's parts
 
 Each part's state is one of:
@@ -88,6 +95,7 @@ Each part's state is one of:
 | 13 | A world by depth, the regions set in it, your idea ([`round13-depth.md`](round13-depth.md)) | answered |
 | 14 | Culling the Dungeon Underneath ([`round14-dungeon.md`](round14-dungeon.md)) | answered |
 | 15 | Themes: what goes with what; who holds the castle-like dungeon ([`round15-themes.md`](round15-themes.md)) | answered |
+| 16 | Monsters' roles and answers, the content model's first step ([`round16-roles.md`](round16-roles.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
