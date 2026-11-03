@@ -5,6 +5,10 @@ All five milestones are in the game (the first version of each); what follows is
 The look is roughly done; this is what comes next, in milestones that can each be tried on their own.
 Decided with the player of the game; open questions at the end.
 
+**Now: the full game is being specified first** (`spec/README.md`): in rounds, you making the key
+decisions from proposals with critique. Nothing more is built until the spec is whole and you
+give the go. What follows is the proof of concept's plan, as it was.
+
 ## How we work
 
 - **Every visual decision is the player's.** Nothing new to look at, and no change to how anything

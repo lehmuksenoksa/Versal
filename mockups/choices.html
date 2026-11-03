@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>The visual language</h1>
-    <p>The rules everything on the map is drawn by, written down (VISUAL_LANGUAGE.md) so every mockup and every new thing keeps to them. Each is shown as my mockups broke it and as kept, drawn with the game's own pen. Agree to each, or say what to change in the box beneath; one has a real choice (how long the shadows are). Once these are settled I'll redraw the stairs and the dais by them, and bring the things in the game that break them into line (listed in VISUAL_LANGUAGE.md).</p>
+    <h1>The full game, round 1: vision</h1>
+    <p>The first round of planning the full game: the decisions everything else hangs on. Each has the options, my pick, and what each costs or rules out (work, phones, the code, balance). The fuller write-up is in the repository: spec/01-vision.md, with the proof of concept reviewed in spec/00-proof-of-concept.md and how we work in spec/README.md. Pick one per question, or say what to change in the box beneath. Nothing is built until the spec is whole and you give the go.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,27 +88,79 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "vl_lines", title: "1. Every line is a pen stroke", said: "Most of the mockups you produce have too artificial looking graphical elements. Synthetic - with clean, unbroken straight lines.", how: "Every line drawn with the game's own pen: a little bowed, ends over- or under-shooting, widths a touch uneven; long lines several strokes (walls a third of a square each, the grid broken now and then). No ruled lines, no perfect circles. Left, as my mockups did; right, the pen.", tile: "420px",
-    why: "This is how the walls, grid and furniture are already drawn; the mockups (and a few things I added) broke it.",
-    opts: [{ k: "Yes", n: "As written", d: "", img: ["vl_lines_wrong", "vl_lines_right"], rec: 1 }] },
-  { id: "vl_weights", title: "2. One weight for each kind of line", said: "", how: "In 32nds of a square: walls (and anything built as a wall) 8; outlines of things (furniture, a dais's edge, a stair's risers) 2.9; stones 2.7; lines inside things 1.9; the floor grid a hairline.", tile: "420px",
-    why: "The weights the map already uses, written down so new things take theirs from the list.",
-    opts: [{ k: "Yes", n: "As written", d: "", img: ["vl_weights"], rec: 1 }] },
-  { id: "vl_fills", title: "3. A fill is the outline's own shape", said: "Also, shading isn't pixel perfect. A brighter base color without shading might bleed through from the edges. Look at the stairs.", how: "Filled with the same pen points as the outline, laid under its ink, so the ink always covers the fill's edge. Colours: ink, paper, the one shadow grey; colour only where it means something (fire, potions, water, the nest). Never a gradient.", tile: "420px",
-    why: "What bled at the stairs' edges was a fill cut to a ruled shape under a wobbling one.",
-    opts: [{ k: "Yes", n: "As written", d: "", img: ["vl_fill_wrong", "vl_fill_right"], rec: 1 }] },
-  { id: "vl_height", title: "4. Height: the one shadow", said: "Or you don't show depth/elevation with shadows - look at the dais.", how: "Light from the top left; anything raised casts the one grey down and right, as far as it's high; a thing cuts its shadow (and lower things') out from under itself, so an upper tier's falls on the lower; all shadows toned at once, never darker where they cross. How long: as now (furniture 0.11 of a square, walls 0.22), or longer, nearer Dyson's (a step or furniture 0.18, walls 0.3). Each: a dais with a flight, then two tiers. The floor's grid runs on across the dais, as in your example.", tile: "420px",
-    why: "<b>Longer</b>: at the game's zoom the shorter one is two pixels and the dais barely lifts; Dyson's are generous. (It would lengthen the walls' and furniture's shadows too, everywhere, so they stay one language.)",
+  { id: "s1_heart", title: "The heart of the game", said: "", how: "What a run is mostly about, moment to moment. (Costs: S little, M, L, XL a large share of the whole.)", tile: "260px",
+    why: "<b>A</b>: it's what the proof of concept does that other roguelikes don't, and the map (light in bands, hatching, shadows) is made for it. A mixes well with C: stealth at the heart, the fights that do happen made tactical; that's how I'd write it in round 2.",
     opts: [
-      { k: "Now", n: "As long as now", d: "Furniture and a step 0.11; walls 0.22.", img: ["vl_height_right", "vl_tiers_right"] },
-      { k: "Longer", n: "Longer", d: "Furniture and a step 0.18; walls 0.3.", img: ["vl_height_long", "vl_tiers_long"], rec: 1 },
+      { k: "A", n: "Stealth in the dark", d: "You're weak against what lives down there; lamp, light, noise and being seen are the main tools; fights dangerous, often best avoided or taken by surprise. Cost: the monsters' minds (searching, patrols, following sounds, reacting to light, raising the alarm), L; each turn's thinking kept cheap on phones; levels made for sneaking. Fewer, deeper monsters.", img: [], rec: 1 },
+      { k: "B", n: "Fight and find", d: "A classic crawl: fighting and loot first, sneaking one tool among many. Cost: a lot of content to stay fresh, and drawing it all, XL. Light and sneaking become a side feature.", img: [] },
+      { k: "C", n: "Few, hard fights", d: "Tactical: each fight a puzzle of position; telegraphed blows, shoving, defending. Cost: telegraphs drawn on the map, more animation, an interface for intent, L. Alone it drops what's special; with A, a second layer.", img: [] },
     ] },
-  { id: "vl_depth", title: "5. Depth: step by step", said: "Or shading is done softly, instead of for single elements - once again look at the stairs: soft shading, not per riser.", how: "Each riser is a drop: the lower step gets a band of the one grey beside it, beyond the riser going down, before it going up. Left, the soft fade I did; middle, down; right, up.", tile: "300px",
-    why: "Per riser, in the one grey: each step reads as a step, and which way is down shows in where the bands are.",
-    opts: [{ k: "Yes", n: "As written", d: "", img: ["vl_stairs_wrong", "vl_stairs_down", "vl_stairs_up"], rec: 1 }] },
-  { id: "vl_tone", title: "6. One shadow tone, laid once", said: "", how: "All the shadows laid out together and toned at once, as the walls' already are: never darker where two cross.", tile: "420px",
-    why: "Keeps the grey one grey, as Dyson's.",
-    opts: [{ k: "Yes", n: "As written", d: "", img: ["vl_tone_wrong", "vl_tone_right"], rec: 1 }] },
+  { id: "s1_for", title: "What it's for", said: "", how: "Sets the finish line, and how much polish, onboarding and testing it needs.", tile: "260px",
+    why: "<b>B</b>: a real finish line (strangers can pick it up and play) without a store's extra work; C stays open later.",
+    opts: [
+      { k: "A", n: "For you and people you share it with", d: "Finished when you're happy with it. No store, no support.", img: [] },
+      { k: "B", n: "Released free, publicly", d: "E.g. on itch.io. Needs playtests by strangers, onboarding, settings, accessibility, browsers tested. Publishing itself small.", img: [], rec: 1 },
+      { k: "C", n: "Sold", d: "Steam or itch.io as an app: B plus a desktop wrapper, store page, trailer, support, maybe achievements and cloud saves; a paying player's bar for polish and balance (L on top). The fonts (Open Font License) may be sold with it.", img: [] },
+    ] },
+  { id: "s1_length", title: "Length of a run", said: "", how: "How many levels and regions a run goes through.", tile: "260px",
+    why: "<b>B</b>: room for a run to rise and change, each region a new place and danger, at a size the drawing can keep up with.",
+    opts: [
+      { k: "A", n: "Short", d: "5 or 6 levels in 2 regions, 30–45 minutes. The least content; saving optional; easy to replay.", img: [] },
+      { k: "B", n: "Middle", d: "About 10 levels in 3 or 4 regions, a boss closing each, 1–2 hours. 1 or 2 regions to add, each with its look (mockup rounds), monsters and set pieces. Saving needed; levels not shown give up their drawing caches.", img: [], rec: 1 },
+      { k: "C", n: "Long", d: "20 or more levels, many hours. Content and look at XL scale; variety must come from the generators; risk of sameness.", img: [] },
+    ] },
+  { id: "s1_character", title: "The character", said: "", how: "How runs differ by who you are and how you grow.", tile: "260px",
+    why: "<b>B</b>: a reason to play again, and it fits the stealth heart (a thief and a soldier should play a level differently). C can be added later without undoing B.",
+    opts: [
+      { k: "A", n: "One adventurer", d: "Growing by levels and finds, as now. Least work; runs differ only by what's found.", img: [] },
+      { k: "B", n: "A background chosen at the start", d: "3 or 4 (e.g. thief, soldier, priest, scholar), each its own stats, gear and one ability. Balance work per background (simulated runs help); a few new things to draw and explain.", img: [], rec: 1 },
+      { k: "C", n: "Choices at each level up", d: "Skills or feats: builds made over a run. Combinations make balance hard; needs a level-up page.", img: [] },
+      { k: "D", n: "B and C", d: "The most variety; the most balance and interface work, L.", img: [] },
+    ] },
+  { id: "s1_between", title: "Between runs", said: "", how: "What, if anything, carries from one run to the next.", tile: "260px",
+    why: "<b>A</b>: a roguelike's runs stand alone; the roll of the dead gives memory and flavour for little. B can come later.",
+    opts: [
+      { k: "A", n: "Nothing carries over", d: "But past runs are remembered: a roll of the dead (who, how far, what killed them). Small; kept in the browser, per device.", img: [], rec: 1 },
+      { k: "B", n: "Unlocks", d: "New backgrounds and starting things earned by how far runs get. A profile per device (no server, so it doesn't follow you between devices); unlocks to balance and design.", img: [] },
+      { k: "C", n: "A home between runs", d: "A camp or town for buying and choosing: a whole second place to design, draw and build, L.", img: [] },
+    ] },
+  { id: "s1_story", title: "Story", said: "", how: "How much is told.", tile: "260px",
+    why: "<b>B</b>: the map already tells a story (crypts, barracks, the king's halls); a thread ties the regions together and gives the end weight, for little.",
+    opts: [
+      { k: "A", n: "None", d: "Beyond the goal: kill the boss at the bottom. Nothing to write.", img: [] },
+      { k: "B", n: "A thin thread", d: "A reason to go down, told in a few lines at the start and end; notes found on levels; rooms and regions with names and a history. Writing, and a page for notes; notes placed by rules in generated levels.", img: [], rec: 1 },
+      { k: "C", n: "A told story", d: "Characters, talk, quests: a dialogue interface and written content; fits badly with generated levels, L.", img: [] },
+    ] },
+  { id: "s1_where", title: "Where it's played", said: "", how: "Screens it's designed for, and so what limits the drawing.", tile: "260px",
+    why: "<b>B</b>: the proof of concept already runs on phones and was tuned for them; dropping them throws that away. But the map and the ledger read best on a big screen, so design starts there.",
+    opts: [
+      { k: "A", n: "Big screens only", d: "Phones not supported. The interface designed once; drawing budgets set by laptops.", img: [] },
+      { k: "B", n: "Big screens first, phones fully playable", d: "A phone layout of its own, designed after the big screen's. Interface designed twice (the phone's simpler); drawing budgets set by phones, which limits level size, lights and shadows.", img: [], rec: 1 },
+      { k: "C", n: "Both alike", d: "Every part designed for both from the start: the most interface work, every decision twice, L.", img: [] },
+    ] },
+  { id: "s1_sound", title: "Sound", said: "", how: "", tile: "260px",
+    why: "<b>A</b>: the words on the map are an unusual and fitting stand-in for sound. B can be added later without changing the design (sounds would follow the words).",
+    opts: [
+      { k: "A", n: "None", d: "The noise words on the map are its sound; already part of the look and the stealth.", img: [], rec: 1 },
+      { k: "B", n: "A little", d: "A quiet ambience per region, a few sounds (steps, blows, doors), the words kept. Sounds found or made, licensed, mixed; I can wire them in but can't judge how they sound: that would be yours, or someone's you trust.", img: [] },
+      { k: "C", n: "Sound and music", d: "B plus music, commissioned or licensed: L, and outside what I can make.", img: [] },
+    ] },
+  { id: "s1_saving", title: "Saving", said: "", how: "", tile: "260px",
+    why: "<b>A</b>: what roguelikes do. It means everything about a run is plain data, which is cheap if designed so from the start and dear if added later.",
+    opts: [
+      { k: "A", n: "One run, saved on leaving, gone on dying", d: "Kept in the browser. All of a run's state designed as plain data.", img: [], rec: 1 },
+      { k: "B", n: "No saving", d: "As now. Only fits a short run; a closed tab loses it.", img: [] },
+      { k: "C", n: "Saves at will", d: "Undoes death, and with it what a roguelike is. Same work as A.", img: [] },
+    ] },
+  { id: "s1_work", title: "How we work", said: "I want us to work on a bigger plan, iteratively, where I make the key decisions, and when we have the full spec, then I give a go to start implementing.", how: "As written in spec/README.md: the spec in rounds, broad to narrow; each decision a proposal with critique (work, phones, the code's shape, balance and testing, what it rules out); you decide here; mockups only where a decision must be seen; nothing built till the go. The one question: may I run small throwaway experiments when a question needs measuring (say, how big a level a phone can draw)? Reported, never put in the game.", tile: "260px",
+    why: "<b>Yes</b>: some of the critique you asked for (speed, memory) is better measured than guessed.",
+    opts: [
+      { k: "Yes", n: "As written, with experiments", d: "", img: [], rec: 1 },
+      { k: "No", n: "As written, no experiments", d: "Reasoning only until the go.", img: [] },
+    ] },
+  { id: "s1_parts", title: "The spec's parts and rounds", said: "", how: "0 the proof of concept reviewed; 1 vision; 2 the run; 3 the character; 4 systems; 5 content; 6 levels; 7 interface; 8 visual language; 9 sound; 10 building it; 11 getting there. Rounds: 1 vision; 2 run, character, systems; 3 content, levels, first building questions; 4 interface, visual language, sound; 5 building, getting there, the whole read through. Then the go. (spec/README.md)", tile: "260px",
+    why: "Anything missing, to merge or split, or in a different order: say so in the comment.",
+    opts: [{ k: "Yes", n: "As listed", d: "", img: [], rec: 1 }] },
 ];
 
 const state = {};  // id -> { choice: [], comment: "" }

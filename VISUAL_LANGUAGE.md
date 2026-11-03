@@ -7,6 +7,14 @@ Shown rule by rule, as broken and as kept, in `mockups/language.html`.
 
 The model is Dyson Logos' maps: one hand, one pen, one ink, one grey, on paper.
 
+**State (answered on the choices page):**
+- Agreed: rules 1 (pen strokes), 2 (weights), 4 (fills) and the one tone, laid once (in 5).
+- Height (5): the longer shadows chosen, but **not enough on their own** (open, below).
+- Depth (6), shown step by step with bands: **not agreed** (open, below).
+
+This is a first step, not the full spec. The rest is part 8 of the full game's spec
+(`spec/README.md`).
+
 ## 1. Every line is a pen stroke
 
 - Drawn with the pen (`pen().line`, `.shape`, `.box`, `.round`, `.lump`): each line a little
@@ -55,7 +63,16 @@ to the right, as far as it is high:
 | Furniture, a dais, one step up | 0.11 |
 | A low thing (a step's front, a kerb) | about half that |
 
-(Open question: these lengths, or longer ones nearer Dyson's: see the choices page.)
+Chosen: the longer ones, nearer Dyson's: walls, rock and posts 0.3 of a square; furniture, a dais
+or a step 0.18. (The table above is the old lengths; the game still uses them.)
+
+**Open: shadows alone don't show height enough** (it shows most on the dais). Your ideas, to be
+mocked up and decided in the spec's visual round:
+- **Line weight by height difference.** An edge drawn heavier the bigger the drop across it. On a
+  dais, the line between the stair's second step and the dais is thinner than the dais's edge
+  over the floor.
+- **Higher areas toned a little differently**, a bit darker or lighter.
+- **Taller things cast longer shadows** (a crate, a table, a wardrobe, each by its height).
 
 - One tone, laid once: all the shadows laid out together, the things themselves cut out, then
   toned at once (`drawShadow`): never darker where two cross.
@@ -63,16 +80,28 @@ to the right, as far as it is high:
   higher thing's shadow falls on a lower one (a dais's upper tier on the lower).
 - Floor marks (the grid, water, the nest's heap) cast none.
 
-## 6. Depth: step by step
+## 6. Depth
 
-Going down is shown per step, never by a soft fade over the whole: each riser is a drop, and
-the lower step gets a band of the one shadow beside it (beyond the riser going down, before it
-going up). The stairs' foot is where the bands are.
+Not by a soft fade over the whole; that much is agreed.
+
+**Open:** a band of the one shadow beside each riser was not agreed. Instead, **solid fill shading
+for different heights and depths**: each level of floor (each step, a pit's floor) one flat tone,
+with the same question as height: which way the tones go, and how that sits with the shadows.
 
 ## 7. Letters on the map
 
 Few, and only where Dyson writes them (a stair's U or D). Ink with a paper halo, in the game's
 lettering, as small as reads at the game's zoom.
+
+## Not covered yet (part 8 of the spec)
+
+- Hatching: its rules, written down (it is the map's biggest element and isn't in these rules
+  yet).
+- Broken lines: where a line breaks, and how often.
+- Ragged lines for light: the light's edges.
+- Families of things (furniture, raised floor, liquids, debris, lights), each with its rules, so a
+  new thing follows its family.
+- The interface: the plates, lettering, the log, tips, menus and pages, and the phone.
 
 ## Already in the game that break these (to bring into line)
 
