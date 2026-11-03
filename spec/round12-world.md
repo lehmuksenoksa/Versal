@@ -1,5 +1,17 @@
 # Round 12: the world's shape
 
+**Answered:** all as picked.
+- Branching links between regions; a run goes through some of them, by its route.
+- Each of round 8's places went where I proposed.
+- Comments on the themed areas:
+  - the archive is found in the Dungeon, the Dwarven Keep and the Drowned City;
+  - the cult's sanctum in the Dungeon and the Drowned City.
+- The first question (the three kinds of place) was left unmarked; the rest of the answers build
+  on it, so I take it as yes.
+
+Then: "If we widen the scope, the regions could be set in a more generic, random generated world
+that is based on depth. Then the regions would stand out." That's round 13 (`round13-depth.md`).
+
 Your idea: "maybe we could have a few bigger regions, consisting of several maps of varying size,
 going up and down in level or even sideways. Regions like The Dungeon Underneath, Goblin
 Territory, Abandoned Dwarven Keep, The Deep Dark, The Drowned City. Some smaller areas that serve
