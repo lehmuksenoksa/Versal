@@ -10,10 +10,17 @@ make the key decisions. When the whole of it is written and you say go, building
    and you've given the go. After the go, the game is built milestone by milestone from the
    spec. If building turns up something the spec didn't see, it comes back to you as a question
    and doesn't get decided along the way.
-2. **In rounds, broad to narrow.** Each round takes up several parts of the spec at once, not one
-   requirement at a time. The first round is the big decisions that everything else hangs on.
-   Later rounds narrow down: systems, then content, interface and looks, then how it's built.
-   Later rounds may reopen earlier answers if something shows they don't hold.
+2. **Shallow first: explore wide before going deep.** In your words: "I'd like to go shallow and
+   explore before deep diving into details."
+   - A round stays at one depth. It doesn't run ahead into the details of what it asks about.
+     For example, a region is first just a place in a line. Who lives there, its boss and its
+     twist come later, each as a question of its own.
+   - One decision per question. Things that can be decided separately are asked separately, not
+     bundled into one option (for example, round 2's "a few choices in a fight" bundled
+     warnings, shoving and kinds of weapon).
+   - Many options wide, then narrowed: keep, maybe, drop, then a closer look at what was kept.
+   - Later rounds may reopen earlier answers if something shows they don't hold. Bundled answers
+     from rounds 1 to 3 get unpicked as their details come up.
 3. **Each decision comes as a proposal with critique.** For each one:
    - the options, with my pick and why;
    - what each option costs: work, and what it does to the rest of the game, its speed on
@@ -60,10 +67,8 @@ Each part's state is one of:
 | 1 | Part 0 (to read) and part 1. How we work (to confirm). The parts above (to confirm). | answered |
 | 2 | Parts 2, 3 and 4 in outline: the run, the character, the systems | answered; three left open |
 | 3 | What round 2 left open: what light is worth, what keeps a run moving; the attributes, how they grow, magic. How to brainstorm the regions | answered |
-| 4 | The regions and the reason to go down: a board of ideas ([`round4-regions.md`](round4-regions.md)), then a second pass putting them together | on the choices page (the board) |
-| 5 | Parts 5 and 6: content and levels. Part 10's first questions (saving, data, budgets) | — |
-| 6 | Parts 7 and 8: interface and visual language in full. Mockups where needed | — |
-| 7 | Part 10 in full, part 11. The whole spec read through for gaps and contradictions, with my critique | — |
+| 4 | Regions, shallow: places in a line each, keep, maybe or drop ([`round4-regions.md`](round4-regions.md)) | on the choices page |
+| … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
-The number of rounds isn't fixed. A round can be split, or one added, as answers come in.
+The rounds aren't planned ahead: each is chosen once the last is answered.
