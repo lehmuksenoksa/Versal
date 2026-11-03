@@ -70,7 +70,8 @@ Each part's state is one of:
 | 4 | Regions, shallow: places in a line each, keep, maybe or drop ([`round4-regions.md`](round4-regions.md)) | answered: 20 kept |
 | 5 | Smaller places, shallow: areas and rooms ([`round5-places.md`](round5-places.md)) | answered: organised in [`places.md`](places.md) |
 | 6 | What the places allow, shallow: features, ways to tell the story, surprises, friendly strangers ([`round6-features.md`](round6-features.md)) | answered |
-| 7 | More friendly strangers, shallow ([`round7-strangers.md`](round7-strangers.md)); what to explore next | on the choices page |
+| 7 | More friendly strangers, shallow ([`round7-strangers.md`](round7-strangers.md)); what to explore next | answered |
+| 8 | Regions or areas; the same regions every run? ([`round8-regions-areas.md`](round8-regions-areas.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
