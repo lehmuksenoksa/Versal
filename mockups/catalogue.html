@@ -72,6 +72,16 @@
   section { display: grid; gap: 14px; }
   table.grid { font-size: 14px; }
   table.best th { white-space: nowrap; }
+  .xhead, .xrow { display: grid; grid-template-columns: minmax(150px, 230px) minmax(110px, 150px) 1fr; gap: 6px 18px; align-items: start; }
+  .xhead { font: 600 12px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding-inline: 14px; }
+  .xband { display: grid; gap: 6px; }
+  .xband h2 { color: var(--amber); font-size: 20px; padding-top: 10px; }
+  .xrow { background: var(--card); border-radius: 5px; padding: 10px 14px; }
+  .xrow.xworld { background: rgba(127, 154, 90, 0.10); }
+  .xname { display: grid; }
+  .xname b { color: var(--paper); font: 600 16px var(--letter); }
+  .c.boss { border-color: var(--amber); color: var(--paper); }
+  @media (max-width: 640px) { .xhead { display: none; } .xrow { grid-template-columns: 1fr; } }
   table.where td.w { text-align: center; color: var(--amber); border-left: 1px solid var(--line); min-width: 34px; }
   table.where th.grp { text-align: center; color: var(--amber); border-left: 2px solid var(--faint); }
   table.where .first { border-left: 2px solid var(--faint) !important; }
@@ -171,21 +181,20 @@ function bestiaryView() {
 function whereView() {
   const bands = [["shallow", "Shallow"], ["middle", "Middle"], ["deep", "Deep"]];
   const KORD = { region: 0, transition: 1, themed: 2 };
-  const cols = bands.flatMap(([b, label]) => [
-    { id: "world-" + b, name: "The world", band: label, world: true },
-    ...C.regions.filter((r) => r.depth === b).sort((x, y) => KORD[x.kind] - KORD[y.kind]).map((r) => ({ id: r.id, name: r.name.replace(/^The /, ""), band: label, kind: r.kind, boss: r.boss })),
-  ]);
-  const at = (f) => cols.map((c, i) => ((f.homes ?? []).includes(c.id) ? i : -1)).filter((i) => i >= 0);
-  const bandOf = (i) => bands.findIndex(([, l]) => l === cols[i].band);
-  const score = (f) => { const is = at(f); if (!is.length) return [9, 9]; const bs = is.map(bandOf); return [Math.min(...bs), bs.reduce((a, b) => a + b, 0) / bs.length]; };
-  const fams = [...C.families].sort((x, y) => { const a = score(x), b = score(y); return a[0] - b[0] || a[1] - b[1]; });
-  const head1 = `<tr><th></th>${bands.map(([, l]) => `<th colspan="${cols.filter((c) => c.band === l).length}" class="grp">${l}</th>`).join("")}</tr>`;
-  const head2 = `<tr><th>Family</th>${cols.map((c) => `<th class="k ${c.world ? "wld" : ""} ${cols.find((x) => x.band === c.band) === c ? "first" : ""}">${esc(c.name)}${c.kind && c.kind !== "region" ? ` <span class="st">(${c.kind === "themed" ? "themed" : "transition"})</span>` : ""}</th>`).join("")}</tr>`;
-  const td = (c, inner) => `<td class="w ${cols.find((x) => x.band === c.band) === c ? "first" : ""} ${c.world ? "wld" : ""}">${inner}</td>`;
-  const bossRow = `<tr class="boss"><th class="r">Boss</th>${cols.map((c) => td(c, c.boss ? `<span class="c">${esc(c.boss)}</span>` : "")).join("")}</tr>`;
-  const rows = fams.map((f) => `<tr><th class="r">${esc(f.name)}</th>${cols.map((c) => td(c, (f.homes ?? []).includes(c.id) ? "●" : "")).join("")}</tr>`).join("");
-  return `<section><p class="note">Where each family lives, by depth. Each depth of the world by depth comes first, then the regions, transitions and themed areas placed at that depth. Families run from the shallowest down. The bosses are yours (round 19); the depths of the regions and the rest of the table are my proposal, to correct as a whole.</p>
-    <div class="wrap"><table class="grid where">${head1}${head2}${bossRow}${rows}</table></div></section>`;
+  const KN = { region: "Region", transition: "Transition", themed: "Themed area" };
+  const famsAt = (id) => C.families.filter((f) => (f.homes ?? []).includes(id));
+  const fchip = (f) => `<span class="c">${esc(f.name)}</span>`;
+  const row = (name, kind, boss, id, world) => `<div class="xrow ${world ? "xworld" : ""}">
+      <div class="xname"><b>${esc(name)}</b><span class="st">${esc(kind)}</span></div>
+      <div class="xboss">${boss ? `<span class="c boss">${esc(boss)}</span>` : ""}</div>
+      <div class="chips">${famsAt(id).map(fchip).join("") || `<span class="none">nobody yet</span>`}</div>
+    </div>`;
+  return `<section><p class="note">The world as a cross-section, top to bottom as you go down: at each depth, the world by depth first, then the regions, transitions and themed areas there. On each row, its boss and the monster families that live there. The bosses are yours (round 19); the depths of the regions and who lives where are my proposal, to correct as a whole.</p>
+    <div class="xhead"><span>Place</span><span>Boss</span><span>Families</span></div>
+    ${bands.map(([b, label]) => `<div class="xband"><h2>${label}</h2>
+      ${row("The world", "generic, by depth", "", "world-" + b, true)}
+      ${C.regions.filter((r) => r.depth === b).sort((x, y) => KORD[x.kind] - KORD[y.kind]).map((r) => row(r.name, KN[r.kind], r.boss, r.id, false)).join("")}
+    </div>`).join("")}</section>`;
 }
 
 function rolesView() {
