@@ -1,5 +1,16 @@
 # Round 10: monsters described by tags
 
+**Answered:** all five yes, as picked:
+- tags;
+- all six sorts;
+- one extra at most;
+- extras that change what a monster is;
+- the same tags for things, rooms and strangers.
+
+On the sorts: "Magic user, Intelligent (can open doors for example), Aggressiveness levels,
+Venomous, we could brainstorm more, enough for all monsters." That's round 11
+(`round11-tag-list.md`).
+
 Your idea: "maybe we could have a system of tags that inform the behaviour of that type of
 monster. A monster type would have a collection of tags, for example <beast>, <pack>, <small>
 for rats, and individual monsters could have extra ones: <savage>, <timid> etc. The extra ones

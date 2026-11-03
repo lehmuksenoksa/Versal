@@ -39,6 +39,16 @@ come with the content.
   - keys.
 
   No food.
+- **Monsters described by tags** (round 10, your idea):
+  - **Tags:** a type has its own tags, and an individual can have one extra, drawn from the type's
+    short list (no timid goblin warriors).
+  - **Sorts of tags:** what it is, size, company, senses, light and how it moves, with more
+    brainstormed in round 11.
+  - **Extras can change what a monster is** (undead rats).
+  - **The same tags for things, rooms and strangers.**
+
+  The tags are summed into one profile when a monster is made, and each tag lists what it can't go
+  with.
 - **What the levels hold:** all five.
   - Hiding places (alcoves, curtains, deep shadow).
   - Traps (alarms, pits, spikes; found by searching; usable against monsters).
