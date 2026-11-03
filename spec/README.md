@@ -68,7 +68,8 @@ Each part's state is one of:
 | 2 | Parts 2, 3 and 4 in outline: the run, the character, the systems | answered; three left open |
 | 3 | What round 2 left open: what light is worth, what keeps a run moving; the attributes, how they grow, magic. How to brainstorm the regions | answered |
 | 4 | Regions, shallow: places in a line each, keep, maybe or drop ([`round4-regions.md`](round4-regions.md)) | answered: 20 kept |
-| 5 | Smaller places, shallow: areas and rooms ([`round5-places.md`](round5-places.md)) | on the choices page |
+| 5 | Smaller places, shallow: areas and rooms ([`round5-places.md`](round5-places.md)) | answered: organised in [`places.md`](places.md) |
+| 6 | What the places allow, shallow: features, ways to tell the story, surprises ([`round6-features.md`](round6-features.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

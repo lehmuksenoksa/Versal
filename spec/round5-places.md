@@ -1,5 +1,11 @@
 # Round 5: smaller places, shallow
 
+**Answered:**
+- Areas: 23 kept, 3 maybe, 4 unmarked.
+- Rooms: 30 kept, 1 maybe, 9 unmarked.
+
+The answers and comments are written into `places.md`.
+
 "Not everything needs to be a full level though. Can we brainstorm more, maybe smaller areas,
 even just special rooms."
 

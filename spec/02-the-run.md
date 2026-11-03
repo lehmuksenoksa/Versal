@@ -27,6 +27,11 @@ Built on round 1:
 - **Bosses guard the way down.** A boss can be killed or got past (sneaked by, lured away). Killing
   it gives more (its hoard, a level up). Each boss's lair is laid out with routes past it (part 6).
 
+## Principles for the map (round 5)
+
+In your words: "I want the map to be random generated, but with regions with different feel and a
+bit different gameplay as well. And there should be surprises on each run. Positive ones as well."
+
 ## Open
 
 - **The reason to go down, and the bottom** (2.1): "We can come up with something later." On
