@@ -63,6 +63,30 @@ Your idea, round 12. It replaces round 8's regions and areas, which are kept in
   monsters by depth.
 - **A run is 2 to 4 hours** (changed from round 1's 1 to 2).
 
+## Themes (round 15)
+
+A theme bundles foes, strangers and places that belong together. A region mixes a few, and a
+themed area is one. Not everything has a theme. The themes:
+- the dead;
+- the old faith;
+- the cult (set against the old faith);
+- pests;
+- the garrison;
+- goblins;
+- the dwarves;
+- the deep;
+- beasts of the dark;
+- the drowned;
+- outlaws.
+
+Maybe: delvers. Lists in `round15-themes.md` and the catalogue.
+
+**The castle-like dungeon** (the garrison's rooms) is held by one holder drawn each run: the dead
+garrison, the cult, or outlaws.
+
+**Goblins:** halls and the throne room rare; camps, guard posts, warrens, pits and crude prisons
+common.
+
 ## Open
 
 - **The reason to go down, and the bottom** (2.1): "We can come up with something later." On

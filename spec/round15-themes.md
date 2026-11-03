@@ -1,5 +1,23 @@
 # Round 15: themes
 
+**Answered:**
+- Themes: yes.
+- The religious: two themes, the old faith and the cult.
+- The castle-like dungeon's holder: one drawn each run, from the dead garrison, the cult and
+  outlaws.
+- Themes kept: the dead, the old faith, the cult, pests, the garrison, goblins, the dwarves, the
+  deep, beasts of the dark, the drowned, outlaws.
+- Maybe: delvers ("Let's forget the kobold for now").
+- Not themes: the learned and travellers ("Not sure if these need to be tied into a theme").
+- "Not every tool fits every purpose. Not everything needs to be tied to a theme." Things can
+  belong to no theme.
+- Comments:
+  - **Outlaws:** "Bandit chief."
+  - **The deep:** "Maybe a dark elf or two."
+  - **Goblins:** "Halls and throne room should be rare. Goblin camps (bonfire, sleeping mats),
+    guard posts (small fire, some goblins), warrens, pits, crude prisons (small parts of the cave,
+    barred with crude fences and gates) more common."
+
 "I feel like we need more thematic coherence here, between enemies, strangers and rooms/areas.
 We have the dead: crypts, skeletons, zombies, ossuaries etc. We have the religious: temples,
 altars, friendly priest, cultists, pilgrims, holy warriors. We have pests: spiders, rats,

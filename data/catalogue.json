@@ -98,7 +98,10 @@
    ],
    "plays": "A nest to avoid or burn; cocoons with things in them",
    "tells": "What the spiders caught",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "a-flooded-wing",
@@ -113,7 +116,10 @@
    ],
    "plays": "Wading, slow and loud; swimming under",
    "tells": "A flood long ago",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "drowned"
+   ]
   },
   {
    "id": "a-collapsed-wing",
@@ -149,7 +155,10 @@
    ],
    "plays": "A watched narrow way, and the ways round it",
    "tells": "What they guard against",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "a-prison-block",
@@ -164,7 +173,10 @@
    ],
    "plays": "Prisoners to free; keys; cells to hide in",
    "tells": "Who was kept, and why",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "a-temple",
@@ -179,7 +191,10 @@
    ],
    "plays": "Altars (curses lifted); holy ground",
    "tells": "A faith, old or the cult's",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "a-crypt-row",
@@ -193,7 +208,10 @@
    ],
    "plays": "The dead asleep; graves to rob",
    "tells": "Families, names on tombs",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "a-river-crossing",
@@ -222,7 +240,10 @@
    ],
    "plays": "Cover; glow; spores",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "a-crystal-grotto",
@@ -236,7 +257,10 @@
    ],
    "plays": "Light carries far off crystal; treasure",
    "tells": "Why miners came",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "a-cave-in-maze",
@@ -250,7 +274,10 @@
    ],
    "plays": "Tight ways, easy to lose pursuers (or yourself)",
    "tells": "Miners trapped",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "delvers"
+   ]
   },
   {
    "id": "a-sinkhole",
@@ -297,7 +324,10 @@
    ],
    "plays": "Hidden rooms behind a false wall; loot",
    "tells": "Who hid it",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "outlaws"
+   ]
   },
   {
    "id": "a-hermits-hollow",
@@ -337,7 +367,10 @@
    ],
    "plays": "A broken altar; holy ground",
    "tells": "A faith fallen",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "a-breach",
@@ -408,7 +441,10 @@
    ],
    "plays": "A grand way down, open and watched",
    "tells": "\"Part of a great dwarven keep\"",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "a-ledge-path",
@@ -437,7 +473,11 @@
    ],
    "plays": "Beasts to let loose on foes, or that get loose",
    "tells": "Who keeps beasts, and for what",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins",
+    "beasts"
+   ]
   },
   {
    "id": "a-statue-gallery",
@@ -479,7 +519,10 @@
    ],
    "plays": "Winch, carts, a shaft down; a pickaxe",
    "tells": "The mine's life",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "delvers"
+   ]
   },
   {
    "id": "a-market",
@@ -556,7 +599,10 @@
    ],
    "plays": "The dead",
    "tells": "Who lies here",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "jail",
@@ -570,7 +616,10 @@
    ],
    "plays": "Cells",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "barracks",
@@ -585,7 +634,10 @@
    ],
    "plays": "Many sleepers",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "dining-hall",
@@ -600,7 +652,10 @@
    ],
    "plays": "Many at once",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "shrine",
@@ -615,7 +670,10 @@
    ],
    "plays": "An altar (curses lifted)",
    "tells": "A faith",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "throne-room",
@@ -627,7 +685,10 @@
    ],
    "plays": "The king and his guard",
    "tells": "The goblin kingdom",
-   "comment": ""
+   "comment": "Rare (round 15)",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "campfire-camp",
@@ -641,7 +702,7 @@
    ],
    "plays": "A pack round its fire; lanes of shadow",
    "tells": "",
-   "comment": ""
+   "comment": "The goblin camp (round 15) replaces it"
   },
   {
    "id": "armoury",
@@ -656,7 +717,10 @@
    ],
    "plays": "Weapons and armour, guarded",
    "tells": "Who armed, for what",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "kitchen",
@@ -672,7 +736,10 @@
    ],
    "plays": "A fire (light); cooks at work",
    "tells": "Daily life",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "larder",
@@ -688,7 +755,11 @@
    ],
    "plays": "Rats; hiding among what hangs",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests",
+    "garrison"
+   ]
   },
   {
    "id": "wine-cellar",
@@ -760,7 +831,10 @@
    ],
    "plays": "A prisoner; dread",
    "tells": "Cruelty, and to whom",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "guardroom",
@@ -780,7 +854,10 @@
    ],
    "plays": "Guards at rest; keys",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "bedchamber",
@@ -809,7 +886,10 @@
    ],
    "plays": "Water; a place to rest",
    "tells": "Luxury lost",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "well-room",
@@ -842,7 +922,10 @@
    ],
    "plays": "Deep water to swim",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "drowned"
+   ]
   },
   {
    "id": "ossuary",
@@ -856,7 +939,10 @@
    ],
    "plays": "Bones that crunch; the dead",
    "tells": "So many dead",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "sarcophagus-chamber",
@@ -870,7 +956,10 @@
    ],
    "plays": "One great tomb: its loot, and who wakes",
    "tells": "Who lies here",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "reliquary",
@@ -884,7 +973,10 @@
    ],
    "plays": "Holy things (wards against the dead)",
    "tells": "A saint or a relic",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "chapel",
@@ -898,7 +990,10 @@
    ],
    "plays": "An altar; holy ground to rest",
    "tells": "A faith",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "sacrifice-room",
@@ -912,7 +1007,10 @@
    ],
    "plays": "A victim to save, or too late",
    "tells": "The cult at work",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "summoning-circle",
@@ -925,7 +1023,10 @@
    ],
    "plays": "Something summoned, or to summon",
    "tells": "The cult's aim",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "map-room",
@@ -937,7 +1038,10 @@
    ],
    "plays": "Fills in your map of the level (your idea)",
    "tells": "The hold as it was",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "workshop",
@@ -966,7 +1070,10 @@
    ],
    "plays": "Mending or bettering gear",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "winch-room",
@@ -993,7 +1100,10 @@
    ],
    "plays": "A portcullis to drop between you and them",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "garrison"
+   ]
   },
   {
    "id": "nursery",
@@ -1007,7 +1117,10 @@
    ],
    "plays": "A choice: spare them or not; angry mothers",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "mushroom-farm",
@@ -1021,7 +1134,10 @@
    ],
    "plays": "Glow; spores",
    "tells": "Who farms down here",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "pool-room",
@@ -1036,7 +1152,10 @@
    ],
    "plays": "Dark water, something under",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "drowned"
+   ]
   },
   {
    "id": "feast-hall",
@@ -1064,7 +1183,10 @@
    ],
    "plays": "A fight for a prize, watched",
    "tells": "",
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "barricaded-room",
@@ -1125,7 +1247,10 @@
    "plays": "A space cut off by a cave-in",
    "tells": "",
    "comment": "",
-   "who": "lost miners"
+   "who": "lost miners",
+   "themes": [
+    "delvers"
+   ]
   },
   {
    "id": "kept-shrine",
@@ -1141,7 +1266,10 @@
    "plays": "A shrine with a candle always lit",
    "tells": "",
    "comment": "",
-   "who": "priest"
+   "who": "priest",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "pilgrims-rest",
@@ -1156,7 +1284,10 @@
    "plays": "A resting place on the way to a holy place",
    "tells": "",
    "comment": "",
-   "who": "pilgrims"
+   "who": "pilgrims",
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "hideout-in-a-crack",
@@ -1171,7 +1302,10 @@
    "plays": "A narrow hidden place to hide in",
    "tells": "",
    "comment": "",
-   "who": "escaped slave, deserter"
+   "who": "escaped slave, deserter",
+   "themes": [
+    "outlaws"
+   ]
   },
   {
    "id": "scholars-dig",
@@ -1201,7 +1335,10 @@
    "plays": "Traps, hides, a fire",
    "tells": "",
    "comment": "",
-   "who": "trapper"
+   "who": "trapper",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "smugglers-hole",
@@ -1216,7 +1353,61 @@
    "plays": "Goods stacked in a hidden cave",
    "tells": "",
    "comment": "",
-   "who": "smugglers"
+   "who": "smugglers",
+   "themes": [
+    "outlaws"
+   ]
+  },
+  {
+   "id": "goblin-camp",
+   "name": "Goblin camp",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens",
+    "caverns"
+   ],
+   "plays": "A bonfire and sleeping mats",
+   "tells": "",
+   "comment": "Common (round 15)",
+   "themes": [
+    "goblins"
+   ]
+  },
+  {
+   "id": "goblin-guard-post",
+   "name": "Goblin guard post",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens",
+    "caverns"
+   ],
+   "plays": "A small fire, some goblins",
+   "tells": "",
+   "comment": "Common (round 15)",
+   "themes": [
+    "goblins"
+   ]
+  },
+  {
+   "id": "crude-prison",
+   "name": "Crude prison",
+   "size": "area",
+   "state": "keep",
+   "fits": [
+    "halls",
+    "warrens",
+    "caverns"
+   ],
+   "plays": "A small part of the cave barred with crude fences and gates",
+   "tells": "",
+   "comment": "Common (round 15)",
+   "themes": [
+    "goblins"
+   ]
   }
  ],
  "strangers": [
@@ -1258,7 +1449,11 @@
     "warrens"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "cult",
+    "goblins"
+   ]
   },
   {
    "id": "an-escaped-slave",
@@ -1273,7 +1468,10 @@
     "warrens"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "a-lost-miner",
@@ -1287,7 +1485,10 @@
     "mines"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "delvers"
+   ]
   },
   {
    "id": "a-hermit",
@@ -1301,7 +1502,10 @@
     "underwood"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "an-exile",
@@ -1329,7 +1533,10 @@
     "hold"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "a-priest",
@@ -1343,7 +1550,10 @@
     "hold"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "old-faith"
+   ]
   },
   {
    "id": "a-scholar",
@@ -1411,7 +1621,11 @@
     "sewers"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "drowned",
+    "outlaws"
+   ]
   },
   {
    "id": "a-trapper",
@@ -1426,7 +1640,10 @@
     "webs"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "a-deserter",
@@ -1439,7 +1656,10 @@
     "sanctum"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "outlaws"
+   ]
   },
   {
    "id": "a-searcher",
@@ -1477,7 +1697,10 @@
     "mines"
    ],
    "comment": "A friendly undead dwarf could be a nice twist.",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "a-kindly-ghost",
@@ -1492,7 +1715,10 @@
     "hold"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "refugees",
@@ -1531,7 +1757,10 @@
     "mines"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "a-rescue-party",
@@ -1570,7 +1799,10 @@
     "mines"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "delvers"
+   ]
   },
   {
    "id": "monster-hunters",
@@ -1585,7 +1817,10 @@
     "webs"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "holy-warriors",
@@ -1599,7 +1834,11 @@
     "sanctum"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "the-dead",
+    "old-faith"
+   ]
   },
   {
    "id": "ratcatchers",
@@ -1613,7 +1852,10 @@
     "sewers"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "tomb-wardens",
@@ -1657,7 +1899,10 @@
     "underwood"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "a-surveying-party",
@@ -1681,7 +1926,10 @@
     "sanctum"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "an-undead-dwarf",
@@ -1695,7 +1943,10 @@
     "mines"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "a-wounded-knight",
@@ -1720,7 +1971,10 @@
     "hold"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "a-bound-spirit",
@@ -1772,7 +2026,10 @@
     "pits"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "a-madman",
@@ -1840,7 +2097,10 @@
     "warrens",
     "bandits"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "bat",
@@ -1854,7 +2114,10 @@
     "mines",
     "glowing"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "spider",
@@ -1869,7 +2132,10 @@
     "underwood",
     "glowing"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "giant-spider",
@@ -1896,7 +2162,10 @@
     "hold",
     "sanctum"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "zombie",
@@ -1910,7 +2179,10 @@
     "sanctum",
     "drowned"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "goblin",
@@ -1924,7 +2196,10 @@
     "warrens",
     "mines"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "goblin-warrior",
@@ -1936,7 +2211,10 @@
     "halls",
     "warrens"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "goblin-king",
@@ -1947,7 +2225,10 @@
    "fits": [
     "halls"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "cultist",
@@ -1960,7 +2241,10 @@
     "sanctum",
     "archive"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "troll",
@@ -1974,7 +2258,10 @@
     "rift",
     "underwood"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "cave-cat",
@@ -1988,7 +2275,10 @@
     "underwood",
     "rift"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "wolf",
@@ -2002,7 +2292,11 @@
     "bandits",
     "caverns"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins",
+    "beasts"
+   ]
   },
   {
    "id": "giant-centipede",
@@ -2016,7 +2310,10 @@
     "mines",
     "vents"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "cave-bear",
@@ -2028,7 +2325,10 @@
     "caverns",
     "underwood"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "burrower",
@@ -2058,7 +2358,11 @@
     "drowned",
     "sewers"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts",
+    "drowned"
+   ]
   },
   {
    "id": "cave-crab",
@@ -2071,7 +2375,10 @@
     "sewers",
     "vents"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "beasts"
+   ]
   },
   {
    "id": "leeches",
@@ -2083,7 +2390,11 @@
     "drowned",
     "sewers"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests",
+    "drowned"
+   ]
   },
   {
    "id": "bat-swarm",
@@ -2136,7 +2447,10 @@
     "bones",
     "hold"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "ghost",
@@ -2163,7 +2477,10 @@
     "bones",
     "rift"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "drowned-dead",
@@ -2175,7 +2492,10 @@
     "drowned",
     "sewers"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "drowned"
+   ]
   },
   {
    "id": "bone-heap",
@@ -2188,7 +2508,10 @@
     "dungeon",
     "sanctum"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "the-dead"
+   ]
   },
   {
    "id": "banshee",
@@ -2212,7 +2535,10 @@
     "halls",
     "warrens"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "goblin-shaman",
@@ -2224,7 +2550,10 @@
     "halls",
     "warrens"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "bandit",
@@ -2236,7 +2565,10 @@
     "bandits",
     "sewers"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "outlaws"
+   ]
   },
   {
    "id": "cult-priest",
@@ -2248,7 +2580,10 @@
     "sanctum",
     "dungeon"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "cult"
+   ]
   },
   {
    "id": "thief",
@@ -2261,7 +2596,10 @@
     "sewers",
     "dungeon"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "outlaws"
+   ]
   },
   {
    "id": "rival-adventurers",
@@ -2277,13 +2615,13 @@
    "name": "Kobold",
    "line": "Small; sets traps",
    "group": "People and goblinkin",
-   "state": "keep",
+   "state": "shelved",
    "fits": [
     "mines",
     "warrens",
     "collapsed"
    ],
-   "comment": ""
+   "comment": "Let's forget the kobold for now."
   },
   {
    "id": "grey-dwarf",
@@ -2305,7 +2643,10 @@
     "bandits",
     "caverns"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "goblins"
+   ]
   },
   {
    "id": "slime",
@@ -2319,7 +2660,10 @@
     "drowned",
     "glowing"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "pests"
+   ]
   },
   {
    "id": "mimic",
@@ -2330,7 +2674,10 @@
    "fits": [
     "anywhere"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "lurker",
@@ -2360,7 +2707,10 @@
     "glowing",
     "underwood"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "shrieker",
@@ -2373,7 +2723,10 @@
     "underwood",
     "caverns"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "watcher",
@@ -2386,7 +2739,10 @@
     "sanctum",
     "rift"
    ],
-   "comment": "Floating eye, yes. Effects could be other."
+   "comment": "Floating eye, yes. Effects could be other.",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "lake-thing",
@@ -2398,7 +2754,11 @@
     "drowned",
     "caverns"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "deep",
+    "drowned"
+   ]
   },
   {
    "id": "gargoyle",
@@ -2411,7 +2771,10 @@
     "sanctum",
     "archive"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "golem",
@@ -2424,7 +2787,10 @@
     "forge",
     "archive"
    ],
-   "comment": "Why blind?"
+   "comment": "Why blind?",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "animated-armour",
@@ -2437,7 +2803,10 @@
     "dungeon",
     "forge"
    ],
-   "comment": ""
+   "comment": "",
+   "themes": [
+    "dwarves"
+   ]
   },
   {
    "id": "will-o-wisp",
@@ -2451,7 +2820,10 @@
     "drowned",
     "rift"
    ],
-   "comment": "Things of the deep, surely. A spirit that shines a small light."
+   "comment": "Things of the deep, surely. A spirit that shines a small light.",
+   "themes": [
+    "deep"
+   ]
   },
   {
    "id": "shadow",
@@ -2464,7 +2836,41 @@
     "rift",
     "archive"
    ],
-   "comment": "Things of the deep, surely."
+   "comment": "Things of the deep, surely.",
+   "themes": [
+    "deep"
+   ]
+  },
+  {
+   "id": "bandit-chief",
+   "name": "Bandit chief",
+   "line": "Leads the outlaws",
+   "group": "People and goblinkin",
+   "state": "keep",
+   "fits": [
+    "bandits"
+   ],
+   "comment": "Your addition (round 15)",
+   "themes": [
+    "outlaws"
+   ]
+  },
+  {
+   "id": "dark-elf",
+   "name": "Dark elf",
+   "line": "Of the deep; one or two",
+   "group": "Deep things",
+   "state": "maybe",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "rift"
+   ],
+   "comment": "Maybe a dark elf or two.",
+   "themes": [
+    "deep"
+   ]
   }
  ],
  "tags": [
@@ -3502,6 +3908,69 @@
    "line": "A carved temple",
    "inGame": false,
    "region": "sanctum"
+  }
+ ],
+ "themes": [
+  {
+   "id": "the-dead",
+   "name": "The dead",
+   "state": "keep"
+  },
+  {
+   "id": "old-faith",
+   "name": "The old faith",
+   "state": "keep"
+  },
+  {
+   "id": "cult",
+   "name": "The cult",
+   "state": "keep",
+   "against": "old-faith"
+  },
+  {
+   "id": "pests",
+   "name": "Pests",
+   "state": "keep"
+  },
+  {
+   "id": "garrison",
+   "name": "The garrison",
+   "state": "keep"
+  },
+  {
+   "id": "goblins",
+   "name": "Goblins",
+   "state": "keep"
+  },
+  {
+   "id": "dwarves",
+   "name": "The dwarves",
+   "state": "keep"
+  },
+  {
+   "id": "deep",
+   "name": "The deep",
+   "state": "keep"
+  },
+  {
+   "id": "beasts",
+   "name": "Beasts of the dark",
+   "state": "keep"
+  },
+  {
+   "id": "drowned",
+   "name": "The drowned",
+   "state": "keep"
+  },
+  {
+   "id": "outlaws",
+   "name": "Outlaws",
+   "state": "keep"
+  },
+  {
+   "id": "delvers",
+   "name": "Delvers",
+   "state": "maybe"
   }
  ]
 }

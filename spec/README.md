@@ -18,6 +18,8 @@ make the key decisions. When the whole of it is written and you say go, building
    - One decision per question. Things that can be decided separately are asked separately, not
      bundled into one option (for example, round 2's "a few choices in a fight" bundled
      warnings, shoving and kinds of weapon).
+   - Not every tool fits every purpose (round 15): a structure (themes, tags, regions) is used
+     where it helps, not forced onto everything.
    - Many options wide, then narrowed: keep, maybe, drop, then a closer look at what was kept.
    - Later rounds may reopen earlier answers if something shows they don't hold. Bundled answers
      from rounds 1 to 3 get unpicked as their details come up.
@@ -85,7 +87,7 @@ Each part's state is one of:
 | 12 | The world's shape, your idea: regions of several maps, transitions, themed areas ([`round12-world.md`](round12-world.md)) | answered |
 | 13 | A world by depth, the regions set in it, your idea ([`round13-depth.md`](round13-depth.md)) | answered |
 | 14 | Culling the Dungeon Underneath ([`round14-dungeon.md`](round14-dungeon.md)) | answered |
-| 15 | Themes: what goes with what; who holds the castle-like dungeon ([`round15-themes.md`](round15-themes.md)) | on the choices page |
+| 15 | Themes: what goes with what; who holds the castle-like dungeon ([`round15-themes.md`](round15-themes.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
