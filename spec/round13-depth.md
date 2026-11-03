@@ -1,5 +1,7 @@
 # Round 13: a world by depth, the regions set in it
 
+**Answered:** all as picked, but the run's length: it **grows to 2 to 4 hours** (B).
+
 Your idea: "If we widen the scope, the regions could be set in a more generic, random generated
 world that is based on depth. Then the regions would stand out."
 

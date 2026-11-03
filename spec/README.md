@@ -83,7 +83,8 @@ Each part's state is one of:
 | 10 | Monsters described by tags, your idea ([`round10-tags.md`](round10-tags.md)) | answered |
 | 11 | Tags, shallow ([`round11-tag-list.md`](round11-tag-list.md)) | answered: cleaned into [`tags.md`](tags.md) |
 | 12 | The world's shape, your idea: regions of several maps, transitions, themed areas ([`round12-world.md`](round12-world.md)) | answered |
-| 13 | A world by depth, the regions set in it, your idea ([`round13-depth.md`](round13-depth.md)) | on the choices page |
+| 13 | A world by depth, the regions set in it, your idea ([`round13-depth.md`](round13-depth.md)) | answered |
+| 14 | Culling the Dungeon Underneath ([`round14-dungeon.md`](round14-dungeon.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

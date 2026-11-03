@@ -43,7 +43,9 @@
   .region .head p { margin: 0; color: var(--dim); flex-basis: 100%; }
   .role { font: 600 11px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--faint); color: var(--text); }
   .role.region-r { background: var(--paper); color: var(--ground); border-color: var(--paper); }
-  .role.either-r { border-color: var(--amber); color: var(--amber); }
+  .role.transition-r { border-color: var(--amber); color: var(--amber); }
+  .role.world-r { border-color: var(--moss); color: var(--moss); }
+  .region .head p + p { margin-top: -6px; }
   .game { font-size: 13px; color: var(--moss); }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 22px; }
   .col { display: grid; gap: 6px; align-content: start; min-width: 0; }
@@ -71,7 +73,7 @@
 <main>
   <header>
     <h1>The catalogue</h1>
-    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 11), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 13), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
   </header>
   <nav class="bar" aria-label="Views">
     <a href="#regions">By region</a>
@@ -95,7 +97,7 @@
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let C = null;
-const ROLE = { region: "Region", either: "Region or area", area: "Area" };
+const KIND = { world: "The world", region: "Region", transition: "Transition", themed: "Themed area" };
 const VIEWS = ["regions", "holes", "monsters", "strangers", "places", "tags", "more"];
 
 function shown(x) {
@@ -108,17 +110,22 @@ const cls = (x) => ({ "in game": "ingame", maybe: "maybe", unmarked: "unmarked",
 const tip = (x) => [x.line ?? x.why ?? x.plays, x.comment && `“${x.comment}”`].filter(Boolean).join(" · ");
 const chip = (x) => `<span class="c ${cls(x)}" title="${esc(tip(x))}">${esc(x.name)}</span>`;
 const chips = (list) => (list.length ? `<div class="chips">${list.map(chip).join("")}</div>` : `<span class="none">none yet</span>`);
-const fitsIn = (list, id) => list.filter((x) => shown(x) && x.fits?.includes(id));
+const partsOf = (rid) => C.parts.filter((p) => p.region === rid).map((p) => p.id);
+const fitsIn = (list, rid) => { const ps = partsOf(rid); return list.filter((x) => shown(x) && (x.fits ?? []).some((f) => ps.includes(f))); };
 const anywhere = (list) => list.filter((x) => shown(x) && x.fits?.includes("anywhere"));
 
 function regionsView() {
-  const order = ["region", "either", "area"];
-  const rs = [...C.regions].sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
   const any = { p: anywhere(C.places).length, m: anywhere(C.monsters).length, s: anywhere(C.strangers).length };
-  return `<section><p class="note">Each region's places, monsters and strangers side by side. Hover a name for its line and your comments. Not repeated under each region, as they fit anywhere: ${any.p} ${any.p === 1 ? "place" : "places"}, ${any.m} ${any.m === 1 ? "monster" : "monsters"}, ${any.s} ${any.s === 1 ? "stranger" : "strangers"}.</p>
-    ${rs.map((r) => {
-      const areas = fitsIn(C.places, r.id).filter((p) => p.size === "area"), rooms = fitsIn(C.places, r.id).filter((p) => p.size === "room");
-      return `<article class="region" id="r-${r.id}"><div class="head"><h2>${esc(r.name)}</h2><span class="role ${r.role}-r">${ROLE[r.role]}</span>${r.inGame ? `<span class="game">in the game</span>` : ""}<p>${esc(r.line)}</p></div>
+  const pl = (n, w) => `${n} ${n === 1 ? w : w + "s"}`;
+  return `<section><p class="note">The world (round 13): a generic world by depth, with the regions, transitions and themed areas set in it (round 12). Under each, its monsters, strangers and places, gathered from the parts it was made of. Hover a name for its line and your comments. Not repeated under each, as they fit anywhere: ${pl(any.p, "place")}, ${pl(any.m, "monster")}, ${pl(any.s, "stranger")}.</p>
+    ${C.regions.map((r) => {
+      const head = `<div class="head"><h2>${esc(r.name)}</h2><span class="role ${r.kind}-r">${KIND[r.kind]}</span>${r.inGame ? `<span class="game">in the game</span>` : ""}<p>${esc(r.line)}</p>`;
+      if (r.kind === "world") return `<article class="region" id="r-${r.id}">${head}<p>What lives and lies in the world at each depth is a later question.</p></div></article>`;
+      const parts = C.parts.filter((p) => p.region === r.id);
+      const found = r.found ? `<p>Found in: ${r.found.map((f) => esc(C.regions.find((x) => x.id === f)?.name)).join(", ")}.</p>` : "";
+      const madeOf = parts.length ? `<p>Made of round 8's ${parts.map((p) => esc(p.name.replace(/^The /, "the "))).join(", ")}.</p>` : `<p>Nothing placed in it yet.</p>`;
+      const pl2 = fitsIn(C.places, r.id), areas = pl2.filter((p) => p.size === "area"), rooms = pl2.filter((p) => p.size === "room");
+      return `<article class="region" id="r-${r.id}">${head}${madeOf}${found}</div>
         <div class="cols">
           <div class="col"><h3>Monsters</h3>${chips(fitsIn(C.monsters, r.id))}</div>
           <div class="col"><h3>Strangers</h3>${chips(fitsIn(C.strangers, r.id))}</div>
@@ -130,9 +137,9 @@ function regionsView() {
 
 function holesView() {
   const n = (v) => `<td class="n ${v === 0 ? "zero" : v <= 2 ? "thin" : ""}">${v}</td>`;
-  const rows = C.regions.map((r) => {
+  const rows = C.regions.filter((r) => r.kind !== "world").map((r) => {
     const p = fitsIn(C.places, r.id);
-    return `<tr><td>${esc(r.name)} <span class="st">${ROLE[r.role]}</span></td>${n(fitsIn(C.monsters, r.id).length)}${n(fitsIn(C.strangers, r.id).length)}${n(p.filter((x) => x.size === "area").length)}${n(p.filter((x) => x.size === "room").length)}</tr>`;
+    return `<tr><td>${esc(r.name)} <span class="st">${KIND[r.kind]}</span></td>${n(fitsIn(C.monsters, r.id).length)}${n(fitsIn(C.strangers, r.id).length)}${n(p.filter((x) => x.size === "area").length)}${n(p.filter((x) => x.size === "room").length)}</tr>`;
   }).join("");
   const unplaced = [...C.monsters, ...C.strangers, ...C.places].filter((x) => shown(x) && !(x.fits ?? []).length);
   return `<section><p class="note">How much each region has of its own, by what's shown above. Red: none; amber: one or two. Things that fit anywhere aren't counted.</p>
@@ -145,7 +152,7 @@ function listView(list, cols) {
   return `<section><div class="wrap"><table><thead><tr>${cols.map((c) => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>
     ${rs.map((x) => `<tr>${cols.map((c) => `<td>${c[1](x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div></section>`;
 }
-const regionNames = (x) => (x.fits ?? []).map((f) => (f === "anywhere" ? "anywhere" : C.regions.find((r) => r.id === f)?.name.replace(/^The /, ""))).join(", ");
+const regionNames = (x) => [...new Set((x.fits ?? []).map((f) => (f === "anywhere" ? "anywhere" : C.regions.find((r) => r.id === C.parts.find((p) => p.id === f)?.region)?.name)))].join(", ");
 const named = (x) => chip(x) + (x.comment ? `<div class="st">“${esc(x.comment)}”</div>` : "");
 
 function tagsView() {
