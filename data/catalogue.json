@@ -2086,9 +2086,11 @@
   {
    "id": "rat",
    "name": "Rat",
-   "line": "Fast, weak, in packs",
-   "group": "Beasts",
+   "family": "Rats",
+   "kind": "Pests",
+   "rank": "Common",
    "state": "in game",
+   "line": "Fast, weak, in packs",
    "fits": [
     "dungeon",
     "collapsed",
@@ -2097,42 +2099,56 @@
     "warrens",
     "bandits"
    ],
-   "comment": "",
    "themes": [
     "pests"
    ],
+   "comment": "",
    "role": "Swarm",
    "answer": "Light holds them off; alone they're weak",
-   "answerKind": "Light",
-   "proposal": "keep"
+   "answerKind": "Light"
+  },
+  {
+   "id": "giant-rat",
+   "name": "Giant rat",
+   "family": "Rats",
+   "kind": "Pests",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
   },
   {
    "id": "bat",
    "name": "Bat",
-   "line": "Flits erratically",
-   "group": "Beasts",
+   "family": "Bats",
+   "kind": "Beasts",
+   "rank": "Common",
    "state": "in game",
+   "line": "Flits erratically",
    "fits": [
     "caverns",
     "rift",
     "mines",
     "glowing"
    ],
-   "comment": "",
    "themes": [
     "beasts"
    ],
+   "comment": "",
    "role": "Alarm-raiser",
    "answer": "Startled by light, they shriek and wake others: pass in the dark",
-   "answerKind": "Darkness",
-   "proposal": "keep"
+   "answerKind": "Darkness"
   },
   {
    "id": "spider",
    "name": "Spider",
-   "line": "Waits still and bites; poison",
-   "group": "Beasts",
+   "family": "Spiders",
+   "kind": "Pests",
+   "rank": "Common",
    "state": "in game",
+   "line": "Waits still and bites; poison",
    "fits": [
     "caverns",
     "webs",
@@ -2140,256 +2156,1188 @@
     "underwood",
     "glowing"
    ],
-   "comment": "",
    "themes": [
     "pests"
    ],
+   "comment": "",
    "role": "Ambusher",
    "answer": "Waits still by its web; light shows it",
-   "answerKind": "Light",
-   "proposal": "keep"
+   "answerKind": "Light"
   },
   {
    "id": "giant-spider",
    "name": "Giant spider",
-   "line": "A great spider",
-   "group": "Beasts",
+   "family": "Spiders",
+   "kind": "Pests",
+   "rank": "Greater",
    "state": "in game",
+   "line": "A great spider",
    "fits": [
     "webs",
     "caverns",
     "underwood"
    ],
+   "themes": [],
    "comment": "",
    "role": "Hunter",
    "answer": "Fire drives it off",
-   "answerKind": "Fire",
-   "proposal": "keep"
-  },
-  {
-   "id": "skeleton",
-   "name": "Skeleton",
-   "line": "Slow, stiff; alone or in pairs, packs in crypts",
-   "group": "The dead",
-   "state": "in game",
-   "fits": [
-    "dungeon",
-    "bones",
-    "hold",
-    "sanctum"
-   ],
-   "comment": "",
-   "themes": [
-    "the-dead"
-   ],
-   "role": "Soldier",
-   "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
-   "answerKind": "Timing",
-   "proposal": "keep"
-  },
-  {
-   "id": "zombie",
-   "name": "Zombie",
-   "line": "Slow, tough, relentless",
-   "group": "The dead",
-   "state": "in game",
-   "fits": [
-    "dungeon",
-    "bones",
-    "sanctum",
-    "drowned"
-   ],
-   "comment": "",
-   "themes": [
-    "the-dead"
-   ],
-   "role": "Brute",
-   "answer": "Slow but never stops: outpace it, shut doors behind you",
-   "answerKind": "Distance",
-   "proposal": "keep"
-  },
-  {
-   "id": "goblin",
-   "name": "Goblin",
-   "line": "Hops; packs round a leader and a campfire",
-   "group": "People and goblinkin",
-   "state": "in game",
-   "fits": [
-    "caverns",
-    "halls",
-    "warrens",
-    "mines"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Pack",
-   "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
-   "answerKind": "Distraction",
-   "proposal": "keep"
-  },
-  {
-   "id": "goblin-warrior",
-   "name": "Goblin warrior",
-   "line": "Leads goblin packs",
-   "group": "People and goblinkin",
-   "state": "in game",
-   "fits": [
-    "halls",
-    "warrens"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Leader",
-   "answer": "Fell it and its pack falters",
-   "answerKind": "Fell the leader",
-   "proposal": "keep"
-  },
-  {
-   "id": "goblin-king",
-   "name": "Goblin king",
-   "line": "Waits with his guard",
-   "group": "People and goblinkin",
-   "state": "in game",
-   "fits": [
-    "halls"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Boss",
-   "answer": "Waits with his guard: get past, or kill him",
-   "answerKind": "Get past",
-   "proposal": "keep"
-  },
-  {
-   "id": "cultist",
-   "name": "Cultist",
-   "line": "Carries a lantern and patrols",
-   "group": "People and goblinkin",
-   "state": "in game",
-   "fits": [
-    "dungeon",
-    "sanctum",
-    "archive"
-   ],
-   "comment": "",
-   "themes": [
-    "cult"
-   ],
-   "role": "Soldier",
-   "answer": "Its lantern shows it coming: keep out of its light",
-   "answerKind": "Light",
-   "proposal": "keep"
-  },
-  {
-   "id": "troll",
-   "name": "Troll",
-   "line": "Slow, huge, healing",
-   "group": "People and goblinkin",
-   "state": "in game",
-   "fits": [
-    "caverns",
-    "halls",
-    "rift",
-    "underwood"
-   ],
-   "comment": "",
-   "themes": [
-    "beasts"
-   ],
-   "role": "Brute",
-   "answer": "Heals as it goes; fire stops that",
-   "answerKind": "Fire",
-   "proposal": "keep"
-  },
-  {
-   "id": "cave-cat",
-   "name": "Cave cat",
-   "line": "Hunts alone, sees well in the dark",
-   "group": "Beasts",
-   "state": "keep",
-   "fits": [
-    "caverns",
-    "glowing",
-    "underwood",
-    "rift"
-   ],
-   "comment": "",
-   "themes": [
-    "beasts"
-   ],
-   "role": "Hunter",
-   "answer": "Stalks you in the dark; your lamp keeps it off",
-   "answerKind": "Light",
-   "proposal": "keep"
+   "answerKind": "Fire"
   },
   {
    "id": "wolf",
    "name": "Wolf",
-   "line": "Goblins' hounds: packs that follow your scent",
-   "group": "Beasts",
+   "family": "Wolves",
+   "kind": "Beasts",
+   "rank": "Common",
    "state": "keep",
+   "line": "Goblins' hounds: packs that follow your scent",
    "fits": [
     "halls",
     "warrens",
     "bandits",
     "caverns"
    ],
-   "comment": "",
    "themes": [
     "goblins",
     "beasts"
    ],
+   "comment": "",
    "role": "Hunter",
    "answer": "Follows your scent: water breaks the trail",
-   "answerKind": "Water",
-   "proposal": "keep"
+   "answerKind": "Water"
+  },
+  {
+   "id": "dire-wolf",
+   "name": "Dire wolf",
+   "family": "Wolves",
+   "kind": "Beasts",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "cave-bear",
+   "name": "Cave bear",
+   "family": "Cave bear",
+   "kind": "Beasts",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Asleep most of the time; terrible awake",
+   "fits": [
+    "caverns",
+    "underwood"
+   ],
+   "themes": [
+    "beasts"
+   ],
+   "comment": "",
+   "role": "Brute",
+   "answer": "Asleep: don't wake it",
+   "answerKind": "Silence"
+  },
+  {
+   "id": "cave-lion",
+   "name": "Cave lion",
+   "family": "Cave lion",
+   "kind": "Beasts",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Hunts alone, sees well in the dark",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "rift"
+   ],
+   "themes": [
+    "beasts"
+   ],
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Stalks you in the dark; your lamp keeps it off",
+   "answerKind": "Light",
+   "was": "Cave cat"
   },
   {
    "id": "giant-centipede",
    "name": "Giant centipede",
-   "line": "Fast; hides under rubble",
-   "group": "Beasts",
+   "family": "Giant centipede",
+   "kind": "Pests",
+   "rank": "Common",
    "state": "keep",
+   "line": "Fast; hides under rubble",
    "fits": [
     "collapsed",
     "caverns",
     "mines",
     "vents"
    ],
-   "comment": "",
    "themes": [
     "pests"
    ],
+   "comment": "",
    "role": "Ambusher",
    "answer": "Under rubble; light shows it",
-   "answerKind": "Light",
-   "proposal": "cut",
-   "proposalWhy": "Same role and answer as the spider, in rubble instead of webs"
+   "answerKind": "Light"
   },
   {
-   "id": "cave-bear",
-   "name": "Cave bear",
-   "line": "Asleep most of the time; terrible awake",
-   "group": "Beasts",
+   "id": "worm",
+   "name": "Worm",
+   "family": "Worm",
+   "kind": "Beasts",
+   "rank": "Common",
    "state": "keep",
+   "line": "Huge; digs through rock; hunts by sound",
    "fits": [
+    "mines",
     "caverns",
-    "underwood"
+    "rift"
+   ],
+   "themes": [],
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Hunts by the ground's tremor: stand still and it passes",
+   "answerKind": "Silence",
+   "was": "Deep worm"
+  },
+  {
+   "id": "eel",
+   "name": "Eel",
+   "family": "Eel",
+   "kind": "Water",
+   "rank": "Common",
+   "state": "keep",
+   "line": "In deep water",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "themes": [
+    "beasts",
+    "drowned"
    ],
    "comment": "",
+   "role": "Ambusher",
+   "answer": "Strikes from deep water: keep out of it",
+   "answerKind": "Water"
+  },
+  {
+   "id": "cave-crab",
+   "name": "Cave crab",
+   "family": "Cave crab",
+   "kind": "Water",
+   "rank": "Common",
+   "state": "keep",
+   "line": "In the shallows, armoured",
+   "fits": [
+    "drowned",
+    "sewers",
+    "vents"
+   ],
    "themes": [
     "beasts"
    ],
+   "comment": "",
+   "role": "Ambusher",
+   "answer": "Waits in the shallows; slow on land, so go round",
+   "answerKind": "Distance"
+  },
+  {
+   "id": "leech",
+   "name": "Leech",
+   "family": "Leech",
+   "kind": "Water",
+   "rank": "Common",
+   "state": "keep",
+   "line": "A swarm in still water",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "themes": [
+    "pests",
+    "drowned"
+   ],
+   "comment": "",
+   "role": "Swarm",
+   "answer": "In still water: don't linger in it",
+   "answerKind": "Water",
+   "was": "Leeches"
+  },
+  {
+   "id": "snake",
+   "name": "Snake",
+   "family": "Snake",
+   "kind": "Beasts",
+   "rank": "Common",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "slime",
+   "name": "Slime",
+   "family": "Oozes",
+   "kind": "Deep things",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Drops from the ceiling",
+   "fits": [
+    "sewers",
+    "caverns",
+    "drowned",
+    "glowing"
+   ],
+   "themes": [
+    "pests"
+   ],
+   "comment": "",
+   "role": "Ambusher",
+   "answer": "Drops from the ceiling; light shows it, fire burns it",
+   "answerKind": "Light"
+  },
+  {
+   "id": "ooze",
+   "name": "Ooze",
+   "family": "Oozes",
+   "kind": "Deep things",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "floating-eye",
+   "name": "Floating eye",
+   "family": "Floating eye",
+   "kind": "Deep things",
+   "rank": "Common",
+   "state": "keep",
+   "line": "A floating eye that sees far and calls others",
+   "fits": [
+    "archive",
+    "sanctum",
+    "rift"
+   ],
+   "themes": [
+    "deep"
+   ],
+   "comment": "",
+   "role": "Alarm-raiser",
+   "answer": "Sees far: break its line of sight",
+   "answerKind": "Cover",
+   "was": "Watcher"
+  },
+  {
+   "id": "mimic",
+   "name": "Mimic",
+   "family": "Mimic",
+   "kind": "Deep things",
+   "rank": "Common",
+   "state": "keep",
+   "line": "A chest that isn't",
+   "fits": [
+    "anywhere"
+   ],
+   "themes": [
+    "deep"
+   ],
+   "comment": "",
+   "role": "Ambusher",
+   "answer": "A chest that isn't: search before you open, or throw something at it",
+   "answerKind": "Searching"
+  },
+  {
+   "id": "golem",
+   "name": "Golem",
+   "family": "Golems",
+   "kind": "Made",
+   "rank": "Common",
+   "state": "keep",
+   "line": "A guard that never sleeps; blind, it goes by sound",
+   "fits": [
+    "hold",
+    "forge",
+    "archive"
+   ],
+   "themes": [
+    "dwarves"
+   ],
+   "comment": "",
    "role": "Brute",
-   "answer": "Asleep: don't wake it",
-   "answerKind": "Silence",
+   "answer": "Goes by sound: sneak past it in silence",
+   "answerKind": "Silence"
+  },
+  {
+   "id": "bronze-golem",
+   "name": "Bronze golem",
+   "family": "Golems",
+   "kind": "Made",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "iron-golem",
+   "name": "Iron golem",
+   "family": "Golems",
+   "kind": "Made",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "steel-golem",
+   "name": "Steel golem",
+   "family": "Golems",
+   "kind": "Made",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "animated-armour",
+   "name": "Animated armour",
+   "family": "Golems",
+   "kind": "Made",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Stands in a row of empty suits",
+   "fits": [
+    "hold",
+    "dungeon",
+    "forge"
+   ],
+   "themes": [
+    "dwarves"
+   ],
+   "comment": "",
+   "role": "Ambusher",
+   "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
+   "answerKind": "Distance"
+  },
+  {
+   "id": "bone-heap",
+   "name": "Bone heap",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Lies as loose bones until something comes near",
+   "fits": [
+    "bones",
+    "dungeon",
+    "sanctum"
+   ],
+   "themes": [
+    "the-dead"
+   ],
+   "comment": "",
+   "role": "Ambusher",
+   "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
+   "answerKind": "Distraction"
+  },
+  {
+   "id": "skeleton",
+   "name": "Skeleton",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Common",
+   "state": "in game",
+   "line": "Slow, stiff; alone or in pairs, packs in crypts",
+   "fits": [
+    "dungeon",
+    "bones",
+    "hold",
+    "sanctum"
+   ],
+   "themes": [
+    "the-dead"
+   ],
+   "comment": "",
+   "role": "Soldier",
+   "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
+   "answerKind": "Timing"
+  },
+  {
+   "id": "skeleton-warrior",
+   "name": "Skeleton warrior",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Warrior",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "skeleton-archer",
+   "name": "Skeleton archer",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "zombie",
+   "name": "Zombie",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Common",
+   "state": "in game",
+   "line": "Slow, tough, relentless",
+   "fits": [
+    "dungeon",
+    "bones",
+    "sanctum",
+    "drowned"
+   ],
+   "themes": [
+    "the-dead"
+   ],
+   "comment": "",
+   "role": "Brute",
+   "answer": "Slow but never stops: outpace it, shut doors behind you",
+   "answerKind": "Distance"
+  },
+  {
+   "id": "wight",
+   "name": "Wight",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Sees in the dark; drains strength",
+   "fits": [
+    "dungeon",
+    "bones",
+    "hold"
+   ],
+   "themes": [
+    "the-dead"
+   ],
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Sees in the dark; holy ground keeps it out",
+   "answerKind": "Holy ground"
+  },
+  {
+   "id": "ghost",
+   "name": "Ghost",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Passes through walls",
+   "fits": [
+    "dungeon",
+    "hold",
+    "archive",
+    "drowned"
+   ],
+   "themes": [],
+   "comment": "",
+   "role": "Wanderer",
+   "answer": "Through walls; holy ground keeps it out",
+   "answerKind": "Holy ground"
+  },
+  {
+   "id": "wraith",
+   "name": "Wraith",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Darkness that moves; fears light",
+   "fits": [
+    "sanctum",
+    "bones",
+    "rift"
+   ],
+   "themes": [
+    "the-dead"
+   ],
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Darkness that moves; light hurts it",
+   "answerKind": "Light"
+  },
+  {
+   "id": "lich",
+   "name": "Lich",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Boss",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "will-o-wisp",
+   "name": "Will-o'-wisp",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "A light that leads you into danger",
+   "fits": [
+    "glowing",
+    "underwood",
+    "drowned",
+    "rift"
+   ],
+   "themes": [
+    "deep"
+   ],
+   "comment": "",
+   "role": "Lure",
+   "answer": "Shines a small light that shows you to others: don't follow it",
+   "answerKind": "Searching"
+  },
+  {
+   "id": "ghost-bat",
+   "name": "Ghost bat",
+   "family": "The dead",
+   "kind": "Undead",
+   "rank": "Special",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "goblin",
+   "name": "Goblin",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Common",
+   "state": "in game",
+   "line": "Hops; packs round a leader and a campfire",
+   "fits": [
+    "caverns",
+    "halls",
+    "warrens",
+    "mines"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Pack",
+   "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
+   "answerKind": "Distraction"
+  },
+  {
+   "id": "goblin-warrior",
+   "name": "Goblin warrior",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Warrior",
+   "state": "in game",
+   "line": "Leads goblin packs",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Leader",
+   "answer": "Fell it and its pack falters",
+   "answerKind": "Fell the leader"
+  },
+  {
+   "id": "goblin-archer",
+   "name": "Goblin archer",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "Shoots from the dark",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Soldier",
+   "answer": "Shoots what it sees: get into cover, then close",
+   "answerKind": "Cover"
+  },
+  {
+   "id": "goblin-chieftain",
+   "name": "Goblin chieftain",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Leader",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "goblin-shaman",
+   "name": "Goblin shaman",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Caster",
+   "state": "keep",
+   "line": "Magic; lights and puts out fires",
+   "fits": [
+    "halls",
+    "warrens"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Caster",
+   "answer": "Lights and puts out fires: take it unaware first",
+   "answerKind": "Strike first"
+  },
+  {
+   "id": "goblin-king",
+   "name": "Goblin king",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Boss",
+   "state": "in game",
+   "line": "Waits with his guard",
+   "fits": [
+    "halls"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Boss",
+   "answer": "Waits with his guard: get past, or kill him",
+   "answerKind": "Get past"
+  },
+  {
+   "id": "goblin-beasthound",
+   "name": "Goblin beasthound",
+   "family": "Goblins",
+   "kind": "Goblinkin",
+   "rank": "Special",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "cultist",
+   "name": "Cultist",
+   "family": "The cult",
+   "kind": "People",
+   "rank": "Common",
+   "state": "in game",
+   "line": "Carries a lantern and patrols",
+   "fits": [
+    "dungeon",
+    "sanctum",
+    "archive"
+   ],
+   "themes": [
+    "cult"
+   ],
+   "comment": "",
+   "role": "Soldier",
+   "answer": "Its lantern shows it coming: keep out of its light",
+   "answerKind": "Light"
+  },
+  {
+   "id": "cultist-warrior",
+   "name": "Cultist warrior",
+   "family": "The cult",
+   "kind": "People",
+   "rank": "Warrior",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "cultist-archer",
+   "name": "Cultist archer",
+   "family": "The cult",
+   "kind": "People",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "cult-priest",
+   "name": "Cult priest",
+   "family": "The cult",
+   "kind": "People",
+   "rank": "Caster",
+   "state": "keep",
+   "line": "Raises the dead",
+   "fits": [
+    "sanctum",
+    "dungeon"
+   ],
+   "themes": [
+    "cult"
+   ],
+   "comment": "",
+   "role": "Caster",
+   "answer": "Raises the dead: kill it first, or keep its dead apart from it",
+   "answerKind": "Strike first"
+  },
+  {
+   "id": "troll",
+   "name": "Troll",
+   "family": "Giants",
+   "kind": "Giants",
+   "rank": "Common",
+   "state": "in game",
+   "line": "Slow, huge, healing",
+   "fits": [
+    "caverns",
+    "halls",
+    "rift",
+    "underwood"
+   ],
+   "themes": [
+    "beasts"
+   ],
+   "comment": "",
+   "role": "Brute",
+   "answer": "Heals as it goes; fire stops that",
+   "answerKind": "Fire"
+  },
+  {
+   "id": "ogre",
+   "name": "Ogre",
+   "family": "Giants",
+   "kind": "Giants",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Big and slow-witted; smells you",
+   "fits": [
+    "halls",
+    "bandits",
+    "caverns"
+   ],
+   "themes": [
+    "goblins"
+   ],
+   "comment": "",
+   "role": "Brute",
+   "answer": "Smells you: water or wind hides your scent; it's slow",
+   "answerKind": "Water"
+  },
+  {
+   "id": "bandit",
+   "name": "Bandit",
+   "family": "Bandits",
+   "kind": "People",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Carries a lantern and a crossbow",
+   "fits": [
+    "bandits",
+    "sewers"
+   ],
+   "themes": [
+    "outlaws"
+   ],
+   "comment": "",
+   "role": "Soldier",
+   "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
+   "answerKind": "Cover"
+  },
+  {
+   "id": "bandit-archer",
+   "name": "Bandit archer",
+   "family": "Bandits",
+   "kind": "People",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "bandit-chief",
+   "name": "Bandit chief",
+   "family": "Bandits",
+   "kind": "People",
+   "rank": "Leader",
+   "state": "keep",
+   "line": "Leads the outlaws",
+   "fits": [
+    "bandits"
+   ],
+   "themes": [
+    "outlaws"
+   ],
+   "comment": "",
+   "role": "Leader",
+   "answer": "Fell it and the outlaws falter",
+   "answerKind": "Fell the leader"
+  },
+  {
+   "id": "thief",
+   "name": "Thief",
+   "family": "Bandits",
+   "kind": "People",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Steals from you and runs",
+   "fits": [
+    "bandits",
+    "sewers",
+    "dungeon"
+   ],
+   "themes": [
+    "outlaws"
+   ],
+   "comment": "",
+   "role": "Thief",
+   "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
+   "answerKind": "Darkness"
+  },
+  {
+   "id": "dark-elf",
+   "name": "Dark elf",
+   "family": "Dark elves",
+   "kind": "Dark elves",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Of the deep; one or two",
+   "fits": [
+    "caverns",
+    "glowing",
+    "underwood",
+    "rift"
+   ],
+   "themes": [
+    "deep"
+   ],
+   "comment": "",
+   "role": "Hunter",
+   "answer": "Sees in the dark and thinks: bright light blinds it",
+   "answerKind": "Light"
+  },
+  {
+   "id": "dark-elf-warrior",
+   "name": "Dark elf warrior",
+   "family": "Dark elves",
+   "kind": "Dark elves",
+   "rank": "Warrior",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "dark-elf-archer",
+   "name": "Dark elf archer",
+   "family": "Dark elves",
+   "kind": "Dark elves",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "dark-elf-prince",
+   "name": "Dark elf prince",
+   "family": "Dark elves",
+   "kind": "Dark elves",
+   "rank": "Leader",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "dark-elf-wizard",
+   "name": "Dark elf wizard",
+   "family": "Dark elves",
+   "kind": "Dark elves",
+   "rank": "Caster",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "earth-elemental",
+   "name": "Earth elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Common",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "water-elemental",
+   "name": "Water elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Common",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "fire-elemental",
+   "name": "Fire elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Common",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "greater-earth-elemental",
+   "name": "Greater earth elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "greater-water-elemental",
+   "name": "Greater water elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "greater-fire-elemental",
+   "name": "Greater fire elemental",
+   "family": "Elementals",
+   "kind": "Elementals",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "dragon",
+   "name": "Dragon",
+   "family": "Dragon",
+   "kind": "Dragons",
+   "rank": "Boss",
+   "state": "keep",
+   "line": "",
+   "fits": [],
+   "themes": [],
+   "comment": ""
+  },
+  {
+   "id": "drowned-dead",
+   "name": "Drowned dead",
+   "line": "Rise from water",
+   "group": "The dead",
+   "state": "drop",
+   "fits": [
+    "drowned",
+    "sewers"
+   ],
+   "comment": "Not in your list (round 18).",
+   "themes": [
+    "drowned"
+   ],
+   "role": "Ambusher",
+   "answer": "Rise from water: keep from the edge",
+   "answerKind": "Water",
    "proposal": "keep"
+  },
+  {
+   "id": "banshee",
+   "name": "Banshee",
+   "line": "Its wail wakes the level",
+   "group": "The dead",
+   "state": "drop",
+   "fits": [
+    "bones",
+    "hold"
+   ],
+   "comment": "Not in your list (round 18).",
+   "role": "Alarm-raiser",
+   "answer": "Its wail wakes the level: stay out of its sight",
+   "answerKind": "Cover",
+   "proposal": "cut",
+   "proposalWhy": "The shrieker already wakes the level, and its answer (the dark) is clearer"
+  },
+  {
+   "id": "kobold",
+   "name": "Kobold",
+   "line": "Small; sets traps",
+   "group": "People and goblinkin",
+   "state": "drop",
+   "fits": [
+    "mines",
+    "warrens",
+    "collapsed"
+   ],
+   "comment": "Let's forget the kobold for now. Not in your list (round 18)."
+  },
+  {
+   "id": "spore-folk",
+   "name": "Spore-folk",
+   "line": "Walking fungus; clouds of spores",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [
+    "glowing",
+    "underwood"
+   ],
+   "comment": "Not in your list (round 18).",
+   "themes": [
+    "deep"
+   ],
+   "role": "Swarm",
+   "answer": "Clouds of spores: keep your distance; fire",
+   "answerKind": "Distance",
+   "proposal": "keep"
+  },
+  {
+   "id": "shrieker",
+   "name": "Shrieker",
+   "line": "A mushroom that screams when light falls on it",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [
+    "glowing",
+    "underwood",
+    "caverns"
+   ],
+   "comment": "Not in your list (round 18).",
+   "themes": [
+    "deep"
+   ],
+   "role": "Alarm-raiser",
+   "answer": "Screams when light falls on it: pass in the dark",
+   "answerKind": "Darkness",
+   "proposal": "keep"
+  },
+  {
+   "id": "lake-thing",
+   "name": "Lake thing",
+   "line": "Tentacles from deep water",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [
+    "drowned",
+    "caverns"
+   ],
+   "comment": "Not in your list (round 18).",
+   "themes": [
+    "deep",
+    "drowned"
+   ],
+   "role": "Ambusher",
+   "answer": "Tentacles from deep water: keep from the edge",
+   "answerKind": "Water",
+   "proposal": "cut",
+   "proposalWhy": "The eel already makes deep water a danger; or keep it as the drowned's boss"
+  },
+  {
+   "id": "gargoyle",
+   "name": "Gargoyle",
+   "line": "Stone until you pass",
+   "group": "Made and bound",
+   "state": "drop",
+   "fits": [
+    "hold",
+    "sanctum",
+    "archive"
+   ],
+   "comment": "Not in your list (round 18).",
+   "themes": [
+    "dwarves"
+   ],
+   "role": "Ambusher",
+   "answer": "Stone until you pass: tracks in the dust give it away",
+   "answerKind": "Searching",
+   "proposal": "change",
+   "proposalWhy": "Close to the animated armour (still until you pass, in the dwarves' theme too); give it a different answer, or cut one"
+  },
+  {
+   "id": "shadow",
+   "name": "Shadow",
+   "line": "A living shadow: strong in the dark, gone in light",
+   "group": "Deep things",
+   "state": "drop",
+   "fits": [
+    "sanctum",
+    "rift",
+    "archive"
+   ],
+   "comment": "Things of the deep, surely. Not in your list (round 18).",
+   "themes": [
+    "deep"
+   ],
+   "role": "Hunter",
+   "answer": "Strong in the dark, gone in light",
+   "answerKind": "Light",
+   "proposal": "cut",
+   "proposalWhy": "Same as the wraith: darkness that moves, beaten by light"
   },
   {
    "id": "burrower",
@@ -2410,66 +3358,6 @@
    "comment": ""
   },
   {
-   "id": "eel",
-   "name": "Eel",
-   "line": "In deep water",
-   "group": "Beasts",
-   "state": "keep",
-   "fits": [
-    "drowned",
-    "sewers"
-   ],
-   "comment": "",
-   "themes": [
-    "beasts",
-    "drowned"
-   ],
-   "role": "Ambusher",
-   "answer": "Strikes from deep water: keep out of it",
-   "answerKind": "Water",
-   "proposal": "keep"
-  },
-  {
-   "id": "cave-crab",
-   "name": "Cave crab",
-   "line": "In the shallows, armoured",
-   "group": "Beasts",
-   "state": "keep",
-   "fits": [
-    "drowned",
-    "sewers",
-    "vents"
-   ],
-   "comment": "",
-   "themes": [
-    "beasts"
-   ],
-   "role": "Ambusher",
-   "answer": "Waits in the shallows; slow on land, so go round",
-   "answerKind": "Distance",
-   "proposal": "keep"
-  },
-  {
-   "id": "leeches",
-   "name": "Leeches",
-   "line": "A swarm in still water",
-   "group": "Beasts",
-   "state": "keep",
-   "fits": [
-    "drowned",
-    "sewers"
-   ],
-   "comment": "",
-   "themes": [
-    "pests",
-    "drowned"
-   ],
-   "role": "Swarm",
-   "answer": "In still water: don't linger in it",
-   "answerKind": "Water",
-   "proposal": "keep"
-  },
-  {
    "id": "bat-swarm",
    "name": "Bat swarm",
    "line": "A cloud that puts out your lamp",
@@ -2488,23 +3376,6 @@
    "comment": ""
   },
   {
-   "id": "deep-worm",
-   "name": "Deep worm",
-   "line": "Huge; digs through rock; hunts by sound",
-   "group": "Beasts",
-   "state": "maybe",
-   "fits": [
-    "mines",
-    "caverns",
-    "rift"
-   ],
-   "comment": "",
-   "role": "Hunter",
-   "answer": "Hunts by the ground's tremor: stand still and it passes",
-   "answerKind": "Silence",
-   "proposal": "keep"
-  },
-  {
    "id": "ghoul",
    "name": "Ghoul",
    "line": "Eats the dead; quick; its touch numbs",
@@ -2512,216 +3383,6 @@
    "state": "drop",
    "fits": [],
    "comment": ""
-  },
-  {
-   "id": "wight",
-   "name": "Wight",
-   "line": "Sees in the dark; drains strength",
-   "group": "The dead",
-   "state": "keep",
-   "fits": [
-    "dungeon",
-    "bones",
-    "hold"
-   ],
-   "comment": "",
-   "themes": [
-    "the-dead"
-   ],
-   "role": "Hunter",
-   "answer": "Sees in the dark; holy ground keeps it out",
-   "answerKind": "Holy ground",
-   "proposal": "keep"
-  },
-  {
-   "id": "ghost",
-   "name": "Ghost",
-   "line": "Passes through walls",
-   "group": "The dead",
-   "state": "keep",
-   "fits": [
-    "dungeon",
-    "hold",
-    "archive",
-    "drowned"
-   ],
-   "comment": "",
-   "role": "Wanderer",
-   "answer": "Through walls; holy ground keeps it out",
-   "answerKind": "Holy ground",
-   "proposal": "keep"
-  },
-  {
-   "id": "wraith",
-   "name": "Wraith",
-   "line": "Darkness that moves; fears light",
-   "group": "The dead",
-   "state": "keep",
-   "fits": [
-    "sanctum",
-    "bones",
-    "rift"
-   ],
-   "comment": "",
-   "themes": [
-    "the-dead"
-   ],
-   "role": "Hunter",
-   "answer": "Darkness that moves; light hurts it",
-   "answerKind": "Light",
-   "proposal": "keep"
-  },
-  {
-   "id": "drowned-dead",
-   "name": "Drowned dead",
-   "line": "Rise from water",
-   "group": "The dead",
-   "state": "keep",
-   "fits": [
-    "drowned",
-    "sewers"
-   ],
-   "comment": "",
-   "themes": [
-    "drowned"
-   ],
-   "role": "Ambusher",
-   "answer": "Rise from water: keep from the edge",
-   "answerKind": "Water",
-   "proposal": "keep"
-  },
-  {
-   "id": "bone-heap",
-   "name": "Bone heap",
-   "line": "Lies as loose bones until something comes near",
-   "group": "The dead",
-   "state": "keep",
-   "fits": [
-    "bones",
-    "dungeon",
-    "sanctum"
-   ],
-   "comment": "",
-   "themes": [
-    "the-dead"
-   ],
-   "role": "Ambusher",
-   "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
-   "answerKind": "Distraction",
-   "proposal": "keep"
-  },
-  {
-   "id": "banshee",
-   "name": "Banshee",
-   "line": "Its wail wakes the level",
-   "group": "The dead",
-   "state": "unmarked",
-   "fits": [
-    "bones",
-    "hold"
-   ],
-   "comment": "",
-   "role": "Alarm-raiser",
-   "answer": "Its wail wakes the level: stay out of its sight",
-   "answerKind": "Cover",
-   "proposal": "cut",
-   "proposalWhy": "The shrieker already wakes the level, and its answer (the dark) is clearer"
-  },
-  {
-   "id": "goblin-archer",
-   "name": "Goblin archer",
-   "line": "Shoots from the dark",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "halls",
-    "warrens"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Soldier",
-   "answer": "Shoots what it sees: get into cover, then close",
-   "answerKind": "Cover",
-   "proposal": "keep"
-  },
-  {
-   "id": "goblin-shaman",
-   "name": "Goblin shaman",
-   "line": "Magic; lights and puts out fires",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "halls",
-    "warrens"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Caster",
-   "answer": "Lights and puts out fires: take it unaware first",
-   "answerKind": "Strike first",
-   "proposal": "keep"
-  },
-  {
-   "id": "bandit",
-   "name": "Bandit",
-   "line": "Carries a lantern and a crossbow",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "bandits",
-    "sewers"
-   ],
-   "comment": "",
-   "themes": [
-    "outlaws"
-   ],
-   "role": "Soldier",
-   "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
-   "answerKind": "Cover",
-   "proposal": "keep"
-  },
-  {
-   "id": "cult-priest",
-   "name": "Cult priest",
-   "line": "Raises the dead",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "sanctum",
-    "dungeon"
-   ],
-   "comment": "",
-   "themes": [
-    "cult"
-   ],
-   "role": "Caster",
-   "answer": "Raises the dead: kill it first, or keep its dead apart from it",
-   "answerKind": "Strike first",
-   "proposal": "keep"
-  },
-  {
-   "id": "thief",
-   "name": "Thief",
-   "line": "Steals from you and runs",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "bandits",
-    "sewers",
-    "dungeon"
-   ],
-   "comment": "",
-   "themes": [
-    "outlaws"
-   ],
-   "role": "Thief",
-   "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
-   "answerKind": "Darkness",
-   "proposal": "keep"
   },
   {
    "id": "rival-adventurers",
@@ -2733,19 +3394,6 @@
    "comment": ""
   },
   {
-   "id": "kobold",
-   "name": "Kobold",
-   "line": "Small; sets traps",
-   "group": "People and goblinkin",
-   "state": "shelved",
-   "fits": [
-    "mines",
-    "warrens",
-    "collapsed"
-   ],
-   "comment": "Let's forget the kobold for now."
-  },
-  {
    "id": "grey-dwarf",
    "name": "Grey dwarf",
    "line": "A dwarf gone bad: sees in the dark, hates light",
@@ -2753,65 +3401,6 @@
    "state": "drop",
    "fits": [],
    "comment": ""
-  },
-  {
-   "id": "ogre",
-   "name": "Ogre",
-   "line": "Big and slow-witted; smells you",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "halls",
-    "bandits",
-    "caverns"
-   ],
-   "comment": "",
-   "themes": [
-    "goblins"
-   ],
-   "role": "Brute",
-   "answer": "Smells you: water or wind hides your scent; it's slow",
-   "answerKind": "Water",
-   "proposal": "keep"
-  },
-  {
-   "id": "slime",
-   "name": "Slime",
-   "line": "Drops from the ceiling",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "sewers",
-    "caverns",
-    "drowned",
-    "glowing"
-   ],
-   "comment": "",
-   "themes": [
-    "pests"
-   ],
-   "role": "Ambusher",
-   "answer": "Drops from the ceiling; light shows it, fire burns it",
-   "answerKind": "Light",
-   "proposal": "keep"
-  },
-  {
-   "id": "mimic",
-   "name": "Mimic",
-   "line": "A chest that isn't",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "anywhere"
-   ],
-   "comment": "",
-   "themes": [
-    "deep"
-   ],
-   "role": "Ambusher",
-   "answer": "A chest that isn't: search before you open, or throw something at it",
-   "answerKind": "Searching",
-   "proposal": "keep"
   },
   {
    "id": "lurker",
@@ -2830,228 +3419,6 @@
    "state": "drop",
    "fits": [],
    "comment": ""
-  },
-  {
-   "id": "spore-folk",
-   "name": "Spore-folk",
-   "line": "Walking fungus; clouds of spores",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "glowing",
-    "underwood"
-   ],
-   "comment": "",
-   "themes": [
-    "deep"
-   ],
-   "role": "Swarm",
-   "answer": "Clouds of spores: keep your distance; fire",
-   "answerKind": "Distance",
-   "proposal": "keep"
-  },
-  {
-   "id": "shrieker",
-   "name": "Shrieker",
-   "line": "A mushroom that screams when light falls on it",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "glowing",
-    "underwood",
-    "caverns"
-   ],
-   "comment": "",
-   "themes": [
-    "deep"
-   ],
-   "role": "Alarm-raiser",
-   "answer": "Screams when light falls on it: pass in the dark",
-   "answerKind": "Darkness",
-   "proposal": "keep"
-  },
-  {
-   "id": "watcher",
-   "name": "Watcher",
-   "line": "A floating eye that sees far and calls others",
-   "group": "Deep things",
-   "state": "maybe",
-   "fits": [
-    "archive",
-    "sanctum",
-    "rift"
-   ],
-   "comment": "Floating eye, yes. Effects could be other.",
-   "themes": [
-    "deep"
-   ],
-   "role": "Alarm-raiser",
-   "answer": "Sees far: break its line of sight",
-   "answerKind": "Cover",
-   "proposal": "keep"
-  },
-  {
-   "id": "lake-thing",
-   "name": "Lake thing",
-   "line": "Tentacles from deep water",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "drowned",
-    "caverns"
-   ],
-   "comment": "",
-   "themes": [
-    "deep",
-    "drowned"
-   ],
-   "role": "Ambusher",
-   "answer": "Tentacles from deep water: keep from the edge",
-   "answerKind": "Water",
-   "proposal": "cut",
-   "proposalWhy": "The eel already makes deep water a danger; or keep it as the drowned's boss"
-  },
-  {
-   "id": "gargoyle",
-   "name": "Gargoyle",
-   "line": "Stone until you pass",
-   "group": "Made and bound",
-   "state": "keep",
-   "fits": [
-    "hold",
-    "sanctum",
-    "archive"
-   ],
-   "comment": "",
-   "themes": [
-    "dwarves"
-   ],
-   "role": "Ambusher",
-   "answer": "Stone until you pass: tracks in the dust give it away",
-   "answerKind": "Searching",
-   "proposal": "change",
-   "proposalWhy": "Close to the animated armour (still until you pass, in the dwarves' theme too); give it a different answer, or cut one"
-  },
-  {
-   "id": "golem",
-   "name": "Golem",
-   "line": "A guard that never sleeps; blind, it goes by sound",
-   "group": "Made and bound",
-   "state": "maybe",
-   "fits": [
-    "hold",
-    "forge",
-    "archive"
-   ],
-   "comment": "Why blind?",
-   "themes": [
-    "dwarves"
-   ],
-   "role": "Brute",
-   "answer": "Goes by sound: sneak past it in silence",
-   "answerKind": "Silence",
-   "proposal": "keep"
-  },
-  {
-   "id": "animated-armour",
-   "name": "Animated armour",
-   "line": "Stands in a row of empty suits",
-   "group": "Made and bound",
-   "state": "keep",
-   "fits": [
-    "hold",
-    "dungeon",
-    "forge"
-   ],
-   "comment": "",
-   "themes": [
-    "dwarves"
-   ],
-   "role": "Ambusher",
-   "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
-   "answerKind": "Distance",
-   "proposal": "keep"
-  },
-  {
-   "id": "will-o-wisp",
-   "name": "Will-o'-wisp",
-   "line": "A light that leads you into danger",
-   "group": "Deep things",
-   "state": "keep",
-   "fits": [
-    "glowing",
-    "underwood",
-    "drowned",
-    "rift"
-   ],
-   "comment": "Things of the deep, surely. A spirit that shines a small light.",
-   "themes": [
-    "deep"
-   ],
-   "role": "Lure",
-   "answer": "Shines a small light that shows you to others: don't follow it",
-   "answerKind": "Searching",
-   "proposal": "keep"
-  },
-  {
-   "id": "shadow",
-   "name": "Shadow",
-   "line": "A living shadow: strong in the dark, gone in light",
-   "group": "Deep things",
-   "state": "unmarked",
-   "fits": [
-    "sanctum",
-    "rift",
-    "archive"
-   ],
-   "comment": "Things of the deep, surely.",
-   "themes": [
-    "deep"
-   ],
-   "role": "Hunter",
-   "answer": "Strong in the dark, gone in light",
-   "answerKind": "Light",
-   "proposal": "cut",
-   "proposalWhy": "Same as the wraith: darkness that moves, beaten by light"
-  },
-  {
-   "id": "bandit-chief",
-   "name": "Bandit chief",
-   "line": "Leads the outlaws",
-   "group": "People and goblinkin",
-   "state": "keep",
-   "fits": [
-    "bandits"
-   ],
-   "comment": "Your addition (round 15)",
-   "themes": [
-    "outlaws"
-   ],
-   "role": "Leader",
-   "answer": "Fell it and the outlaws falter",
-   "answerKind": "Fell the leader",
-   "proposal": "keep"
-  },
-  {
-   "id": "dark-elf",
-   "name": "Dark elf",
-   "line": "Of the deep; one or two",
-   "group": "Deep things",
-   "state": "maybe",
-   "fits": [
-    "caverns",
-    "glowing",
-    "underwood",
-    "rift"
-   ],
-   "comment": "Maybe a dark elf or two.",
-   "themes": [
-    "deep"
-   ],
-   "role": "Hunter",
-   "answer": "Sees in the dark and thinks: bright light blinds it",
-   "answerKind": "Light",
-   "proposal": "keep"
   }
  ],
  "tags": [
@@ -4232,5 +4599,113 @@
  "duties": [
   "Guard a post",
   "Walk a round"
+ ],
+ "families": [
+  {
+   "name": "Rats",
+   "kind": "Pests"
+  },
+  {
+   "name": "Bats",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Spiders",
+   "kind": "Pests"
+  },
+  {
+   "name": "Wolves",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Cave bear",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Cave lion",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Giant centipede",
+   "kind": "Pests"
+  },
+  {
+   "name": "Worm",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Eel",
+   "kind": "Water"
+  },
+  {
+   "name": "Cave crab",
+   "kind": "Water"
+  },
+  {
+   "name": "Leech",
+   "kind": "Water"
+  },
+  {
+   "name": "Snake",
+   "kind": "Beasts"
+  },
+  {
+   "name": "Oozes",
+   "kind": "Deep things"
+  },
+  {
+   "name": "Floating eye",
+   "kind": "Deep things"
+  },
+  {
+   "name": "Mimic",
+   "kind": "Deep things"
+  },
+  {
+   "name": "Golems",
+   "kind": "Made"
+  },
+  {
+   "name": "The dead",
+   "kind": "Undead"
+  },
+  {
+   "name": "Goblins",
+   "kind": "Goblinkin"
+  },
+  {
+   "name": "The cult",
+   "kind": "People"
+  },
+  {
+   "name": "Giants",
+   "kind": "Giants"
+  },
+  {
+   "name": "Bandits",
+   "kind": "People"
+  },
+  {
+   "name": "Dark elves",
+   "kind": "Dark elves"
+  },
+  {
+   "name": "Elementals",
+   "kind": "Elementals"
+  },
+  {
+   "name": "Dragon",
+   "kind": "Dragons"
+  }
+ ],
+ "ranks": [
+  "Common",
+  "Greater",
+  "Warrior",
+  "Archer",
+  "Caster",
+  "Leader",
+  "Boss",
+  "Special"
  ]
 }

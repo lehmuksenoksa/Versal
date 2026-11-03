@@ -1,4 +1,6 @@
-# Round 17: each monster's role and answer
+# Round 17: each monster's role and answer (withdrawn)
+
+**Withdrawn before it was answered.** Too piecemeal, and too focused on stealth (round 18). The roster is now yours, by family and rank (`monsters.md`).
 
 With round 16's roles: one role per monster type. Guard and patrol are duties given by placement,
 not roles. For each monster: its **role** and its **answer** (what gets you past it). Two monsters
