@@ -1,5 +1,22 @@
 # Round 16: the roles
 
+**Answered:**
+- **Roles kept:** wanderer, pack, swarm, ambusher, hunter, alarm-raiser, brute, caster, leader,
+  lure, thief, boss, and the new breeder.
+- **Merged:** tracker into hunter (both "come after you"); water hazard into ambusher (an ambusher
+  in water). The scavenger was left unmarked.
+- **Guard and patroller are duties, not roles.** In your words: "I think it'd be better if some of
+  the same foes could patrol and guard, and we wouldn't need separate monster types for those.
+  The other ones are probably one per monster." So a monster type has one role, and where it's
+  placed can give it a duty: guard a post, or walk a round.
+- **Comments:**
+  - **Ambusher:** "Also animated armors."
+  - **Pack:** "I'd love a way to attract the attention of one at a time."
+  - **Swarm:** "Can also be easily fought in tighter spaces, killing one by one."
+  - **Lure:** "How would it lure? Maybe they would lead to treasures and monsters both."
+  - **Tracker:** "Not sure about this. To keep this fun, there would need to be a good chance of
+    finding the feature that stops the tracking. And it's pretty similar to hunter."
+
 You asked to open the roles up and go through them in a round of their own. A role is what a
 monster does to you, seen from a sneaking player's side: how it finds you, and what kind of
 trouble it is once it has. Each monster gets one (round 17), with its answer: what gets you past

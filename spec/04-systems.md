@@ -49,6 +49,26 @@ come with the content.
 
   The tags are summed into one profile when a monster is made, and each tag lists what it can't go
   with.
+- **Monsters' roles and duties** (round 16). Each monster type has one role:
+  - wanderer;
+  - pack;
+  - swarm;
+  - ambusher;
+  - hunter;
+  - alarm-raiser;
+  - brute;
+  - caster;
+  - leader;
+  - lure;
+  - thief;
+  - breeder;
+  - boss.
+
+  Guarding a post and walking a round are **duties**, given by where a monster is placed, not
+  monster types. Wishes from the round:
+  - a way to draw one of a pack's attention at a time;
+  - swarms that can be fought one by one in tight spaces;
+  - lures that may lead to treasure as well as to monsters.
 - **What the levels hold:** all five.
   - Hiding places (alcoves, curtains, deep shadow).
   - Traps (alarms, pits, spikes; found by searching; usable against monsters).

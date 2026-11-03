@@ -95,8 +95,8 @@ Each part's state is one of:
 | 13 | A world by depth, the regions set in it, your idea ([`round13-depth.md`](round13-depth.md)) | answered |
 | 14 | Culling the Dungeon Underneath ([`round14-dungeon.md`](round14-dungeon.md)) | answered |
 | 15 | Themes: what goes with what; who holds the castle-like dungeon ([`round15-themes.md`](round15-themes.md)) | answered |
-| 16 | The roles, opened up ([`round16-roles.md`](round16-roles.md)) | on the choices page |
-| 17 | Each monster's role and answer (drafted: [`round17-monster-roles.md`](round17-monster-roles.md)) | after round 16 |
+| 16 | The roles, opened up ([`round16-roles.md`](round16-roles.md)) | answered |
+| 17 | Each monster's role and answer ([`round17-monster-roles.md`](round17-monster-roles.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
