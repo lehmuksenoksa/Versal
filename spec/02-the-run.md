@@ -32,12 +32,25 @@ Built on round 1:
 In your words: "I want the map to be random generated, but with regions with different feel and a
 bit different gameplay as well. And there should be surprises on each run. Positive ones as well."
 
+## Regions and areas (round 8)
+
+- **Regions** (whole levels): the dungeon, the drowned city, the dwarven hold, the bandits' hold,
+  the cult's sanctum.
+- **Either a region or an area:** the collapsed rooms, the caverns, the sewers, the mines, the
+  archive.
+- **Areas** (a part of a level): the goblin king's halls, the glowing deep, the goblin warrens,
+  the webs, the forge, the sulphur vents, the rift, the bone field, the underwood, the pits.
+- **Each run draws its regions:** each stage of the run takes one region from the few that fit
+  its depth, so runs differ while danger rises top to bottom.
+
+(Details: `round8-regions-areas.md`.)
+
 ## Open
 
 - **The reason to go down, and the bottom** (2.1): "We can come up with something later." On
   round 4's board with the regions. The ideas so far: the cult waking something under the king's halls; a relic to fetch
   and bring back up; the goblin king as the end.
-- **The regions** (2.2): round 4, a board of ideas (`round4-regions.md`).
+- **The regions** (2.2): which fit which depth, and what's in each: later.
   Round 2 sketched four, kept as a starting point:
   - the dungeon;
   - the caverns;
