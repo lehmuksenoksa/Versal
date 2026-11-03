@@ -9,6 +9,17 @@ that makes this game unique among roguelikes, but it shouldn't be the only thing
 gameplay should be fighting melee, shooting enemies, retreating to a better position, running
 away."
 
+## The bosses (round 19)
+
+Yours:
+- **The Dungeon Underneath:** the lich, leading the cult or the undead, whichever holds it that
+  run (round 15).
+- **Goblin Territory:** the goblin king.
+- **The Abandoned Dwarven Keep:** the dragon.
+- **The Deep Dark:** the dark elf prince, with the dark elves.
+- **The Drowned City:** an eldritch horror, with a new family of its kind: abominations, shadows,
+  lurkers.
+
 ## Ranks
 
 How a family fights. Not every family has every rank.
@@ -42,9 +53,10 @@ How a family fights. Not every family has every rank.
 | The cult | Cultist | | Cultist warrior | Cultist archer | Cult priest | | | |
 | Bandits | Bandit | | | Bandit archer | | Bandit chief | | Thief |
 | Giants | Troll, ogre | | | | | | | |
-| Dark elves | Dark elf | | Dark elf warrior | Dark elf archer | Dark elf wizard | Dark elf prince | | |
+| Dark elves | Dark elf | | Dark elf warrior | Dark elf archer | Dark elf wizard | | Dark elf prince | |
 | Elementals | Earth, water, fire elemental | Greater earth, water, fire elemental | | | | | | |
 | Dragon | | | | | | | Dragon | |
+| Eldritch | Shadow | Abomination | | | | | Eldritch horror | Lurker |
 
 **Not on your list, so out:** the drowned dead, the banshee, the kobold, the spore-folk, the
 shrieker, the lake thing, the gargoyle, the shadow. The cave cat, the deep worm and the watcher

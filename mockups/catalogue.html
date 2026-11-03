@@ -72,6 +72,10 @@
   section { display: grid; gap: 14px; }
   table.grid { font-size: 14px; }
   table.best th { white-space: nowrap; }
+  table.where td.w { text-align: center; color: var(--amber); border-left: 1px solid var(--line); min-width: 34px; }
+  table.where th.grp { text-align: center; color: var(--dim); border-left: 1px solid var(--line); }
+  table.where tr.boss td .c { font-size: 12px; white-space: nowrap; }
+  table.where th.r { white-space: nowrap; color: var(--paper); text-transform: none; letter-spacing: 0; font-size: 15px; }
   table.best tr.kindrow th { padding-top: 16px; color: var(--amber); font: 600 12px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; }
   table.grid th.k { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; padding: 8px 4px; text-align: left; vertical-align: bottom; }
   table.grid th.r { white-space: nowrap; color: var(--paper); text-transform: none; letter-spacing: 0; font-size: 15px; }
@@ -85,11 +89,12 @@
 <main>
   <header>
     <h1>The catalogue</h1>
-    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 18), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 19), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
   </header>
   <nav class="bar" aria-label="Views">
     <a href="#regions">By region</a>
     <a href="#bestiary">Bestiary</a>
+    <a href="#where">Where</a>
     <a href="#roles">Roles</a>
     <a href="#themes">Themes</a>
     <a href="#holes">Holes</a>
@@ -113,7 +118,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let C = null;
 const KIND = { world: "The world", region: "Region", transition: "Transition", themed: "Themed area" };
-const VIEWS = ["regions", "bestiary", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
+const VIEWS = ["regions", "bestiary", "where", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
 
 function shown(x) {
   if (x.state === "maybe") return $("#show-maybe").checked;
@@ -159,6 +164,18 @@ function bestiaryView() {
     `<tr><th class="r">${esc(f.name)}</th>${ranks.map((r) => `<td class="g">${ms.filter((m) => m.family === f.name && m.rank === r).map(chip).join("")}</td>`).join("")}</tr>`).join("")).join("");
   return `<section><p class="note">Your roster of monsters (round 18), by family and rank. A family's ranks are how it fights: common ones, greater kinds, warriors in melee, archers shooting, casters, leaders, a boss, and the special ones that work their own way. Empty cells aren't holes by themselves: not every family needs every rank. Hover a name for its line.</p>
     <div class="wrap"><table class="grid best">${head}${rows}</table></div></section>`;
+}
+
+function whereView() {
+  const cols = [...C.places_of_world.map((w) => ({ id: w.id, name: w.name, group: "The world by depth" })),
+    ...C.regions.filter((r) => r.kind !== "world").map((r) => ({ id: r.id, name: r.name.replace(/^The /, ""), group: { region: "Regions", transition: "Transitions", themed: "Themed areas" }[r.kind], boss: r.boss }))];
+  const groups = [...new Set(cols.map((c) => c.group))];
+  const head1 = `<tr><th></th>${groups.map((g) => `<th colspan="${cols.filter((c) => c.group === g).length}" class="grp">${esc(g)}</th>`).join("")}</tr>`;
+  const head2 = `<tr><th>Family</th>${cols.map((c) => `<th class="k">${esc(c.name)}</th>`).join("")}</tr>`;
+  const bossRow = `<tr class="boss"><th class="r">Boss</th>${cols.map((c) => `<td class="w">${c.boss ? `<span class="c">${esc(c.boss)}</span>` : ""}</td>`).join("")}</tr>`;
+  const rows = C.families.map((f) => `<tr><th class="r">${esc(f.name)}</th>${cols.map((c) => `<td class="w">${(f.homes ?? []).includes(c.id) ? "●" : ""}</td>`).join("")}</tr>`).join("");
+  return `<section><p class="note">Where each family lives: in the world by depth, in the regions, transitions and themed areas. The bosses are yours (round 19); the rest of the table is my proposal, to correct as a whole.</p>
+    <div class="wrap"><table class="grid where">${head1}${head2}${bossRow}${rows}</table></div></section>`;
 }
 
 function rolesView() {
@@ -227,6 +244,7 @@ function render() {
   $("#view").innerHTML = {
     regions: regionsView,
     bestiary: bestiaryView,
+    where: whereView,
     roles: rolesView,
     themes: themesView,
     holes: holesView,

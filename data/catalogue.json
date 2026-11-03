@@ -12,31 +12,36 @@
    "name": "The Dungeon Underneath",
    "kind": "region",
    "line": "Built rooms and corridors, falling in toward the caves",
-   "inGame": true
+   "inGame": true,
+   "boss": "Lich"
   },
   {
    "id": "goblin-territory",
    "name": "Goblin Territory",
    "kind": "region",
-   "line": "The goblin king's halls, the warrens and the pits"
+   "line": "The goblin king's halls, the warrens and the pits",
+   "boss": "Goblin king"
   },
   {
    "id": "dwarven-keep",
    "name": "Abandoned Dwarven Keep",
    "kind": "region",
-   "line": "A fallen dwarf city and its forge"
+   "line": "A fallen dwarf city and its forge",
+   "boss": "Dragon"
   },
   {
    "id": "deep-dark",
    "name": "The Deep Dark",
    "kind": "region",
-   "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots"
+   "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots",
+   "boss": "Dark elf prince"
   },
   {
    "id": "drowned-city",
    "name": "The Drowned City",
    "kind": "region",
-   "line": "Ruins half under black water"
+   "line": "Ruins half under black water",
+   "boss": "Eldritch horror"
   },
   {
    "id": "mines",
@@ -2693,7 +2698,7 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "The Dungeon Underneath's boss, leading the cult or the undead (your words): whichever holds it that run"
   },
   {
    "id": "will-o-wisp",
@@ -2837,7 +2842,7 @@
    "themes": [
     "goblins"
    ],
-   "comment": "",
+   "comment": "Goblin Territory's boss",
    "role": "Boss",
    "answer": "Waits with his guard: get past, or kill him",
    "answerKind": "Get past"
@@ -3085,12 +3090,12 @@
    "name": "Dark elf prince",
    "family": "Dark elves",
    "kind": "Dark elves",
-   "rank": "Leader",
+   "rank": "Boss",
    "state": "keep",
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "Leads the dark elves; the Deep Dark's boss (your words)"
   },
   {
    "id": "dark-elf-wizard",
@@ -3186,7 +3191,7 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "The Dwarven Keep's boss (your words)"
   },
   {
    "id": "drowned-dead",
@@ -3319,27 +3324,6 @@
    "proposalWhy": "Close to the animated armour (still until you pass, in the dwarves' theme too); give it a different answer, or cut one"
   },
   {
-   "id": "shadow",
-   "name": "Shadow",
-   "line": "A living shadow: strong in the dark, gone in light",
-   "group": "Deep things",
-   "state": "drop",
-   "fits": [
-    "sanctum",
-    "rift",
-    "archive"
-   ],
-   "comment": "Things of the deep, surely. Not in your list (round 18).",
-   "themes": [
-    "deep"
-   ],
-   "role": "Hunter",
-   "answer": "Strong in the dark, gone in light",
-   "answerKind": "Light",
-   "proposal": "cut",
-   "proposalWhy": "Same as the wraith: darkness that moves, beaten by light"
-  },
-  {
    "id": "burrower",
    "name": "Burrower",
    "line": "Hears steps through the ground and comes up under you",
@@ -3403,15 +3387,6 @@
    "comment": ""
   },
   {
-   "id": "lurker",
-   "name": "Lurker",
-   "line": "Lies flat on the ceiling, drops on you",
-   "group": "Deep things",
-   "state": "drop",
-   "fits": [],
-   "comment": ""
-  },
-  {
    "id": "cloaker",
    "name": "Cloaker",
    "line": "Like a cloak in the dark; smothers lights",
@@ -3419,6 +3394,70 @@
    "state": "drop",
    "fits": [],
    "comment": ""
+  },
+  {
+   "id": "shadow",
+   "name": "Shadow",
+   "family": "Eldritch",
+   "kind": "Eldritch",
+   "rank": "Common",
+   "state": "keep",
+   "line": "A living shadow",
+   "fits": [
+    "drowned"
+   ],
+   "themes": [
+    "drowned"
+   ],
+   "comment": "Your addition (round 19)"
+  },
+  {
+   "id": "lurker",
+   "name": "Lurker",
+   "family": "Eldritch",
+   "kind": "Eldritch",
+   "rank": "Special",
+   "state": "keep",
+   "line": "Lies hidden until you're close",
+   "fits": [
+    "drowned"
+   ],
+   "themes": [
+    "drowned"
+   ],
+   "comment": "Your addition (round 19)"
+  },
+  {
+   "id": "abomination",
+   "name": "Abomination",
+   "family": "Eldritch",
+   "kind": "Eldritch",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "A thing that shouldn't be",
+   "fits": [
+    "drowned"
+   ],
+   "themes": [
+    "drowned"
+   ],
+   "comment": "Your addition (round 19)"
+  },
+  {
+   "id": "eldritch-horror",
+   "name": "Eldritch horror",
+   "family": "Eldritch",
+   "kind": "Eldritch",
+   "rank": "Boss",
+   "state": "keep",
+   "line": "The Drowned City's boss (your words)",
+   "fits": [
+    "drowned"
+   ],
+   "themes": [
+    "drowned"
+   ],
+   "comment": "Your addition (round 19)"
   }
  ],
  "tags": [
@@ -4603,99 +4642,227 @@
  "families": [
   {
    "name": "Rats",
-   "kind": "Pests"
+   "kind": "Pests",
+   "homes": [
+    "world-shallow",
+    "dungeon-underneath",
+    "goblin-territory",
+    "sewers"
+   ]
   },
   {
    "name": "Bats",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-shallow",
+    "world-middle",
+    "world-deep",
+    "deep-dark",
+    "mines"
+   ]
   },
   {
    "name": "Spiders",
-   "kind": "Pests"
+   "kind": "Pests",
+   "homes": [
+    "world-shallow",
+    "world-middle",
+    "deep-dark",
+    "dungeon-underneath"
+   ]
   },
   {
    "name": "Wolves",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-middle",
+    "goblin-territory"
+   ]
   },
   {
    "name": "Cave bear",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-middle",
+    "deep-dark"
+   ]
   },
   {
    "name": "Cave lion",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-deep",
+    "deep-dark"
+   ]
   },
   {
    "name": "Giant centipede",
-   "kind": "Pests"
+   "kind": "Pests",
+   "homes": [
+    "world-middle",
+    "deep-dark",
+    "mines"
+   ]
   },
   {
    "name": "Worm",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-middle",
+    "world-deep",
+    "deep-dark",
+    "mines"
+   ]
   },
   {
    "name": "Eel",
-   "kind": "Water"
+   "kind": "Water",
+   "homes": [
+    "drowned-city",
+    "sewers"
+   ]
   },
   {
    "name": "Cave crab",
-   "kind": "Water"
+   "kind": "Water",
+   "homes": [
+    "drowned-city",
+    "sewers"
+   ]
   },
   {
    "name": "Leech",
-   "kind": "Water"
+   "kind": "Water",
+   "homes": [
+    "drowned-city",
+    "sewers"
+   ]
   },
   {
    "name": "Snake",
-   "kind": "Beasts"
+   "kind": "Beasts",
+   "homes": [
+    "world-shallow",
+    "world-middle",
+    "deep-dark",
+    "drowned-city"
+   ]
   },
   {
    "name": "Oozes",
-   "kind": "Deep things"
+   "kind": "Deep things",
+   "homes": [
+    "world-middle",
+    "deep-dark",
+    "drowned-city",
+    "sewers"
+   ]
   },
   {
    "name": "Floating eye",
-   "kind": "Deep things"
+   "kind": "Deep things",
+   "homes": [
+    "world-deep",
+    "drowned-city",
+    "archive"
+   ]
   },
   {
    "name": "Mimic",
-   "kind": "Deep things"
+   "kind": "Deep things",
+   "homes": [
+    "dungeon-underneath",
+    "dwarven-keep",
+    "archive"
+   ]
   },
   {
    "name": "Golems",
-   "kind": "Made"
+   "kind": "Made",
+   "homes": [
+    "dwarven-keep",
+    "archive"
+   ]
   },
   {
    "name": "The dead",
-   "kind": "Undead"
+   "kind": "Undead",
+   "homes": [
+    "world-shallow",
+    "world-middle",
+    "dungeon-underneath",
+    "dwarven-keep"
+   ]
   },
   {
    "name": "Goblins",
-   "kind": "Goblinkin"
+   "kind": "Goblinkin",
+   "homes": [
+    "world-shallow",
+    "world-middle",
+    "goblin-territory"
+   ]
   },
   {
    "name": "The cult",
-   "kind": "People"
+   "kind": "People",
+   "homes": [
+    "dungeon-underneath",
+    "sanctum",
+    "drowned-city"
+   ]
   },
   {
    "name": "Giants",
-   "kind": "Giants"
+   "kind": "Giants",
+   "homes": [
+    "world-middle",
+    "goblin-territory",
+    "deep-dark"
+   ]
   },
   {
    "name": "Bandits",
-   "kind": "People"
+   "kind": "People",
+   "homes": [
+    "world-shallow",
+    "dungeon-underneath",
+    "bandits"
+   ]
   },
   {
    "name": "Dark elves",
-   "kind": "Dark elves"
+   "kind": "Dark elves",
+   "homes": [
+    "world-deep",
+    "deep-dark"
+   ]
   },
   {
    "name": "Elementals",
-   "kind": "Elementals"
+   "kind": "Elementals",
+   "homes": [
+    "world-deep",
+    "deep-dark",
+    "dwarven-keep",
+    "drowned-city",
+    "mines"
+   ]
   },
   {
    "name": "Dragon",
-   "kind": "Dragons"
+   "kind": "Dragons",
+   "homes": [
+    "dwarven-keep"
+   ]
+  },
+  {
+   "name": "Eldritch",
+   "kind": "Eldritch",
+   "homes": [
+    "world-deep",
+    "drowned-city"
+   ]
   }
  ],
  "ranks": [
@@ -4707,5 +4874,19 @@
   "Leader",
   "Boss",
   "Special"
+ ],
+ "places_of_world": [
+  {
+   "id": "world-shallow",
+   "name": "Shallow"
+  },
+  {
+   "id": "world-middle",
+   "name": "Middle"
+  },
+  {
+   "id": "world-deep",
+   "name": "Deep"
+  }
  ]
 }

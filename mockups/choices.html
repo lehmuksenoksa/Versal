@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>Nothing to answer just now</h1>
-    <p>Round 17 was withdrawn before it was answered. Your roster of monsters (round 18) is in the catalogue's Bestiary view and in spec/monsters.md. The next round comes once we've agreed what it takes up.</p>
+    <h1>The full game, round 19: where the families live</h1>
+    <p>Your bosses are in (the lich, the goblin king, the dragon, the dark elf prince, an eldritch horror) and a new eldritch family. One table for the big picture, on the catalogue page under Where: each family against the world by depth and the places, to correct as a whole. And two small questions it raised.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,6 +88,9 @@
 <script>
 const P = "choices/";
 const Q = [
+  {"id": "s19_where", "title": "Where each family lives", "said": "", "how": "One table: each family against the world by depth (shallow, middle, deep), the five regions, the transitions and the themed areas, with your bosses on top. Open it on the catalogue page, under Where: https://claude.ai/artifact/WpPGj87jr2GcuEkkfBrTKv#where. The bosses are yours; the rest is my proposal. Correct it as a whole, in the comment.", "tile": "200px", "why": "<b>As a start</b>: built round your bosses (dark elves in the Deep Dark, the dragon and golems in the Keep, the eldritch and water things in the Drowned City). Gaps to see: a breach has nobody; the elementals are spread thin (earth in the Deep Dark, fire in the Keep's forge, water in the Drowned City).", "opts": [{"k": "Fine", "n": "As a start", "d": "", "img": [], "rec": 1}, {"k": "Change", "n": "Say what in the comment", "d": "", "img": []}]},
+  {"id": "s19_lich", "title": "The lich, when outlaws hold the dungeon", "said": "Dungeon could have a Lich (either as the leader of the cult or as the leader of the undead)", "how": "Round 15 draws the Dungeon Underneath's holder each run: the dead garrison, the cult, or outlaws. With the dead or the cult, the lich leads them. With outlaws holding it:", "tile": "200px", "why": "<b>A</b>: the lich stays the region's boss every run, deeper in, below the outlaws' rooms; the bandit chief leads the outlaws above it.", "opts": [{"k": "A", "n": "The lich is still there, deeper", "d": "The outlaws hold the upper rooms; the lich waits below.", "img": [], "rec": 1}, {"k": "B", "n": "The bandit chief is the boss that run", "d": "", "img": []}, {"k": "C", "n": "Outlaws can't hold the dungeon", "d": "Only the dead or the cult.", "img": []}]},
+  {"id": "s19_eldritch", "title": "The eldritch family", "said": "The Drowned City could have an Eldritch Horror as a boss, and other similar monster types Abomination, Shadows, Lurkers", "how": "As placed: shadow (common), abomination (greater), lurker (special), eldritch horror (boss).", "tile": "200px", "why": "", "opts": [{"k": "Fine", "n": "", "d": "", "img": [], "rec": 1}, {"k": "Change", "n": "Say what in the comment", "d": "", "img": []}]},
 ];
 
 const state = {};  // id -> { choice: [], comment: "" }

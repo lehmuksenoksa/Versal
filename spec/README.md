@@ -98,6 +98,7 @@ Each part's state is one of:
 | 16 | The roles, opened up ([`round16-roles.md`](round16-roles.md)) | answered |
 | 17 | Each monster's role and answer ([`round17-monster-roles.md`](round17-monster-roles.md)) | withdrawn: too piecemeal, too focused on stealth |
 | 18 | Your roster of monsters, by family and rank ([`monsters.md`](monsters.md)); the heart of the game widened to fighting as well as stealth | decided |
+| 19 | The bosses and the eldritch family (yours); where each family lives, as one table | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

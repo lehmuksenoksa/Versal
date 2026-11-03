@@ -87,6 +87,14 @@ garrison, the cult, or outlaws.
 **Goblins:** halls and the throne room rare; camps, guard posts, warrens, pits and crude prisons
 common.
 
+## Bosses (round 19)
+
+- The Dungeon Underneath: the lich (leading the cult or the undead, whichever holds it).
+- Goblin Territory: the goblin king.
+- The Abandoned Dwarven Keep: the dragon.
+- The Deep Dark: the dark elf prince.
+- The Drowned City: an eldritch horror.
+
 ## Open
 
 - **The reason to go down, and the bottom** (2.1): "We can come up with something later." On
