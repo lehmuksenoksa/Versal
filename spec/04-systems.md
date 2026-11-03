@@ -1,82 +1,84 @@
-# 4. Systems (proposed in outline, round 2)
+# 4. Systems
 
 The rules the game runs on, in outline: how deep each one goes. Their details (numbers, lists)
-come with the content in round 3. Asked on the choices page, round 2.
+come with the content.
 
-Today's systems:
-- light in bands, with the lamp on or off;
-- awareness in stages (unaware, suspicious, alarmed);
-- noise heard as words on the map;
-- speeds;
-- sneak attacks;
-- morale;
-- bleeding and poison;
-- traits, some of them hidden;
-- doors and secret doors.
+## Decided (round 2)
+
+- **Monsters' minds: searching, and a level that keeps watch.**
+  - Searching: a monster that loses you goes to where it last saw or heard you and looks round,
+    and it follows noises to their source.
+  - Watch: guards at posts and patrols on routes; packs that call others when alarmed (a shout, a
+    goblin horn); sleepers woken by the alarm.
+  - Minds are small sets of states with clear rules, cheap per turn and testable without a
+    browser.
+  - The level-wide alert that rises over time is not decided (it went with 2.4).
+- **Light: lights you can put out and light.** Braziers, candles and campfires take a turn or two
+  and make a noise. Monsters may relight them, or grow suspicious. The lamp stays on or off: not
+  hooded, and no light to throw.
+- **Noise: noise to use, and the ground's sound.**
+  - Throw a stone (or anything) to make a noise where it lands; monsters go to look.
+  - Some floors are loud (rubble, water), some quiet (moss, carpet); running is loud.
+  - Floors are drawn so their sound can be read (part 8).
+- **Fighting: a few choices, and shooting.**
+  - A monster's heavy blow is shown a turn before.
+  - Shove (into a pit, water, a fire).
+  - Weapons that differ (a dagger quick, a spear reaching two, an axe sweeping, a hammer
+    stunning).
+  - Bows, slings and crossbows, for you and for monsters.
+
+  Critique carried forward: shooting from the dark can make sneaking too easy. The ways to keep it
+  in check are listed under 4.2 (round 3) and in part 5 (ammunition, the noise of a shot, monsters
+  that shoot back from cover).
+- **Things to find:**
+  - light (oil, candles; not to throw, by the light decision);
+  - things to throw (stones, darts, nets, caltrops);
+  - scrolls;
+  - charms (rings, amulets);
+  - wands;
+  - keys.
+
+  No food.
+- **What the levels hold:** all five.
+  - Hiding places (alcoves, curtains, deep shadow).
+  - Traps (alarms, pits, spikes; found by searching; usable against monsters).
+  - Locked doors (picked, or opened with keys).
+  - Levers and hidden ways.
+  - Water and ledges (deep water to swim without the lamp; ledges to drop from).
 
 ---
 
-## 4.1 The monsters' minds
+## 4.2 What light is worth (round 3)
 
-The biggest piece of a stealth game. Today a monster notices you, chases, and gives up.
+Your question: "I'm not sure what's the benefit of having a light on. It attracts monsters."
 
-| | Option | What it adds | Costs and consequences |
+Today, light gives:
+- **sight:** with the lamp out you see only a square or two, beyond that only what the level's
+  lights show;
+- **speed:** a step with the lamp out takes one and a half turns.
+
+Against that, it makes you easy to notice from far off. The sight is worth less than it seems:
+- the map remembers what you've seen;
+- the noise words show monsters you can't see;
+- the level's own lights show much of the way.
+
+So the lamp is mostly a speed boost with a big cost, and a careful player keeps it out.
+
+For light to be a real choice, it has to show what the dark hides and help where the dark hurts.
+These are the ways it could. More than one can be picked, and any of them makes the oil (2.4 A)
+worth spending.
+
+| | Way | What it means | Cost |
 |---|---|---|---|
-| A | **Searching** | A monster that loses you goes to where it last saw or heard you, and looks round; it follows noises to their source. | **M**. Cheap per turn. |
-| B | **A, and a level that keeps watch** *(my pick)* | Guards at posts and patrols on routes; packs that call others when alarmed (a shout heard as a word, a goblin horn); the level's alert (2.4, B) raising patrols and waking sleepers. | **L**. Patrol routes are made with the level (part 6). A monster's mind is a small set of states with clear rules, so it stays cheap and can be tested without a browser. |
-| C | **B, and monsters that notice changes** | They notice a doused light, a door left open, a body, a missing friend, and grow suspicious. | **XL**: each change has to be remembered and seen. It's the richest stealth, but the hardest to make clear to the player (why did it notice?) and to balance. |
+| ✓ | **Traps and secrets show only in light** *(my pick)* | In the dark, you find a trap by walking into it, and secret doors and levers only by searching. With the lamp lit they're found as you pass. Walking in the dark becomes a risk you take on purpose. | **S** |
+| ✓ | **The dark is blind** *(my pick)* | Blows in the dark miss more, and you can't shoot what you can't see. Monsters that see in the dark (goblins, spiders) don't suffer it; others do. Shooting from the dark needs the target lit, by its own light or a level's, which keeps shooting in check (round 2's critique). | **S** |
+| ✓ | **Some things shun light** *(my pick)* | Rats, bats and spiders keep out of your light and won't attack into it. Some of the dead are slowed in it. A swarm is held off by the lamp. Light becomes a shield against some kinds, and a beacon to others. | **M** (the minds read light) |
+| ✓ | **Reading needs light** *(my pick)* | Scrolls and notes can't be read in the dark. Spells already known can be cast. | **S** |
+| | **Things told only in light** | In the dark band you see that something is there, not what: "a monster", "something on the floor". | **S** |
 
-## 4.2 Light
+Together with the dread of the dark (2.4 B), the choice becomes:
+- **Light:** you see the traps, fight well, hold off vermin, read, and gain ground (and
+  experience, since seeing new ground earns it) faster. It costs oil and draws eyes.
+- **Dark:** you go unseen, but blind to traps, fighting badly, while dread rises.
 
-| | Option | Costs and consequences |
-|---|---|---|
-| A | **As now:** the lamp on or off; the level's lights fixed | Nothing new. |
-| B | **Lights you can put out and light:** braziers, candles, campfires (a turn or two, and a noise); monsters may relight them, or grow suspicious | Lights change during a level, so their light and shadows are worked out again when they do. The light is drawn in bands already worked out per light, so it's cheap to redo one light. **M** |
-| C | **B, and light you carry and throw** *(my pick)*: a hooded lamp with three settings (out, dim, full); torches and oil flasks to throw (a light where it lands, or fire) | Light becomes your main tool. A dim setting is a middle way between sneaking and seeing. Thrown light needs aiming (the Shift-hover can point it), items, and fire rules. **L** |
-
-**Why C:** with the lamp's oil as the run's resource (2.4), how you spend light should be rich.
-Laptops only (round 1) means changing lights cost little.
-
-## 4.3 Noise
-
-| | Option | Costs and consequences |
-|---|---|---|
-| A | **As now:** steps, fights and doors make noise, heard as words | — |
-| B | **A, and noise to use** *(my pick)*: throw a stone (or anything) to make a noise where it lands; monsters go to look (with 4.1 A) | The simplest lure in stealth games. Aiming as for thrown light. **S** |
-| C | **B, and the ground's sound:** some floors loud (rubble, water: already), some quiet (moss, carpet); running loud | Floors marked by their sound, drawn so they can be read (part 8). **M** |
-
-## 4.4 Fighting
-
-Today a fight is bumping into a monster and trading blows, with sneak attacks and morale.
-
-| | Option | Costs and consequences |
-|---|---|---|
-| A | **As now** | Fights stay simple, and the stealth carries the game. |
-| B | **Fights with a few choices** *(my pick)*: a monster's heavy blow shown a turn before (step away or take it); shove (into a pit, water, a fire, off a ledge); weapons that differ (a dagger quick, a spear reaches two, an axe sweeps, a hammer stuns) | When a fight does happen it's worth thinking about, not just trading blows. The warnings and weapon reach need drawing (part 8) and explaining (tips). **L** |
-| C | **B, and shooting:** bows, slings, crossbows, for you and for monsters | Kills from the dark, which needs care (it can make sneaking too easy). Monsters that shoot need cover rules and smarter minds. **L** on top. |
-
-## 4.5 Kinds of things to find
-
-Today there are weapons, armour and potions. More than one can be picked.
-
-| | Kind | What it brings | Cost |
-|---|---|---|---|
-| ✓ | **Light** *(my pick)* | Oil, torches, oil flasks, candles. Needed by 2.4 A and 4.2 C | S |
-| ✓ | **Things to throw** *(my pick)* | Stones (noise), darts, nets, caltrops (slows those who follow). Needed by 4.3 B | S |
-| ✓ | **Scrolls** *(my pick)* | One-use magic suited to sneaking: darkness, silence, sleep, a blink of a few squares, see through walls. Unknown until read, as murky potions are today | M |
-| ✓ | **Charms** (rings, amulets) *(my pick)* | Worn for a lasting effect (quieter steps, better sight in the dark); a few slots. They go with the level-up choices | M |
-| | **Wands** | Charged magic. Overlaps with scrolls | M |
-| | **Keys** | For locked doors (4.6) | S |
-| | **Food** | Only with hunger (2.4 C) | S |
-
-## 4.6 What the levels hold
-
-More than one can be picked. Each is laid out with the level (part 6) and drawn (part 8).
-
-| | Thing | What it brings | Cost |
-|---|---|---|---|
-| ✓ | **Hiding places** *(my pick)* | Alcoves, curtains, deep shadow under arches: standing in one, you can't be seen unless a light falls on it or a monster steps next to you | M |
-| ✓ | **Traps** *(my pick)* | Alarm traps (a bell, a tripwire: noise), pits and spikes; found by searching, like secret doors; can be used against monsters | M |
-| | **Locked doors** | Locks picked (time and noise) or opened with keys | M |
-| | **Levers and hidden ways** | Secret passages opened by levers, bridges let down | M |
-| ✓ | **Water and ledges** *(my pick)* | Deep water to swim (no lamp), ledges to drop down from (and not climb back). Ways round guarded places | M |
+The answer changes room by room, which is what the stealth heart needs.

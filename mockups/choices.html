@@ -76,8 +76,8 @@
 
 <main>
   <header>
-    <h1>The full game, round 2: the run, the character, the systems</h1>
-    <p>Built on round 1 (stealth in the dark, about 10 levels, choices at each level up, big screens, one saved run). Each question has the options, my pick, and what each costs. Write-ups in the repository: spec/02-the-run.md, spec/03-the-character.md, spec/04-systems.md. Systems are in outline here: how deep each goes; the numbers and lists come with the content in round 3. Two questions take more than one pick.</p>
+    <h1>The full game, round 3: light, pressure, attributes, magic</h1>
+    <p>What round 2 left open, taken up: what light is worth (your question) and what keeps a run moving, which hang together; what each of your five attributes drives, how they grow, and what mana is for; and how to brainstorm the regions in round 4. Round 2's answers are written into spec/02-the-run.md, spec/03-the-character.md and spec/04-systems.md, with this round's proposals beneath them. The first two questions take more than one pick.</p>
   </header>
   <div class="bar" id="bar"><b id="count">0 of 0 chosen</b><nav class="dots" id="dots" aria-label="Questions"></nav><span class="note" id="note">Connecting…</span></div>
   <div id="warn" class="warn" hidden>Your choices can't be saved in this view. Open the page on claude.ai to save them.</div>
@@ -88,103 +88,50 @@
 <script>
 const P = "choices/";
 const Q = [
-  { id: "s2_goal", title: "The reason to go down, and the bottom", said: "", how: "The story's thread; it decides the last region. (Costs: S little, M, L, XL a large share of the whole.) Write-up: spec/02-the-run.md", tile: "260px",
-    why: "<b>A</b>: it turns something already in the game into the thread, and ends a stealth game in a region that can be about light and dark.",
+  { id: "s3r_light", title: "What light is worth", said: "At the moment, I'm not sure what's the benefit of having a light on. It attracts monsters. We need to think this more.", how: "Today light gives sight and speed, against being noticed from far off. The sight is worth less than it seems (the map remembers, the noise words show what you can't see, the level's lights show much), so the lamp is mostly a speed boost with a big cost. For light to be a real choice it has to show what the dark hides and help where the dark hurts. Pick any. (Costs: S little, M, L.) Write-up: spec/04-systems.md, 4.2", tile: "240px", multi: 1,
+    why: "<b>The first four</b>, with the dread of the dark (next question): light, you see the traps, fight well, hold off vermin, read, and gain ground (and experience) faster, but it costs oil and draws eyes; dark, you go unseen but blind to traps, fighting badly, while dread rises. The answer changes room by room.",
     opts: [
-      { k: "A", n: "The cult", d: "The cultists (already on level 1 with their lanterns) serve something sleeping under the goblin king's halls: they raise the dead in the crypts, buy the goblins' help, and are waking it. You go down to stop them; the last region is their sanctum. The cult runs through every region (notes, marks, patrols). One new region to design and draw, L.", img: [], rec: 1 },
-      { k: "B", n: "Fetch something and bring it back up", d: "A relic at the bottom; taking it wakes the levels above and you climb back out. Levels used twice, but less tense the second time; every level kept and changed (more saving and memory); the way up needs its own rules, L.", img: [] },
-      { k: "C", n: "The goblin king is the end", d: "As now. No new region, but 10 levels over 3 regions means 3–4 levels of each kind; a goblin is a weak final threat.", img: [] },
+      { k: "Traps", n: "Traps and secrets show only in light", d: "In the dark a trap is found by walking into it, secret doors and levers only by searching; lit, found as you pass. S", img: [], rec: 1 },
+      { k: "Blind", n: "The dark is blind", d: "Blows in the dark miss more; you can't shoot what you can't see. Monsters that see in the dark (goblins, spiders) don't suffer it. Shooting from the dark needs the target lit: keeps shooting in check. S", img: [], rec: 1 },
+      { k: "Shun", n: "Some things shun light", d: "Rats, bats, spiders keep out of your light and won't attack into it; some of the dead slowed in it. A shield against some kinds, a beacon to others. M", img: [], rec: 1 },
+      { k: "Read", n: "Reading needs light", d: "Scrolls and notes can't be read in the dark; spells already known can be cast. S", img: [], rec: 1 },
+      { k: "Told", n: "Things told only in light", d: "In the dark band you see that something's there, not what: \"a monster\", \"something on the floor\". S", img: [] },
     ] },
-  { id: "s2_regions", title: "The regions", said: "", how: "With the cult: 1. The dungeon, levels 1–3 (built rooms turning to collapsed; the dead, rats, first cultists; closed by the warden of the crypts). 2. The caverns, 4–5 (collapsed turning to caves; spiders, bats, first goblins; the brood mother). 3. The king's halls, 6–8 (caves turning to halls; goblins, warriors, trolls; the goblin king). 4. The sanctum, 9–10 (new: the cult's carved temple; cultists, the dead they raise, what they serve; the waking thing or its high priest). Monsters and bosses are a sketch, settled in round 3; asked here is the shape.", tile: "260px",
-    why: "<b>A</b>: three of today's kinds of ground and one new, each region a new place and danger.",
+  { id: "s3r_pressure", title: "What keeps a run moving", said: "", how: "Without pressure a careful player rests to full after every fight and waits out anything. Revisited with what light is worth. Pick any. Write-up: spec/02-the-run.md, 2.4", tile: "240px", multi: 1,
+    why: "<b>A and B</b> make light and dark a loop: light costs oil and draws monsters, the dark costs dread and hides what's there; neither is safe to stay in. Resting stops being free (lit burns oil, dark builds dread), which does most of what C would.",
     opts: [
-      { k: "A", n: "Four regions, as listed", d: "One new region to draw (the sanctum).", img: [], rec: 1 },
-      { k: "B", n: "Three regions", d: "No caverns region; the caves only between the dungeon and the halls. Less new work, less change over the run.", img: [] },
-      { k: "C", n: "Five regions", d: "Adding a second new one (e.g. a drowned region, flooded ruins). More to draw, L.", img: [] },
+      { k: "A", n: "The lamp's oil", d: "Burns while lit; found on levels; out of oil, dark till you find more. Only works if light is worth having. An oil gauge. M", img: [], rec: 1 },
+      { k: "B", n: "The dark wears on you", d: "Dread rises in the dark, falls in light. High: you hear things that aren't there (false noise words, not told from real ones), your hands shake (worse blows), at worst you panic for a turn. Fervor resists. M", img: [], rec: 1 },
+      { k: "C", n: "The level wakes up over time", d: "The longer you stay, the more monsters wander, wake, patrol. A level-wide alert read by the minds. M", img: [] },
+      { k: "D", n: "Hunger", d: "Food to find and eat; nothing to do with light or sneaking (food wasn't picked). M", img: [] },
+      { k: "E", n: "None", d: "As now.", img: [] },
     ] },
-  { id: "s2_boss", title: "What a boss is in a stealth game", said: "", how: "", tile: "260px",
-    why: "<b>A</b>: a boss you can get round keeps to the heart of the game; killing it is still worth more.",
+  { id: "s3r_attrs", title: "What each attribute drives", said: "Health, attack, defense, speed, sneakiness, mana/magic derived from attributes. I'd like them to be a bit different (more flavorful) than traditionally: Grit, brawn, cunning, fervor, acumen.", how: "Grit (toughness): health; resisting bleeding and poison; blows taken (defence, with armour). Brawn (strength): damage; heavy weapons and armour without penalty; shoving; carrying. Cunning (quickness, guile): sneakiness; hitting (any weapon, thrown or shot); traps and locks. Fervor (will, faith): half of mana; resisting dread and fear; standing against the dead and the cult. Acumen (mind): half of mana; power of scrolls, wands, spells; finding out unknown things sooner, more in the tips; noticing secrets and traps. Write-up: spec/03-the-character.md, 3.4", tile: "260px",
+    why: "<b>A</b>: in a turn-based game small changes to speed change everything (an extra move every few turns decides fights and chases), so speed moves only by particular things (heavy armour, swiftness, a level-up choice). Cunning is the strongest pull in a stealth game; damage from Brawn, health from Grit and traps from Acumen keep it in check, and simulated runs should check an all-Cunning character isn't simply best.",
     opts: [
-      { k: "A", n: "Guards the way down", d: "Killed or got past (sneaked by, lured away); killing it gives more (its hoard, a level up). Each lair laid out with routes past it.", img: [], rec: 1 },
-      { k: "B", n: "Must be killed", d: "Simpler levels, but a forced fight for a character who's avoided fights; every character must be able to win it.", img: [] },
-      { k: "C", n: "Optional, off the way, with a prize", d: "The least pressure; the regions lose their ending.", img: [] },
+      { k: "A", n: "As written, speed not from an attribute", d: "", img: [], rec: 1 },
+      { k: "B", n: "As written, speed from Cunning", d: "Cunning then drives sneaking, hitting and speed: likely too strong.", img: [] },
     ] },
-  { id: "s2_pressure", title: "What keeps a run moving", said: "", how: "Without pressure a careful player rests to full after every fight and can wait out anything, which takes the tension out of stealth.", tile: "260px", multi: 1,
-    why: "<b>A and B</b>: the oil makes light, the game's heart, a thing you spend; the waking level makes waiting dangerous. Resting in the dark saves oil but lets the level wake: the two pull against each other.",
+  { id: "s3r_grow", title: "How attributes grow", said: "", how: "Everyone starts the same (round 1); my proposal: all five at the same middle value, the first level ups making the character yours.", tile: "260px",
+    why: "<b>A</b>: steady growth you steer, and a choice that colours the run, on one page.",
     opts: [
-      { k: "A", n: "The lamp's oil", d: "The lamp burns oil while lit; oil found on the levels; out of oil, you're in the dark till you find more. An oil gauge in the ledger, oil as an item, its balance by simulated runs. M", img: [], rec: 1 },
-      { k: "B", n: "The level wakes up over time", d: "The longer you stay, the more its monsters wander, wake and patrol; resting a risk, not a pause. A level-wide alert rising with time and noise, read by the monsters' minds. M", img: [], rec: 1 },
-      { k: "C", n: "Hunger", d: "Food to find and eat: the classic clock, but nothing to do with light or sneaking. M", img: [] },
-      { k: "D", n: "None", d: "As now.", img: [] },
+      { k: "A", n: "Each level up: a choice of three, and +1 to an attribute", d: "Both at once, the attribute your own pick.", img: [], rec: 1 },
+      { k: "B", n: "The three offered mix attributes and other choices", d: "A level up is growth or an ability, never both; a +1 offer is usually the dull pick.", img: [] },
+      { k: "C", n: "Attributes rise only by things", d: "Charms, potions, choices that raise them. Finds matter more; growth uneven between runs.", img: [] },
     ] },
-  { id: "s3_xp", title: "How you earn a level", said: "", how: "Today experience comes from kills, which pays the player to fight, against the heart of the game. Write-up: spec/03-the-character.md", tile: "260px",
-    why: "<b>B</b>: rewards the way the game is meant to be played.",
+  { id: "s3r_magic", title: "Magic", said: "", how: "Mana needs something to spend it on. Spells for a stealth game: darkness, silence, douse (a light from afar), sleep, blink (a few squares), sight through walls, a ward against the dead. Write-up: spec/03-the-character.md, 3.6", tile: "260px",
+    why: "<b>B</b>: gives both Fervor and Acumen a reason to raise them, with one pool to show and balance. C can grow out of B later by sorting the spells in two.",
     opts: [
-      { k: "A", n: "Kills", d: "As now. Every monster sneaked past is experience lost, so a careful player is weaker.", img: [] },
-      { k: "B", n: "Going deeper and finding things out", d: "New ground seen, new levels, secrets, notes; sneaking (getting past a monster that would have noticed you, a sneak attack); bosses killed or got past. Kills give a little. S", img: [], rec: 1 },
-      { k: "C", n: "One per level reached", d: "About 10 a run; simplest to balance, but nothing you do changes how fast you grow.", img: [] },
+      { k: "A", n: "Things only", d: "Scrolls and wands are the magic; mana isn't spent, so it should go.", img: [] },
+      { k: "B", n: "Spells, one mana pool", d: "From Fervor and Acumen. Learned from level-up choices and scrolls; mana back slowly, faster at rest; known spells in the ledger; each drawn where it shows on the map. L", img: [], rec: 1 },
+      { k: "C", n: "Two kinds, two pools", d: "Prayers (Fervor: against the dead, the cult, dread) and the arcane (Acumen: darkness, silence, blink). The cult gets a magic to face; twice the lists, balance and gauges. L on top.", img: [] },
     ] },
-  { id: "s3_levelup", title: "What you choose at a level up", said: "", how: "For example: Soft step (sneaking costs no extra time); Night eyes (one more square in the dark); Backstab (sneak attacks ×4); Steady hand (half the oil); Thick skin (+1 defence); Lore of the dead (the undead notice you less).", tile: "260px",
-    why: "<b>A</b>: with one start for everyone, the choices are what makes one run unlike another, so not in a fixed order. The pool grouped in families (shadow, blade, lamp, lore, endurance) so the player can lean into one.",
+  { id: "s3r_brainstorm", title: "How to brainstorm the regions", said: "I think this would be best decided after brainstorming different regions in a session of its own.", how: "Round 4 is the regions and the reason to go down (\"We can come up with something later\"). How would you like to brainstorm?", tile: "260px",
+    why: "<b>A</b>: you react to many ideas fast, keep and mix the ones that spark, and the board stays as the record. The goal comes out of the regions chosen (or the other way round).",
     opts: [
-      { k: "A", n: "One of three offered", d: "Three drawn from a pool, take one. Every run grows differently. A pool of 30–40 to design and balance; rare ones only deeper; a page showing three. L", img: [], rec: 1 },
-      { k: "B", n: "A tree", d: "A few paths (shadow, blade, lamp, lore), each a line of choices opening in order. Builds planned; about 20 to design; runs grow alike once you know it. M", img: [] },
-      { k: "C", n: "Points into stats", d: "Health, attack, defence, stealth. Least work, least interest. S", img: [] },
-    ] },
-  { id: "s3_numbers", title: "What a character has", said: "", how: "", tile: "260px",
-    why: "<b>A</b>: few numbers to show and balance; the choices carry the interest.",
-    opts: [
-      { k: "A", n: "A few numbers, choices changing rules", d: "Health, attack, defence, speed (as now); choices change how things work.", img: [], rec: 1 },
-      { k: "B", n: "Attributes", d: "Strength, agility, wits…, raised by the choices, everything worked out from them. More numbers; each rule says which it reads. M", img: [] },
-      { k: "C", n: "Skills with ranks", d: "Stealth, blades, lore… rising with choices. Clear growth, but stealth becomes a number to grind rather than a way of playing.", img: [] },
-    ] },
-  { id: "s4_minds", title: "The monsters' minds", said: "", how: "The biggest piece of a stealth game. Today a monster notices you, chases, and gives up. Write-up: spec/04-systems.md", tile: "260px",
-    why: "<b>B</b>: a level that keeps watch is what makes sneaking tense; C's richness is hard to make readable (why did it notice?) and to balance.",
-    opts: [
-      { k: "A", n: "Searching", d: "A monster that loses you goes to where it last saw or heard you and looks round; it follows noises to their source. M", img: [] },
-      { k: "B", n: "A, and a level that keeps watch", d: "Guards at posts, patrols on routes; packs that call others when alarmed (a shout, a goblin horn); the level's alert raising patrols and waking sleepers. L. Minds as small sets of states with clear rules: cheap, testable without a browser.", img: [], rec: 1 },
-      { k: "C", n: "B, and monsters that notice changes", d: "A doused light, a door left open, a body, a missing friend. XL; the hardest to make clear to the player and to balance.", img: [] },
-    ] },
-  { id: "s4_light", title: "Light", said: "", how: "", tile: "260px",
-    why: "<b>C</b>: with oil as the run's resource, how you spend light should be rich; laptops only means changing lights cost little.",
-    opts: [
-      { k: "A", n: "As now", d: "Lamp on or off; the level's lights fixed.", img: [] },
-      { k: "B", n: "Lights you can put out and light", d: "Braziers, candles, campfires (a turn or two, and a noise); monsters may relight them or grow suspicious. Light and shadows redone for the one light. M", img: [] },
-      { k: "C", n: "B, and light you carry and throw", d: "A hooded lamp: out, dim, full; torches and oil flasks to throw (a light where it lands, or fire). Aiming (with Shift-hover), items, fire rules. L", img: [], rec: 1 },
-    ] },
-  { id: "s4_noise", title: "Noise", said: "", how: "", tile: "260px",
-    why: "<b>B</b>: the simplest lure in stealth games, and cheap.",
-    opts: [
-      { k: "A", n: "As now", d: "Steps, fights, doors, heard as words.", img: [] },
-      { k: "B", n: "A, and noise to use", d: "Throw a stone (or anything): a noise where it lands; monsters go to look. S", img: [], rec: 1 },
-      { k: "C", n: "B, and the ground's sound", d: "Some floors loud (rubble, water), some quiet (moss, carpet); running loud. Floors drawn so their sound reads. M", img: [] },
-    ] },
-  { id: "s4_fight", title: "Fighting", said: "", how: "Today: bump into a monster and trade blows, with sneak attacks and morale.", tile: "260px",
-    why: "<b>B</b>: when a fight does happen it's worth thinking about; shooting (C) risks making sneaking too easy.",
-    opts: [
-      { k: "A", n: "As now", d: "Fights stay simple; the stealth carries the game.", img: [] },
-      { k: "B", n: "A few choices in a fight", d: "Heavy blows shown a turn before (step away or take it); shove (into a pit, water, fire); weapons that differ (dagger quick, spear reaches two, axe sweeps, hammer stuns). Warnings and reach drawn and explained. L", img: [], rec: 1 },
-      { k: "C", n: "B, and shooting", d: "Bows, slings, crossbows, for you and monsters. Kills from the dark need care; shooting monsters need cover rules and smarter minds. L on top.", img: [] },
-    ] },
-  { id: "s4_things", title: "Kinds of things to find", said: "", how: "Today: weapons, armour, potions.", tile: "220px", multi: 1,
-    why: "<b>Light, throwing, scrolls, charms</b>: light and throwing are needed by the oil, light and noise picks; scrolls and charms suit sneaking and go with the level-up choices.",
-    opts: [
-      { k: "Light", n: "Light", d: "Oil, torches, oil flasks, candles. S", img: [], rec: 1 },
-      { k: "Throw", n: "Things to throw", d: "Stones (noise), darts, nets, caltrops. S", img: [], rec: 1 },
-      { k: "Scrolls", n: "Scrolls", d: "One-use magic for sneaking: darkness, silence, sleep, a blink, see through walls; unknown until read. M", img: [], rec: 1 },
-      { k: "Charms", n: "Charms", d: "Rings, amulets: lasting effects (quieter steps, sight in the dark); a few slots. M", img: [], rec: 1 },
-      { k: "Wands", n: "Wands", d: "Charged magic; overlaps with scrolls. M", img: [] },
-      { k: "Keys", n: "Keys", d: "For locked doors. S", img: [] },
-      { k: "Food", n: "Food", d: "Only with hunger. S", img: [] },
-    ] },
-  { id: "s4_levels", title: "What the levels hold", said: "", how: "Each laid out with the level and drawn.", tile: "220px", multi: 1,
-    why: "<b>Hiding places, traps, water and ledges</b>: places to use for sneaking and ways round guarded places.",
-    opts: [
-      { k: "Hiding", n: "Hiding places", d: "Alcoves, curtains, deep shadow under arches: unseen unless lit or a monster steps next to you. M", img: [], rec: 1 },
-      { k: "Traps", n: "Traps", d: "Alarm traps (bell, tripwire), pits, spikes; found by searching; usable against monsters. M", img: [], rec: 1 },
-      { k: "Locks", n: "Locked doors", d: "Picked (time, noise) or opened with keys. M", img: [] },
-      { k: "Levers", n: "Levers and hidden ways", d: "Passages opened by levers, bridges let down. M", img: [] },
-      { k: "Water", n: "Water and ledges", d: "Deep water to swim (no lamp); ledges to drop from (not climb back). M", img: [], rec: 1 },
+      { k: "A", n: "A board of ideas", d: "I bring 15–20 regions, each in a few lines (the place, its look, who lives there, its stealth twist, the boss, a story hook), with a picture where cheap; you keep, drop, mix and add here. Then a second pass on the kept ones and the goal.", img: [], rec: 1 },
+      { k: "B", n: "In the chat", d: "We go back and forth in the conversation; I write up what we land on.", img: [] },
+      { k: "C", n: "You first", d: "You bring your ideas (or pictures, as with Dyson's maps), and I build out from them with critique.", img: [] },
     ] },
 ];
 

@@ -42,15 +42,15 @@ Each part's state is one of:
 |---|---|---|---|
 | 0 | [The proof of concept, reviewed](00-proof-of-concept.md) | What it proved, what carries over, what has to be redone for a full game | written |
 | 1 | [Vision](01-vision.md) | What kind of game, how long a run, who grows how, between runs, story, where it's played, sound, saving | decided (round 1) |
-| 2 | [The run](02-the-run.md) | Regions and levels, their order, bosses, the goal, how hard it gets | proposed (round 2) |
-| 3 | [The character](03-the-character.md) | How levels are earned, the choices at a level up, what a character has | proposed (round 2) |
-| 4 | [Systems](04-systems.md) | Light and stealth, noise, awareness and the monsters' minds, combat, ailments, items and traits, resting, doors and secrets, food (or none) | proposed in outline (round 2) |
+| 2 | [The run](02-the-run.md) | Regions and levels, their order, bosses, the goal, how hard it gets | bosses decided; the goal and regions in round 4; what keeps a run moving in round 3 |
+| 3 | [The character](03-the-character.md) | How levels are earned, the choices at a level up, attributes, magic | decided in outline (round 2); attributes and magic in round 3 |
+| 4 | [Systems](04-systems.md) | Light and stealth, noise, awareness and the monsters' minds, combat, ailments, items and traits, resting, doors and secrets, food (or none) | decided in outline (round 2); what light is worth in round 3 |
 | 5 | Content | Every monster, item, trait, room kind and ground kind, as tables | open |
 | 6 | Levels | How each ground kind is made, set pieces, how a level is laid out to be played | open |
-| 7 | Interface | Layouts (big screen, phone), panels, tips, keys and touch, title, death and victory pages, settings, accessibility | open |
+| 7 | Interface | Layout (big screens), panels, tips, keys and mouse, the level-up page, title, death and victory pages, settings, accessibility | open |
 | 8 | Visual language | The map's rules in full (hatching, broken lines, light's ragged edges, height and depth, families of things), the interface's rules, every element by family | started (`../VISUAL_LANGUAGE.md`) |
 | 9 | Sound | None (round 1): the noise words are its sound | decided |
-| 10 | Building it | Code structure, data for content, saving, performance budgets (phones), tests, balance by simulated runs, where it's published | open |
+| 10 | Building it | Code structure, data for content, saving, performance budgets (laptops), tests, balance by simulated runs, where it's published | open |
 | 11 | Getting there | Milestones from the go to release; playtests | open |
 
 ## Rounds
@@ -58,10 +58,12 @@ Each part's state is one of:
 | Round | Takes up | State |
 |---|---|---|
 | 1 | Part 0 (to read) and part 1. How we work (to confirm). The parts above (to confirm). | answered |
-| 2 | Parts 2, 3 and 4 in outline: the run, the character, the systems, built on round 1's answers | on the choices page |
-| 3 | Parts 5 and 6: content and levels. Part 10's first questions (saving, data, budgets) | — |
-| 4 | Parts 7, 8 and 9: interface, visual language in full, sound. Mockups where needed | — |
-| 5 | Part 10 in full, part 11. The whole spec read through for gaps and contradictions, with my critique | — |
+| 2 | Parts 2, 3 and 4 in outline: the run, the character, the systems | answered; three left open |
+| 3 | What round 2 left open: what light is worth, what keeps a run moving; the attributes, how they grow, magic. How to brainstorm the regions | on the choices page |
+| 4 | The regions and the reason to go down: a round of their own, brainstormed | — |
+| 5 | Parts 5 and 6: content and levels. Part 10's first questions (saving, data, budgets) | — |
+| 6 | Parts 7 and 8: interface and visual language in full. Mockups where needed | — |
+| 7 | Part 10 in full, part 11. The whole spec read through for gaps and contradictions, with my critique | — |
 | — | The go | — |
 
 The number of rounds isn't fixed. A round can be split, or one added, as answers come in.
