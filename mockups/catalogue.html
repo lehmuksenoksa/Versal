@@ -81,6 +81,20 @@
   .xname { display: grid; }
   .xname b { color: var(--paper); font: 600 16px var(--letter); }
   .c.boss { border-color: var(--amber); color: var(--paper); }
+  .dn { font: 600 12px var(--letter); color: var(--amber); font-variant-numeric: tabular-nums; }
+  .ladder-scale { display: grid; gap: 6px; }
+  .lrow { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: start; background: var(--card); border-radius: 5px; padding: 8px 12px; }
+  .lnum { font: 600 15px var(--letter); color: var(--paper); font-variant-numeric: tabular-nums; }
+  .rung { background: var(--card); border-radius: 6px; padding: 14px 18px; display: grid; gap: 10px; }
+  .rhead { display: grid; grid-template-columns: 44px 220px 1fr; gap: 12px; align-items: center; }
+  .rstep { font: 700 28px var(--letter); color: var(--paper); }
+  .rhead b { color: var(--paper); font: 600 16px var(--letter); }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--amber); }
+  ul.ex { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  .lab { display: inline-block; min-width: 44px; text-align: center; font: 600 11px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; background: var(--chip); color: var(--dim); }
+  .lab.fair { color: var(--moss); } .lab.hard { color: var(--amber); } .lab.run { color: var(--blood); } .lab.boss { color: var(--paper); border: 1px solid var(--amber); }
+  @media (max-width: 640px) { .rhead { grid-template-columns: 36px 1fr; } .rhead .bar { grid-column: 1 / -1; } }
   @media (max-width: 640px) { .xhead { display: none; } .xrow { grid-template-columns: 1fr; } }
   table.where td.w { text-align: center; color: var(--amber); border-left: 1px solid var(--line); min-width: 34px; }
   table.where th.grp { text-align: center; color: var(--amber); border-left: 2px solid var(--faint); }
@@ -101,10 +115,11 @@
 <main>
   <header>
     <h1>The catalogue</h1>
-    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 19), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 20), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
   </header>
   <nav class="bar" aria-label="Views">
     <a href="#regions">By region</a>
+    <a href="#ladder">Danger ladder</a>
     <a href="#bestiary">Bestiary</a>
     <a href="#where">Where</a>
     <a href="#roles">Roles</a>
@@ -130,7 +145,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let C = null;
 const KIND = { world: "The world", region: "Region", transition: "Transition", themed: "Themed area" };
-const VIEWS = ["regions", "bestiary", "where", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
+const VIEWS = ["ladder", "regions", "bestiary", "where", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
 
 function shown(x) {
   if (x.state === "maybe") return $("#show-maybe").checked;
@@ -176,6 +191,26 @@ function bestiaryView() {
     `<tr><th class="r">${esc(f.name)}</th>${ranks.map((r) => `<td class="g">${ms.filter((m) => m.family === f.name && m.rank === r).map(chip).join("")}</td>`).join("")}</tr>`).join("")).join("");
   return `<section><p class="note">Your roster of monsters (round 18), by family and rank. A family's ranks are how it fights: common ones, greater kinds, warriors in melee, archers shooting, casters, leaders, a boss, and the special ones that work their own way. Empty cells aren't holes by themselves: not every family needs every rank. Hover a name for its line.</p>
     <div class="wrap"><table class="grid best">${head}${rows}</table></div></section>`;
+}
+
+function ladderView() {
+  const L = C.ladder, ms = C.monsters.filter((m) => m.danger && (m.state === "keep" || m.state === "in game"));
+  const max = Math.max(...L.steps.map((s) => s.fair));
+  const BANDS = [[1, 1], [2, 3], [4, 5], [6, 9], [10, 14], [15, 24], [25, 49], [50, 999]];
+  const mchip = (m) => `<span class="c ${m.rank === "Boss" ? "boss" : ""}" title="${esc(m.line || "")}">${esc(m.name)} <span class="dn">${m.danger}</span></span>`;
+  const scale = BANDS.map(([a, b]) => { const g = ms.filter((m) => m.rank !== "Boss" && m.danger >= a && m.danger <= b).sort((x, y) => x.danger - y.danger);
+    return `<div class="lrow"><div class="lnum">${b >= 999 ? a + "+" : a === b ? a : a + "–" + b}</div><div class="chips">${g.map(mchip).join("")}</div></div>`; }).join("");
+  const bosses = ms.filter((m) => m.rank === "Boss").sort((x, y) => x.danger - y.danger);
+  const rung = (st) => `<article class="rung">
+      <div class="rhead"><div class="rstep">${st.step}</div><div><b>${st.band[0].toUpperCase() + st.band.slice(1)}</b><div class="st">a fair fight: about ${st.fair} rats</div></div>
+        <div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></div>
+      <div class="cols">
+        <div class="col"><h3>New at this step</h3>${st.new.length ? `<div class="chips">${st.new.map((n) => mchip(ms.find((m) => m.name === n))).join("")}</div>` : `<span class="more">nothing new: bigger groups of what's here</span>`}</div>
+        <div class="col"><h3>For example</h3><ul class="ex">${st.examples.map((e) => `<li><span class="lab ${e.label}">${e.label}</span> ${esc(e.what)} <span class="dn">${e.danger}</span>${e.narrow && e.label === "run" ? ` <span class="st">(one at a time: ${e.narrow})</span>` : ""}</li>`).join("")}</ul></div>
+      </div></article>`;
+  return `<section><p class="note">How danger rises from top to bottom, for the whole world first (regions are placed on it after). Each monster's danger is counted in <b>rats</b>: a lone rat is 1. A group counts for more than its sum: each one after the first adds ${Math.round(L.grow * 100)}%, so twelve rats are about 23. Fought one at a time, in a narrow way, a group counts as its sum. Each step down the world has a fair fight: the biggest a character there should win. Examples are marked easy (under half of it), fair, hard (up to twice) or run. All numbers are a proposal for the shape of the climb; the real ones are tuned by simulated runs.</p>
+    <h2>The scale</h2><div class="ladder-scale">${scale}<div class="lrow"><div class="lnum">Bosses</div><div class="chips">${bosses.map(mchip).join("")}</div></div></div>
+    <h2>The ladder, step by step</h2>${L.steps.map(rung).join("")}</section>`;
 }
 
 function whereView() {
@@ -263,6 +298,7 @@ function render() {
   $("#view").innerHTML = {
     regions: regionsView,
     bestiary: bestiaryView,
+    ladder: ladderView,
     where: whereView,
     roles: rolesView,
     themes: themesView,

@@ -2132,7 +2132,9 @@
    "comment": "",
    "role": "Swarm",
    "answer": "Light holds them off; alone they're weak",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 1,
+   "fromStep": 1
   },
   {
    "id": "giant-rat",
@@ -2144,7 +2146,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "bat",
@@ -2166,7 +2170,9 @@
    "comment": "",
    "role": "Alarm-raiser",
    "answer": "Startled by light, they shriek and wake others: pass in the dark",
-   "answerKind": "Darkness"
+   "answerKind": "Darkness",
+   "danger": 1,
+   "fromStep": 1
   },
   {
    "id": "spider",
@@ -2189,7 +2195,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Waits still by its web; light shows it",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 2,
+   "fromStep": 1
   },
   {
    "id": "giant-spider",
@@ -2208,7 +2216,9 @@
    "comment": "",
    "role": "Hunter",
    "answer": "Fire drives it off",
-   "answerKind": "Fire"
+   "answerKind": "Fire",
+   "danger": 8,
+   "fromStep": 4
   },
   {
    "id": "wolf",
@@ -2231,7 +2241,9 @@
    "comment": "",
    "role": "Hunter",
    "answer": "Follows your scent: water breaks the trail",
-   "answerKind": "Water"
+   "answerKind": "Water",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "dire-wolf",
@@ -2243,7 +2255,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 9,
+   "fromStep": 4
   },
   {
    "id": "cave-bear",
@@ -2263,7 +2277,9 @@
    "comment": "",
    "role": "Brute",
    "answer": "Asleep: don't wake it",
-   "answerKind": "Silence"
+   "answerKind": "Silence",
+   "danger": 12,
+   "fromStep": 5
   },
   {
    "id": "cave-lion",
@@ -2286,7 +2302,9 @@
    "role": "Hunter",
    "answer": "Stalks you in the dark; your lamp keeps it off",
    "answerKind": "Light",
-   "was": "Cave cat"
+   "was": "Cave cat",
+   "danger": 12,
+   "fromStep": 5
   },
   {
    "id": "giant-centipede",
@@ -2308,7 +2326,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Under rubble; light shows it",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "worm",
@@ -2328,7 +2348,9 @@
    "role": "Hunter",
    "answer": "Hunts by the ground's tremor: stand still and it passes",
    "answerKind": "Silence",
-   "was": "Deep worm"
+   "was": "Deep worm",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "eel",
@@ -2349,7 +2371,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Strikes from deep water: keep out of it",
-   "answerKind": "Water"
+   "answerKind": "Water",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "cave-crab",
@@ -2370,7 +2394,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Waits in the shallows; slow on land, so go round",
-   "answerKind": "Distance"
+   "answerKind": "Distance",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "leech",
@@ -2392,7 +2418,9 @@
    "role": "Swarm",
    "answer": "In still water: don't linger in it",
    "answerKind": "Water",
-   "was": "Leeches"
+   "was": "Leeches",
+   "danger": 1,
+   "fromStep": 1
   },
   {
    "id": "snake",
@@ -2404,7 +2432,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 2,
+   "fromStep": 1
   },
   {
    "id": "slime",
@@ -2426,7 +2456,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Drops from the ceiling; light shows it, fire burns it",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "ooze",
@@ -2438,7 +2470,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "floating-eye",
@@ -2460,7 +2494,9 @@
    "role": "Alarm-raiser",
    "answer": "Sees far: break its line of sight",
    "answerKind": "Cover",
-   "was": "Watcher"
+   "was": "Watcher",
+   "danger": 6,
+   "fromStep": 3
   },
   {
    "id": "mimic",
@@ -2479,7 +2515,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "A chest that isn't: search before you open, or throw something at it",
-   "answerKind": "Searching"
+   "answerKind": "Searching",
+   "danger": 6,
+   "fromStep": 3
   },
   {
    "id": "golem",
@@ -2500,7 +2538,9 @@
    "comment": "",
    "role": "Brute",
    "answer": "Goes by sound: sneak past it in silence",
-   "answerKind": "Silence"
+   "answerKind": "Silence",
+   "danger": 18,
+   "fromStep": 7
   },
   {
    "id": "bronze-golem",
@@ -2512,7 +2552,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 25,
+   "fromStep": 8
   },
   {
    "id": "iron-golem",
@@ -2524,7 +2566,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 35,
+   "fromStep": 9
   },
   {
    "id": "steel-golem",
@@ -2536,7 +2580,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 50,
+   "fromStep": 11
   },
   {
    "id": "animated-armour",
@@ -2557,7 +2603,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
-   "answerKind": "Distance"
+   "answerKind": "Distance",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "bone-heap",
@@ -2578,7 +2626,9 @@
    "comment": "",
    "role": "Ambusher",
    "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
-   "answerKind": "Distraction"
+   "answerKind": "Distraction",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "skeleton",
@@ -2600,7 +2650,9 @@
    "comment": "",
    "role": "Soldier",
    "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
-   "answerKind": "Timing"
+   "answerKind": "Timing",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "skeleton-warrior",
@@ -2612,7 +2664,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 7,
+   "fromStep": 3
   },
   {
    "id": "skeleton-archer",
@@ -2624,7 +2678,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "zombie",
@@ -2646,7 +2702,9 @@
    "comment": "",
    "role": "Brute",
    "answer": "Slow but never stops: outpace it, shut doors behind you",
-   "answerKind": "Distance"
+   "answerKind": "Distance",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "wight",
@@ -2667,7 +2725,9 @@
    "comment": "",
    "role": "Hunter",
    "answer": "Sees in the dark; holy ground keeps it out",
-   "answerKind": "Holy ground"
+   "answerKind": "Holy ground",
+   "danger": 12,
+   "fromStep": 5
   },
   {
    "id": "ghost",
@@ -2687,7 +2747,9 @@
    "comment": "",
    "role": "Wanderer",
    "answer": "Through walls; holy ground keeps it out",
-   "answerKind": "Holy ground"
+   "answerKind": "Holy ground",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "wraith",
@@ -2708,7 +2770,9 @@
    "comment": "",
    "role": "Hunter",
    "answer": "Darkness that moves; light hurts it",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 22,
+   "fromStep": 7
   },
   {
    "id": "lich",
@@ -2720,7 +2784,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": "The Dungeon Underneath's boss, leading the cult or the undead (your words): whichever holds it that run"
+   "comment": "The Dungeon Underneath's boss, leading the cult or the undead (your words): whichever holds it that run",
+   "danger": 30,
+   "fromStep": 4
   },
   {
    "id": "will-o-wisp",
@@ -2742,7 +2808,9 @@
    "comment": "",
    "role": "Lure",
    "answer": "Shines a small light that shows you to others: don't follow it",
-   "answerKind": "Searching"
+   "answerKind": "Searching",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "ghost-bat",
@@ -2754,7 +2822,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 5,
+   "fromStep": 2
   },
   {
    "id": "goblin",
@@ -2776,7 +2846,9 @@
    "comment": "",
    "role": "Pack",
    "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
-   "answerKind": "Distraction"
+   "answerKind": "Distraction",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "goblin-warrior",
@@ -2796,7 +2868,9 @@
    "comment": "",
    "role": "Leader",
    "answer": "Fell it and its pack falters",
-   "answerKind": "Fell the leader"
+   "answerKind": "Fell the leader",
+   "danger": 7,
+   "fromStep": 3
   },
   {
    "id": "goblin-archer",
@@ -2816,7 +2890,9 @@
    "comment": "",
    "role": "Soldier",
    "answer": "Shoots what it sees: get into cover, then close",
-   "answerKind": "Cover"
+   "answerKind": "Cover",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "goblin-chieftain",
@@ -2828,7 +2904,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 15,
+   "fromStep": 6
   },
   {
    "id": "goblin-shaman",
@@ -2848,7 +2926,9 @@
    "comment": "",
    "role": "Caster",
    "answer": "Lights and puts out fires: take it unaware first",
-   "answerKind": "Strike first"
+   "answerKind": "Strike first",
+   "danger": 8,
+   "fromStep": 4
   },
   {
    "id": "goblin-king",
@@ -2867,7 +2947,9 @@
    "comment": "Goblin Territory's boss",
    "role": "Boss",
    "answer": "Waits with his guard: get past, or kill him",
-   "answerKind": "Get past"
+   "answerKind": "Get past",
+   "danger": 45,
+   "fromStep": 7
   },
   {
    "id": "goblin-beasthound",
@@ -2879,7 +2961,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 5,
+   "fromStep": 2
   },
   {
    "id": "cultist",
@@ -2900,7 +2984,9 @@
    "comment": "",
    "role": "Soldier",
    "answer": "Its lantern shows it coming: keep out of its light",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "cultist-warrior",
@@ -2912,7 +2998,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 7,
+   "fromStep": 3
   },
   {
    "id": "cultist-archer",
@@ -2924,7 +3012,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "cult-priest",
@@ -2944,7 +3034,9 @@
    "comment": "",
    "role": "Caster",
    "answer": "Raises the dead: kill it first, or keep its dead apart from it",
-   "answerKind": "Strike first"
+   "answerKind": "Strike first",
+   "danger": 9,
+   "fromStep": 4
   },
   {
    "id": "troll",
@@ -2966,7 +3058,9 @@
    "comment": "",
    "role": "Brute",
    "answer": "Heals as it goes; fire stops that",
-   "answerKind": "Fire"
+   "answerKind": "Fire",
+   "danger": 20,
+   "fromStep": 7
   },
   {
    "id": "ogre",
@@ -2987,7 +3081,9 @@
    "comment": "",
    "role": "Brute",
    "answer": "Smells you: water or wind hides your scent; it's slow",
-   "answerKind": "Water"
+   "answerKind": "Water",
+   "danger": 15,
+   "fromStep": 6
   },
   {
    "id": "bandit",
@@ -3007,7 +3103,9 @@
    "comment": "",
    "role": "Soldier",
    "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
-   "answerKind": "Cover"
+   "answerKind": "Cover",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "bandit-archer",
@@ -3019,7 +3117,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 4,
+   "fromStep": 2
   },
   {
    "id": "bandit-chief",
@@ -3038,7 +3138,9 @@
    "comment": "",
    "role": "Leader",
    "answer": "Fell it and the outlaws falter",
-   "answerKind": "Fell the leader"
+   "answerKind": "Fell the leader",
+   "danger": 15,
+   "fromStep": 6
   },
   {
    "id": "thief",
@@ -3059,7 +3161,9 @@
    "comment": "",
    "role": "Thief",
    "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
-   "answerKind": "Darkness"
+   "answerKind": "Darkness",
+   "danger": 3,
+   "fromStep": 1
   },
   {
    "id": "dark-elf",
@@ -3081,7 +3185,9 @@
    "comment": "",
    "role": "Hunter",
    "answer": "Sees in the dark and thinks: bright light blinds it",
-   "answerKind": "Light"
+   "answerKind": "Light",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "dark-elf-warrior",
@@ -3093,7 +3199,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 14,
+   "fromStep": 6
   },
   {
    "id": "dark-elf-archer",
@@ -3105,7 +3213,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 11,
+   "fromStep": 5
   },
   {
    "id": "dark-elf-prince",
@@ -3117,7 +3227,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": "Leads the dark elves; the Deep Dark's boss (your words)"
+   "comment": "Leads the dark elves; the Deep Dark's boss (your words)",
+   "danger": 90,
+   "fromStep": 11
   },
   {
    "id": "dark-elf-wizard",
@@ -3129,7 +3241,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 18,
+   "fromStep": 7
   },
   {
    "id": "earth-elemental",
@@ -3141,7 +3255,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 20,
+   "fromStep": 7
   },
   {
    "id": "water-elemental",
@@ -3153,7 +3269,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 20,
+   "fromStep": 7
   },
   {
    "id": "fire-elemental",
@@ -3165,7 +3283,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 20,
+   "fromStep": 7
   },
   {
    "id": "greater-earth-elemental",
@@ -3177,7 +3297,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 40,
+   "fromStep": 10
   },
   {
    "id": "greater-water-elemental",
@@ -3189,7 +3311,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 40,
+   "fromStep": 10
   },
   {
    "id": "greater-fire-elemental",
@@ -3201,7 +3325,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": ""
+   "comment": "",
+   "danger": 40,
+   "fromStep": 10
   },
   {
    "id": "dragon",
@@ -3213,7 +3339,9 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": "The Dwarven Keep's boss (your words)"
+   "comment": "The Dwarven Keep's boss (your words)",
+   "danger": 150,
+   "fromStep": 12
   },
   {
    "id": "drowned-dead",
@@ -3431,7 +3559,9 @@
    "themes": [
     "drowned"
    ],
-   "comment": "Your addition (round 19)"
+   "comment": "Your addition (round 19)",
+   "danger": 10,
+   "fromStep": 4
   },
   {
    "id": "lurker",
@@ -3447,7 +3577,9 @@
    "themes": [
     "drowned"
    ],
-   "comment": "Your addition (round 19)"
+   "comment": "Your addition (round 19)",
+   "danger": 14,
+   "fromStep": 6
   },
   {
    "id": "abomination",
@@ -3463,7 +3595,9 @@
    "themes": [
     "drowned"
    ],
-   "comment": "Your addition (round 19)"
+   "comment": "Your addition (round 19)",
+   "danger": 30,
+   "fromStep": 9
   },
   {
    "id": "eldritch-horror",
@@ -3479,7 +3613,9 @@
    "themes": [
     "drowned"
    ],
-   "comment": "Your addition (round 19)"
+   "comment": "Your addition (round 19)",
+   "danger": 60,
+   "fromStep": 8
   }
  ],
  "tags": [
@@ -4910,5 +5046,535 @@
    "id": "world-deep",
    "name": "Deep"
   }
- ]
+ ],
+ "ladder": {
+  "unit": "rats",
+  "note": "A monster's danger in rats: a lone rat is 1. A group counts for more than its sum (each one after the first adds 8%), unless it can only come at you one at a time (a narrow way), when it counts as its sum. 'Fair' is the biggest fight a character at that step should win.",
+  "grow": 0.08,
+  "steps": [
+   {
+    "step": 1,
+    "band": "shallow",
+    "fair": 3,
+    "new": [
+     "Rat",
+     "Giant rat",
+     "Bat",
+     "Spider",
+     "Giant centipede",
+     "Leech",
+     "Snake",
+     "Skeleton",
+     "Will-o'-wisp",
+     "Goblin",
+     "Cultist",
+     "Bandit",
+     "Thief"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "A rat",
+      "danger": 1.0,
+      "narrow": null,
+      "label": "easy"
+     },
+     {
+      "what": "Three rats",
+      "danger": 3.5,
+      "narrow": 3,
+      "label": "hard"
+     },
+     {
+      "what": "A giant rat",
+      "danger": 3.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A goblin",
+      "danger": 3.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Twelve rats",
+      "danger": 22.6,
+      "narrow": 12,
+      "label": "run"
+     }
+    ]
+   },
+   {
+    "step": 2,
+    "band": "shallow",
+    "fair": 5,
+    "new": [
+     "Wolf",
+     "Eel",
+     "Cave crab",
+     "Slime",
+     "Bone heap",
+     "Skeleton archer",
+     "Zombie",
+     "Ghost bat",
+     "Goblin archer",
+     "Goblin beasthound",
+     "Cultist archer",
+     "Bandit archer"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "Two goblins",
+      "danger": 6.5,
+      "narrow": 6,
+      "label": "hard"
+     },
+     {
+      "what": "A wolf",
+      "danger": 4.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A skeleton, a skeleton archer",
+      "danger": 7.6,
+      "narrow": 7,
+      "label": "hard"
+     },
+     {
+      "what": "Three bats, a spider",
+      "danger": 6.2,
+      "narrow": 5,
+      "label": "hard"
+     },
+     {
+      "what": "Six rats",
+      "danger": 8.4,
+      "narrow": 6,
+      "label": "hard"
+     }
+    ]
+   },
+   {
+    "step": 3,
+    "band": "shallow",
+    "fair": 7,
+    "new": [
+     "Floating eye",
+     "Mimic",
+     "Skeleton warrior",
+     "Goblin warrior",
+     "Cultist warrior"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "A goblin warrior",
+      "danger": 7.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Three goblins",
+      "danger": 10.4,
+      "narrow": 9,
+      "label": "hard"
+     },
+     {
+      "what": "Two bandits, a bandit archer",
+      "danger": 11.6,
+      "narrow": 10,
+      "label": "hard"
+     },
+     {
+      "what": "A mimic",
+      "danger": 6.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Twelve rats",
+      "danger": 22.6,
+      "narrow": 12,
+      "label": "run"
+     }
+    ]
+   },
+   {
+    "step": 4,
+    "band": "shallow",
+    "fair": 10,
+    "new": [
+     "Giant spider",
+     "Dire wolf",
+     "Worm",
+     "Ooze",
+     "Animated armour",
+     "Ghost",
+     "Goblin shaman",
+     "Cult priest",
+     "Dark elf",
+     "Shadow"
+    ],
+    "bosses": [
+     "Lich"
+    ],
+    "examples": [
+     {
+      "what": "A skeleton warrior, two skeletons",
+      "danger": 15.1,
+      "narrow": 13,
+      "label": "hard"
+     },
+     {
+      "what": "Two wolves",
+      "danger": 8.6,
+      "narrow": 8,
+      "label": "fair"
+     },
+     {
+      "what": "A giant spider",
+      "danger": 8.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Ten giant rats",
+      "danger": 51.6,
+      "narrow": 30,
+      "label": "run"
+     },
+     {
+      "what": "The lich (boss)",
+      "danger": 30,
+      "label": "boss"
+     }
+    ]
+   },
+   {
+    "step": 5,
+    "band": "middle",
+    "fair": 13,
+    "new": [
+     "Cave bear",
+     "Cave lion",
+     "Wight",
+     "Dark elf archer"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "A cave bear",
+      "danger": 12.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A goblin warrior, two goblins, a goblin archer",
+      "danger": 21.1,
+      "narrow": 17,
+      "label": "hard"
+     },
+     {
+      "what": "A wight",
+      "danger": 12.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Two dire wolves",
+      "danger": 19.4,
+      "narrow": 18,
+      "label": "hard"
+     }
+    ]
+   },
+   {
+    "step": 6,
+    "band": "middle",
+    "fair": 17,
+    "new": [
+     "Goblin chieftain",
+     "Ogre",
+     "Bandit chief",
+     "Dark elf warrior",
+     "Lurker"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "An ogre",
+      "danger": 15.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A bandit chief, two bandits, two bandit archers",
+      "danger": 38.3,
+      "narrow": 29,
+      "label": "run"
+     },
+     {
+      "what": "A dark elf warrior, a dark elf archer",
+      "danger": 27.0,
+      "narrow": 25,
+      "label": "hard"
+     },
+     {
+      "what": "Six dire wolves",
+      "danger": 75.6,
+      "narrow": 54,
+      "label": "run"
+     }
+    ]
+   },
+   {
+    "step": 7,
+    "band": "middle",
+    "fair": 22,
+    "new": [
+     "Golem",
+     "Wraith",
+     "Troll",
+     "Dark elf wizard",
+     "Earth elemental",
+     "Water elemental",
+     "Fire elemental"
+    ],
+    "bosses": [
+     "Goblin king"
+    ],
+    "examples": [
+     {
+      "what": "A troll",
+      "danger": 20.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A cult priest, two cultist warriors, a cultist archer",
+      "danger": 33.5,
+      "narrow": 27,
+      "label": "hard"
+     },
+     {
+      "what": "A golem",
+      "danger": 18.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Three cave lions",
+      "danger": 41.8,
+      "narrow": 36,
+      "label": "hard"
+     },
+     {
+      "what": "The goblin king (boss)",
+      "danger": 45,
+      "label": "boss"
+     }
+    ]
+   },
+   {
+    "step": 8,
+    "band": "middle",
+    "fair": 28,
+    "new": [
+     "Bronze golem"
+    ],
+    "bosses": [
+     "Eldritch horror"
+    ],
+    "examples": [
+     {
+      "what": "A bronze golem",
+      "danger": 25.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A wraith",
+      "danger": 22.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "An earth elemental, two dark elves",
+      "danger": 46.4,
+      "narrow": 40,
+      "label": "hard"
+     },
+     {
+      "what": "Eight dire wolves",
+      "danger": 112.3,
+      "narrow": 72,
+      "label": "run"
+     },
+     {
+      "what": "The eldritch horror (boss)",
+      "danger": 60,
+      "label": "boss"
+     }
+    ]
+   },
+   {
+    "step": 9,
+    "band": "deep",
+    "fair": 35,
+    "new": [
+     "Iron golem",
+     "Abomination"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "An iron golem",
+      "danger": 35.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "An abomination",
+      "danger": 30.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A goblin chieftain, a goblin shaman, two goblin warriors, two goblin archers",
+      "danger": 63.0,
+      "narrow": 45,
+      "label": "hard"
+     },
+     {
+      "what": "Three trolls",
+      "danger": 69.6,
+      "narrow": 60,
+      "label": "hard"
+     }
+    ]
+   },
+   {
+    "step": 10,
+    "band": "deep",
+    "fair": 45,
+    "new": [
+     "Greater earth elemental",
+     "Greater water elemental",
+     "Greater fire elemental"
+    ],
+    "bosses": [],
+    "examples": [
+     {
+      "what": "A greater fire elemental",
+      "danger": 40.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "Two trolls",
+      "danger": 43.2,
+      "narrow": 40,
+      "label": "fair"
+     },
+     {
+      "what": "A dark elf wizard, a dark elf warrior, two dark elf archers",
+      "danger": 67.0,
+      "narrow": 54,
+      "label": "hard"
+     },
+     {
+      "what": "Two iron golems",
+      "danger": 75.6,
+      "narrow": 70,
+      "label": "hard"
+     }
+    ]
+   },
+   {
+    "step": 11,
+    "band": "deep",
+    "fair": 55,
+    "new": [
+     "Steel golem"
+    ],
+    "bosses": [
+     "Dark elf prince"
+    ],
+    "examples": [
+     {
+      "what": "A steel golem",
+      "danger": 50.0,
+      "narrow": null,
+      "label": "fair"
+     },
+     {
+      "what": "A dark elf wizard, two dark elf warriors, two dark elf archers",
+      "danger": 89.8,
+      "narrow": 68,
+      "label": "hard"
+     },
+     {
+      "what": "Two greater water elementals",
+      "danger": 86.4,
+      "narrow": 80,
+      "label": "hard"
+     },
+     {
+      "what": "Three iron golems",
+      "danger": 121.8,
+      "narrow": 105,
+      "label": "run"
+     },
+     {
+      "what": "The dark elf prince (boss)",
+      "danger": 90,
+      "label": "boss"
+     }
+    ]
+   },
+   {
+    "step": 12,
+    "band": "deep",
+    "fair": 70,
+    "new": [],
+    "bosses": [
+     "Dragon"
+    ],
+    "examples": [
+     {
+      "what": "Two iron golems",
+      "danger": 75.6,
+      "narrow": 70,
+      "label": "fair"
+     },
+     {
+      "what": "A greater earth elemental, two earth elementals",
+      "danger": 92.8,
+      "narrow": 80,
+      "label": "hard"
+     },
+     {
+      "what": "A steel golem, an iron golem",
+      "danger": 91.8,
+      "narrow": 85,
+      "label": "hard"
+     },
+     {
+      "what": "Two steel golems",
+      "danger": 108.0,
+      "narrow": 100,
+      "label": "hard"
+     },
+     {
+      "what": "The dragon (boss)",
+      "danger": 150,
+      "label": "boss"
+     }
+    ]
+   }
+  ]
+ }
 }
