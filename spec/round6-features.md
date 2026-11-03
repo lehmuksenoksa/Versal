@@ -63,3 +63,48 @@ maybe or drop. How any of them works is a later question.
 | 17 | A level with a twist | All dark, all flooded, or full of one kind of monster | either |
 | 18 | A place out of its region | A dwarven vault in the dungeon, a temple in the caves | either |
 | 19 | Your own past | A character from an earlier run, dead, or risen | either |
+
+## Friendly strangers: who, and why they're down here
+
+In your words: "For monsters, it's easy to explain why they're down there, but what about the
+friendlies? We can't have full societies down there, just random strangers, alone or in groups."
+Each needs a reason to be down here.
+
+| # | Stranger | Why they're down here | Alone or a group |
+|---|---|---|---|
+| 1 | A fellow adventurer | Came for the same reason you did | alone, or a party |
+| 2 | A lone survivor | The rest of their party died | alone |
+| 3 | A prisoner | Taken by goblins, bandits or the cult | alone, or a few in a cell |
+| 4 | An escaped slave | Got away from the goblins, and hiding | alone |
+| 5 | A lost miner | Cut off by a cave-in | alone, or a crew |
+| 6 | A hermit | Fled the world above | alone |
+| 7 | An exile | Sent down as a punishment | alone |
+| 8 | A pilgrim | Come to a holy place below | alone, or a band |
+| 9 | A priest | Keeps a shrine down here | alone |
+| 10 | A scholar | Studying the ruins | alone, with a guard or two |
+| 11 | A mapmaker | Mapping the deep, and selling maps | alone |
+| 12 | A peddler | Follows adventurers down to buy their finds and sell them what they need | alone, with a pack beast |
+| 13 | A treasure hunter | After the tombs and vaults | alone, or a crew |
+| 14 | A smuggler | Uses the deep ways to move goods | a few |
+| 15 | A trapper | Hunts the caves for pelts and beasts | alone |
+| 16 | A deserter | Ran from the bandits or the cult | alone |
+| 17 | A searcher | Come down to find someone | alone |
+| 18 | A sellsword | Will follow you, for pay | alone |
+| 19 | The last dwarf | Of the fallen hold | alone |
+| 20 | A kindly ghost | One of the dead who isn't hostile | alone |
+| 21 | Refugees | Fled something above, and hiding | a group |
+
+## Places the strangers suggest
+
+| # | Place | In a line | Who |
+|---|---|---|---|
+| 1 | A barricaded room | Someone holed up, door blocked from inside | survivor, refugees |
+| 2 | A lost party's camp | A camp still lived in, not only a last one | fellow adventurers, treasure hunters |
+| 3 | A peddler's stall | At a crossing of ways, with a lamp lit | peddler |
+| 4 | A miners' pocket | A space cut off by a cave-in | lost miners |
+| 5 | A kept shrine | A shrine with a candle always lit | priest |
+| 6 | A pilgrims' rest | A resting place on the way to a holy place | pilgrims |
+| 7 | A hideout in a crack | A narrow hidden place to hide in | escaped slave, deserter |
+| 8 | A scholar's dig | Ruins being dug out, with tools and notes | scholar |
+| 9 | A trapper's den | Traps, hides, a fire | trapper |
+| 10 | A smugglers' hole | Goods stacked in a hidden cave | smugglers |
