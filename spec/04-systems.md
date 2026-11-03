@@ -3,7 +3,7 @@
 The rules the game runs on, in outline: how deep each one goes. Their details (numbers, lists)
 come with the content.
 
-## Decided (round 2)
+## Decided (rounds 2 and 3)
 
 - **Monsters' minds: searching, and a level that keeps watch.**
   - Searching: a monster that loses you goes to where it last saw or heard you and looks round,
@@ -46,39 +46,20 @@ come with the content.
   - Levers and hidden ways.
   - Water and ledges (deep water to swim without the lamp; ledges to drop from).
 
----
+- **What light is worth** (round 3). Light shows what the dark hides and helps where the dark
+  hurts. All five ways:
+  - **Traps and secrets show only in light.** In the dark, a trap is found by walking into it,
+    and secret doors and levers only by searching.
+  - **The dark is blind.** Blows in the dark miss more; you can't shoot what you can't see.
+    Monsters that see in the dark don't suffer it. Shooting from the dark needs the target lit,
+    which keeps shooting in check.
+  - **Some things shun light.** Rats, bats and spiders keep out of your light and won't attack
+    into it; some of the dead are slowed in it.
+  - **Reading needs light.** Scrolls and notes can't be read in the dark; spells already known can
+    be cast.
+  - **Things are told only in light.** In the dark band you see that something's there, not what.
 
-## 4.2 What light is worth (round 3)
-
-Your question: "I'm not sure what's the benefit of having a light on. It attracts monsters."
-
-Today, light gives:
-- **sight:** with the lamp out you see only a square or two, beyond that only what the level's
-  lights show;
-- **speed:** a step with the lamp out takes one and a half turns.
-
-Against that, it makes you easy to notice from far off. The sight is worth less than it seems:
-- the map remembers what you've seen;
-- the noise words show monsters you can't see;
-- the level's own lights show much of the way.
-
-So the lamp is mostly a speed boost with a big cost, and a careful player keeps it out.
-
-For light to be a real choice, it has to show what the dark hides and help where the dark hurts.
-These are the ways it could. More than one can be picked, and any of them makes the oil (2.4 A)
-worth spending.
-
-| | Way | What it means | Cost |
-|---|---|---|---|
-| ✓ | **Traps and secrets show only in light** *(my pick)* | In the dark, you find a trap by walking into it, and secret doors and levers only by searching. With the lamp lit they're found as you pass. Walking in the dark becomes a risk you take on purpose. | **S** |
-| ✓ | **The dark is blind** *(my pick)* | Blows in the dark miss more, and you can't shoot what you can't see. Monsters that see in the dark (goblins, spiders) don't suffer it; others do. Shooting from the dark needs the target lit, by its own light or a level's, which keeps shooting in check (round 2's critique). | **S** |
-| ✓ | **Some things shun light** *(my pick)* | Rats, bats and spiders keep out of your light and won't attack into it. Some of the dead are slowed in it. A swarm is held off by the lamp. Light becomes a shield against some kinds, and a beacon to others. | **M** (the minds read light) |
-| ✓ | **Reading needs light** *(my pick)* | Scrolls and notes can't be read in the dark. Spells already known can be cast. | **S** |
-| | **Things told only in light** | In the dark band you see that something is there, not what: "a monster", "something on the floor". | **S** |
-
-Together with the dread of the dark (2.4 B), the choice becomes:
-- **Light:** you see the traps, fight well, hold off vermin, read, and gain ground (and
-  experience, since seeing new ground earns it) faster. It costs oil and draws eyes.
-- **Dark:** you go unseen, but blind to traps, fighting badly, while dread rises.
-
-The answer changes room by room, which is what the stealth heart needs.
+  With the oil and dread (2), light and dark are a loop:
+  - **Light:** you see the traps, fight well, hold off vermin, read, and gain ground (and
+    experience) faster; it costs oil and draws eyes.
+  - **Dark:** you go unseen, but blind to traps, fighting badly, while dread rises.
