@@ -73,7 +73,9 @@
   table.grid { font-size: 14px; }
   table.best th { white-space: nowrap; }
   table.where td.w { text-align: center; color: var(--amber); border-left: 1px solid var(--line); min-width: 34px; }
-  table.where th.grp { text-align: center; color: var(--dim); border-left: 1px solid var(--line); }
+  table.where th.grp { text-align: center; color: var(--amber); border-left: 2px solid var(--faint); }
+  table.where .first { border-left: 2px solid var(--faint) !important; }
+  table.where .wld { background: rgba(127, 154, 90, 0.08); }
   table.where tr.boss td .c { font-size: 12px; white-space: nowrap; }
   table.where th.r { white-space: nowrap; color: var(--paper); text-transform: none; letter-spacing: 0; font-size: 15px; }
   table.best tr.kindrow th { padding-top: 16px; color: var(--amber); font: 600 12px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; }
@@ -167,14 +169,22 @@ function bestiaryView() {
 }
 
 function whereView() {
-  const cols = [...C.places_of_world.map((w) => ({ id: w.id, name: w.name, group: "The world by depth" })),
-    ...C.regions.filter((r) => r.kind !== "world").map((r) => ({ id: r.id, name: r.name.replace(/^The /, ""), group: { region: "Regions", transition: "Transitions", themed: "Themed areas" }[r.kind], boss: r.boss }))];
-  const groups = [...new Set(cols.map((c) => c.group))];
-  const head1 = `<tr><th></th>${groups.map((g) => `<th colspan="${cols.filter((c) => c.group === g).length}" class="grp">${esc(g)}</th>`).join("")}</tr>`;
-  const head2 = `<tr><th>Family</th>${cols.map((c) => `<th class="k">${esc(c.name)}</th>`).join("")}</tr>`;
-  const bossRow = `<tr class="boss"><th class="r">Boss</th>${cols.map((c) => `<td class="w">${c.boss ? `<span class="c">${esc(c.boss)}</span>` : ""}</td>`).join("")}</tr>`;
-  const rows = C.families.map((f) => `<tr><th class="r">${esc(f.name)}</th>${cols.map((c) => `<td class="w">${(f.homes ?? []).includes(c.id) ? "●" : ""}</td>`).join("")}</tr>`).join("");
-  return `<section><p class="note">Where each family lives: in the world by depth, in the regions, transitions and themed areas. The bosses are yours (round 19); the rest of the table is my proposal, to correct as a whole.</p>
+  const bands = [["shallow", "Shallow"], ["middle", "Middle"], ["deep", "Deep"]];
+  const KORD = { region: 0, transition: 1, themed: 2 };
+  const cols = bands.flatMap(([b, label]) => [
+    { id: "world-" + b, name: "The world", band: label, world: true },
+    ...C.regions.filter((r) => r.depth === b).sort((x, y) => KORD[x.kind] - KORD[y.kind]).map((r) => ({ id: r.id, name: r.name.replace(/^The /, ""), band: label, kind: r.kind, boss: r.boss })),
+  ]);
+  const at = (f) => cols.map((c, i) => ((f.homes ?? []).includes(c.id) ? i : -1)).filter((i) => i >= 0);
+  const bandOf = (i) => bands.findIndex(([, l]) => l === cols[i].band);
+  const score = (f) => { const is = at(f); if (!is.length) return [9, 9]; const bs = is.map(bandOf); return [Math.min(...bs), bs.reduce((a, b) => a + b, 0) / bs.length]; };
+  const fams = [...C.families].sort((x, y) => { const a = score(x), b = score(y); return a[0] - b[0] || a[1] - b[1]; });
+  const head1 = `<tr><th></th>${bands.map(([, l]) => `<th colspan="${cols.filter((c) => c.band === l).length}" class="grp">${l}</th>`).join("")}</tr>`;
+  const head2 = `<tr><th>Family</th>${cols.map((c) => `<th class="k ${c.world ? "wld" : ""} ${cols.find((x) => x.band === c.band) === c ? "first" : ""}">${esc(c.name)}${c.kind && c.kind !== "region" ? ` <span class="st">(${c.kind === "themed" ? "themed" : "transition"})</span>` : ""}</th>`).join("")}</tr>`;
+  const td = (c, inner) => `<td class="w ${cols.find((x) => x.band === c.band) === c ? "first" : ""} ${c.world ? "wld" : ""}">${inner}</td>`;
+  const bossRow = `<tr class="boss"><th class="r">Boss</th>${cols.map((c) => td(c, c.boss ? `<span class="c">${esc(c.boss)}</span>` : "")).join("")}</tr>`;
+  const rows = fams.map((f) => `<tr><th class="r">${esc(f.name)}</th>${cols.map((c) => td(c, (f.homes ?? []).includes(c.id) ? "●" : "")).join("")}</tr>`).join("");
+  return `<section><p class="note">Where each family lives, by depth. Each depth of the world by depth comes first, then the regions, transitions and themed areas placed at that depth. Families run from the shallowest down. The bosses are yours (round 19); the depths of the regions and the rest of the table are my proposal, to correct as a whole.</p>
     <div class="wrap"><table class="grid where">${head1}${head2}${bossRow}${rows}</table></div></section>`;
 }
 

@@ -13,59 +13,77 @@
    "kind": "region",
    "line": "Built rooms and corridors, falling in toward the caves",
    "inGame": true,
-   "boss": "Lich"
+   "boss": "Lich",
+   "depth": "shallow",
+   "depthProposed": true
   },
   {
    "id": "goblin-territory",
    "name": "Goblin Territory",
    "kind": "region",
    "line": "The goblin king's halls, the warrens and the pits",
-   "boss": "Goblin king"
+   "boss": "Goblin king",
+   "depth": "middle",
+   "depthProposed": true
   },
   {
    "id": "dwarven-keep",
    "name": "Abandoned Dwarven Keep",
    "kind": "region",
    "line": "A fallen dwarf city and its forge",
-   "boss": "Dragon"
+   "boss": "Dragon",
+   "depth": "deep",
+   "depthProposed": true
   },
   {
    "id": "deep-dark",
    "name": "The Deep Dark",
    "kind": "region",
    "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots",
-   "boss": "Dark elf prince"
+   "boss": "Dark elf prince",
+   "depth": "deep",
+   "depthProposed": true
   },
   {
    "id": "drowned-city",
    "name": "The Drowned City",
    "kind": "region",
    "line": "Ruins half under black water",
-   "boss": "Eldritch horror"
+   "boss": "Eldritch horror",
+   "depth": "middle",
+   "depthProposed": true
   },
   {
    "id": "mines",
    "name": "The mines",
    "kind": "transition",
-   "line": "An abandoned mine"
+   "line": "An abandoned mine",
+   "depth": "middle",
+   "depthProposed": true
   },
   {
    "id": "sewers",
    "name": "The sewers",
    "kind": "transition",
-   "line": "Channels and cisterns under a city"
+   "line": "Channels and cisterns under a city",
+   "depth": "shallow",
+   "depthProposed": true
   },
   {
    "id": "breach",
    "name": "A breach",
    "kind": "transition",
-   "line": "Where a tunnel broke into built rooms"
+   "line": "Where a tunnel broke into built rooms",
+   "depth": "middle",
+   "depthProposed": true
   },
   {
    "id": "bandits",
    "name": "The bandits' hold",
    "kind": "themed",
-   "line": "A hideout under a ruin"
+   "line": "A hideout under a ruin",
+   "depth": "shallow",
+   "depthProposed": true
   },
   {
    "id": "archive",
@@ -76,7 +94,9 @@
     "dungeon-underneath",
     "dwarven-keep",
     "drowned-city"
-   ]
+   ],
+   "depth": "shallow",
+   "depthProposed": true
   },
   {
    "id": "sanctum",
@@ -86,7 +106,9 @@
    "found": [
     "dungeon-underneath",
     "drowned-city"
-   ]
+   ],
+   "depth": "shallow",
+   "depthProposed": true
   }
  ],
  "places": [
