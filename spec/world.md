@@ -10,6 +10,38 @@ monster that will be generated there."
 This is the draft from it, to correct. The page: https://claude.ai/artifact/J78tDpCuv2GMniBu47AYru. The data: `data/catalogue.json`, under `world`. Monster danger is in rats (round 20);
 the numbers sketch the shape of the climb.
 
+## How a run is made (your note)
+
+"In my mind, out of the 5 main regions only 2-3 appear on each run. One of them is always the end
+game. I'm also thinking that I could be good to have some of these appear as smaller regions
+sometimes. For example, dwarven keep could appear higher in the dungeon, with less map
+space/levels, more depth approriate challenge and no dragon."
+
+- Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (steps 10 to 12), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.
+- **Can be the end game** (my proposal): The Dwarven Keep, the Deep Dark or the Drowned City.
+- **Monsters by depth:** A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.
+
+| Region | Full | Small version | Can be the end game |
+|---|---|---|---|
+| The Dungeon Underneath | steps 1 to 4, 2 to 3 maps, the lich | A dungeon wing: steps 1 to 6, 1 map(s); instead of the boss, its holder's leader (the cult priest, a skeleton warrior, the bandit chief) | no |
+| Goblin Territory | steps 3 to 7, 2 to 3 maps, the goblin king | A goblin outpost: steps 2 to 6, 1 map(s); instead of the boss, a goblin chieftain | no |
+| The Drowned City | steps 5 to 8, 2 to 3 maps, the eldritch horror | A flooded quarter: steps 3 to 7, 1 to 2 map(s); instead of the boss, no boss; an abomination at most | yes |
+| The Deep Dark | steps 8 to 11, 2 to 3 maps, the dark elf prince | A dark elf outpost: steps 5 to 9, 1 to 2 map(s); instead of the boss, a dark elf wizard | yes |
+| The Abandoned Dwarven Keep | steps 10 to 12, 3 maps, the dragon | A dwarven hall: steps 4 to 9, 1 to 2 map(s); instead of the boss, no dragon; a golem as its guardian | yes |
+
+Example runs, top to bottom:
+1. The Over Dungeon → The Dungeon Underneath (full, steps 1 to 4: the lich) → The Over Dungeon → A flooded quarter (small Drowned City, step 6) → The Over Dungeon → The Abandoned Dwarven Keep (end game: the dragon)
+2. The Over Dungeon → A goblin outpost (small Goblin Territory, step 3) → The Over Dungeon → The Drowned City (full, steps 6 to 8: the eldritch horror) → The Over Dungeon → The Deep Dark (end game: the dark elf prince)
+3. The Over Dungeon → Goblin Territory (full, steps 4 to 7: the goblin king) → The Over Dungeon → The Drowned City (end game: the eldritch horror, at its strongest)
+
+Critique:
+- **An end-game boss in two strengths.** Whichever region is the end game, its boss has to be
+  the run's last test, so the Drowned City's eldritch horror or the Deep Dark's prince fights at
+  the dragon's level then, and at its own step when met on the way. That's one boss to draw, with
+  two sets of numbers.
+- **The small versions answer the thin deep end** (the Over Dungeon has nothing new below step 10)
+  only partly: they sit higher up. The deep is the end game's.
+
 ## The Over Dungeon
 
 The general dungeon between and around the regions: any monster, by depth. Its ground changes with depth: built rooms near the top, falling in, then caves, then something deeper still.

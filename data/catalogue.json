@@ -5720,7 +5720,24 @@
     "holds": [
      "The archive",
      "The cult's sanctum"
-    ]
+    ],
+    "full": {
+     "steps": [
+      1,
+      4
+     ],
+     "maps": "2 to 3"
+    },
+    "small": {
+     "name": "A dungeon wing",
+     "steps": [
+      1,
+      6
+     ],
+     "maps": "1",
+     "instead": "its holder's leader (the cult priest, a skeleton warrior, the bandit chief)"
+    },
+    "endGame": false
    },
    {
     "id": "goblin-territory",
@@ -5766,7 +5783,24 @@
      "Crude prison",
      "Warrens"
     ],
-    "holds": []
+    "holds": [],
+    "full": {
+     "steps": [
+      3,
+      7
+     ],
+     "maps": "2 to 3"
+    },
+    "small": {
+     "name": "A goblin outpost",
+     "steps": [
+      2,
+      6
+     ],
+     "maps": "1",
+     "instead": "a goblin chieftain"
+    },
+    "endGame": false
    },
    {
     "id": "drowned-city",
@@ -5813,7 +5847,24 @@
     "holds": [
      "The archive",
      "The cult's sanctum"
-    ]
+    ],
+    "full": {
+     "steps": [
+      5,
+      8
+     ],
+     "maps": "2 to 3"
+    },
+    "small": {
+     "name": "A flooded quarter",
+     "steps": [
+      3,
+      7
+     ],
+     "maps": "1 to 2",
+     "instead": "no boss; an abomination at most"
+    },
+    "endGame": true
    },
    {
     "id": "deep-dark",
@@ -5862,7 +5913,24 @@
      "The rift",
      "Underwood"
     ],
-    "holds": []
+    "holds": [],
+    "full": {
+     "steps": [
+      8,
+      11
+     ],
+     "maps": "2 to 3"
+    },
+    "small": {
+     "name": "A dark elf outpost",
+     "steps": [
+      5,
+      9
+     ],
+     "maps": "1 to 2",
+     "instead": "a dark elf wizard"
+    },
+    "endGame": true
    },
    {
     "id": "dwarven-keep",
@@ -5913,7 +5981,24 @@
     ],
     "holds": [
      "The archive"
-    ]
+    ],
+    "full": {
+     "steps": [
+      10,
+      12
+     ],
+     "maps": "3"
+    },
+    "small": {
+     "name": "A dwarven hall",
+     "steps": [
+      4,
+      9
+     ],
+     "maps": "1 to 2",
+     "instead": "no dragon; a golem as its guardian"
+    },
+    "endGame": true
    }
   ],
   "transitions": [
@@ -6033,6 +6118,35 @@
      "Prison cells"
     ]
    }
-  ]
+  ],
+  "run": {
+   "rule": "Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (steps 10 to 12), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.",
+   "endGame": "The Dwarven Keep, the Deep Dark or the Drowned City.",
+   "filter": "A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.",
+   "examples": [
+    [
+     "The Over Dungeon",
+     "The Dungeon Underneath (full, steps 1 to 4: the lich)",
+     "The Over Dungeon",
+     "A flooded quarter (small Drowned City, step 6)",
+     "The Over Dungeon",
+     "The Abandoned Dwarven Keep (end game: the dragon)"
+    ],
+    [
+     "The Over Dungeon",
+     "A goblin outpost (small Goblin Territory, step 3)",
+     "The Over Dungeon",
+     "The Drowned City (full, steps 6 to 8: the eldritch horror)",
+     "The Over Dungeon",
+     "The Deep Dark (end game: the dark elf prince)"
+    ],
+    [
+     "The Over Dungeon",
+     "Goblin Territory (full, steps 4 to 7: the goblin king)",
+     "The Over Dungeon",
+     "The Drowned City (end game: the eldritch horror, at its strongest)"
+    ]
+   ]
+  }
  }
 }
