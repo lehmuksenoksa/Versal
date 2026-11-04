@@ -98,121 +98,116 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
 const LEVELS = 20, MAXW = 3, END = [18, 20];
 const BANDS = [["shallow", 1, 7], ["middle", 8, 14], ["deep", 15, 20]];
-const P = { bigger: 0.65, forks: [2, 4], third: 0.3, deepSmaller: 0.5, bandits: 0.5, archive: 0.5, sanctum: 0.5, minThemed: 5 };
+const P = { bigger: 0.65, gap: 2, forks: [2, 4], lineT: 0.5, wide: 0.6, deepSmaller: 0.5, bandits: 0.5, archive: 0.5, sanctum: 0.5, minThemed: 5 };
 const RULES = [
   `Twenty levels in three bands: shallow 1 to 7, middle 8 to 14, deep 15 to 20. Level 1 is a single map of the Over Dungeon, where every run starts.`,
   `The end game is one of the regions that can be (the Keep, the Deep Dark, the Drowned City), at levels ${END[0]} to ${END[1]}: the deep band's bigger region.`,
-  `The shallow and middle bands each get at most one bigger region (about ${P.bigger * 100}% of the time, if one fits there), with its full run of levels and its boss. A band without one gets a smaller region: a region's smaller version, or the bandits' hold, one level.`,
-  `A region appears once in a run, bigger or smaller. More smaller regions are added, where they fit, until the themed areas every way passes number at least ${P.minThemed}. The archive and the cult's sanctum, each half the time, sit inside a bigger region that can hold them.`,
-  `The dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run, each fork in the stretch between two themed areas: one way is a transition leading into the next themed area (where one fits the depth), the other the Over Dungeon. At most one fork in a run has a third way (${P.third * 100}% of runs). The ways join again at the next themed area.`,
-  `Everything else is the Over Dungeon.`,
+  `The shallow and middle bands each get at most one bigger region (about ${P.bigger * 100}% of the time, if one fits there), or else a smaller region: a region's smaller version, or the bandits' hold, one level. A region appears once in a run, bigger or smaller.`,
+  `Themed areas are at least ${P.gap} levels apart, so two never sit side by side.`,
+  `A bigger region isn't a corridor: its first and middle levels can hold two maps side by side (about ${P.wide * 100}% of the time), joined every way, and its last level is the boss's lair. The archive and the cult's sanctum (each half the time) are a side map off one of a region's levels, where the region can hold them.`,
+  `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions), the mines Goblin Territory, the Deep Dark and the Keep, a breach anything. Each transition appears at most once in a run, over two or three levels just before the themed area it leads into. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
+  `Smaller regions are added, where they fit, until every way meets at least ${P.minThemed} themed areas (transitions and sub-regions counted).`,
 ];
 
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const range = (s) => { const m = String(s).match(/(\d+)(?:\D+(\d+))?/); return [Number(m[1]), Number(m[2] ?? m[1])]; };
+const themedOnPath = (path) => { const set = []; for (const c of path) if (c.area && !set.includes(c.area.name)) set.push(c.area.name); return set; };
 
 function generate(W, seed) {
   const R = rng(seed), pick = (a) => a[Math.floor(R() * a.length)], int = (a, b) => a + Math.floor(R() * (b - a + 1));
   const shuffle = (a) => a.map((x) => [R(), x]).sort((p, q) => p[0] - q[0]).map((p) => p[1]);
-  const used = new Set(), segs = [];               // segs: themed areas on the main line {name, kind, from, to, boss, region}
-  const free = (f, t) => f >= 2 && t <= LEVELS && !segs.some((s) => !(t < s.from || f > s.to));
+  const used = new Set(), segs = [];
+  const free = (f, t) => f >= 2 && t <= LEVELS && !segs.some((s) => !(t + P.gap < s.from || f - P.gap > s.to));
   const bandOf = (d) => BANDS.find(([, a, b]) => d >= a && d <= b)[0];
-  const fitStart = (len, lo, hi) => { const opts = []; for (let f = Math.max(2, lo); f + len - 1 <= hi; f++) if (free(f, f + len - 1)) opts.push(f); return opts.length ? pick(opts) : null; };
-  // the end game
+  const fitStart = (len, lo, hi) => { const o = []; for (let f = Math.max(2, lo); f + len - 1 <= hi; f++) if (free(f, f + len - 1)) o.push(f); return o.length ? pick(o) : null; };
   const endR = pick(W.regions.filter((r) => r.endGame));
-  segs.push({ name: endR.name, kind: "region", from: END[0], to: END[1], boss: endR.boss, end: true, region: endR }); used.add(endR.name);
+  segs.push({ name: endR.name, kind: "region", rid: endR.id, from: END[0], to: END[1], boss: endR.boss, region: endR, end: true }); used.add(endR.id);
   const smallerOptions = (lo, hi) => [
-    ...W.regions.filter((r) => !used.has(r.name)).map((r) => ({ name: r.small.name, kind: "small", of: r.name, lo: Math.max(lo, r.small.steps[0]), hi: Math.min(hi, r.small.steps[1]) })),
-    ...W.smallerRegions.filter((x) => !used.has(x.name)).map((x) => ({ name: x.name, kind: "smallerRegion", lo: Math.max(lo, x.steps[0]), hi: Math.min(hi, x.steps[1]) })),
+    ...W.regions.filter((r) => !used.has(r.id)).map((r) => ({ name: r.small.name, kind: "small", rid: r.id, of: r.name, lo: Math.max(lo, r.small.steps[0]), hi: Math.min(hi, r.small.steps[1]) })),
+    ...W.smallerRegions.filter((x) => !used.has(x.id)).map((x) => ({ name: x.name, kind: "smallerRegion", rid: x.id, lo: Math.max(lo, x.steps[0]), hi: Math.min(hi, x.steps[1]) })),
   ].filter((o) => o.lo <= o.hi);
-  const addSmaller = (lo, hi) => {
-    for (const o of shuffle(smallerOptions(lo, hi))) { const f = fitStart(1, o.lo, o.hi); if (f) { segs.push({ name: o.name, kind: o.kind, of: o.of, from: f, to: f }); used.add(o.of || o.name); return true; } }
-    return false;
-  };
-  // shallow and middle: one bigger region, or a smaller one
-  for (const [band, lo, hi] of BANDS.slice(0, 2)) {
+  const addSmaller = (lo, hi) => { for (const o of shuffle(smallerOptions(lo, hi))) { const f = fitStart(1, o.lo, o.hi); if (f) { segs.push({ ...o, from: f, to: f }); used.add(o.rid); return true; } } return false; };
+  for (const [, lo, hi] of BANDS.slice(0, 2)) {
     let placed = false;
-    if (R() < P.bigger) {
-      for (const r of shuffle(W.regions.filter((r) => !used.has(r.name)))) {
-        const [a, b] = range(r.full.maps), len = int(a, b), l = Math.max(lo, r.full.steps[0]), h = Math.min(hi, r.full.steps[1], END[0] - 1);
-        const f = fitStart(len, l, h);
-        if (f) { segs.push({ name: r.name, kind: "region", from: f, to: f + len - 1, boss: r.boss, region: r }); used.add(r.name); placed = true; break; }
-      }
+    if (R() < P.bigger) for (const r of shuffle(W.regions.filter((r) => !used.has(r.id)))) {
+      const [a, b] = range(r.full.maps), len = int(a, b), f = fitStart(len, Math.max(lo, r.full.steps[0]), Math.min(hi, r.full.steps[1], END[0] - 1));
+      if (f) { segs.push({ name: r.name, kind: "region", rid: r.id, from: f, to: f + len - 1, boss: r.boss, region: r }); used.add(r.id); placed = true; break; }
     }
     if (!placed) addSmaller(lo, hi);
   }
   if (R() < P.deepSmaller) addSmaller(15, END[0] - 1);
-  if (R() < P.bandits && !used.has("The bandits' hold")) { const bh = W.smallerRegions[0]; const f = fitStart(1, bh.steps[0], bh.steps[1]); if (f) { segs.push({ name: bh.name, kind: "smallerRegion", from: f, to: f }); used.add(bh.name); } }
-  // sub-regions inside bigger regions
+  if (R() < P.bandits) addSmaller(...W.smallerRegions[0].steps);
   const subs = [];
   for (const [nm, p] of [["The archive", P.archive], ["The cult's sanctum", P.sanctum]]) {
     if (R() >= p) continue;
     const hosts = segs.filter((s) => s.kind === "region" && s.region.subRegions.includes(nm) && !subs.some((x) => x.seg === s));
-    if (hosts.length) { const s = pick(hosts); subs.push({ name: nm, seg: s, d: int(s.from, s.to) }); }
+    if (hosts.length) { const s = pick(hosts); subs.push({ name: nm, seg: s, d: int(s.from, Math.max(s.from, s.to - 1)) }); }
   }
-  // at least five themed areas on every way
-  let guard = 0;
-  while (segs.length + subs.length < P.minThemed && guard++ < 30) {
-    const counts = BANDS.map(([n, lo, hi]) => [segs.filter((s) => s.from >= lo && s.from <= hi).length, lo, Math.min(hi, END[0] - 1)]).filter(([, lo, hi]) => lo <= hi).sort((x, y) => x[0] - y[0]);
-    if (!counts.some(([, lo, hi]) => addSmaller(lo, hi))) break;
-  }
-  segs.sort((x, y) => x.from - y.from);
-  // the shape: level by level
-  const levels = Array.from({ length: LEVELS }, () => []), edges = [];
-  let nid = 0; const node = (d, area, extra = {}) => { const c = { id: nid++, d, area, ...extra }; levels[d - 1].push(c); return c; };
-  const start = node(1, null);
-  let prev = [start], cursor = 2;
-  const transUsed = new Set();
-  // which gaps fork: two to four of them, one perhaps three ways
-  const gaps = []; { let cur = 2; for (const sg of segs) { if (cur <= sg.from - 1) gaps.push(sg.from); cur = sg.to + 1; } }
-  const forkAt = new Set(shuffle(gaps).slice(0, int(...P.forks)));
-  const threeAt = R() < P.third && forkAt.size ? pick([...forkAt]) : null;
-  const link = (from, to) => from.forEach((a) => to.forEach((b) => edges.push({ d: a.d, a: a.id, b: b.id })));
-  for (let i = 0; i <= segs.length; i++) {
-    const seg = segs[i], gapTo = seg ? seg.from - 1 : 0;
-    if (seg && cursor <= gapTo) {
-      // a gap between themed areas: fork or not
-      const len = gapTo - cursor + 1;
-      const ways = [];
-      if (forkAt.has(seg.from)) {
-        const fits = shuffle(W.transitions.filter((t) => !transUsed.has(t.name) && t.steps[0] <= gapTo && t.steps[1] >= Math.max(cursor, gapTo - 1)));
-        const nWays = seg.from === threeAt ? 3 : 2;
-        for (let k = 0; k < nWays; k++) {
-          const t = k > 0 ? fits.shift() : null;
-          if (t) transUsed.add(t.name);
-          ways.push(t ? { name: t.name, kind: "transition", tl: Math.min(len, int(1, 2)) } : null);
+  const connects = (t, a, b) => t.connects.includes("*") || (t.connects.includes(a) && t.connects.includes(b));
+  const build = (keepT = false) => {
+    segs.sort((x, y) => x.from - y.from);
+    const levels = Array.from({ length: LEVELS }, () => []), edges = [];
+    let nid = 0; const node = (d, area, extra = {}) => { const c = { id: nid++, d, area, ...extra }; levels[d - 1].push(c); return c; };
+    const link = (from, to) => from.forEach((a) => to.forEach((b) => edges.push({ a: a.id, b: b.id })));
+    const start = node(1, null); let prev = [start], cursor = 2, tUsed = new Set();
+    // which gaps can fork: those with a fitting transition, between two themed areas
+    const chosen = new Set();
+    const plan = segs.map((seg, i) => {
+      const before = segs[i - 1], a = before ? before.to + 1 : 2, b = seg.from - 1;
+      if (b < a || !before) return { a, b, t: null };
+      const t = shuffle(W.transitions).find((t) => !chosen.has(t.name) && connects(t, before.rid, seg.rid) && t.steps[0] <= b && t.steps[1] >= Math.max(a, b - 1));
+      if (t) chosen.add(t.name);
+      return { a, b, t };
+    });
+    const forkable = shuffle(plan.map((g, i) => (g.t ? i : -1)).filter((i) => i >= 0));
+    const nf = Math.min(forkable.length, int(...P.forks));
+    const forkAt = new Set(forkable.slice(0, nf));
+    plan.forEach((g, i) => { if (g.t && !forkAt.has(i) && !keepT && R() >= P.lineT) g.t = null; });
+    const forks = plan.filter((g, i) => forkAt.has(i) && g.t && g.b >= g.a).length;
+    segs.forEach((seg, i) => {
+      const g = plan[i];
+      if (g.b >= g.a) {
+        const len = g.b - g.a + 1, tl = g.t ? Math.min(len, int(2, 3)) : 0, fork = forkAt.has(i) && g.t;
+        // plain Over Dungeon first, one way
+        for (let d = g.a; d <= g.b - tl; d++) { const c = node(d, null); link(prev, [c]); prev = [c]; }
+        if (tl) {
+          // the transition's levels: the only way, or one side of a fork with the Over Dungeon
+          const lanes = fork ? [null, g.t] : [g.t], rows = lanes.map(() => []);
+          for (let d = g.b - tl + 1; d <= g.b; d++) {
+            const row = lanes.map((t, k) => { const c = node(d, t ? { name: t.name, kind: "transition" } : null); rows[k].push(c); return c; });
+            if (d === g.b - tl + 1) link(prev, row); else rows.forEach((r) => edges.push({ a: r[r.length - 2].id, b: r[r.length - 1].id }));
+          }
+          tUsed.add(g.t.name);
+          prev = rows.map((r) => r[r.length - 1]);
         }
-      } else ways.push(null);
-      const lanes = ways.map(() => []);
-      for (let d = cursor; d <= gapTo; d++) {
-        const row = ways.map((w, k) => {
-          const inT = w && d > gapTo - w.tl;
-          const c = node(d, inT ? { name: w.name, kind: "transition" } : null, inT ? { first: d === gapTo - w.tl + 1 } : {});
-          lanes[k].push(c); return c;
-        });
-        if (d === cursor) link(prev, row); else lanes.forEach((ln) => edges.push({ d: d - 1, a: ln[ln.length - 2].id, b: ln[ln.length - 1].id }));
       }
-      prev = lanes.map((ln) => ln[ln.length - 1]);
-      cursor = gapTo + 1;
-    }
-    if (!seg) break;
-    for (let d = seg.from; d <= seg.to; d++) {
-      const c = node(d, seg, { first: d === seg.from, last: d === seg.to });
-      const sub = subs.find((x) => x.seg === seg && x.d === d); if (sub) c.sub = sub.name;
-      link(prev, [c]); prev = [c];
-    }
-    cursor = seg.to + 1;
+      // the themed area itself
+      for (let d = seg.from; d <= seg.to; d++) {
+        const last = d === seg.to, wide = seg.kind === "region" && !last && R() < P.wide;
+        const row = [node(d, seg, { first: d === seg.from, last })];
+        if (wide) row.push(node(d, seg, {}));
+        const sub = subs.find((x) => x.seg === seg && x.d === d);
+        link(prev, row);
+        if (sub) { const sc = node(d, { name: sub.name, kind: "sub", inside: seg.name }, {}); link(prev, [sc]); row.push(sc); }
+        prev = row;
+      }
+    });
+    const byId = new Map(levels.flat().map((c) => [c.id, c])), out = new Map();
+    edges.forEach((e) => { if (!out.has(e.a)) out.set(e.a, []); out.get(e.a).push(e.b); });
+    const paths = []; const walk = (c, acc) => { const n = [...acc, c]; const nx = out.get(c.id) || []; if (!nx.length) { paths.push(n); return; } if (paths.length > 400) return; nx.forEach((id) => walk(byId.get(id), n)); };
+    walk(start, []);
+    return { levels, edges, paths, forks, tUsed };
+  };
+  let shape = build(), guard = 0;
+  while (Math.min(...shape.paths.map((p) => themedOnPath(p).length)) < P.minThemed && guard++ < 12) {
+    const counts = BANDS.map(([n, lo, hi]) => [segs.filter((s) => s.from >= lo && s.from <= hi).length, lo, Math.min(hi, END[0] - 1)]).filter(([, lo, hi]) => lo <= hi).sort((x, y) => x[0] - y[0]);
+    if (counts.some(([, lo, hi]) => addSmaller(lo, hi))) { shape = build(); continue; }
+    shape = build(true); break;
   }
-  const cellById = new Map(levels.flat().map((c) => [c.id, c]));
-  const out = new Map(); edges.forEach((e) => { if (!out.has(e.a)) out.set(e.a, []); out.get(e.a).push(e.b); });
-  const paths = []; const walk = (c, acc) => { const n = [...acc, c]; const nx = out.get(c.id) || []; if (!nx.length) { paths.push(n); return; } nx.forEach((id) => walk(cellById.get(id), n)); };
-  walk(start, []);
-  const areas = [...segs, ...subs.map((s) => ({ name: s.name, kind: "sub" })), ...[...transUsed].map((n) => ({ name: n, kind: "transition" }))];
-  const forks = levels.reduce((n, l, i) => n + (l.length > 1 && (i === 0 || levels[i - 1].length === 1) ? 1 : 0), 0);
-  return { seed, levels, edges, paths, endR, areas, segs, bandOf, forks };
+  return { seed, ...shape, endR, segs, subs, bandOf };
 }
 
-const themedOn = (path) => { const set = []; for (const c of path) { if (c.area && !set.includes(c.area.name)) set.push(c.area.name); if (c.sub && !set.includes(c.sub)) set.push(c.sub); } return set; };
+const themedOn = themedOnPath;
 const COLOR = { region: "#d9a53a", small: "rgba(217,165,58,0.4)", transition: "#6d7c8c", smallerRegion: "#7f9a5a", sub: "#7f9a5a" };
 
 function draw(run) {
@@ -235,10 +230,10 @@ function draw(run) {
       <title>${esc((a ? a.name + (a.kind === "small" ? " (small " + a.of + ")" : "") : "The Over Dungeon") + (c.sub ? ", with " + c.sub : ""))}</title></g>`;
   }).join("");
   $("#map").innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="The run's levels and the ways down">${bands}${nums}${lines}${nodes}</svg>`;
-  $("#seed").textContent = `Run ${run.seed}: ${run.forks} fork${run.forks === 1 ? "" : "s"}, ${run.paths.length} way${run.paths.length === 1 ? "" : "s"} down; end game ${run.endR.name}.`;
+  $("#seed").textContent = `Run ${run.seed}: ${run.forks} fork${run.forks === 1 ? "" : "s"} between themed areas; end game ${run.endR.name}.`;
   const groups = new Map();
   run.paths.forEach((p) => { const t = themedOn(p); const k = t.join("|"); groups.set(k, { t, n: (groups.get(k)?.n || 0) + 1 }); });
-  $("#paths").innerHTML = `<p class="note">${run.paths.length} way${run.paths.length === 1 ? "" : "s"} down, grouped by the themed areas they meet.</p>` + [...groups.values()].sort((a, b) => b.t.length - a.t.length).map(({ t, n }) => `<div class="path"><div class="ph"><b>${n} way${n === 1 ? "" : "s"}</b><span class="${t.length >= 5 ? "ok" : "short"}">${t.length} themed area${t.length === 1 ? "" : "s"}</span></div><div class="chips">${t.map((x) => `<span class="c">${esc(x)}</span>`).join("")}</div></div>`).join("");
+  $("#paths").innerHTML = `<p class="note">Every way down, grouped by the themed areas it meets (a way inside a region that skips its side map misses that sub-region).</p>` + [...groups.values()].sort((a, b) => b.t.length - a.t.length).map(({ t, n }) => `<div class="path"><div class="ph"><b>${n} way${n === 1 ? "" : "s"}</b><span class="${t.length >= 5 ? "ok" : "short"}">${t.length} themed area${t.length === 1 ? "" : "s"}</span></div><div class="chips">${t.map((x) => `<span class="c">${esc(x)}</span>`).join("")}</div></div>`).join("");
 }
 
 function stats(W) {
@@ -252,10 +247,14 @@ function stats(W) {
   const bandAvg = (n) => avg(rs.map((r) => r.segs.filter((s) => r.bandOf(s.from) === n).length));
   const bigger = avg(rs.map((r) => r.segs.filter((s) => s.kind === "region").length));
   const ends = {}; rs.forEach((r) => (ends[r.endR.name] = (ends[r.endR.name] || 0) + 1));
+  const gapsMin = rs.map((r) => { const ss = [...r.segs].sort((x, y) => x.from - y.from); return Math.min(...ss.slice(1).map((x, i) => x.from - ss[i].to - 1)); });
+  const tPlaced = rs.map((r) => r.tUsed.size);
   const rows = [
-    ["Forks in a run: fewest and most", Math.min(...rs.map((r) => r.forks)) + " and " + Math.max(...rs.map((r) => r.forks))], ["Ways down in a run, on average (each fork doubles them)", avg(ways)], ["Fewest and most ways down in a run", Math.min(...ways) + " and " + Math.max(...ways)],
+    ["Forks in a run: fewest and most", Math.min(...rs.map((r) => r.forks)) + " and " + Math.max(...rs.map((r) => r.forks))],
+    ["Transitions in a run, on average", avg(tPlaced)],
     ["Levels with one map, two, three", ["1", "2", "3"].map((k) => pct(rowsW.filter((x) => x === Number(k)).length, rowsW.length)).join(", ")],
     ["Themed areas a way meets, on average", avg(per)], ["Fewest a way meets", Math.min(...per)], ["Runs where every way meets five or more", pct(allFive)],
+    ["Fewest levels between two themed areas", Math.min(...gapsMin)],
     ["Bigger regions in a run, on average (the end game counted)", bigger],
     ["Themed areas starting in the shallow, middle and deep bands, on average", [bandAvg("shallow"), bandAvg("middle"), bandAvg("deep")].join(", ")],
     ["Maps that are the Over Dungeon", pct(od, maps.length)],

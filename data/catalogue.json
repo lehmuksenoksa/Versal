@@ -6092,6 +6092,10 @@
      "Channels",
      "Cistern",
      "Smugglers' hole"
+    ],
+    "connects": [
+     "dungeon-underneath",
+     "drowned-city"
     ]
    },
    {
@@ -6113,6 +6117,11 @@
      "Cave-in maze",
      "Miners' pocket",
      "Winch room"
+    ],
+    "connects": [
+     "goblin-territory",
+     "deep-dark",
+     "dwarven-keep"
     ]
    },
    {
@@ -6127,6 +6136,9 @@
     ],
     "places": [
      "A broken wall into the other side"
+    ],
+    "connects": [
+     "*"
     ]
    }
   ],
@@ -6220,7 +6232,8 @@
     "steps": [
      1,
      10
-    ]
+    ],
+    "id": "bandits"
    }
   ]
  }

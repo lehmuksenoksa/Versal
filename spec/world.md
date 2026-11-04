@@ -72,19 +72,28 @@ the way: one boss to draw, two sets of numbers.
 - Your rules for it: "too much variation in the ways the dungeon can branch… I'd like the
   thematic areas more evenly spread between shallow, middle and deep. Maximum of one bigger region
   for each. And if there's no bigger region, there needs to be a smaller region. Also, the
-  transitions are supposed to connect themed areas." The simulator now follows them:
-  - three bands (shallow 1 to 7, middle 8 to 14, deep 15 to 20), each with at most one bigger
-    region, or else a smaller one;
-  - the end game is the deep band's bigger region;
-  - two to four forks a run, each between two themed areas: a transition into the next one, or
-    the Over Dungeon (at most one fork in a run has a third way);
-  - smaller regions added until every way meets at least five themed areas.
+  transitions are supposed to connect themed areas." Then: themed areas "too close to each other
+  sometimes", transitions that don't connect, too much plain Over Dungeon, regions that look like
+  corridors. The simulator now:
+  - uses three bands (shallow 1 to 7, middle 8 to 14, deep 15 to 20), each with at most one bigger
+    region, or else a smaller one, the deep band's being the end game;
+  - keeps themed areas at least two levels apart;
+  - lets a transition join only what it connects: the sewers the Dungeon Underneath and the
+    Drowned City, the mines Goblin Territory, the Deep Dark and the Keep, a breach anything. Each
+    transition appears once in a run, over the two or three levels before the themed area it
+    leads into, either as the only way or as one side of a fork with the Over Dungeon; there's
+    never a fork between two plain maps;
+  - gives a bigger region two maps side by side on its first and middle levels (more often than
+    not), and a single map for the boss's lair; the archive and the cult's sanctum are side maps
+    off a region's level.
 
   Over a thousand runs:
-  - every way meets five or more themed areas (6.4 on average);
-  - themed areas are spread 1.7, 1.3 and 1.4 across the bands;
-  - 60% of maps are the Over Dungeon;
-  - a run has 4 to 24 ways down (each fork doubles them).
+  - 1 to 3 forks a run;
+  - 43% of maps are the Over Dungeon;
+  - themed areas are spread 1.6, 1.6 and 1.4 across the bands;
+  - a way meets 5.8 themed areas on average, but only 56% of runs give five on every way: the
+    Over Dungeon side of a fork misses that transition, and there's less room once themed areas
+    are spaced out. There are only three transitions, so at most three forks.
 
 ## The Over Dungeon
 
