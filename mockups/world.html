@@ -57,7 +57,7 @@
   .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; width: 140px; margin-top: 6px; }
   .bar span { display: block; height: 100%; background: var(--amber); }
   /* the strip: steps across, one row per place */
-  .strip { display: grid; grid-template-columns: minmax(170px, 240px) repeat(12, minmax(30px, 1fr)); gap: 3px 0; align-items: center; min-width: 640px; }
+  .strip { display: grid; grid-template-columns: minmax(170px, 240px) repeat(20, minmax(22px, 1fr)); gap: 3px 0; align-items: center; min-width: 760px; }
   .strip .lbl { font: 600 15px var(--letter); color: var(--paper); padding-right: 10px; }
   .strip .lbl small { display: block; font: 400 13px var(--log); color: var(--dim); }
   .strip .sh { font: 600 13px var(--letter); color: var(--dim); text-align: center; font-variant-numeric: tabular-nums; }
@@ -81,7 +81,7 @@
 <main>
   <header>
     <h1>The world plan</h1>
-    <p class="note">The world, top to bottom as you go down. First the Over Dungeon, the general dungeon where any monster can turn up, by depth. Then where the regions, transitions and themed areas can appear, and a card for each: its monsters, its locations, and what's found only there. A draft from your outline (round 21), with your note on 2 or 3 regions a run and their small versions: monster danger is counted in rats (round 20), and every number sketches the shape of the climb, to be tuned later.</p>
+    <p class="note">The world, top to bottom as you go down. First the Over Dungeon, the general dungeon where any monster can turn up, by depth. Then where the regions, transitions and themed areas can appear, and a card for each: its monsters, its locations, and what's found only there. A draft from your outline (round 21), with your note on 2 or 3 regions a run and their small versions: the world is twenty levels deep; monster danger is counted in rats (round 20), and every number sketches the shape of the climb, to be tuned later.</p>
   </header>
   <div id="view"><p class="note">Loading the plan…</p></div>
 </main>
@@ -93,16 +93,16 @@ let C;
 const mon = (n) => C.monsters.find((m) => m.name === n);
 const mchip = (n, extra = "") => { const m = mon(n); return `<span class="c ${extra}" title="${esc(m?.line || "")}">${esc(n)}${m?.danger ? ` <span class="dn">${m.danger}</span>` : ""}</span>`; };
 const pchip = (n, only) => `<span class="c ${only ? "only" : ""}">${esc(n)}</span>`;
-const steps = (a) => `steps ${a[0]} to ${a[1]}`;
+const steps = (a) => `levels ${a[0]} to ${a[1]}`;
 
 function strip(W) {
-  const rows = [["The Over Dungeon", "everywhere between", [1, 12], "od", ""],
+  const rows = [["The Over Dungeon", "everywhere between", [1, 20], "od", ""],
     ...W.regions.flatMap((r) => [[r.name, r.endGame ? "region · can be the end game" : "region", r.full.steps, "", "full"], [r.small.name, "its small version", r.small.steps, "small", "small"]]),
     ...W.transitions.map((t) => [t.name, "transition", t.steps, "trans", ""]),
     ...W.themed.filter((t) => t.steps).map((t) => [t.name, "themed area", t.steps, "themed", ""])];
-  const bands = `<div></div><div class="bandh" style="grid-column: span 4">Shallow</div><div class="bandh" style="grid-column: span 4">Middle</div><div class="bandh" style="grid-column: span 4">Deep</div>`;
-  const nums = `<div></div>${Array.from({ length: 12 }, (_, i) => `<div class="sh">${i + 1}</div>`).join("")}`;
-  const body = rows.map(([name, kind, [a, b], cls, form]) => `<div class="lbl ${form === "small" ? "sub" : ""}">${esc(name)}<small>${kind}</small></div>${a > 1 ? `<div style="grid-column: span ${a - 1}"></div>` : ""}<div class="span ${cls}" style="grid-column: span ${b - a + 1}">${cls === "od" ? "" : esc(steps([a, b]))}</div>${b < 12 ? `<div style="grid-column: span ${12 - b}"></div>` : ""}`).join("");
+  const bands = `<div></div><div class="bandh" style="grid-column: span 7">Shallow</div><div class="bandh" style="grid-column: span 7">Middle</div><div class="bandh" style="grid-column: span 6">Deep</div>`;
+  const nums = `<div></div>${Array.from({ length: 20 }, (_, i) => `<div class="sh">${i + 1}</div>`).join("")}`;
+  const body = rows.map(([name, kind, [a, b], cls, form]) => `<div class="lbl ${form === "small" ? "sub" : ""}">${esc(name)}<small>${kind}</small></div>${a > 1 ? `<div style="grid-column: span ${a - 1}"></div>` : ""}<div class="span ${cls}" style="grid-column: span ${b - a + 1}">${cls === "od" ? "" : esc(steps([a, b]))}</div>${b < 20 ? `<div style="grid-column: span ${20 - b}"></div>` : ""}`).join("");
   return `<div class="wrap"><div class="strip">${bands}${nums}${body}</div></div>`;
 }
 
@@ -121,7 +121,7 @@ function render() {
 
   <section>
     <h2>Where things can appear</h2>
-    <p class="note">At which steps of depth each can turn up in a run. The Over Dungeon runs all the way down. Each region has its full range and, lighter beneath it, the range of its small version; an end-game region is set at the bottom instead. Branching routes (round 12) choose between those at the same depth. The archive and the cult's sanctum appear only inside their regions, so they have no range of their own.</p>
+    <p class="note">At which levels of depth each can turn up in a run (twenty in all). The Over Dungeon runs all the way down. Each region has its full range and, lighter beneath it, the range of its small version; an end-game region is set at the bottom instead. Branching routes (round 12) choose between those at the same depth. The archive and the cult's sanctum appear only inside their regions, so they have no range of their own.</p>
     <div class="legend"><span><i style="background: var(--amber)"></i>region</span><span><i style="background: rgba(217,165,58,0.35)"></i>its small version</span><span><i style="background: var(--faint)"></i>transition</span><span><i style="background: var(--moss)"></i>themed area</span></div>
     ${strip(W)}
   </section>
@@ -135,9 +135,9 @@ function render() {
         ${O.mix.map((m) => `<tr><td>${esc(m.share)}</td><td><b>${esc(m.what)}</b></td><td>${esc(m.how)}</td></tr>`).join("")}</table></div>
     </div>
     <div class="card">
-      <h3>The ladder: what first turns up at each step</h3>
-      <p class="note">A fair fight is the biggest a character at that step should win, in rats (a lone rat is 1; a group counts 8% more for each one after the first, or just its sum fought one at a time in a narrow way). Monsters found only in regions aren't listed.</p>
-      <div class="wrap"><table><tr><th>Step</th><th>Depth</th><th>Fair fight</th><th>First turns up</th></tr>
+      <h3>The ladder: what first turns up at each level</h3>
+      <p class="note">A fair fight is the biggest a character at that level should win, in rats (a lone rat is 1; a group counts 8% more for each one after the first, or just its sum fought one at a time in a narrow way). Monsters found only in regions aren't listed.</p>
+      <div class="wrap"><table><tr><th>Level</th><th>Depth</th><th>Fair fight</th><th>First turns up</th></tr>
         ${L.steps.map((st) => `<tr><td class="num">${st.step}</td><td class="band">${st.band}</td><td>about ${st.fair}<div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></td><td><div class="chips">${odNew(st).map((n) => mchip(n)).join("") || `<span class="note">nothing new: bigger groups of what's here</span>`}</div></td></tr>`).join("")}</table></div>
     </div>
     <div class="card cols">
@@ -148,7 +148,7 @@ function render() {
 
   <section>
     <h2>The regions</h2>
-    <p class="note">Each can appear within its range of steps, with its own monsters and locations. Green-edged locations are found only in that region.</p>
+    <p class="note">Each can appear within its range of levels, with its own monsters and locations. Green-edged locations are found only in that region.</p>
     ${W.regions.map((r) => `<article class="card">
       <div class="head"><h2>${esc(r.name)}</h2><span class="tag steps">${steps(r.full.steps)}, ${esc(r.full.maps)} maps</span><span class="tag">boss: ${esc(r.boss)}</span>${r.endGame ? `<span class="tag end">can be the end game</span>` : ""}<p>${esc(r.line)}</p>
         <p><b>Small version:</b> ${esc(r.small.name.toLowerCase())}, ${esc(steps(r.small.steps))}, ${esc(r.small.maps)} map${r.small.maps === "1" ? "" : "s"}; instead of the boss, ${esc(r.small.instead)}.</p></div>
@@ -157,6 +157,15 @@ function render() {
         <div class="col"><h3>Locations</h3><div class="chips">${r.places.map((n) => pchip(n, r.onlyHere.includes(n))).join("")}${r.onlyHere.filter((n) => !r.places.includes(n)).map((n) => pchip(n, true)).join("")}</div>
           ${r.holds.length ? `<p class="note">Themed areas found here: ${r.holds.map(esc).join(", ")}.</p>` : ""}</div>
       </div></article>`).join("")}
+  </section>
+
+  <section>
+    <h2>Themed areas to choose from</h2>
+    <p class="note">You'd like at least five themed areas; three are above. These are candidates, each with where it can turn up and what it brings. Keep, maybe or drop them on the choices page.</p>
+    <div class="cols">${W.themedCandidates.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><p>${esc(t.line)}. ${esc(t.where)}.</p></div>
+      <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => (mon(n) ? mchip(n) : `<span class="c">${esc(n)}</span>`)).join("")}</div></div>
+      <div class="col"><h3>Strangers</h3><div class="chips">${t.strangers.map((n) => `<span class="c">${esc(n)}</span>`).join("")}</div></div>
+      <div class="col"><h3>Locations</h3><div class="chips">${t.places.map((n) => pchip(n)).join("")}</div></div></article>`).join("")}</div>
   </section>
 
   <section>

@@ -2218,7 +2218,7 @@
    "answer": "Fire drives it off",
    "answerKind": "Fire",
    "danger": 8,
-   "fromStep": 4
+   "fromStep": 7
   },
   {
    "id": "wolf",
@@ -2257,7 +2257,7 @@
    "themes": [],
    "comment": "",
    "danger": 9,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "cave-bear",
@@ -2279,7 +2279,7 @@
    "answer": "Asleep: don't wake it",
    "answerKind": "Silence",
    "danger": 12,
-   "fromStep": 5
+   "fromStep": 10
   },
   {
    "id": "cave-lion",
@@ -2304,7 +2304,7 @@
    "answerKind": "Light",
    "was": "Cave cat",
    "danger": 12,
-   "fromStep": 5
+   "fromStep": 10
   },
   {
    "id": "giant-centipede",
@@ -2350,7 +2350,7 @@
    "answerKind": "Silence",
    "was": "Deep worm",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "eel",
@@ -2472,7 +2472,7 @@
    "themes": [],
    "comment": "",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "floating-eye",
@@ -2496,7 +2496,7 @@
    "answerKind": "Cover",
    "was": "Watcher",
    "danger": 6,
-   "fromStep": 3
+   "fromStep": 5
   },
   {
    "id": "mimic",
@@ -2517,7 +2517,7 @@
    "answer": "A chest that isn't: search before you open, or throw something at it",
    "answerKind": "Searching",
    "danger": 6,
-   "fromStep": 3
+   "fromStep": 5
   },
   {
    "id": "golem",
@@ -2540,7 +2540,7 @@
    "answer": "Goes by sound: sneak past it in silence",
    "answerKind": "Silence",
    "danger": 18,
-   "fromStep": 7
+   "fromStep": 12
   },
   {
    "id": "bronze-golem",
@@ -2554,7 +2554,7 @@
    "themes": [],
    "comment": "",
    "danger": 25,
-   "fromStep": 8
+   "fromStep": 14
   },
   {
    "id": "iron-golem",
@@ -2568,7 +2568,7 @@
    "themes": [],
    "comment": "",
    "danger": 35,
-   "fromStep": 9
+   "fromStep": 16
   },
   {
    "id": "steel-golem",
@@ -2582,7 +2582,7 @@
    "themes": [],
    "comment": "",
    "danger": 50,
-   "fromStep": 11
+   "fromStep": 18
   },
   {
    "id": "animated-armour",
@@ -2605,7 +2605,7 @@
    "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
    "answerKind": "Distance",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "bone-heap",
@@ -2666,7 +2666,7 @@
    "themes": [],
    "comment": "",
    "danger": 7,
-   "fromStep": 3
+   "fromStep": 6
   },
   {
    "id": "skeleton-archer",
@@ -2727,7 +2727,7 @@
    "answer": "Sees in the dark; holy ground keeps it out",
    "answerKind": "Holy ground",
    "danger": 12,
-   "fromStep": 5
+   "fromStep": 10
   },
   {
    "id": "ghost",
@@ -2749,7 +2749,7 @@
    "answer": "Through walls; holy ground keeps it out",
    "answerKind": "Holy ground",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "wraith",
@@ -2772,7 +2772,7 @@
    "answer": "Darkness that moves; light hurts it",
    "answerKind": "Light",
    "danger": 22,
-   "fromStep": 7
+   "fromStep": 13
   },
   {
    "id": "lich",
@@ -2786,7 +2786,7 @@
    "themes": [],
    "comment": "The Dungeon Underneath's boss, leading the cult or the undead (your words): whichever holds it that run",
    "danger": 30,
-   "fromStep": 4
+   "fromStep": 6
   },
   {
    "id": "will-o-wisp",
@@ -2824,7 +2824,7 @@
    "themes": [],
    "comment": "",
    "danger": 5,
-   "fromStep": 2
+   "fromStep": 4
   },
   {
    "id": "goblin",
@@ -2870,7 +2870,7 @@
    "answer": "Fell it and its pack falters",
    "answerKind": "Fell the leader",
    "danger": 7,
-   "fromStep": 3
+   "fromStep": 6
   },
   {
    "id": "goblin-archer",
@@ -2906,7 +2906,7 @@
    "themes": [],
    "comment": "",
    "danger": 15,
-   "fromStep": 6
+   "fromStep": 11
   },
   {
    "id": "goblin-shaman",
@@ -2928,7 +2928,7 @@
    "answer": "Lights and puts out fires: take it unaware first",
    "answerKind": "Strike first",
    "danger": 8,
-   "fromStep": 4
+   "fromStep": 7
   },
   {
    "id": "goblin-king",
@@ -2949,7 +2949,7 @@
    "answer": "Waits with his guard: get past, or kill him",
    "answerKind": "Get past",
    "danger": 45,
-   "fromStep": 7
+   "fromStep": 11
   },
   {
    "id": "goblin-beasthound",
@@ -2963,7 +2963,7 @@
    "themes": [],
    "comment": "",
    "danger": 5,
-   "fromStep": 2
+   "fromStep": 4
   },
   {
    "id": "cultist",
@@ -3000,7 +3000,7 @@
    "themes": [],
    "comment": "",
    "danger": 7,
-   "fromStep": 3
+   "fromStep": 6
   },
   {
    "id": "cultist-archer",
@@ -3036,7 +3036,7 @@
    "answer": "Raises the dead: kill it first, or keep its dead apart from it",
    "answerKind": "Strike first",
    "danger": 9,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "troll",
@@ -3060,7 +3060,7 @@
    "answer": "Heals as it goes; fire stops that",
    "answerKind": "Fire",
    "danger": 20,
-   "fromStep": 7
+   "fromStep": 13
   },
   {
    "id": "ogre",
@@ -3083,7 +3083,7 @@
    "answer": "Smells you: water or wind hides your scent; it's slow",
    "answerKind": "Water",
    "danger": 15,
-   "fromStep": 6
+   "fromStep": 11
   },
   {
    "id": "bandit",
@@ -3140,7 +3140,7 @@
    "answer": "Fell it and the outlaws falter",
    "answerKind": "Fell the leader",
    "danger": 15,
-   "fromStep": 6
+   "fromStep": 11
   },
   {
    "id": "thief",
@@ -3187,7 +3187,7 @@
    "answer": "Sees in the dark and thinks: bright light blinds it",
    "answerKind": "Light",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "dark-elf-warrior",
@@ -3201,7 +3201,7 @@
    "themes": [],
    "comment": "",
    "danger": 14,
-   "fromStep": 6
+   "fromStep": 11
   },
   {
    "id": "dark-elf-archer",
@@ -3215,7 +3215,7 @@
    "themes": [],
    "comment": "",
    "danger": 11,
-   "fromStep": 5
+   "fromStep": 9
   },
   {
    "id": "dark-elf-prince",
@@ -3229,7 +3229,7 @@
    "themes": [],
    "comment": "Leads the dark elves; the Deep Dark's boss (your words)",
    "danger": 90,
-   "fromStep": 11
+   "fromStep": 18
   },
   {
    "id": "dark-elf-wizard",
@@ -3243,7 +3243,7 @@
    "themes": [],
    "comment": "",
    "danger": 18,
-   "fromStep": 7
+   "fromStep": 12
   },
   {
    "id": "earth-elemental",
@@ -3257,7 +3257,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 7
+   "fromStep": 13
   },
   {
    "id": "water-elemental",
@@ -3271,7 +3271,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 7
+   "fromStep": 13
   },
   {
    "id": "fire-elemental",
@@ -3285,7 +3285,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 7
+   "fromStep": 13
   },
   {
    "id": "greater-earth-elemental",
@@ -3299,7 +3299,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 10
+   "fromStep": 17
   },
   {
    "id": "greater-water-elemental",
@@ -3313,7 +3313,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 10
+   "fromStep": 17
   },
   {
    "id": "greater-fire-elemental",
@@ -3327,7 +3327,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 10
+   "fromStep": 17
   },
   {
    "id": "dragon",
@@ -3341,7 +3341,7 @@
    "themes": [],
    "comment": "The Dwarven Keep's boss (your words)",
    "danger": 150,
-   "fromStep": 12
+   "fromStep": 20
   },
   {
    "id": "drowned-dead",
@@ -3561,7 +3561,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 10,
-   "fromStep": 4
+   "fromStep": 8
   },
   {
    "id": "lurker",
@@ -3579,7 +3579,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 14,
-   "fromStep": 6
+   "fromStep": 11
   },
   {
    "id": "abomination",
@@ -3597,7 +3597,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 30,
-   "fromStep": 9
+   "fromStep": 15
   },
   {
    "id": "eldritch-horror",
@@ -3615,7 +3615,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 60,
-   "fromStep": 8
+   "fromStep": 13
   }
  ],
  "tags": [
@@ -5049,7 +5049,7 @@
  ],
  "ladder": {
   "unit": "rats",
-  "note": "A monster's danger in rats: a lone rat is 1. A group counts for more than its sum (each one after the first adds 8%), unless it can only come at you one at a time (a narrow way), when it counts as its sum. 'Fair' is the biggest fight a character at that step should win.",
+  "note": "A monster's danger in rats: a lone rat is 1. A group counts for more than its sum (each one after the first adds 8%), unless it can only come at you one at a time (a narrow way), when it counts as its sum. 'Fair' is the biggest fight a character at that step should win. Twenty levels deep (round 21): shallow 1 to 7, middle 8 to 14, deep 15 to 20.",
   "grow": 0.08,
   "steps": [
    {
@@ -5108,7 +5108,7 @@
    {
     "step": 2,
     "band": "shallow",
-    "fair": 5,
+    "fair": 4,
     "new": [
      "Wolf",
      "Eel",
@@ -5117,12 +5117,18 @@
      "Bone heap",
      "Skeleton archer",
      "Zombie",
-     "Ghost bat",
      "Goblin archer",
-     "Goblin beasthound",
      "Cultist archer",
      "Bandit archer"
     ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 3,
+    "band": "shallow",
+    "fair": 4,
+    "new": [],
     "bosses": [],
     "examples": [
      {
@@ -5153,20 +5159,17 @@
       "what": "Six rats",
       "danger": 8.4,
       "narrow": 6,
-      "label": "hard"
+      "label": "run"
      }
     ]
    },
    {
-    "step": 3,
+    "step": 4,
     "band": "shallow",
-    "fair": 7,
+    "fair": 5,
     "new": [
-     "Floating eye",
-     "Mimic",
-     "Skeleton warrior",
-     "Goblin warrior",
-     "Cultist warrior"
+     "Ghost bat",
+     "Goblin beasthound"
     ],
     "bosses": [],
     "examples": [
@@ -5174,25 +5177,25 @@
       "what": "A goblin warrior",
       "danger": 7.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "Three goblins",
       "danger": 10.4,
       "narrow": 9,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "Two bandits, a bandit archer",
       "danger": 11.6,
       "narrow": 10,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "A mimic",
       "danger": 6.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "Twelve rats",
@@ -5203,20 +5206,24 @@
     ]
    },
    {
-    "step": 4,
+    "step": 5,
     "band": "shallow",
-    "fair": 10,
+    "fair": 6,
     "new": [
-     "Giant spider",
-     "Dire wolf",
-     "Worm",
-     "Ooze",
-     "Animated armour",
-     "Ghost",
-     "Goblin shaman",
-     "Cult priest",
-     "Dark elf",
-     "Shadow"
+     "Floating eye",
+     "Mimic"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 6,
+    "band": "shallow",
+    "fair": 7,
+    "new": [
+     "Skeleton warrior",
+     "Goblin warrior",
+     "Cultist warrior"
     ],
     "bosses": [
      "Lich"
@@ -5226,19 +5233,19 @@
       "what": "A skeleton warrior, two skeletons",
       "danger": 15.1,
       "narrow": 13,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "Two wolves",
       "danger": 8.6,
       "narrow": 8,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "A giant spider",
       "danger": 8.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "Ten giant rats",
@@ -5254,14 +5261,29 @@
     ]
    },
    {
-    "step": 5,
-    "band": "middle",
-    "fair": 13,
+    "step": 7,
+    "band": "shallow",
+    "fair": 8,
     "new": [
-     "Cave bear",
-     "Cave lion",
-     "Wight",
-     "Dark elf archer"
+     "Giant spider",
+     "Goblin shaman"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 8,
+    "band": "middle",
+    "fair": 10,
+    "new": [
+     "Dire wolf",
+     "Worm",
+     "Ooze",
+     "Animated armour",
+     "Ghost",
+     "Cult priest",
+     "Dark elf",
+     "Shadow"
     ],
     "bosses": [],
     "examples": [
@@ -5269,19 +5291,19 @@
       "what": "A cave bear",
       "danger": 12.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "A goblin warrior, two goblins, a goblin archer",
       "danger": 21.1,
       "narrow": 17,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "A wight",
       "danger": 12.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "Two dire wolves",
@@ -5292,15 +5314,23 @@
     ]
    },
    {
-    "step": 6,
+    "step": 9,
     "band": "middle",
-    "fair": 17,
+    "fair": 11,
     "new": [
-     "Goblin chieftain",
-     "Ogre",
-     "Bandit chief",
-     "Dark elf warrior",
-     "Lurker"
+     "Dark elf archer"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 10,
+    "band": "middle",
+    "fair": 13,
+    "new": [
+     "Cave bear",
+     "Cave lion",
+     "Wight"
     ],
     "bosses": [],
     "examples": [
@@ -5308,7 +5338,7 @@
       "what": "An ogre",
       "danger": 15.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "A bandit chief, two bandits, two bandit archers",
@@ -5320,7 +5350,7 @@
       "what": "A dark elf warrior, a dark elf archer",
       "danger": 27.0,
       "narrow": 25,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "Six dire wolves",
@@ -5331,17 +5361,15 @@
     ]
    },
    {
-    "step": 7,
+    "step": 11,
     "band": "middle",
-    "fair": 22,
+    "fair": 16,
     "new": [
-     "Golem",
-     "Wraith",
-     "Troll",
-     "Dark elf wizard",
-     "Earth elemental",
-     "Water elemental",
-     "Fire elemental"
+     "Goblin chieftain",
+     "Ogre",
+     "Bandit chief",
+     "Dark elf warrior",
+     "Lurker"
     ],
     "bosses": [
      "Goblin king"
@@ -5351,25 +5379,25 @@
       "what": "A troll",
       "danger": 20.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "A cult priest, two cultist warriors, a cultist archer",
       "danger": 33.5,
       "narrow": 27,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "A golem",
       "danger": 18.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "Three cave lions",
       "danger": 41.8,
       "narrow": 36,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "The goblin king (boss)",
@@ -5379,11 +5407,26 @@
     ]
    },
    {
-    "step": 8,
+    "step": 12,
     "band": "middle",
-    "fair": 28,
+    "fair": 19,
     "new": [
-     "Bronze golem"
+     "Golem",
+     "Dark elf wizard"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 13,
+    "band": "middle",
+    "fair": 22,
+    "new": [
+     "Wraith",
+     "Troll",
+     "Earth elemental",
+     "Water elemental",
+     "Fire elemental"
     ],
     "bosses": [
      "Eldritch horror"
@@ -5393,7 +5436,7 @@
       "what": "A bronze golem",
       "danger": 25.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "A wraith",
@@ -5405,7 +5448,7 @@
       "what": "An earth elemental, two dark elves",
       "danger": 46.4,
       "narrow": 40,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "Eight dire wolves",
@@ -5421,11 +5464,20 @@
     ]
    },
    {
-    "step": 9,
-    "band": "deep",
-    "fair": 35,
+    "step": 14,
+    "band": "middle",
+    "fair": 26,
     "new": [
-     "Iron golem",
+     "Bronze golem"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 15,
+    "band": "deep",
+    "fair": 31,
+    "new": [
      "Abomination"
     ],
     "bosses": [],
@@ -5434,7 +5486,7 @@
       "what": "An iron golem",
       "danger": 35.0,
       "narrow": null,
-      "label": "fair"
+      "label": "hard"
      },
      {
       "what": "An abomination",
@@ -5446,20 +5498,30 @@
       "what": "A goblin chieftain, a goblin shaman, two goblin warriors, two goblin archers",
       "danger": 63.0,
       "narrow": 45,
-      "label": "hard"
+      "label": "run"
      },
      {
       "what": "Three trolls",
       "danger": 69.6,
       "narrow": 60,
-      "label": "hard"
+      "label": "run"
      }
     ]
    },
    {
-    "step": 10,
+    "step": 16,
     "band": "deep",
-    "fair": 45,
+    "fair": 36,
+    "new": [
+     "Iron golem"
+    ],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 17,
+    "band": "deep",
+    "fair": 43,
     "new": [
      "Greater earth elemental",
      "Greater water elemental",
@@ -5494,9 +5556,9 @@
     ]
    },
    {
-    "step": 11,
+    "step": 18,
     "band": "deep",
-    "fair": 55,
+    "fair": 50,
     "new": [
      "Steel golem"
     ],
@@ -5536,7 +5598,15 @@
     ]
    },
    {
-    "step": 12,
+    "step": 19,
+    "band": "deep",
+    "fair": 59,
+    "new": [],
+    "bosses": [],
+    "examples": []
+   },
+   {
+    "step": 20,
     "band": "deep",
     "fair": 70,
     "new": [],
@@ -5586,12 +5656,12 @@
     {
      "share": "6 in 10",
      "what": "At its depth",
-     "how": "Monsters that first appear at this step or the one above, in groups sized to a fair fight"
+     "how": "Monsters that first appear at this level or the one above, in groups sized to a fair fight"
     },
     {
      "share": "3 in 10",
      "what": "Lesser, in bigger groups",
-     "how": "Monsters from shallower steps, more of them, so the fight is still fair (twelve rats instead of one wolf)"
+     "how": "Monsters from shallower levels, more of them, so the fight is still fair (twelve rats instead of one wolf)"
     },
     {
      "share": "1 in 10",
@@ -5601,7 +5671,7 @@
     {
      "share": "now and then",
      "what": "From deeper",
-     "how": "One monster from two steps deeper: a surprise (round 6's 'a stranger from deeper')"
+     "how": "One monster from two levels deeper: a surprise (round 6's 'a stranger from deeper')"
     }
    ],
    "places": [
@@ -5660,7 +5730,7 @@
     "name": "The Dungeon Underneath",
     "steps": [
      1,
-     4
+     6
     ],
     "boss": "Lich",
     "line": "A castle-like dungeon, held each run by the dead garrison, the cult or outlaws (round 15); the lich leads the dead or the cult.",
@@ -5724,7 +5794,7 @@
     "full": {
      "steps": [
       1,
-      4
+      6
      ],
      "maps": "2 to 3"
     },
@@ -5732,7 +5802,7 @@
      "name": "A dungeon wing",
      "steps": [
       1,
-      6
+      9
      ],
      "maps": "1",
      "instead": "its holder's leader (the cult priest, a skeleton warrior, the bandit chief)"
@@ -5743,8 +5813,8 @@
     "id": "goblin-territory",
     "name": "Goblin Territory",
     "steps": [
-     3,
-     7
+     4,
+     11
     ],
     "boss": "Goblin king",
     "line": "Goblin caves: camps, guard posts and warrens common; halls and the throne room rare (round 15).",
@@ -5786,8 +5856,8 @@
     "holds": [],
     "full": {
      "steps": [
-      3,
-      7
+      4,
+      11
      ],
      "maps": "2 to 3"
     },
@@ -5795,7 +5865,7 @@
      "name": "A goblin outpost",
      "steps": [
       2,
-      6
+      9
      ],
      "maps": "1",
      "instead": "a goblin chieftain"
@@ -5806,8 +5876,8 @@
     "id": "drowned-city",
     "name": "The Drowned City",
     "steps": [
-     5,
-     8
+     8,
+     13
     ],
     "boss": "Eldritch horror",
     "line": "Ruins half under black water; something old and wrong sleeps under it.",
@@ -5850,16 +5920,16 @@
     ],
     "full": {
      "steps": [
-      5,
-      8
+      8,
+      13
      ],
      "maps": "2 to 3"
     },
     "small": {
      "name": "A flooded quarter",
      "steps": [
-      3,
-      7
+      4,
+      11
      ],
      "maps": "1 to 2",
      "instead": "no boss; an abomination at most"
@@ -5870,8 +5940,8 @@
     "id": "deep-dark",
     "name": "The Deep Dark",
     "steps": [
-     8,
-     11
+     13,
+     18
     ],
     "boss": "Dark elf prince",
     "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots. The dark elves rule here.",
@@ -5916,16 +5986,16 @@
     "holds": [],
     "full": {
      "steps": [
-      8,
-      11
+      13,
+      18
      ],
      "maps": "2 to 3"
     },
     "small": {
      "name": "A dark elf outpost",
      "steps": [
-      5,
-      9
+      8,
+      15
      ],
      "maps": "1 to 2",
      "instead": "a dark elf wizard"
@@ -5936,8 +6006,8 @@
     "id": "dwarven-keep",
     "name": "The Abandoned Dwarven Keep",
     "steps": [
-     10,
-     12
+     17,
+     20
     ],
     "boss": "Dragon",
     "line": "A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleeps on what's left of its wealth.",
@@ -5984,16 +6054,16 @@
     ],
     "full": {
      "steps": [
-      10,
-      12
+      17,
+      20
      ],
      "maps": "3"
     },
     "small": {
      "name": "A dwarven hall",
      "steps": [
-      4,
-      9
+      6,
+      15
      ],
      "maps": "1 to 2",
      "instead": "no dragon; a golem as its guardian"
@@ -6007,7 +6077,7 @@
     "between": "The Dungeon Underneath and the Drowned City",
     "steps": [
      2,
-     6
+     10
     ],
     "monsters": [
      "Rat",
@@ -6028,8 +6098,8 @@
     "name": "The mines",
     "between": "Goblin Territory, the Deep Dark and the Dwarven Keep",
     "steps": [
-     4,
-     10
+     6,
+     16
     ],
     "monsters": [
      "Bat",
@@ -6050,7 +6120,7 @@
     "between": "Any built place and the caves",
     "steps": [
      2,
-     10
+     16
     ],
     "monsters": [
      "Whatever lives on either side"
@@ -6063,7 +6133,7 @@
   "themed": [
    {
     "name": "The bandits' hold",
-    "where": "The Over Dungeon, steps 1 to 6",
+    "where": "The Over Dungeon, levels 1 to 10",
     "monsters": [
      "Bandit",
      "Bandit archer",
@@ -6080,7 +6150,7 @@
     ],
     "steps": [
      1,
-     6
+     10
     ]
    },
    {
@@ -6120,7 +6190,7 @@
    }
   ],
   "run": {
-   "rule": "Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (steps 10 to 12), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.",
+   "rule": "Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.",
    "endGame": "The Dwarven Keep, the Deep Dark or the Drowned City.",
    "filter": "A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.",
    "examples": [
@@ -6147,6 +6217,171 @@
      "The Drowned City (end game: the eldritch horror, at its strongest)"
     ]
    ]
-  }
+  },
+  "levels": 20,
+  "themedCandidates": [
+   {
+    "name": "The old faith's temple",
+    "where": "Over Dungeon, levels 3 to 12",
+    "theme": "The old faith",
+    "monsters": [
+     "The dead at its doors: Skeleton, Zombie, Wight"
+    ],
+    "strangers": [
+     "Priest",
+     "Pilgrims",
+     "Holy warriors"
+    ],
+    "places": [
+     "Temple",
+     "Chapel",
+     "Reliquary",
+     "Pilgrims' rest",
+     "Kept shrine"
+    ],
+    "line": "A holy place still kept, under siege by the dead: a refuge, and a fight at its doors"
+   },
+   {
+    "name": "The webs",
+    "where": "Over Dungeon, levels 3 to 14; or in the Deep Dark",
+    "theme": "Pests",
+    "monsters": [
+     "Spider",
+     "Giant spider"
+    ],
+    "strangers": [
+     "Cocooned victims to cut free"
+    ],
+    "places": [
+     "Spider nest",
+     "Webbed halls",
+     "Egg chambers"
+    ],
+    "line": "Caves strung with webs; the spiders feel you through them"
+   },
+   {
+    "name": "The plague cellars",
+    "where": "Over Dungeon, levels 1 to 8; or in the Dungeon Underneath",
+    "theme": "Pests",
+    "monsters": [
+     "Rat",
+     "Giant rat",
+     "Ooze"
+    ],
+    "strangers": [
+     "Ratcatchers"
+    ],
+    "places": [
+     "Larder",
+     "Storeroom",
+     "Infested rooms",
+     "A rats' nest"
+    ],
+    "line": "Cellars overrun by rats, and whatever they've bred into"
+   },
+   {
+    "name": "The pits",
+    "where": "Only in Goblin Territory",
+    "theme": "Goblins",
+    "monsters": [
+     "Goblin",
+     "Goblin chieftain",
+     "Wolf",
+     "Dire wolf",
+     "Ogre",
+     "Troll"
+    ],
+    "strangers": [
+     "Chained beast",
+     "Prisoners made to fight"
+    ],
+    "places": [
+     "Fighting pit",
+     "Beast pens",
+     "Crude prison"
+    ],
+    "line": "Where goblins keep beasts and make prisoners fight"
+   },
+   {
+    "name": "The bone field",
+    "where": "Over Dungeon, levels 10 to 18",
+    "theme": "The dead",
+    "monsters": [
+     "Bone heap",
+     "Skeleton warrior",
+     "Wight",
+     "Wraith",
+     "Ghost bat"
+    ],
+    "strangers": [
+     "Kindly ghost"
+    ],
+    "places": [
+     "Bone field",
+     "Crypt row",
+     "Ossuary"
+    ],
+    "line": "A vast cave of old bones that don't all stay still"
+   },
+   {
+    "name": "The elemental rift",
+    "where": "Over Dungeon, levels 9 to 20; or in the Keep's forge",
+    "theme": "(gives the elementals a home)",
+    "monsters": [
+     "Earth elemental",
+     "Water elemental",
+     "Fire elemental",
+     "Greater elementals"
+    ],
+    "strangers": [
+     "A scholar studying it"
+    ],
+    "places": [
+     "The rift",
+     "Sulphur vents",
+     "Hot spring",
+     "Crystal grotto"
+    ],
+    "line": "A crack where the world's elements leak through"
+   },
+   {
+    "name": "The dwarven expedition's camp",
+    "where": "Over Dungeon, levels 8 to 18, near the Keep",
+    "theme": "The dwarves",
+    "monsters": [
+     "Golems roused by their digging"
+    ],
+    "strangers": [
+     "Dwarven expedition",
+     "An undead dwarf"
+    ],
+    "places": [
+     "Expedition camp",
+     "Scholar's dig",
+     "Mine-head"
+    ],
+    "line": "Dwarves come to take back the keep, camped on the way down"
+   },
+   {
+    "name": "The mushroom grove",
+    "where": "Over Dungeon, levels 8 to 16; or in the Deep Dark",
+    "theme": "The deep",
+    "monsters": [
+     "Slime",
+     "Ooze",
+     "Floating eye",
+     "Snake"
+    ],
+    "strangers": [
+     "Hermit"
+    ],
+    "places": [
+     "Mushroom grove",
+     "Mushroom farm",
+     "Glowing deep"
+    ],
+    "line": "Glowing fungus, dim light everywhere, spores"
+   }
+  ]
  }
 }
