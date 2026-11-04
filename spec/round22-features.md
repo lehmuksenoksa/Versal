@@ -91,14 +91,28 @@ the game already, or decided in an earlier round.
 | 45 | Webs | Stick to you; the spiders feel you through them | — |
 | 46 | Unstable floor | Gives way under weight | — |
 
+## Containers
+
+| # | Feature | In a line | Already |
+|---|---|---|---|
+| 47 | Chest | Holds the better things; may be locked or trapped | — |
+| 48 | Crates and barrels | Break them open: noise, and something or nothing inside | — |
+| 49 | Sacks and baskets | Quick to search, small things | — |
+| 50 | Urns | Grave goods; disturbing them may wake the dead | — |
+| 51 | Coffins and sarcophagi | Grave goods, and maybe their owner | — |
+| 52 | Weapon and armour racks | Gear in the armoury or the guardroom | — |
+| 53 | Bodies | What those before you carried | — |
+| 54 | Nests and hoards | What a beast, a goblin or the dragon has gathered | — |
+| 55 | Hidden caches | Behind a loose stone or under the floor: found by searching | — |
+
 ## Things to use
 
 | # | Feature | In a line | Already |
 |---|---|---|---|
-| 47 | Oil | A spill or a barrel to set alight | — |
-| 48 | Altar | Lifts curses; holy ground to rest | in the game |
-| 49 | Places to rest | A hot spring, a bath, a kept shrine: rest is safer there | decided, round 6 |
-| 50 | Cages and pens | Open them to let beasts loose on your foes | decided, round 6 |
-| 51 | Bookshelves | Notes and scrolls to find; reading needs light | — |
-| 52 | Mine cart | Ride it (fast, loud) or push it into things | — |
-| 53 | Bell | Ring it to draw monsters where you want them | — |
+| 56 | Oil | A spill or a barrel to set alight | — |
+| 57 | Altar | Lifts curses; holy ground to rest | in the game |
+| 58 | Places to rest | A hot spring, a bath, a kept shrine: rest is safer there | decided, round 6 |
+| 59 | Cages and pens | Open them to let beasts loose on your foes | decided, round 6 |
+| 60 | Bookshelves | Notes and scrolls to find; reading needs light | — |
+| 61 | Mine cart | Ride it (fast, loud) or push it into things | — |
+| 62 | Bell | Ring it to draw monsters where you want them | — |
