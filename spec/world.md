@@ -76,7 +76,8 @@ the way: one boss to draw, two sets of numbers.
   sometimes", transitions that don't connect, too much plain Over Dungeon, regions that look like
   corridors. The simulator now:
   - uses three bands (shallow 1 to 7, middle 8 to 14, deep 15 to 20), each with at most one bigger
-    region, or else a smaller one, the deep band's being the end game;
+    region, or else a smaller one, the deep band's being the end game; a run always has two or
+    three bigger regions (the end game and at least one more: you caught a run with only one);
   - keeps themed areas at least two levels apart;
   - lets a transition join only what it connects: the sewers the Dungeon Underneath and the
     Drowned City, the mines Goblin Territory, the Deep Dark and the Keep, a breach anything. Each

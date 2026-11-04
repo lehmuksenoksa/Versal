@@ -102,7 +102,7 @@ const P = { bigger: 0.65, gap: 2, forks: [2, 4], lineT: 0.5, wide: 0.6, deepSmal
 const RULES = [
   `Map sizes: a region's maps are large, a smaller region's medium, a transition's its own, a sub-region a small side map, the Over Dungeon medium; drawn here by width. Twenty levels in three bands: shallow 1 to 7, middle 8 to 14, deep 15 to 20. Level 1 is a single map of the Over Dungeon, where every run starts.`,
   `The end game is one of the regions that can be (the Keep, the Deep Dark, the Drowned City), at levels ${END[0]} to ${END[1]}: the deep band's bigger region.`,
-  `The shallow and middle bands each get at most one bigger region (about ${P.bigger * 100}% of the time, if one fits there), or else a smaller region: a region's smaller version, or the bandits' hold, one level. A region appears once in a run, bigger or smaller.`,
+  `A run has two or three bigger regions: the end game, and one or both of the shallow and middle bands' (each about ${P.bigger * 100}% of the time, and always at least one). A band without a bigger region gets a smaller one: a region's smaller version, or the bandits' hold, one level. A region appears once in a run, bigger or smaller.`,
   `Themed areas are at least ${P.gap} levels apart, so two never sit side by side.`,
   `A bigger region isn't a corridor: its first and middle levels can hold two maps side by side (about ${P.wide * 100}% of the time), joined every way, and its last level is the boss's lair. The archive and the cult's sanctum (each half the time) are a side map off one of a region's middle levels, reached and left only through the region's own maps, never from a transition or the Over Dungeon; so only a region three levels long can hold one.`,
   `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions); the mines Goblin Territory, the Deep Dark and the Keep; the underground river Goblin Territory or the Deep Dark with the Drowned City; the ledge path Goblin Territory, the Deep Dark and the Keep; the great stairway the Keep with anything built; a breach anything. Each transition appears at most once in a run, just before the themed area it leads into, over its own number of levels: the mines and the great stairway two or three small maps stacked, the sewers and the underground river two medium ones, a breach and the ledge path one small one. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
@@ -127,14 +127,18 @@ function generate(W, seed) {
     ...W.smallerRegions.filter((x) => !used.has(x.id)).map((x) => ({ name: x.name, kind: "smallerRegion", rid: x.id, lo: Math.max(lo, x.steps[0]), hi: Math.min(hi, x.steps[1]) })),
   ].filter((o) => o.lo <= o.hi);
   const addSmaller = (lo, hi) => { for (const o of shuffle(smallerOptions(lo, hi))) { const f = fitStart(1, o.lo, o.hi); if (f) { segs.push({ ...o, from: f, to: f }); used.add(o.rid); return true; } } return false; };
-  for (const [, lo, hi] of BANDS.slice(0, 2)) {
-    let placed = false;
-    if (R() < P.bigger) for (const r of shuffle(W.regions.filter((r) => !used.has(r.id)))) {
+  const placeBigger = (lo, hi) => {
+    for (const r of shuffle(W.regions.filter((r) => !used.has(r.id)))) {
       const [a, b] = range(r.full.maps), len = int(a, b), f = fitStart(len, Math.max(lo, r.full.steps[0]), Math.min(hi, r.full.steps[1], END[0] - 1));
-      if (f) { segs.push({ name: r.name, kind: "region", rid: r.id, from: f, to: f + len - 1, boss: r.boss, region: r }); used.add(r.id); placed = true; break; }
+      if (f) { segs.push({ name: r.name, kind: "region", rid: r.id, from: f, to: f + len - 1, boss: r.boss, region: r }); used.add(r.id); return true; }
     }
-    if (!placed) addSmaller(lo, hi);
-  }
+    return false;
+  };
+  // bigger regions first: each of shallow and middle may get one; at least one of them must
+  const hasBig = BANDS.slice(0, 2).map(([, lo, hi]) => R() < P.bigger && placeBigger(lo, hi));
+  if (!hasBig[0] && !hasBig[1]) { for (const i of shuffle([0, 1])) { const [, lo, hi] = BANDS[i]; if (placeBigger(lo, hi)) { hasBig[i] = true; break; } } }
+  // a band without a bigger region gets a smaller one
+  BANDS.slice(0, 2).forEach(([, lo, hi], i) => { if (!hasBig[i]) addSmaller(lo, hi); });
   if (R() < P.deepSmaller) addSmaller(15, END[0] - 1);
   if (R() < P.bandits) addSmaller(...W.smallerRegions[0].steps);
   const subs = [];
@@ -258,7 +262,7 @@ function stats(W) {
     ["Levels with one map, two, three", ["1", "2", "3"].map((k) => pct(rowsW.filter((x) => x === Number(k)).length, rowsW.length)).join(", ")],
     ["Themed areas a way meets, on average", avg(per)], ["Fewest a way meets", Math.min(...per)], ["Runs with five or more themed areas", pct(rs.filter((r) => new Set(r.levels.flat().filter((c) => c.area).map((c) => c.area.name)).size >= 5).length)], ["Runs where every way also meets five", pct(allFive)],
     ["Fewest levels between two themed areas", Math.min(...gapsMin)],
-    ["Bigger regions in a run, on average (the end game counted)", bigger],
+    ["Bigger regions in a run, on average (the end game counted)", bigger], ["Bigger regions in a run: fewest and most", Math.min(...rs.map((r) => r.segs.filter((s) => s.kind === "region").length)) + " and " + Math.max(...rs.map((r) => r.segs.filter((s) => s.kind === "region").length))],
     ["Themed areas starting in the shallow, middle and deep bands, on average", [bandAvg("shallow"), bandAvg("middle"), bandAvg("deep")].join(", ")],
     ["Maps that are the Over Dungeon", pct(od, maps.length)],
     ...Object.entries(ends).map(([n, k]) => [`End game: ${n}`, pct(k)])];
