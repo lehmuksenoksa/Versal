@@ -1,7 +1,7 @@
 # Round 23: things to find, shallow
 
 **Answered.** Everything ticked was kept. Left unmarked: the net, the ward scroll, the knowing scroll
-(renamed, below). The melee weapons grid wasn't answered. Comments:
+(renamed, below). The melee weapons: all kept (your answer hadn't reached me when I first read the round). Comments:
 - **Potions:** "Potion of Courage = Strong spirits."
 - **Scrolls:** "Scroll of Identify to identify items." (In place of "knowing".)
 
@@ -19,14 +19,14 @@ the game already, or decided in an earlier round.
 
 | # | Thing | In a line | Already | Answer |
 |---|---|---|---|---|
-| 1 | Dagger | Quick: strikes twice where others strike once; best for a sneak attack | in the game | (not answered) |
-| 2 | Sword | Balanced: hits often, hits fair | in the game | (not answered) |
-| 3 | Axe | Sweeps: can hit two beside each other | in the game | (not answered) |
-| 4 | Warhammer | Two hands; heavy blows that stun | in the game | (not answered) |
-| 5 | Spear | Reaches two squares: strike from behind someone, or across a gap | decided, round 2: weapons that differ | (not answered) |
-| 6 | Mace | Crushes: good against armour and bone | — | (not answered) |
-| 7 | Club | Crude and common; goblins carry them | — | (not answered) |
-| 8 | Staff | Two hands; for those who cast | — | (not answered) |
+| 1 | Dagger | Quick: strikes twice where others strike once; best for a sneak attack | in the game | keep |
+| 2 | Sword | Balanced: hits often, hits fair | in the game | keep |
+| 3 | Axe | Sweeps: can hit two beside each other | in the game | keep |
+| 4 | Warhammer | Two hands; heavy blows that stun | in the game | keep |
+| 5 | Spear | Reaches two squares: strike from behind someone, or across a gap | decided, round 2: weapons that differ | keep |
+| 6 | Mace | Crushes: good against armour and bone | — | keep |
+| 7 | Club | Crude and common; goblins carry them | — | keep |
+| 8 | Staff | Two hands; for those who cast | — | keep |
 
 ## Weapons that shoot
 
