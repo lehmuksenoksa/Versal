@@ -7,8 +7,7 @@ areas. Some themed areas or rooms can only happen inside a specific region. Thes
 have specific level range where they can appear, and they have a specific list of locations and
 monster that will be generated there."
 
-This is the draft from it, to correct. The page: https://claude.ai/artifact/ (world plan; link in
-the chat). The data: `data/catalogue.json`, under `world`. Monster danger is in rats (round 20);
+This is the draft from it, to correct. The page: https://claude.ai/artifact/J78tDpCuv2GMniBu47AYru. The data: `data/catalogue.json`, under `world`. Monster danger is in rats (round 20);
 the numbers sketch the shape of the climb.
 
 ## The Over Dungeon
