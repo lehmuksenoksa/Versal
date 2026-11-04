@@ -68,7 +68,23 @@ the way: one boss to draw, two sets of numbers.
   Over Dungeon." The levels branch: a way down can split in two, and two ways can join again. Each
   way can lead somewhere different.
 - "Can we simulate these kind of branching paths?" Yes: the run simulator
-  (`mockups/runs.html`).
+  (`mockups/runs.html`, https://claude.ai/artifact/B2fLg9LAq6xFyHG62cz13P).
+- Your rules for it: "too much variation in the ways the dungeon can branch… I'd like the
+  thematic areas more evenly spread between shallow, middle and deep. Maximum of one bigger region
+  for each. And if there's no bigger region, there needs to be a smaller region. Also, the
+  transitions are supposed to connect themed areas." The simulator now follows them:
+  - three bands (shallow 1 to 7, middle 8 to 14, deep 15 to 20), each with at most one bigger
+    region, or else a smaller one;
+  - the end game is the deep band's bigger region;
+  - two to four forks a run, each between two themed areas: a transition into the next one, or
+    the Over Dungeon (at most one fork in a run has a third way);
+  - smaller regions added until every way meets at least five themed areas.
+
+  Over a thousand runs:
+  - every way meets five or more themed areas (6.4 on average);
+  - themed areas are spread 1.7, 1.3 and 1.4 across the bands;
+  - 60% of maps are the Over Dungeon;
+  - a run has 4 to 24 ways down (each fork doubles them).
 
 ## The Over Dungeon
 
