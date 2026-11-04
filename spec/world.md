@@ -12,7 +12,11 @@ the end game. I'm also thinking that I could be good to have some of these appea
 regions sometimes. For example, dwarven keep could appear higher in the dungeon, with less map
 space/levels, more depth approriate challenge and no dragon." And: "Overall, I'd like to see at
 least 5 themed areas. But then we would probably need the depth to be 20 levels all-in-all, to
-allow space for that."
+allow space for that." And: "When I said themed areas: I meant regions, transitions and
+"themed areas" - which I would change to "sub-regions"."
+
+So **themed areas** are all three kinds: regions, transitions and sub-regions (what were called
+themed areas before), and a run has at least five of them.
 
 A draft, to correct. The page: https://claude.ai/artifact/J78tDpCuv2GMniBu47AYru. The data:
 `data/catalogue.json`, under `world` and `ladder`. Monster danger is in rats (round 20); the
@@ -31,7 +35,7 @@ Critique:
 
 ## How a run is made
 
-- Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.
+- Each run has at least five themed areas (regions, transitions and sub-regions together), with the Over Dungeon between them. Of the 5 regions, 2 or 3 appear. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss).
 - **Can be the end game** (my proposal): The Dwarven Keep, the Deep Dark or the Drowned City.
 - **Monsters by depth:** A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.
 
@@ -43,10 +47,10 @@ Critique:
 | The Deep Dark | levels 13 to 18, 2 to 3 maps, the dark elf prince | A dark elf outpost: levels 8 to 15, 1 to 2 map(s); instead of the boss, a dark elf wizard | yes |
 | The Abandoned Dwarven Keep | levels 17 to 20, 3 maps, the dragon | A dwarven hall: levels 6 to 15, 1 to 2 map(s); instead of the boss, no dragon; a golem as its guardian | yes |
 
-Example runs, top to bottom:
-1. The Over Dungeon → The Dungeon Underneath (full, levels 1 to 4: the lich) → The Over Dungeon → A flooded quarter (small Drowned City, step 6) → The Over Dungeon → The Abandoned Dwarven Keep (end game: the dragon)
-2. The Over Dungeon → A goblin outpost (small Goblin Territory, step 3) → The Over Dungeon → The Drowned City (full, levels 6 to 8: the eldritch horror) → The Over Dungeon → The Deep Dark (end game: the dark elf prince)
-3. The Over Dungeon → Goblin Territory (full, levels 4 to 7: the goblin king) → The Over Dungeon → The Drowned City (end game: the eldritch horror, at its strongest)
+Example runs, top to bottom, each with five or more themed areas:
+1. The Over Dungeon → The Dungeon Underneath (region, levels 1 to 6: the lich) → The sewers (transition) → The plague cellars (sub-region) → A flooded quarter (small Drowned City, level 9) → The mines (transition) → The Abandoned Dwarven Keep (end game: the dragon)
+2. The Over Dungeon → The bandits' hold (sub-region) → A goblin outpost (small Goblin Territory, level 5) → The Drowned City (region, levels 9 to 13: the eldritch horror) → The bone field (sub-region) → A breach (transition) → The Deep Dark (end game: the dark elf prince)
+3. The Over Dungeon → A dungeon wing (small Dungeon Underneath, level 3) → Goblin Territory (region, levels 5 to 11: the goblin king) → The mines (transition) → The dwarven expedition's camp (sub-region) → A dwarven hall (small Dwarven Keep, level 14) → The Drowned City (end game: the eldritch horror, at its strongest)
 
 Critique: whichever region is the end game, its boss is the run's last test, so the eldritch
 horror or the dark elf prince fights at the dragon's level then, and at its own level when met on
@@ -75,7 +79,7 @@ A castle-like dungeon, held each run by the dead garrison, the cult or outlaws (
 - **Monsters:** Rat, Giant rat, Spider, Skeleton, Skeleton warrior, Skeleton archer, Zombie, Bone heap, Ghost, Wight, Cultist, Cultist warrior, Cultist archer, Cult priest, Bandit, Bandit archer, Bandit chief, Thief, Mimic.
 - **Locations:** Guard post, Guardroom, Barracks, Prison block, Jail, Armoury, Kitchen, Larder, Dining hall, Gatehouse, Crypt, Crypt row, Ossuary, Sarcophagus chamber, Shrine, Chapel, Temple, Torture chamber, Treasury, Bath, Well room, Statue gallery, Sealed wing, A collapsed wing.
 - **Only here:** The lich's tomb (the boss's lair), Prison block, Ossuary, Sarcophagus chamber.
-- **Themed areas found here:** The archive, The cult's sanctum.
+- **Sub-regions found here:** The archive, The cult's sanctum.
 
 ### Goblin Territory (levels 4 to 11; boss: Goblin king)
 
@@ -92,7 +96,7 @@ Ruins half under black water; something old and wrong sleeps under it.
 - **Monsters:** Eel, Cave crab, Leech, Snake, Slime, Ooze, Floating eye, Water elemental, Shadow, Lurker, Abomination, Cultist, Cult priest.
 - **Locations:** Flooded streets, A flooded wing, Cistern, Pool room, Temple, Ruined chapel, Bath, Well room, Statue gallery, A river crossing, A sunken plaza.
 - **Only here:** Flooded streets, A sunken plaza, The horror's pool (the boss's lair).
-- **Themed areas found here:** The archive, The cult's sanctum.
+- **Sub-regions found here:** The archive, The cult's sanctum.
 
 ### The Deep Dark (levels 13 to 18; boss: Dark elf prince)
 
@@ -109,7 +113,7 @@ A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleep
 - **Monsters:** Golem, Bronze golem, Iron golem, Steel golem, Animated armour, Skeleton warrior, Ghost, Wight, Fire elemental, Greater fire elemental, Greater earth elemental, Mimic.
 - **Locations:** Gates, Great stairway, Halls, Forge, Smithy, Workshop, Map room, Treasury, Bath, Crypt row, Statue gallery, Winch room, Gatehouse, Armoury, Sealed wing.
 - **Only here:** Gates, Great stairway, Forge, Map room, The dragon's hoard (the boss's lair).
-- **Themed areas found here:** The archive.
+- **Sub-regions found here:** The archive.
 
 ## Transitions
 
@@ -117,15 +121,15 @@ A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleep
 - **The mines** (levels 6 to 16), between goblin Territory, the Deep Dark and the Dwarven Keep: Bat, Giant centipede, Worm, Earth elemental, Goblin; Mine-head, Cave-in maze, Miners' pocket, Winch room.
 - **A breach** (levels 2 to 16), between any built place and the caves: Whatever lives on either side; A broken wall into the other side.
 
-## Themed areas
+## Sub-regions
 
 - **The bandits' hold**: The Over Dungeon, levels 1 to 10. Bandit, Bandit archer, Bandit chief, Thief, Wolf; Hideout, Storeroom, Smugglers' stash, Jail, Feast hall.
 - **The archive**: Only in the Dungeon Underneath, the Drowned City and the Dwarven Keep (round 12). Floating eye, Mimic, Golem, Animated armour; Library, Alchemist's room, Scholar's dig, Statue gallery.
 - **The cult's sanctum**: Only in the Dungeon Underneath and the Drowned City (round 12). Cultist, Cultist warrior, Cultist archer, Cult priest, Skeleton, Zombie; Temple, Sacrifice room, Summoning circle, Torture chamber, Prison cells.
 
-## Themed areas to choose from
+## More sub-regions to choose from
 
-You'd like at least five; three are above. Candidates:
+Candidates beyond the three above:
 
 - **The old faith's temple** (Over Dungeon, levels 3 to 12): A holy place still kept, under siege by the dead: a refuge, and a fight at its doors. Monsters: The dead at its doors: Skeleton, Zombie, Wight. Strangers: Priest, Pilgrims, Holy warriors. Locations: Temple, Chapel, Reliquary, Pilgrims' rest, Kept shrine.
 - **The webs** (Over Dungeon, levels 3 to 14; or in the Deep Dark): Caves strung with webs; the spiders feel you through them. Monsters: Spider, Giant spider. Strangers: Cocooned victims to cut free. Locations: Spider nest, Webbed halls, Egg chambers.

@@ -5787,10 +5787,6 @@
      "Ossuary",
      "Sarcophagus chamber"
     ],
-    "holds": [
-     "The archive",
-     "The cult's sanctum"
-    ],
     "full": {
      "steps": [
       1,
@@ -5807,7 +5803,11 @@
      "maps": "1",
      "instead": "its holder's leader (the cult priest, a skeleton warrior, the bandit chief)"
     },
-    "endGame": false
+    "endGame": false,
+    "subRegions": [
+     "The archive",
+     "The cult's sanctum"
+    ]
    },
    {
     "id": "goblin-territory",
@@ -5853,7 +5853,6 @@
      "Crude prison",
      "Warrens"
     ],
-    "holds": [],
     "full": {
      "steps": [
       4,
@@ -5870,7 +5869,8 @@
      "maps": "1",
      "instead": "a goblin chieftain"
     },
-    "endGame": false
+    "endGame": false,
+    "subRegions": []
    },
    {
     "id": "drowned-city",
@@ -5914,10 +5914,6 @@
      "A sunken plaza",
      "The horror's pool (the boss's lair)"
     ],
-    "holds": [
-     "The archive",
-     "The cult's sanctum"
-    ],
     "full": {
      "steps": [
       8,
@@ -5934,7 +5930,11 @@
      "maps": "1 to 2",
      "instead": "no boss; an abomination at most"
     },
-    "endGame": true
+    "endGame": true,
+    "subRegions": [
+     "The archive",
+     "The cult's sanctum"
+    ]
    },
    {
     "id": "deep-dark",
@@ -5983,7 +5983,6 @@
      "The rift",
      "Underwood"
     ],
-    "holds": [],
     "full": {
      "steps": [
       13,
@@ -6000,7 +5999,8 @@
      "maps": "1 to 2",
      "instead": "a dark elf wizard"
     },
-    "endGame": true
+    "endGame": true,
+    "subRegions": []
    },
    {
     "id": "dwarven-keep",
@@ -6049,9 +6049,6 @@
      "Map room",
      "The dragon's hoard (the boss's lair)"
     ],
-    "holds": [
-     "The archive"
-    ],
     "full": {
      "steps": [
       17,
@@ -6068,7 +6065,10 @@
      "maps": "1 to 2",
      "instead": "no dragon; a golem as its guardian"
     },
-    "endGame": true
+    "endGame": true,
+    "subRegions": [
+     "The archive"
+    ]
    }
   ],
   "transitions": [
@@ -6130,7 +6130,42 @@
     ]
    }
   ],
-  "themed": [
+  "run": {
+   "rule": "Each run has at least five themed areas (regions, transitions and sub-regions together), with the Over Dungeon between them. Of the 5 regions, 2 or 3 appear. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss).",
+   "endGame": "The Dwarven Keep, the Deep Dark or the Drowned City.",
+   "filter": "A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.",
+   "examples": [
+    [
+     "The Over Dungeon",
+     "The Dungeon Underneath (region, levels 1 to 6: the lich)",
+     "The sewers (transition)",
+     "The plague cellars (sub-region)",
+     "A flooded quarter (small Drowned City, level 9)",
+     "The mines (transition)",
+     "The Abandoned Dwarven Keep (end game: the dragon)"
+    ],
+    [
+     "The Over Dungeon",
+     "The bandits' hold (sub-region)",
+     "A goblin outpost (small Goblin Territory, level 5)",
+     "The Drowned City (region, levels 9 to 13: the eldritch horror)",
+     "The bone field (sub-region)",
+     "A breach (transition)",
+     "The Deep Dark (end game: the dark elf prince)"
+    ],
+    [
+     "The Over Dungeon",
+     "A dungeon wing (small Dungeon Underneath, level 3)",
+     "Goblin Territory (region, levels 5 to 11: the goblin king)",
+     "The mines (transition)",
+     "The dwarven expedition's camp (sub-region)",
+     "A dwarven hall (small Dwarven Keep, level 14)",
+     "The Drowned City (end game: the eldritch horror, at its strongest)"
+    ]
+   ]
+  },
+  "levels": 20,
+  "subRegions": [
    {
     "name": "The bandits' hold",
     "where": "The Over Dungeon, levels 1 to 10",
@@ -6189,37 +6224,7 @@
     ]
    }
   ],
-  "run": {
-   "rule": "Each run has 2 or 3 of the 5 regions. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss). The Over Dungeon runs between them, all the way down.",
-   "endGame": "The Dwarven Keep, the Deep Dark or the Drowned City.",
-   "filter": "A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.",
-   "examples": [
-    [
-     "The Over Dungeon",
-     "The Dungeon Underneath (full, steps 1 to 4: the lich)",
-     "The Over Dungeon",
-     "A flooded quarter (small Drowned City, step 6)",
-     "The Over Dungeon",
-     "The Abandoned Dwarven Keep (end game: the dragon)"
-    ],
-    [
-     "The Over Dungeon",
-     "A goblin outpost (small Goblin Territory, step 3)",
-     "The Over Dungeon",
-     "The Drowned City (full, steps 6 to 8: the eldritch horror)",
-     "The Over Dungeon",
-     "The Deep Dark (end game: the dark elf prince)"
-    ],
-    [
-     "The Over Dungeon",
-     "Goblin Territory (full, steps 4 to 7: the goblin king)",
-     "The Over Dungeon",
-     "The Drowned City (end game: the eldritch horror, at its strongest)"
-    ]
-   ]
-  },
-  "levels": 20,
-  "themedCandidates": [
+  "subRegionCandidates": [
    {
     "name": "The old faith's temple",
     "where": "Over Dungeon, levels 3 to 12",
