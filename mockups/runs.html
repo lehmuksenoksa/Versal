@@ -65,7 +65,7 @@
 <main>
   <header>
     <h1>The run simulator</h1>
-    <p class="note">Runs generated from the world plan, to see the branching paths you asked for. Twenty levels, top to bottom; each level holds one to three maps side by side, and the lines are the ways down between them. A way can split, so the player chooses, and two ways can join again. Each map is the Over Dungeon or part of a themed area: a region, a region's small version (a sub-region, as you said), a transition, or another sub-region. The rules are listed under the run; the figures at the bottom come from a thousand runs.</p>
+    <p class="note">Runs generated from the world plan, to see the branching paths you asked for. Twenty levels, top to bottom; each level holds one to three maps side by side, and the lines are the ways down between them. A way can split, so the player chooses, and two ways can join again. Each map is the Over Dungeon (the generic region the branching ways are made of) or part of a themed area: a region, a smaller region (one level: a region's smaller version, or the bandits' hold), a transition (a smaller region that connects), or a sub-region inside a region (the archive, the cult's sanctum). The rules are listed under the run; the figures at the bottom come from a thousand runs.</p>
   </header>
   <div class="bar">
     <button id="again" type="button">A new run</button>
@@ -73,10 +73,10 @@
   </div>
   <div class="legend">
     <span><i style="background: var(--amber)"></i>region</span>
-    <span><i style="background: rgba(217,165,58,0.4)"></i>small version (sub-region)</span>
-    <span><i style="background: var(--slate)"></i>transition</span>
-    <span><i style="background: var(--moss)"></i>sub-region</span>
-    <span><i style="background: var(--chip); border: 1px dashed var(--faint)"></i>the Over Dungeon</span>
+    <span><i style="background: rgba(217,165,58,0.4)"></i>smaller version of a region</span>
+    <span><i style="background: var(--slate)"></i>transition (a smaller region that connects)</span>
+    <span><i style="background: var(--moss)"></i>smaller region</span><span><i style="background: var(--moss); border-radius: 50%; width: 10px"></i>sub-region, inside a region</span>
+    <span><i style="background: var(--chip); border: 1px dashed var(--faint)"></i>the Over Dungeon (the generic region)</span>
     <span>★ boss</span>
   </div>
   <div class="layout">
@@ -101,11 +101,11 @@ const P = { split: 0.3, merge: 0.3, fullRegion: 0.5, others: [1, 2], transitions
 const RULES = [
   `Twenty levels. Level 1 starts with one map; going down, a way splits in two about ${P.split * 100}% of the time (at most ${MAXW} maps on a level), and two neighbouring ways join about ${P.merge * 100}% of the time.`,
   `The end game is one of the regions that can be (the Keep, the Deep Dark, the Drowned City). It takes levels ${END[0]} to ${END[1]}, and every way down joins into it by level ${END[0]}.`,
-  `One or two more regions come on the way: each full (half the time: its range, its maps, its boss on its last map) or as its small version (a sub-region of one or two maps, within its small range).`,
+  `One or two more regions come on the way: each full (half the time: its range, its maps, its boss on its last map) or as its smaller version (a smaller region: one level, within its smaller range).`,
   `One to three transitions, each one or two maps on one way, within its range.`,
-  `The bandits' hold more often than not, one map within levels 1 to 10. The archive and the cult's sanctum, each half the time, as one map inside a region where they can be.`,
+  `The bandits' hold (a smaller region) more often than not, one level within levels 1 to 10. The archive and the cult's sanctum (sub-regions), each half the time, as one map inside a region where they can be.`,
   `Everything else is the Over Dungeon.`,
-  `If a run has fewer than five themed areas, more transitions or small versions are added until it has five.`,
+  `If a run has fewer than five themed areas, more transitions or smaller regions are added until it has five.`,
 ];
 
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -158,8 +158,8 @@ function generate(W, seed) {
   const ts = [...W.transitions].sort(() => R() - 0.5).slice(0, int(...P.transitions));
   for (const t of ts) place({ name: t.name, kind: "transition" }, int(1, 2), t.steps[0], Math.min(t.steps[1], END[0] - 1));
   // 5. sub-regions
-  const bh = W.subRegions.find((s) => s.name === "The bandits' hold");
-  if (R() < P.bandits) place({ name: bh.name, kind: "sub" }, 1, bh.steps[0], bh.steps[1]);
+  const bh = W.smallerRegions.find((s) => s.name === "The bandits' hold");
+  if (R() < P.bandits) place({ name: bh.name, kind: "smallerRegion" }, 1, bh.steps[0], bh.steps[1]);
   for (const [nm, p] of [["The archive", P.archive], ["The cult's sanctum", P.sanctum]]) {
     if (R() >= p) continue;
     const hosts = W.regions.filter((r) => r.subRegions.includes(nm)).map((r) => r.name);
@@ -180,7 +180,7 @@ function generate(W, seed) {
 }
 
 const themedOn = (path) => { const set = []; for (const c of path) { if (c.area && !set.includes(c.area.name)) set.push(c.area.name); if (c.sub && !set.includes(c.sub)) set.push(c.sub); } return set; };
-const COLOR = { region: "var(--amber)", small: "rgba(217,165,58,0.4)", transition: "var(--slate)", sub: "var(--moss)" };
+const COLOR = { region: "var(--amber)", small: "rgba(217,165,58,0.4)", transition: "var(--slate)", smallerRegion: "var(--moss)", sub: "var(--moss)" };
 
 function draw(run) {
   const colW = 150, rowH = 40, left = 34, top = 14, nodeW = 136, nodeH = 28;

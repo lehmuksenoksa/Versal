@@ -5650,7 +5650,7 @@
  "world": {
   "overDungeon": {
    "name": "The Over Dungeon",
-   "line": "The general dungeon between and around the regions: any monster, by depth. Its ground changes with depth: built rooms near the top, falling in, then caves, then something deeper still.",
+   "line": "A generic region, used at any depth for the branching ways between the themed ones: any monster, by depth. Its ground changes with depth: built rooms near the top, falling in, then caves, then something deeper still.",
    "steps": 12,
    "mix": [
     {
@@ -5927,7 +5927,7 @@
       4,
       11
      ],
-     "maps": "1 to 2",
+     "maps": "1",
      "instead": "no boss; an abomination at most"
     },
     "endGame": true,
@@ -5996,7 +5996,7 @@
       8,
       15
      ],
-     "maps": "1 to 2",
+     "maps": "1",
      "instead": "a dark elf wizard"
     },
     "endGame": true,
@@ -6062,7 +6062,7 @@
       6,
       15
      ],
-     "maps": "1 to 2",
+     "maps": "1",
      "instead": "no dragon; a golem as its guardian"
     },
     "endGame": true,
@@ -6131,7 +6131,7 @@
    }
   ],
   "run": {
-   "rule": "Each run has at least five themed areas (regions, transitions and sub-regions together), with the Over Dungeon between them. Of the 5 regions, 2 or 3 appear. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or small (higher up, a map or two, no boss).",
+   "rule": "Each run has at least five themed areas (regions, smaller regions, transitions and sub-regions together), with the Over Dungeon between them. Of the 5 regions, 2 or 3 appear. One is always the end game: at the bottom (levels 18 to 20), full, with its boss at its strongest. The others come on the way, full (at their range, with their boss) or as their smaller version (a smaller region: one level, higher up, no boss).",
    "endGame": "The Dwarven Keep, the Deep Dark or the Drowned City.",
    "filter": "A region's monsters are filtered by the depth it's placed at: those whose danger fits the step (the ladder). A small region higher up gets the lesser of its kind.",
    "examples": [
@@ -6139,52 +6139,30 @@
      "The Over Dungeon",
      "The Dungeon Underneath (region, levels 1 to 6: the lich), with the cult's sanctum (sub-region) inside",
      "The sewers (transition)",
-     "A flooded quarter (small Drowned City, level 9)",
+     "A flooded quarter (smaller Drowned City, level 9)",
      "The mines (transition)",
      "The Abandoned Dwarven Keep (end game: the dragon)"
     ],
     [
      "The Over Dungeon",
-     "The bandits' hold (sub-region)",
-     "A goblin outpost (small Goblin Territory, level 5)",
+     "The bandits' hold (smaller region)",
+     "A goblin outpost (smaller Goblin Territory, level 5)",
      "The Drowned City (region, levels 9 to 13: the eldritch horror), with the archive (sub-region) inside",
      "A breach (transition)",
      "The Deep Dark (end game: the dark elf prince)"
     ],
     [
      "The Over Dungeon",
-     "A dungeon wing (small Dungeon Underneath, level 3)",
+     "A dungeon wing (smaller Dungeon Underneath, level 3)",
      "Goblin Territory (region, levels 5 to 11: the goblin king)",
      "The mines (transition)",
-     "A dwarven hall (small Dwarven Keep, level 14), with the archive (sub-region) inside",
+     "A dwarven hall (smaller Dwarven Keep, level 14), with the archive (sub-region) inside",
      "The Drowned City (end game: the eldritch horror, at its strongest)"
     ]
    ]
   },
   "levels": 20,
   "subRegions": [
-   {
-    "name": "The bandits' hold",
-    "where": "The Over Dungeon, levels 1 to 10",
-    "monsters": [
-     "Bandit",
-     "Bandit archer",
-     "Bandit chief",
-     "Thief",
-     "Wolf"
-    ],
-    "places": [
-     "Hideout",
-     "Storeroom",
-     "Smugglers' stash",
-     "Jail",
-     "Feast hall"
-    ],
-    "steps": [
-     1,
-     10
-    ]
-   },
    {
     "name": "The archive",
     "where": "Only in the Dungeon Underneath, the Drowned City and the Dwarven Keep (round 12)",
@@ -6218,6 +6196,30 @@
      "Summoning circle",
      "Torture chamber",
      "Prison cells"
+    ]
+   }
+  ],
+  "smallerRegions": [
+   {
+    "name": "The bandits' hold",
+    "where": "The Over Dungeon, levels 1 to 10",
+    "monsters": [
+     "Bandit",
+     "Bandit archer",
+     "Bandit chief",
+     "Thief",
+     "Wolf"
+    ],
+    "places": [
+     "Hideout",
+     "Storeroom",
+     "Smugglers' stash",
+     "Jail",
+     "Feast hall"
+    ],
+    "steps": [
+     1,
+     10
     ]
    }
   ]

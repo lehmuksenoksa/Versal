@@ -12,6 +12,39 @@ The content plan is done when **every run can assemble itself from the catalogue
 - puts everything where it makes sense;
 - fits a scope we can draw and balance.
 
+## The hierarchy (yours, after round 21)
+
+In your words: "A region consists of several levels with a common theme. The maps have a distinct
+look and there's a set of enemies and strangers who can appear and environmental gameplay
+features. They can contain smaller areas, which can contain a set of rooms and a set of enemies and
+strangers who can appear. A room is one room some of those: distinct look, a set of items, a set of
+enemies in certain state, environmental gameplay features. A smaller region is just one level. A
+sub-region is level or half a level attached to larger region." And: "The Over Dungeon is a
+generic region that can be used at any depth for the branching paths between more thematic areas."
+
+| Level | What it is | What it has |
+|---|---|---|
+| **Region** | Several levels with a common theme | A distinct look; enemies and strangers who can appear; environmental gameplay features; areas |
+| **The Over Dungeon** | A generic region, used at any depth, for the branching ways between the themed ones | Its look and monsters change with depth |
+| **Smaller region** | One level, on its own: the bandits' hold, a region's smaller version (a goblin outpost, a dwarven hall…) | As a region, at one level's size |
+| **Transition** | A smaller region that leads from one region to another: the mines, the sewers, a breach | As a smaller region |
+| **Sub-region** | A level or half a level, attached to a larger region: the archive, the cult's sanctum | As a smaller region, but only inside its regions |
+| **Area** | Part of a level | A set of rooms; enemies and strangers who can appear |
+| **Room** | One room | Some of: a distinct look, items, enemies in a certain state, environmental features |
+
+Also each needs (my additions, agreed "pretty much"):
+- **its depth range** (monsters filtered by the danger ladder there);
+- **how its levels connect** (stairs, where a way down splits, what each fork leads to);
+- **a boss and its lair** (for a region);
+- **its light;**
+- **how its maps are made;**
+- **its things to find;**
+- **how rare it is;**
+- **its story.**
+
+Duties (guarding a post, walking a round) belong to areas and rooms. A room has a common kind and a
+region's variant: a storeroom in the warrens isn't one in the keep.
+
 ## Four tests for every entry
 
 1. **Can the generator place it?** It knows where, how deep, how often, how many.

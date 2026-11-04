@@ -15,8 +15,11 @@ least 5 themed areas. But then we would probably need the depth to be 20 levels 
 allow space for that." And: "When I said themed areas: I meant regions, transitions and
 "themed areas" - which I would change to "sub-regions"."
 
-So **themed areas** are all three kinds: regions, transitions and sub-regions (what were called
-themed areas before), and a run has at least five of them.
+So **themed areas** are regions, smaller regions, transitions and sub-regions, and a run has at
+least five of them. The names follow the hierarchy in `content-model.md`: a region's smaller
+version and the bandits' hold are **smaller regions** (one level, on their own); the archive and the
+cult's sanctum are **sub-regions** (a level or half a level, inside a region); the Over Dungeon is
+the **generic region** the branching ways are made of.
 
 A draft, to correct. The page: https://claude.ai/artifact/J78tDpCuv2GMniBu47AYru. The data:
 `data/catalogue.json`, under `world` and `ladder`. Monster danger is in rats (round 20); the
@@ -59,8 +62,7 @@ the way: one boss to draw, two sets of numbers.
 ## Generation: sub-regions and diverging paths (your notes)
 
 - "I would consider the smaller versions of regions as sub-regions from generation point of
-  view." A region's small version is placed as a sub-region: a map or two, set where its range
-  allows.
+  view." Later named: a region's smaller version is a **smaller region** (one level).
 - "I'd also like diverging paths in the generated dungeon. The player can go down different ways
   to different paths through the dungeon. One choice might lead to a Transition, one might lead to
   Over Dungeon." The levels branch: a way down can split in two, and two ways can join again. Each
@@ -133,7 +135,7 @@ A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleep
 - **The mines** (levels 6 to 16), between goblin Territory, the Deep Dark and the Dwarven Keep: Bat, Giant centipede, Worm, Earth elemental, Goblin; Mine-head, Cave-in maze, Miners' pocket, Winch room.
 - **A breach** (levels 2 to 16), between any built place and the caves: Whatever lives on either side; A broken wall into the other side.
 
-## Sub-regions
+## Smaller regions and sub-regions
 
 - **The bandits' hold**: The Over Dungeon, levels 1 to 10. Bandit, Bandit archer, Bandit chief, Thief, Wolf; Hideout, Storeroom, Smugglers' stash, Jail, Feast hall.
 - **The archive**: Only in the Dungeon Underneath, the Drowned City and the Dwarven Keep (round 12). Floating eye, Mimic, Golem, Animated armour; Library, Alchemist's room, Scholar's dig, Statue gallery.
