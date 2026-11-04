@@ -5733,7 +5733,7 @@
      6
     ],
     "boss": "Lich",
-    "line": "A castle-like dungeon, held each run by the dead garrison, the cult or outlaws (round 15); the lich leads the dead or the cult.",
+    "line": "A castle-like dungeon, held each run by the dead garrison, the cult or outlaws (round 15); the lich leads the dead or the cult; a stronger bandit chief leads the outlaws.",
     "monsters": [
      "Rat",
      "Giant rat",
@@ -5807,7 +5807,12 @@
     "subRegions": [
      "The archive",
      "The cult's sanctum"
-    ]
+    ],
+    "bossByHolder": {
+     "The dead garrison": "Lich",
+     "The cult": "Lich",
+     "Outlaws": "Bandit chief (stronger)"
+    }
    },
    {
     "id": "goblin-territory",

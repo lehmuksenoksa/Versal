@@ -1,5 +1,22 @@
 # Round 25: what the Dungeon Underneath contains
 
+**Answered.**
+- **Its areas:** none ticked. "I don't think all guard related things should be in the guard wing,
+  maybe just barracks and armoury out of these? Guards should be spread out in the region. Some of
+  these should be connected to each other, like the crypts and the chapel, and some don't feel
+  like connected like crypts and the kitchen, if you know what I mean. We should take that into
+  account as well." Reworked in round 26 (`round26-dungeon-areas.md`).
+- **Who holds it:** all three. "Let the bandit chief be the boss for bandit held one. Just make him
+  stronger." (That settles round 19's question of the lich with outlaws.)
+- **Whatever the holder:** all here (rats and giant rats, spiders, the giant centipede, the dead in
+  the crypts, a mimic).
+- **Strangers:** all here but the ratcatchers (unmarked). "A friendly priest can hold the chapel,
+  if there's bandits."
+- **Environmental features:** all here; traps maybe; the flooded wing here. "Portcullises in the
+  guard wing, Tripwires in the guard wing > Notice my note above about guards and guard wing...
+  Tripwires done by bandits, not by anyone else."
+- **Containers:** all here.
+
 The first region, by your hierarchy (`content-model.md`): its areas and their rooms; who holds
 it; who's there whatever the holder; strangers; environmental features; containers. Built from
 round 14's cull of this region, round 15's holders, and rounds 22 and 23's kept lists. Here, maybe

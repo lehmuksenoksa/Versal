@@ -89,7 +89,8 @@ common.
 
 ## Bosses (round 19)
 
-- The Dungeon Underneath: the lich (leading the cult or the undead, whichever holds it).
+- The Dungeon Underneath: the lich, leading the cult or the undead, whichever holds it. When
+  outlaws hold it, a stronger bandit chief instead (round 25).
 - Goblin Territory: the goblin king.
 - The Abandoned Dwarven Keep: the dragon.
 - The Deep Dark: the dark elf prince.
