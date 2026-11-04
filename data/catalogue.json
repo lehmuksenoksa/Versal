@@ -6342,5 +6342,503 @@
    "subRegion": "small",
    "overDungeon": "medium"
   }
- }
+ },
+ "environment": [
+  {
+   "id": "feat-1",
+   "name": "Alcove",
+   "group": "Hiding and cover",
+   "line": "A niche to stand in, out of sight unless lit or someone steps close",
+   "state": "unmarked",
+   "note": "decided, round 2: hiding places"
+  },
+  {
+   "id": "feat-2",
+   "name": "Curtain",
+   "group": "Hiding and cover",
+   "line": "Hide behind a hanging cloth or tapestry",
+   "state": "unmarked",
+   "note": ""
+  },
+  {
+   "id": "feat-3",
+   "name": "Deep shadow",
+   "group": "Hiding and cover",
+   "line": "Under arches and behind columns: unseen unless light falls on it",
+   "state": "unmarked",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-4",
+   "name": "Columns",
+   "group": "Hiding and cover",
+   "line": "Break line of sight and cast shadow",
+   "state": "keep",
+   "note": "in the game"
+  },
+  {
+   "id": "feat-5",
+   "name": "Crates and barrels",
+   "group": "Hiding and cover",
+   "line": "Cover to hide behind; some can be pushed",
+   "state": "maybe",
+   "note": "in the game as furniture"
+  },
+  {
+   "id": "feat-6",
+   "name": "Rubble",
+   "group": "Hiding and cover",
+   "line": "Low cover; loud to cross",
+   "state": "unmarked",
+   "note": ""
+  },
+  {
+   "id": "feat-7",
+   "name": "Statues",
+   "group": "Hiding and cover",
+   "line": "Cover, and one of them might not be a statue",
+   "state": "unmarked",
+   "note": ""
+  },
+  {
+   "id": "feat-8",
+   "name": "Braziers, candles, campfires",
+   "group": "Light",
+   "line": "Lit; can be put out (a turn or two, and a noise), and relit by monsters",
+   "state": "keep",
+   "note": "in the game; decided, round 2"
+  },
+  {
+   "id": "feat-9",
+   "name": "A lantern on a hook",
+   "group": "Light",
+   "line": "Take it, or put it out",
+   "state": "maybe",
+   "note": ""
+  },
+  {
+   "id": "feat-10",
+   "name": "Glowing fungus",
+   "group": "Light",
+   "line": "Dim light everywhere that can't be put out, only cut away",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-11",
+   "name": "Forge and lava glow",
+   "group": "Light",
+   "line": "Light that can't be put out",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-12",
+   "name": "Foul air",
+   "group": "Light",
+   "line": "The lamp gutters and burns more oil",
+   "state": "drop",
+   "note": ""
+  },
+  {
+   "id": "feat-13",
+   "name": "Light that carries",
+   "group": "Light",
+   "line": "Crystal or still water throwing light further",
+   "state": "drop",
+   "note": "maybe, round 6"
+  },
+  {
+   "id": "feat-14",
+   "name": "Rubble floor",
+   "group": "Sound underfoot",
+   "line": "Loud to walk on",
+   "state": "keep",
+   "note": "decided, round 2: the ground's sound"
+  },
+  {
+   "id": "feat-15",
+   "name": "Bones",
+   "group": "Sound underfoot",
+   "line": "Crunch underfoot, loud",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-16",
+   "name": "Shallow water",
+   "group": "Sound underfoot",
+   "line": "Wading: slow and loud",
+   "state": "keep",
+   "note": "in the game"
+  },
+  {
+   "id": "feat-17",
+   "name": "Moss and soft earth",
+   "group": "Sound underfoot",
+   "line": "Quiet to walk on",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-18",
+   "name": "Wooden boards and bridges",
+   "group": "Sound underfoot",
+   "line": "Creak, loud",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-19",
+   "name": "Rushing water",
+   "group": "Sound underfoot",
+   "line": "A waterfall or rapids that cover your noise, and theirs",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-20",
+   "name": "Deep water",
+   "group": "Water",
+   "line": "Swim: silent, but the lamp goes out",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-21",
+   "name": "A current",
+   "group": "Water",
+   "line": "Carries you along, one way",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-22",
+   "name": "Still water",
+   "group": "Water",
+   "line": "Where leeches and worse wait",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-23",
+   "name": "Ledge",
+   "group": "Height and drops",
+   "line": "Drop down, but can't climb back",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-24",
+   "name": "Chasm",
+   "group": "Height and drops",
+   "line": "Can't be crossed but by a bridge; shove things in",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-25",
+   "name": "Rope bridge",
+   "group": "Height and drops",
+   "line": "Cross it, or cut it behind you",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-26",
+   "name": "High ground",
+   "group": "Height and drops",
+   "line": "A dais, a balcony or a gallery: see further, shoot down, hold it",
+   "state": "keep",
+   "note": "for your 'retreating to a better position'"
+  },
+  {
+   "id": "feat-27",
+   "name": "Pit",
+   "group": "Height and drops",
+   "line": "A fall to the level below",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-28",
+   "name": "Door",
+   "group": "Doors and ways",
+   "line": "Open, close; monsters open them too",
+   "state": "keep",
+   "note": "in the game"
+  },
+  {
+   "id": "feat-29",
+   "name": "Locked door",
+   "group": "Doors and ways",
+   "line": "A key, or picked (time and noise)",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-30",
+   "name": "Secret door",
+   "group": "Doors and ways",
+   "line": "Found by searching, hinted by rubble or marks on the floor",
+   "state": "keep",
+   "note": "in the game; hints yours, round 6"
+  },
+  {
+   "id": "feat-31",
+   "name": "Gate",
+   "group": "Doors and ways",
+   "line": "A portcullis to drop between you and them; never blocks the way on",
+   "state": "keep",
+   "note": "decided, round 6"
+  },
+  {
+   "id": "feat-32",
+   "name": "Barricade",
+   "group": "Doors and ways",
+   "line": "Block a door, or break through one",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-33",
+   "name": "Narrow way",
+   "group": "Doors and ways",
+   "line": "A crawlway or crack: one at a time, so a swarm can be fought there",
+   "state": "keep",
+   "note": "yours, round 16"
+  },
+  {
+   "id": "feat-34",
+   "name": "Collapsed passage",
+   "group": "Doors and ways",
+   "line": "Dug through with a pickaxe",
+   "state": "keep",
+   "note": "decided, round 6: digging"
+  },
+  {
+   "id": "feat-35",
+   "name": "Lever",
+   "group": "Doors and ways",
+   "line": "Opens a gate or a hidden way",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-36",
+   "name": "Tripwire",
+   "group": "Traps",
+   "line": "Rings a bell: an alarm",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "feat-37",
+   "name": "Pressure plate",
+   "group": "Traps",
+   "line": "Darts or spikes",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-38",
+   "name": "Pit trap",
+   "group": "Traps",
+   "line": "A hidden pit",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-39",
+   "name": "Falling rocks",
+   "group": "Traps",
+   "line": "The ceiling comes down",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-40",
+   "name": "Net",
+   "group": "Traps",
+   "line": "Holds you fast",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-41",
+   "name": "Gas vent",
+   "group": "Traps",
+   "line": "A cloud of gas or spores",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-42",
+   "name": "Fire",
+   "group": "Hazards",
+   "line": "Spreads, burns, and lights the place",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-43",
+   "name": "Lava",
+   "group": "Hazards",
+   "line": "Deadly to touch; lights everything",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-44",
+   "name": "Steam vents",
+   "group": "Hazards",
+   "line": "Scald, but the steam hides you",
+   "state": "maybe",
+   "note": ""
+  },
+  {
+   "id": "feat-45",
+   "name": "Webs",
+   "group": "Hazards",
+   "line": "Stick to you; the spiders feel you through them",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-46",
+   "name": "Unstable floor",
+   "group": "Hazards",
+   "line": "Gives way under weight",
+   "state": "maybe",
+   "note": ""
+  },
+  {
+   "id": "feat-47",
+   "name": "Chest",
+   "group": "Containers",
+   "line": "Holds the better things; may be locked or trapped",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-48",
+   "name": "Crates and barrels",
+   "group": "Containers",
+   "line": "Break them open: noise, and something or nothing inside",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-49",
+   "name": "Sacks and baskets",
+   "group": "Containers",
+   "line": "Quick to search, small things",
+   "state": "maybe",
+   "note": ""
+  },
+  {
+   "id": "feat-50",
+   "name": "Urns",
+   "group": "Containers",
+   "line": "Grave goods; disturbing them may wake the dead",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-51",
+   "name": "Coffins and sarcophagi",
+   "group": "Containers",
+   "line": "Grave goods, and maybe their owner",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-52",
+   "name": "Weapon and armour racks",
+   "group": "Containers",
+   "line": "Gear in the armoury or the guardroom",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-53",
+   "name": "Bodies",
+   "group": "Containers",
+   "line": "What those before you carried",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-54",
+   "name": "Nests and hoards",
+   "group": "Containers",
+   "line": "What a beast, a goblin or the dragon has gathered",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-55",
+   "name": "Hidden caches",
+   "group": "Containers",
+   "line": "Behind a loose stone or under the floor: found by searching",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-56",
+   "name": "Oil",
+   "group": "Things to use",
+   "line": "A spill or a barrel to set alight",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-57",
+   "name": "Altar",
+   "group": "Things to use",
+   "line": "Lifts curses; holy ground to rest",
+   "state": "keep",
+   "note": "in the game"
+  },
+  {
+   "id": "feat-58",
+   "name": "Places to rest",
+   "group": "Things to use",
+   "line": "A hot spring, a bath, a kept shrine: rest is safer there",
+   "state": "keep",
+   "note": "decided, round 6"
+  },
+  {
+   "id": "feat-59",
+   "name": "Cages and pens",
+   "group": "Things to use",
+   "line": "Open them to let beasts loose on your foes",
+   "state": "keep",
+   "note": "decided, round 6"
+  },
+  {
+   "id": "feat-60",
+   "name": "Bookshelves",
+   "group": "Things to use",
+   "line": "Notes and scrolls to find; reading needs light",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-61",
+   "name": "Mine cart",
+   "group": "Things to use",
+   "line": "Ride it (fast, loud) or push it into things",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "feat-62",
+   "name": "Bell",
+   "group": "Things to use",
+   "line": "Ring it to draw monsters where you want them",
+   "state": "maybe",
+   "note": ""
+  }
+ ]
 }
