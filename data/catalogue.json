@@ -6840,5 +6840,61 @@
    "state": "maybe",
    "note": ""
   }
- ]
+ ],
+ "itemTags": {
+  "quality": {
+   "Crude": "Normal, but heavier",
+   "Fine": "A bit better damage",
+   "Masterwork": "Better damage, lighter, maybe faster to use"
+  },
+  "maker": {
+   "Goblin-made": "",
+   "Dwarven": "",
+   "Dark elven": "",
+   "Ancient": "",
+   "Cultist": ""
+  },
+  "material": {
+   "Stone": "Your addition",
+   "Bronze": "",
+   "Iron": "Plain, left unsaid",
+   "Steel": "",
+   "Silver": "Bites the dead and the eldritch",
+   "Mithril": "Light and hard; deep"
+  },
+  "condition": {
+   "Rusty": "",
+   "Sharp": "",
+   "Heavy": "",
+   "Sturdy": "",
+   "Padded": "",
+   "Spiked": "",
+   "Cursed": ""
+  },
+  "slaying": [
+   "spider",
+   "goblin",
+   "undead",
+   "beast",
+   "dragon",
+   "elf",
+   "horror"
+  ],
+  "enchantment": [
+   "light",
+   "fire",
+   "silence",
+   "shadows",
+   "swiftness",
+   "venom",
+   "returning",
+   "warding"
+  ],
+  "rules": {
+   "most": "Two words before the name and one 'of …' after, at most; most items have fewer",
+   "order": "condition, quality, maker, material, the thing, of …",
+   "depth": "Tags follow depth through the danger ladder; makers by region, and rarer outside it"
+  },
+  "open": "Each maker's gameplay effect (your note)"
+ }
 }

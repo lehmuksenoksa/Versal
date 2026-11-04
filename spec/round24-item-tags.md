@@ -1,5 +1,16 @@
 # Round 24: item tags
 
+**Answered.**
+- **Kept:** every tag, except notched (dropped).
+- **Quality:** "Crude could be normal, but just heavier. Fine weapon has a bit better damage.
+  Masterwork has better damage and is lighter, maybe faster to use."
+- **Maker:** "We need to think gameplay effects on all of these at some point."
+- **Material:** "Maybe stone for some as well." Stone is added.
+- **How many tags:** two words before and one "of …" after (A), but "A is maximum, not the norm."
+- **Follow depth:** yes; "makers can be found outside the region, but they're rarer."
+- **The order of words:** yes.
+- **Round 23's melee weapons grid:** not answered again.
+
 Your idea: "We will also need levels or tags for items: crude dagger, fine dagger, masterwork dagger, dwarven dagger, dark elven dagger, dwarven masterwork dagger, steel dagger, silver dagger, mithril dagger, dagger of spider slaying, dagger of light, dagger of fire etc."
 
 Items carry tags as monsters do (round 10: the same tags for everything). Six kinds, from your

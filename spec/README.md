@@ -103,7 +103,7 @@ Each part's state is one of:
 | 21 | The world plan, from your outline (and the run simulator, `mockups/runs.html`): the Over Dungeon, then regions, transitions and themed areas ([`world.md`](world.md)) | answered |
 | 22 | Environmental features, shallow ([`round22-features.md`](round22-features.md)) | answered |
 | 23 | Things to find, shallow ([`round23-things.md`](round23-things.md)) | answered (melee weapons asked again in round 24) |
-| 24 | Item tags, your idea ([`round24-item-tags.md`](round24-item-tags.md)) | on the choices page |
+| 24 | Item tags, your idea ([`round24-item-tags.md`](round24-item-tags.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
