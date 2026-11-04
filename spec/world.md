@@ -105,8 +105,25 @@ the way: one boss to draw, two sets of numbers.
     over dungeon." So the rule is at least five themed areas a run. The archive and the sanctum
     are side maps off a region's middle level, reached and left only through the region's own
     maps, so only a region three levels long can hold one.
-  - "I don't like transitions spanning 2-3 levels." A transition is one level, just before the
-    themed area it leads into; a fork is that one level, the transition or the Over Dungeon.
+  - "I don't like transitions spanning 2-3 levels." Then: "maybe some transitions can be longer.
+    Like Mines, Sewers and Underground river. I just feel like a Breach should be shorter, more
+    abrupt change. Maybe we should consider size of the map and how many levels for each area as
+    well. Mines and Great staircase sound to me like 2-3 maybe smaller maps stacked on top of each
+    other. While the Breach or Ledge should [not] be too large either way." So each kind has its
+    own levels and map size (my proposal, from your note):
+
+    | | Levels | Maps |
+    |---|---|---|
+    | The mines | 2 to 3 | small, stacked |
+    | The great stairway | 2 to 3 | small, stacked |
+    | The sewers | 2 | medium |
+    | The underground river | 2 | medium, long and narrow |
+    | A breach | 1 | small: an abrupt change |
+    | The ledge path | 1 | small |
+    | A region | 2 to 3 | large |
+    | A smaller region | 1 | medium |
+    | A sub-region | half a level, a side map | small |
+    | The Over Dungeon | what fills the gaps | medium |
 
 ## The Over Dungeon
 

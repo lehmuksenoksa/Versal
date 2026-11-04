@@ -161,7 +161,7 @@ function render() {
 
   <section>
     <h2>Transitions</h2>
-    <div class="cols">${W.transitions.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><span class="tag steps">${steps(t.steps)}</span><p>Between ${esc(t.between[0].toLowerCase() + t.between.slice(1))}.</p></div>
+    <div class="cols">${W.transitions.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><span class="tag steps">${steps(t.steps)}</span><span class="tag">${t.levels[0] === t.levels[1] ? t.levels[0] : t.levels[0] + " to " + t.levels[1]} level${t.levels[1] > 1 ? "s" : ""}, ${esc(t.size)} map${t.levels[1] > 1 ? "s" : ""}</span><p>Between ${esc(t.between[0].toLowerCase() + t.between.slice(1))}.</p></div>
       <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => (mon(n) ? mchip(n) : `<span class="c">${esc(n)}</span>`)).join("")}</div></div>
       <div class="col"><h3>Locations</h3><div class="chips">${t.places.map((n) => pchip(n)).join("")}</div></div></article>`).join("")}</div>
   </section>

@@ -6096,7 +6096,12 @@
     "connects": [
      "dungeon-underneath",
      "drowned-city"
-    ]
+    ],
+    "levels": [
+     2,
+     2
+    ],
+    "size": "medium"
    },
    {
     "name": "The mines",
@@ -6122,7 +6127,12 @@
      "goblin-territory",
      "deep-dark",
      "dwarven-keep"
-    ]
+    ],
+    "levels": [
+     2,
+     3
+    ],
+    "size": "small"
    },
    {
     "name": "A breach",
@@ -6139,7 +6149,12 @@
     ],
     "connects": [
      "*"
-    ]
+    ],
+    "levels": [
+     1,
+     1
+    ],
+    "size": "small"
    },
    {
     "name": "The underground river",
@@ -6163,7 +6178,12 @@
      "deep-dark",
      "drowned-city"
     ],
-    "hub": "drowned-city"
+    "hub": "drowned-city",
+    "levels": [
+     2,
+     2
+    ],
+    "size": "medium"
    },
    {
     "name": "The ledge path",
@@ -6185,7 +6205,12 @@
      "goblin-territory",
      "deep-dark",
      "dwarven-keep"
-    ]
+    ],
+    "levels": [
+     1,
+     1
+    ],
+    "size": "small"
    },
    {
     "name": "The great stairway",
@@ -6209,7 +6234,12 @@
      "drowned-city",
      "bandits"
     ],
-    "hub": "dwarven-keep"
+    "hub": "dwarven-keep",
+    "levels": [
+     2,
+     3
+    ],
+    "size": "small"
    }
   ],
   "run": {
@@ -6305,6 +6335,12 @@
     ],
     "id": "bandits"
    }
-  ]
+  ],
+  "sizes": {
+   "region": "large",
+   "smallerRegion": "medium",
+   "subRegion": "small",
+   "overDungeon": "medium"
+  }
  }
 }

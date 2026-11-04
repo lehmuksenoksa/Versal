@@ -100,12 +100,12 @@ const LEVELS = 20, MAXW = 3, END = [18, 20];
 const BANDS = [["shallow", 1, 7], ["middle", 8, 14], ["deep", 15, 20]];
 const P = { bigger: 0.65, gap: 2, forks: [2, 4], lineT: 0.5, wide: 0.6, deepSmaller: 0.5, bandits: 0.5, archive: 0.5, sanctum: 0.5, minThemed: 5 };
 const RULES = [
-  `Twenty levels in three bands: shallow 1 to 7, middle 8 to 14, deep 15 to 20. Level 1 is a single map of the Over Dungeon, where every run starts.`,
+  `Map sizes: a region's maps are large, a smaller region's medium, a transition's its own, a sub-region a small side map, the Over Dungeon medium; drawn here by width. Twenty levels in three bands: shallow 1 to 7, middle 8 to 14, deep 15 to 20. Level 1 is a single map of the Over Dungeon, where every run starts.`,
   `The end game is one of the regions that can be (the Keep, the Deep Dark, the Drowned City), at levels ${END[0]} to ${END[1]}: the deep band's bigger region.`,
   `The shallow and middle bands each get at most one bigger region (about ${P.bigger * 100}% of the time, if one fits there), or else a smaller region: a region's smaller version, or the bandits' hold, one level. A region appears once in a run, bigger or smaller.`,
   `Themed areas are at least ${P.gap} levels apart, so two never sit side by side.`,
   `A bigger region isn't a corridor: its first and middle levels can hold two maps side by side (about ${P.wide * 100}% of the time), joined every way, and its last level is the boss's lair. The archive and the cult's sanctum (each half the time) are a side map off one of a region's middle levels, reached and left only through the region's own maps, never from a transition or the Over Dungeon; so only a region three levels long can hold one.`,
-  `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions); the mines Goblin Territory, the Deep Dark and the Keep; the underground river Goblin Territory or the Deep Dark with the Drowned City; the ledge path Goblin Territory, the Deep Dark and the Keep; the great stairway the Keep with anything built; a breach anything. Each transition appears at most once in a run, as one level just before the themed area it leads into. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
+  `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions); the mines Goblin Territory, the Deep Dark and the Keep; the underground river Goblin Territory or the Deep Dark with the Drowned City; the ledge path Goblin Territory, the Deep Dark and the Keep; the great stairway the Keep with anything built; a breach anything. Each transition appears at most once in a run, just before the themed area it leads into, over its own number of levels: the mines and the great stairway two or three small maps stacked, the sewers and the underground river two medium ones, a breach and the ledge path one small one. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
   `Smaller regions are added where they fit, as many as there's room for between the others (toward five on every way). The requirement is at least ${P.minThemed} themed areas a run (transitions and sub-regions counted), which every run meets.`,
 ];
 
@@ -155,7 +155,7 @@ function generate(W, seed) {
     const plan = segs.map((seg, i) => {
       const before = segs[i - 1], a = before ? before.to + 1 : 2, b = seg.from - 1;
       if (b < a || !before) return { a, b, t: null };
-      const t = shuffle(W.transitions).find((t) => !chosen.has(t.name) && connects(t, before.rid, seg.rid) && t.steps[0] <= b && t.steps[1] >= Math.max(a, b - 1));
+      const t = shuffle(W.transitions).find((t) => !chosen.has(t.name) && connects(t, before.rid, seg.rid) && b - a + 1 >= t.levels[0] && t.steps[0] <= b - t.levels[0] + 1 && t.steps[1] >= b);
       if (t) chosen.add(t.name);
       return { a, b, t };
     });
@@ -167,14 +167,14 @@ function generate(W, seed) {
     segs.forEach((seg, i) => {
       const g = plan[i];
       if (g.b >= g.a) {
-        const len = g.b - g.a + 1, tl = g.t ? 1 : 0, fork = forkAt.has(i) && g.t;
+        const len = g.b - g.a + 1, tl = g.t ? Math.min(len, int(...g.t.levels)) : 0, fork = forkAt.has(i) && g.t;
         // plain Over Dungeon first, one way
         for (let d = g.a; d <= g.b - tl; d++) { const c = node(d, null); link(prev, [c]); prev = [c]; }
         if (tl) {
           // the transition's levels: the only way, or one side of a fork with the Over Dungeon
           const lanes = fork ? [null, g.t] : [g.t], rows = lanes.map(() => []);
           for (let d = g.b - tl + 1; d <= g.b; d++) {
-            const row = lanes.map((t, k) => { const c = node(d, t ? { name: t.name, kind: "transition" } : null); rows[k].push(c); return c; });
+            const row = lanes.map((t, k) => { const c = node(d, t ? { name: t.name, kind: "transition", size: t.size } : null); rows[k].push(c); return c; });
             if (d === g.b - tl + 1) link(prev, row); else rows.forEach((r) => edges.push({ a: r[r.length - 2].id, b: r[r.length - 1].id }));
           }
           tUsed.add(g.t.name);
@@ -220,14 +220,16 @@ function draw(run) {
   const bands = [[1, 7, "shallow"], [8, 14, "middle"], [15, 20, "deep"]].map(([a, b, n]) => `<text x="4" y="${top + (a - 1) * rowH + 12}" fill="#d9a53a" font-size="11" letter-spacing="1">${n.toUpperCase()}</text>`).join("");
   const nums = run.levels.map((row, i) => `<text x="4" y="${top + i * rowH + 26}" fill="#5d574f" font-size="12">${i + 1}</text>`).join("");
   const nodes = run.levels.flat().map((c) => {
-    const [x, y] = pos.get(c.id), a = c.area;
+    const [x0, y] = pos.get(c.id), a = c.area;
+    const size = a ? (a.kind === "region" ? "large" : a.kind === "transition" ? (a.size || "medium") : a.kind === "sub" ? "small" : "medium") : "medium";
+    const w = { large: nodeW, medium: nodeW - 22, small: nodeW - 46 }[size], x = x0 + (nodeW - w) / 2;
     const fill = a ? COLOR[a.kind] : "#1f1b16";
     const label = a ? a.name.replace(/^The /, "").replace(/^A /, "").replace("Abandoned ", "").replace("Dungeon Underneath", "Dungeon Under.") : "Over Dungeon";
     const txt = a && a.kind === "small" ? "#f4eee2" : a ? (a.kind === "transition" ? "#f4eee2" : "#0d0c0b") : "#8f877a";
     const star = a && a.boss && c.last ? " ★" : "";
-    return `<g><rect x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="4" fill="${fill}" ${a ? "" : 'stroke="#5d574f" stroke-dasharray="3 3"'}/>
+    return `<g><rect x="${x}" y="${y}" width="${w}" height="${nodeH}" rx="4" fill="${fill}" ${a ? "" : 'stroke="#5d574f" stroke-dasharray="3 3"'}/>
       <text x="${x + 7}" y="${y + 18}" fill="${txt}" font-size="13">${esc(label)}${star}</text>
-      ${c.sub ? `<circle cx="${x + nodeW - 8}" cy="${y + 8}" r="5" fill="#7f9a5a"><title>${esc(c.sub)}</title></circle>` : ""}
+      ${c.sub ? `<circle cx="${x + w - 8}" cy="${y + 8}" r="5" fill="#7f9a5a"><title>${esc(c.sub)}</title></circle>` : ""}
       <title>${esc((a ? a.name + (a.kind === "small" ? " (small " + a.of + ")" : "") : "The Over Dungeon") + (c.sub ? ", with " + c.sub : ""))}</title></g>`;
   }).join("");
   $("#map").innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="The run's levels and the ways down">${bands}${nums}${lines}${nodes}</svg>`;
