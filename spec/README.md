@@ -104,6 +104,7 @@ Each part's state is one of:
 | 22 | Environmental features, shallow ([`round22-features.md`](round22-features.md)) | answered |
 | 23 | Things to find, shallow ([`round23-things.md`](round23-things.md)) | answered |
 | 24 | Item tags, your idea ([`round24-item-tags.md`](round24-item-tags.md)) | answered |
+| 25 | What the Dungeon Underneath contains ([`round25-dungeon.md`](round25-dungeon.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
