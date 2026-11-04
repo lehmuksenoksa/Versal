@@ -6140,6 +6140,76 @@
     "connects": [
      "*"
     ]
+   },
+   {
+    "name": "The underground river",
+    "between": "Goblin Territory or the Deep Dark and the Drowned City",
+    "steps": [
+     6,
+     16
+    ],
+    "monsters": [
+     "Eel",
+     "Leech",
+     "Snake",
+     "Cave crab"
+    ],
+    "places": [
+     "Riverbank",
+     "A river crossing"
+    ],
+    "connects": [
+     "goblin-territory",
+     "deep-dark",
+     "drowned-city"
+    ],
+    "hub": "drowned-city"
+   },
+   {
+    "name": "The ledge path",
+    "between": "Goblin Territory, the Deep Dark and the Dwarven Keep",
+    "steps": [
+     8,
+     18
+    ],
+    "monsters": [
+     "Bat",
+     "Giant spider",
+     "Cave lion"
+    ],
+    "places": [
+     "A ledge path",
+     "A chasm bridge"
+    ],
+    "connects": [
+     "goblin-territory",
+     "deep-dark",
+     "dwarven-keep"
+    ]
+   },
+   {
+    "name": "The great stairway",
+    "between": "The Dwarven Keep and anything built (the Dungeon Underneath, the Drowned City, the bandits' hold)",
+    "steps": [
+     10,
+     18
+    ],
+    "monsters": [
+     "Animated armour",
+     "Skeleton warrior",
+     "Ghost"
+    ],
+    "places": [
+     "Great stairway",
+     "Gatehouse"
+    ],
+    "connects": [
+     "dwarven-keep",
+     "dungeon-underneath",
+     "drowned-city",
+     "bandits"
+    ],
+    "hub": "dwarven-keep"
    }
   ],
   "run": {

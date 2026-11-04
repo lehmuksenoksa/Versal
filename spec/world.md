@@ -94,6 +94,12 @@ the way: one boss to draw, two sets of numbers.
   - a way meets 5.8 themed areas on average, but only 56% of runs give five on every way: the
     Over Dungeon side of a fork misses that transition, and there's less room once themed areas
     are spaced out. There are only three transitions, so at most three forks.
+  - With your three new transitions (the underground river, the ledge path, the great stairway):
+    - 1 to 4 forks a run;
+    - 2.8 transitions a run on average;
+    - 38% of maps are the Over Dungeon;
+    - 6.4 themed areas a way on average;
+    - 71% of runs give five on every way.
 
 ## The Over Dungeon
 
@@ -156,9 +162,14 @@ A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleep
 
 ## Transitions
 
+The three new ones (the underground river, the ledge path, the great stairway) are yours, from my list; not the sinkhole or the lift shaft.
+
 - **The sewers** (levels 2 to 10), between the Dungeon Underneath and the Drowned City: Rat, Giant rat, Ooze, Slime, Eel, Leech, Thief; Channels, Cistern, Smugglers' hole.
 - **The mines** (levels 6 to 16), between goblin Territory, the Deep Dark and the Dwarven Keep: Bat, Giant centipede, Worm, Earth elemental, Goblin; Mine-head, Cave-in maze, Miners' pocket, Winch room.
 - **A breach** (levels 2 to 16), between any built place and the caves: Whatever lives on either side; A broken wall into the other side.
+- **The underground river** (levels 6 to 16), between goblin Territory or the Deep Dark and the Drowned City: Eel, Leech, Snake, Cave crab; Riverbank, A river crossing.
+- **The ledge path** (levels 8 to 18), between goblin Territory, the Deep Dark and the Dwarven Keep: Bat, Giant spider, Cave lion; A ledge path, A chasm bridge.
+- **The great stairway** (levels 10 to 18), between the Dwarven Keep and anything built (the Dungeon Underneath, the Drowned City, the bandits' hold): Animated armour, Skeleton warrior, Ghost; Great stairway, Gatehouse.
 
 ## Smaller regions and sub-regions
 

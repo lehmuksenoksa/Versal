@@ -105,7 +105,7 @@ const RULES = [
   `The shallow and middle bands each get at most one bigger region (about ${P.bigger * 100}% of the time, if one fits there), or else a smaller region: a region's smaller version, or the bandits' hold, one level. A region appears once in a run, bigger or smaller.`,
   `Themed areas are at least ${P.gap} levels apart, so two never sit side by side.`,
   `A bigger region isn't a corridor: its first and middle levels can hold two maps side by side (about ${P.wide * 100}% of the time), joined every way, and its last level is the boss's lair. The archive and the cult's sanctum (each half the time) are a side map off one of a region's levels, where the region can hold them.`,
-  `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions), the mines Goblin Territory, the Deep Dark and the Keep, a breach anything. Each transition appears at most once in a run, over two or three levels just before the themed area it leads into. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
+  `Transitions join the themed areas on either side of them: the sewers the Dungeon Underneath and the Drowned City (or their smaller versions); the mines Goblin Territory, the Deep Dark and the Keep; the underground river Goblin Territory or the Deep Dark with the Drowned City; the ledge path Goblin Territory, the Deep Dark and the Keep; the great stairway the Keep with anything built; a breach anything. Each transition appears at most once in a run, over two or three levels just before the themed area it leads into. There it's either the only way (about ${P.lineT * 100}% of the time) or one side of a fork whose other side is the Over Dungeon; the dungeon forks ${P.forks[0]} to ${P.forks[1]} times a run where it can. Any Over Dungeon before that is a single way, so a fork is always a choice between a transition and the Over Dungeon, never between two plain maps.`,
   `Smaller regions are added, where they fit, until every way meets at least ${P.minThemed} themed areas (transitions and sub-regions counted).`,
 ];
 
@@ -143,7 +143,7 @@ function generate(W, seed) {
     const hosts = segs.filter((s) => s.kind === "region" && s.region.subRegions.includes(nm) && !subs.some((x) => x.seg === s));
     if (hosts.length) { const s = pick(hosts); subs.push({ name: nm, seg: s, d: int(s.from, Math.max(s.from, s.to - 1)) }); }
   }
-  const connects = (t, a, b) => t.connects.includes("*") || (t.connects.includes(a) && t.connects.includes(b));
+  const connects = (t, a, b) => t.connects.includes("*") || (t.connects.includes(a) && t.connects.includes(b) && a !== b && (!t.hub || a === t.hub || b === t.hub));
   const build = (keepT = false) => {
     segs.sort((x, y) => x.from - y.from);
     const levels = Array.from({ length: LEVELS }, () => []), edges = [];
