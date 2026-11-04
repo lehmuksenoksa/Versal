@@ -49,3 +49,10 @@ One start for everyone. The run's variety comes from choices made at each level 
   - blink;
   - sight through walls;
   - a ward against the dead.
+
+## Ideas for level-up choices (kept for their brainstorm)
+
+- **Hiding as choices** (your idea, round 22): hiding in a grid, turn-based game comes from the
+  light and what blocks sight, and from choices made at a level up rather than features of the
+  map. Your example: the first step in light counts as darkness, to make running between shadows
+  easier.

@@ -3,7 +3,8 @@
 **Answered.** Nearly everything kept. Dropped: foul air, light that carries. Maybe: crates and
 barrels as cover, a lantern on a hook, steam vents, unstable floor, sacks and baskets, the bell.
 Hiding and cover: only columns kept, crates and barrels maybe, the rest unmarked: "I'm not sure
-many of these work in grid and turn based gameplay."
+many of these work in grid and turn based gameplay." Then: hiding could come from level-up
+choices instead (`03-the-character.md`).
 
 Environmental gameplay features: what a region, area or room can hold that changes how you play
 there (your hierarchy, `content-model.md`). One line each, to keep, maybe or drop, grouped by what
