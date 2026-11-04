@@ -1,0 +1,167 @@
+<meta charset="utf-8">
+<title>Versal World Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Texturina:opsz,wght@12..72,500;12..72,600;12..72,700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  /* Layout: the world plan, top to bottom as you go down: the Over Dungeon
+     and its depth ladder; a strip showing at which steps each region,
+     transition and themed area can appear; then a card for each. One dark
+     look, as the game's ink ledger, the choices page and the catalogue. */
+  :root {
+    --ground: #0d0c0b;
+    --card: #15130f;
+    --chip: #1f1b16;
+    --paper: #f4eee2;
+    --text: #ddd6c6;
+    --dim: #8f877a;
+    --faint: #5d574f;
+    --line: #2e2a25;
+    --amber: #d9a53a;
+    --moss: #7f9a5a;
+    --blood: #c0392b;
+    --letter: Texturina, Georgia, serif;
+    --log: "Crimson Pro", Georgia, serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--text); font: 17px/1.45 var(--log); }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
+  main { max-width: 1180px; margin: 0 auto; padding-block: 32px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 30px; }
+  header { display: grid; gap: 8px; }
+  h1 { font: 600 clamp(30px, 5vw, 44px)/1.05 var(--letter); margin: 0; color: var(--paper); text-wrap: balance; }
+  h2 { margin: 0; font: 600 26px/1.15 var(--letter); color: var(--paper); text-wrap: balance; }
+  h3 { margin: 0; font: 600 12px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  p { margin: 0; }
+  .note { color: var(--dim); max-width: 78ch; }
+  section { display: grid; gap: 14px; }
+  #view { display: grid; gap: 40px; }
+  .card { background: var(--card); border-radius: 6px; padding: 18px 20px; display: grid; gap: 14px; }
+  .head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+  .head p { flex-basis: 100%; color: var(--dim); }
+  .tag { font: 600 12px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--faint); color: var(--text); }
+  .tag.steps { border-color: var(--amber); color: var(--amber); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .c { font-size: 15px; padding: 1px 8px; border-radius: 3px; background: var(--chip); color: var(--text); }
+  .c.boss { border: 1px solid var(--amber); color: var(--paper); }
+  .c.only { border: 1px solid var(--moss); }
+  .dn { font: 600 12px var(--letter); color: var(--amber); font-variant-numeric: tabular-nums; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px 24px; }
+  .col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 600 12px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  td.num { font: 700 20px var(--letter); color: var(--paper); width: 3em; }
+  td.band { color: var(--dim); width: 6em; }
+  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; width: 140px; margin-top: 6px; }
+  .bar span { display: block; height: 100%; background: var(--amber); }
+  /* the strip: steps across, one row per place */
+  .strip { display: grid; grid-template-columns: minmax(170px, 240px) repeat(12, minmax(30px, 1fr)); gap: 3px 0; align-items: center; min-width: 640px; }
+  .strip .lbl { font: 600 15px var(--letter); color: var(--paper); padding-right: 10px; }
+  .strip .lbl small { display: block; font: 400 13px var(--log); color: var(--dim); }
+  .strip .sh { font: 600 13px var(--letter); color: var(--dim); text-align: center; font-variant-numeric: tabular-nums; }
+  .strip .bandh { font: 600 11px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+  .strip .span { height: 22px; border-radius: 4px; background: var(--amber); opacity: 0.85; display: flex; align-items: center; justify-content: flex-end; padding-inline: 6px; font: 600 12px var(--letter); color: var(--ground); white-space: nowrap; overflow: hidden; }
+  .strip .span.trans { background: var(--faint); color: var(--paper); }
+  .strip .span.themed { background: var(--moss); color: var(--ground); }
+  .strip .span.od { background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 9px); color: var(--dim); justify-content: flex-start; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--dim); }
+  .legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  @media (max-width: 520px) { .card { padding: 14px 12px; } }
+</style>
+
+<main>
+  <header>
+    <h1>The world plan</h1>
+    <p class="note">The world, top to bottom as you go down. First the Over Dungeon, the general dungeon where any monster can turn up, by depth. Then where the regions, transitions and themed areas can appear, and a card for each: its monsters, its locations, and what's found only there. A draft from your outline (round 21): monster danger is counted in rats (round 20), and every number sketches the shape of the climb, to be tuned later.</p>
+  </header>
+  <div id="view"><p class="note">Loading the plan…</p></div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+let C;
+const mon = (n) => C.monsters.find((m) => m.name === n);
+const mchip = (n, extra = "") => { const m = mon(n); return `<span class="c ${extra}" title="${esc(m?.line || "")}">${esc(n)}${m?.danger ? ` <span class="dn">${m.danger}</span>` : ""}</span>`; };
+const pchip = (n, only) => `<span class="c ${only ? "only" : ""}">${esc(n)}</span>`;
+const steps = (a) => `steps ${a[0]} to ${a[1]}`;
+
+function strip(W) {
+  const rows = [["The Over Dungeon", "everywhere between", [1, 12], "od"],
+    ...W.regions.map((r) => [r.name, "region", r.steps, ""]),
+    ...W.transitions.map((t) => [t.name, "transition", t.steps, "trans"]),
+    ...W.themed.filter((t) => t.steps).map((t) => [t.name, "themed area", t.steps, "themed"])];
+  const bands = `<div></div><div class="bandh" style="grid-column: span 4">Shallow</div><div class="bandh" style="grid-column: span 4">Middle</div><div class="bandh" style="grid-column: span 4">Deep</div>`;
+  const nums = `<div></div>${Array.from({ length: 12 }, (_, i) => `<div class="sh">${i + 1}</div>`).join("")}`;
+  const body = rows.map(([name, kind, [a, b], cls]) => `<div class="lbl">${esc(name)}<small>${kind}</small></div>${a > 1 ? `<div style="grid-column: span ${a - 1}"></div>` : ""}<div class="span ${cls}" style="grid-column: span ${b - a + 1}">${cls === "od" ? "" : esc(steps([a, b]))}</div>${b < 12 ? `<div style="grid-column: span ${12 - b}"></div>` : ""}`).join("");
+  return `<div class="wrap"><div class="strip">${bands}${nums}${body}</div></div>`;
+}
+
+function render() {
+  const W = C.world, L = C.ladder, O = W.overDungeon;
+  const max = Math.max(...L.steps.map((s) => s.fair));
+  const odNew = (st) => st.new.filter((n) => !O.notIn.includes(n));
+  $("#view").innerHTML = `
+  <section>
+    <h2>Where things can appear</h2>
+    <p class="note">At which steps of depth each can turn up in a run. The Over Dungeon runs all the way down; a region is set somewhere in its range, and branching routes (round 12) choose between those at the same depth. The archive and the cult's sanctum appear only inside their regions, so they have no range of their own.</p>
+    <div class="legend"><span><i style="background: var(--amber)"></i>region</span><span><i style="background: var(--faint)"></i>transition</span><span><i style="background: var(--moss)"></i>themed area</span></div>
+    ${strip(W)}
+  </section>
+
+  <section>
+    <h2>${esc(O.name)}</h2>
+    <p class="note">${esc(O.line)} More depth means generally more dangerous foes, or bigger groups of lesser ones, but some easier ones too.</p>
+    <div class="card">
+      <h3>What a fight there is made of</h3>
+      <div class="wrap"><table><tr><th>How often</th><th>What</th><th>How</th></tr>
+        ${O.mix.map((m) => `<tr><td>${esc(m.share)}</td><td><b>${esc(m.what)}</b></td><td>${esc(m.how)}</td></tr>`).join("")}</table></div>
+    </div>
+    <div class="card">
+      <h3>The ladder: what first turns up at each step</h3>
+      <p class="note">A fair fight is the biggest a character at that step should win, in rats (a lone rat is 1; a group counts 8% more for each one after the first, or just its sum fought one at a time in a narrow way). Monsters found only in regions aren't listed.</p>
+      <div class="wrap"><table><tr><th>Step</th><th>Depth</th><th>Fair fight</th><th>First turns up</th></tr>
+        ${L.steps.map((st) => `<tr><td class="num">${st.step}</td><td class="band">${st.band}</td><td>about ${st.fair}<div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></td><td><div class="chips">${odNew(st).map((n) => mchip(n)).join("") || `<span class="note">nothing new: bigger groups of what's here</span>`}</div></td></tr>`).join("")}</table></div>
+    </div>
+    <div class="card cols">
+      <div class="col"><h3>Its locations</h3><div class="chips">${O.places.map((n) => pchip(n)).join("")}</div></div>
+      <div class="col"><h3>Never in the Over Dungeon</h3><div class="chips">${O.notIn.map((n) => mchip(n)).join("")}</div><p class="note">Bosses, and what belongs only to one region.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The regions</h2>
+    <p class="note">Each can appear within its range of steps, with its own monsters and locations. Green-edged locations are found only in that region.</p>
+    ${W.regions.map((r) => `<article class="card">
+      <div class="head"><h2>${esc(r.name)}</h2><span class="tag steps">${steps(r.steps)}</span><span class="tag">boss: ${esc(r.boss)}</span><p>${esc(r.line)}</p></div>
+      <div class="cols">
+        <div class="col"><h3>Monsters</h3><div class="chips">${mchip(r.boss, "boss")}${r.monsters.map((n) => mchip(n)).join("")}</div></div>
+        <div class="col"><h3>Locations</h3><div class="chips">${r.places.map((n) => pchip(n, r.onlyHere.includes(n))).join("")}${r.onlyHere.filter((n) => !r.places.includes(n)).map((n) => pchip(n, true)).join("")}</div>
+          ${r.holds.length ? `<p class="note">Themed areas found here: ${r.holds.map(esc).join(", ")}.</p>` : ""}</div>
+      </div></article>`).join("")}
+  </section>
+
+  <section>
+    <h2>Transitions</h2>
+    <div class="cols">${W.transitions.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><span class="tag steps">${steps(t.steps)}</span><p>Between ${esc(t.between[0].toLowerCase() + t.between.slice(1))}.</p></div>
+      <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => (mon(n) ? mchip(n) : `<span class="c">${esc(n)}</span>`)).join("")}</div></div>
+      <div class="col"><h3>Locations</h3><div class="chips">${t.places.map((n) => pchip(n)).join("")}</div></div></article>`).join("")}</div>
+  </section>
+
+  <section>
+    <h2>Themed areas</h2>
+    <div class="cols">${W.themed.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><p>${esc(t.where)}.</p></div>
+      <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => mchip(n)).join("")}</div></div>
+      <div class="col"><h3>Locations</h3><div class="chips">${t.places.map((n) => pchip(n)).join("")}</div></div></article>`).join("")}</div>
+  </section>`;
+}
+(async () => {
+  for (const url of ["catalogue.json", "../data/catalogue.json"]) {
+    try { const r = await fetch(url); if (r.ok) { C = await r.json(); break; } } catch {}
+  }
+  if (!C) { $("#view").innerHTML = `<p class="note">The plan couldn't be loaded.</p>`; return; }
+  render();
+})();
+</script>

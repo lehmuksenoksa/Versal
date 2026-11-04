@@ -5576,5 +5576,463 @@
     ]
    }
   ]
+ },
+ "world": {
+  "overDungeon": {
+   "name": "The Over Dungeon",
+   "line": "The general dungeon between and around the regions: any monster, by depth. Its ground changes with depth: built rooms near the top, falling in, then caves, then something deeper still.",
+   "steps": 12,
+   "mix": [
+    {
+     "share": "6 in 10",
+     "what": "At its depth",
+     "how": "Monsters that first appear at this step or the one above, in groups sized to a fair fight"
+    },
+    {
+     "share": "3 in 10",
+     "what": "Lesser, in bigger groups",
+     "how": "Monsters from shallower steps, more of them, so the fight is still fair (twelve rats instead of one wolf)"
+    },
+    {
+     "share": "1 in 10",
+     "what": "Easy",
+     "how": "A lone lesser foe: a breather"
+    },
+    {
+     "share": "now and then",
+     "what": "From deeper",
+     "how": "One monster from two steps deeper: a surprise (round 6's 'a stranger from deeper')"
+    }
+   ],
+   "places": [
+    "Storeroom",
+    "Gallery",
+    "Pillared hall",
+    "Crypt",
+    "Jail",
+    "Barracks",
+    "Dining hall",
+    "Shrine",
+    "Guardroom",
+    "Well room",
+    "Larder",
+    "Kitchen",
+    "A collapsed wing",
+    "A flooded wing",
+    "A dry well",
+    "A sinkhole",
+    "A stair tower",
+    "A smugglers' stash",
+    "A hermit's hollow",
+    "An adventurers' last camp",
+    "A barricaded room",
+    "A lost party's camp",
+    "A peddler's stall",
+    "A kept shrine",
+    "A hideout in a crack",
+    "A trapper's den",
+    "Goblin camp",
+    "Goblin guard post",
+    "Spider nest",
+    "Mushroom grove",
+    "Crystal grotto",
+    "River crossing",
+    "Hot spring",
+    "Ledge path",
+    "Cave-in maze"
+   ],
+   "notIn": [
+    "Lich",
+    "Goblin king",
+    "Eldritch horror",
+    "Dark elf prince",
+    "Dragon",
+    "Shadow",
+    "Abomination",
+    "Lurker",
+    "Dark elf wizard",
+    "Steel golem"
+   ]
+  },
+  "regions": [
+   {
+    "id": "dungeon-underneath",
+    "name": "The Dungeon Underneath",
+    "steps": [
+     1,
+     4
+    ],
+    "boss": "Lich",
+    "line": "A castle-like dungeon, held each run by the dead garrison, the cult or outlaws (round 15); the lich leads the dead or the cult.",
+    "monsters": [
+     "Rat",
+     "Giant rat",
+     "Spider",
+     "Skeleton",
+     "Skeleton warrior",
+     "Skeleton archer",
+     "Zombie",
+     "Bone heap",
+     "Ghost",
+     "Wight",
+     "Cultist",
+     "Cultist warrior",
+     "Cultist archer",
+     "Cult priest",
+     "Bandit",
+     "Bandit archer",
+     "Bandit chief",
+     "Thief",
+     "Mimic"
+    ],
+    "places": [
+     "Guard post",
+     "Guardroom",
+     "Barracks",
+     "Prison block",
+     "Jail",
+     "Armoury",
+     "Kitchen",
+     "Larder",
+     "Dining hall",
+     "Gatehouse",
+     "Crypt",
+     "Crypt row",
+     "Ossuary",
+     "Sarcophagus chamber",
+     "Shrine",
+     "Chapel",
+     "Temple",
+     "Torture chamber",
+     "Treasury",
+     "Bath",
+     "Well room",
+     "Statue gallery",
+     "Sealed wing",
+     "A collapsed wing"
+    ],
+    "onlyHere": [
+     "The lich's tomb (the boss's lair)",
+     "Prison block",
+     "Ossuary",
+     "Sarcophagus chamber"
+    ],
+    "holds": [
+     "The archive",
+     "The cult's sanctum"
+    ]
+   },
+   {
+    "id": "goblin-territory",
+    "name": "Goblin Territory",
+    "steps": [
+     3,
+     7
+    ],
+    "boss": "Goblin king",
+    "line": "Goblin caves: camps, guard posts and warrens common; halls and the throne room rare (round 15).",
+    "monsters": [
+     "Rat",
+     "Wolf",
+     "Dire wolf",
+     "Goblin",
+     "Goblin warrior",
+     "Goblin archer",
+     "Goblin shaman",
+     "Goblin chieftain",
+     "Goblin beasthound",
+     "Ogre",
+     "Troll"
+    ],
+    "places": [
+     "Goblin camp",
+     "Goblin guard post",
+     "Warrens",
+     "Crude prison",
+     "Beast pens",
+     "Nursery",
+     "Fighting pit",
+     "Kitchen",
+     "Larder",
+     "Armoury",
+     "Halls (rare)",
+     "Throne room (rare)"
+    ],
+    "onlyHere": [
+     "Throne room",
+     "Fighting pit",
+     "Beast pens",
+     "Nursery",
+     "Crude prison",
+     "Warrens"
+    ],
+    "holds": []
+   },
+   {
+    "id": "drowned-city",
+    "name": "The Drowned City",
+    "steps": [
+     5,
+     8
+    ],
+    "boss": "Eldritch horror",
+    "line": "Ruins half under black water; something old and wrong sleeps under it.",
+    "monsters": [
+     "Eel",
+     "Cave crab",
+     "Leech",
+     "Snake",
+     "Slime",
+     "Ooze",
+     "Floating eye",
+     "Water elemental",
+     "Shadow",
+     "Lurker",
+     "Abomination",
+     "Cultist",
+     "Cult priest"
+    ],
+    "places": [
+     "Flooded streets",
+     "A flooded wing",
+     "Cistern",
+     "Pool room",
+     "Temple",
+     "Ruined chapel",
+     "Bath",
+     "Well room",
+     "Statue gallery",
+     "A river crossing",
+     "A sunken plaza"
+    ],
+    "onlyHere": [
+     "Flooded streets",
+     "A sunken plaza",
+     "The horror's pool (the boss's lair)"
+    ],
+    "holds": [
+     "The archive",
+     "The cult's sanctum"
+    ]
+   },
+   {
+    "id": "deep-dark",
+    "name": "The Deep Dark",
+    "steps": [
+     8,
+     11
+    ],
+    "boss": "Dark elf prince",
+    "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots. The dark elves rule here.",
+    "monsters": [
+     "Bat",
+     "Giant spider",
+     "Giant centipede",
+     "Cave bear",
+     "Cave lion",
+     "Worm",
+     "Snake",
+     "Ooze",
+     "Troll",
+     "Earth elemental",
+     "Dark elf",
+     "Dark elf warrior",
+     "Dark elf archer",
+     "Dark elf wizard"
+    ],
+    "places": [
+     "Glowing deep",
+     "Mushroom grove",
+     "Crystal grotto",
+     "Spider nest",
+     "Webs",
+     "Hot spring",
+     "Sulphur vents",
+     "Ledge path",
+     "The rift",
+     "Bone field",
+     "Underwood",
+     "A river crossing",
+     "A sinkhole",
+     "Dark elf outpost"
+    ],
+    "onlyHere": [
+     "Dark elf outpost",
+     "The prince's court (the boss's lair)",
+     "The rift",
+     "Underwood"
+    ],
+    "holds": []
+   },
+   {
+    "id": "dwarven-keep",
+    "name": "The Abandoned Dwarven Keep",
+    "steps": [
+     10,
+     12
+    ],
+    "boss": "Dragon",
+    "line": "A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleeps on what's left of its wealth.",
+    "monsters": [
+     "Golem",
+     "Bronze golem",
+     "Iron golem",
+     "Steel golem",
+     "Animated armour",
+     "Skeleton warrior",
+     "Ghost",
+     "Wight",
+     "Fire elemental",
+     "Greater fire elemental",
+     "Greater earth elemental",
+     "Mimic"
+    ],
+    "places": [
+     "Gates",
+     "Great stairway",
+     "Halls",
+     "Forge",
+     "Smithy",
+     "Workshop",
+     "Map room",
+     "Treasury",
+     "Bath",
+     "Crypt row",
+     "Statue gallery",
+     "Winch room",
+     "Gatehouse",
+     "Armoury",
+     "Sealed wing"
+    ],
+    "onlyHere": [
+     "Gates",
+     "Great stairway",
+     "Forge",
+     "Map room",
+     "The dragon's hoard (the boss's lair)"
+    ],
+    "holds": [
+     "The archive"
+    ]
+   }
+  ],
+  "transitions": [
+   {
+    "name": "The sewers",
+    "between": "The Dungeon Underneath and the Drowned City",
+    "steps": [
+     2,
+     6
+    ],
+    "monsters": [
+     "Rat",
+     "Giant rat",
+     "Ooze",
+     "Slime",
+     "Eel",
+     "Leech",
+     "Thief"
+    ],
+    "places": [
+     "Channels",
+     "Cistern",
+     "Smugglers' hole"
+    ]
+   },
+   {
+    "name": "The mines",
+    "between": "Goblin Territory, the Deep Dark and the Dwarven Keep",
+    "steps": [
+     4,
+     10
+    ],
+    "monsters": [
+     "Bat",
+     "Giant centipede",
+     "Worm",
+     "Earth elemental",
+     "Goblin"
+    ],
+    "places": [
+     "Mine-head",
+     "Cave-in maze",
+     "Miners' pocket",
+     "Winch room"
+    ]
+   },
+   {
+    "name": "A breach",
+    "between": "Any built place and the caves",
+    "steps": [
+     2,
+     10
+    ],
+    "monsters": [
+     "Whatever lives on either side"
+    ],
+    "places": [
+     "A broken wall into the other side"
+    ]
+   }
+  ],
+  "themed": [
+   {
+    "name": "The bandits' hold",
+    "where": "The Over Dungeon, steps 1 to 6",
+    "monsters": [
+     "Bandit",
+     "Bandit archer",
+     "Bandit chief",
+     "Thief",
+     "Wolf"
+    ],
+    "places": [
+     "Hideout",
+     "Storeroom",
+     "Smugglers' stash",
+     "Jail",
+     "Feast hall"
+    ],
+    "steps": [
+     1,
+     6
+    ]
+   },
+   {
+    "name": "The archive",
+    "where": "Only in the Dungeon Underneath, the Drowned City and the Dwarven Keep (round 12)",
+    "monsters": [
+     "Floating eye",
+     "Mimic",
+     "Golem",
+     "Animated armour"
+    ],
+    "places": [
+     "Library",
+     "Alchemist's room",
+     "Scholar's dig",
+     "Statue gallery"
+    ]
+   },
+   {
+    "name": "The cult's sanctum",
+    "where": "Only in the Dungeon Underneath and the Drowned City (round 12)",
+    "monsters": [
+     "Cultist",
+     "Cultist warrior",
+     "Cultist archer",
+     "Cult priest",
+     "Skeleton",
+     "Zombie"
+    ],
+    "places": [
+     "Temple",
+     "Sacrifice room",
+     "Summoning circle",
+     "Torture chamber",
+     "Prison cells"
+    ]
+   }
+  ]
  }
 }
