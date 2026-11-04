@@ -160,15 +160,6 @@ function render() {
   </section>
 
   <section>
-    <h2>More sub-regions to choose from</h2>
-    <p class="note">Candidates beyond the three above, each with where it can turn up and what it brings. Keep, maybe or drop them on the choices page.</p>
-    <div class="cols">${W.subRegionCandidates.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><p>${esc(t.line)}. ${esc(t.where)}.</p></div>
-      <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => (mon(n) ? mchip(n) : `<span class="c">${esc(n)}</span>`)).join("")}</div></div>
-      <div class="col"><h3>Strangers</h3><div class="chips">${t.strangers.map((n) => `<span class="c">${esc(n)}</span>`).join("")}</div></div>
-      <div class="col"><h3>Locations</h3><div class="chips">${t.places.map((n) => pchip(n)).join("")}</div></div></article>`).join("")}</div>
-  </section>
-
-  <section>
     <h2>Transitions</h2>
     <div class="cols">${W.transitions.map((t) => `<article class="card"><div class="head"><h2>${esc(t.name)}</h2><span class="tag steps">${steps(t.steps)}</span><p>Between ${esc(t.between[0].toLowerCase() + t.between.slice(1))}.</p></div>
       <div class="col"><h3>Monsters</h3><div class="chips">${t.monsters.map((n) => (mon(n) ? mchip(n) : `<span class="c">${esc(n)}</span>`)).join("")}</div></div>

@@ -48,9 +48,9 @@ Critique:
 | The Abandoned Dwarven Keep | levels 17 to 20, 3 maps, the dragon | A dwarven hall: levels 6 to 15, 1 to 2 map(s); instead of the boss, no dragon; a golem as its guardian | yes |
 
 Example runs, top to bottom, each with five or more themed areas:
-1. The Over Dungeon → The Dungeon Underneath (region, levels 1 to 6: the lich) → The sewers (transition) → The plague cellars (sub-region) → A flooded quarter (small Drowned City, level 9) → The mines (transition) → The Abandoned Dwarven Keep (end game: the dragon)
-2. The Over Dungeon → The bandits' hold (sub-region) → A goblin outpost (small Goblin Territory, level 5) → The Drowned City (region, levels 9 to 13: the eldritch horror) → The bone field (sub-region) → A breach (transition) → The Deep Dark (end game: the dark elf prince)
-3. The Over Dungeon → A dungeon wing (small Dungeon Underneath, level 3) → Goblin Territory (region, levels 5 to 11: the goblin king) → The mines (transition) → The dwarven expedition's camp (sub-region) → A dwarven hall (small Dwarven Keep, level 14) → The Drowned City (end game: the eldritch horror, at its strongest)
+1. The Over Dungeon → The Dungeon Underneath (region, levels 1 to 6: the lich), with the cult's sanctum (sub-region) inside → The sewers (transition) → A flooded quarter (small Drowned City, level 9) → The mines (transition) → The Abandoned Dwarven Keep (end game: the dragon)
+2. The Over Dungeon → The bandits' hold (sub-region) → A goblin outpost (small Goblin Territory, level 5) → The Drowned City (region, levels 9 to 13: the eldritch horror), with the archive (sub-region) inside → A breach (transition) → The Deep Dark (end game: the dark elf prince)
+3. The Over Dungeon → A dungeon wing (small Dungeon Underneath, level 3) → Goblin Territory (region, levels 5 to 11: the goblin king) → The mines (transition) → A dwarven hall (small Dwarven Keep, level 14), with the archive (sub-region) inside → The Drowned City (end game: the eldritch horror, at its strongest)
 
 Critique: whichever region is the end game, its boss is the run's last test, so the eldritch
 horror or the dark elf prince fights at the dragon's level then, and at its own level when met on
@@ -126,19 +126,6 @@ A fallen dwarf city, its gates and halls, its forge still warm; the dragon sleep
 - **The bandits' hold**: The Over Dungeon, levels 1 to 10. Bandit, Bandit archer, Bandit chief, Thief, Wolf; Hideout, Storeroom, Smugglers' stash, Jail, Feast hall.
 - **The archive**: Only in the Dungeon Underneath, the Drowned City and the Dwarven Keep (round 12). Floating eye, Mimic, Golem, Animated armour; Library, Alchemist's room, Scholar's dig, Statue gallery.
 - **The cult's sanctum**: Only in the Dungeon Underneath and the Drowned City (round 12). Cultist, Cultist warrior, Cultist archer, Cult priest, Skeleton, Zombie; Temple, Sacrifice room, Summoning circle, Torture chamber, Prison cells.
-
-## More sub-regions to choose from
-
-Candidates beyond the three above:
-
-- **The old faith's temple** (Over Dungeon, levels 3 to 12): A holy place still kept, under siege by the dead: a refuge, and a fight at its doors. Monsters: The dead at its doors: Skeleton, Zombie, Wight. Strangers: Priest, Pilgrims, Holy warriors. Locations: Temple, Chapel, Reliquary, Pilgrims' rest, Kept shrine.
-- **The webs** (Over Dungeon, levels 3 to 14; or in the Deep Dark): Caves strung with webs; the spiders feel you through them. Monsters: Spider, Giant spider. Strangers: Cocooned victims to cut free. Locations: Spider nest, Webbed halls, Egg chambers.
-- **The plague cellars** (Over Dungeon, levels 1 to 8; or in the Dungeon Underneath): Cellars overrun by rats, and whatever they've bred into. Monsters: Rat, Giant rat, Ooze. Strangers: Ratcatchers. Locations: Larder, Storeroom, Infested rooms, A rats' nest.
-- **The pits** (Only in Goblin Territory): Where goblins keep beasts and make prisoners fight. Monsters: Goblin, Goblin chieftain, Wolf, Dire wolf, Ogre, Troll. Strangers: Chained beast, Prisoners made to fight. Locations: Fighting pit, Beast pens, Crude prison.
-- **The bone field** (Over Dungeon, levels 10 to 18): A vast cave of old bones that don't all stay still. Monsters: Bone heap, Skeleton warrior, Wight, Wraith, Ghost bat. Strangers: Kindly ghost. Locations: Bone field, Crypt row, Ossuary.
-- **The elemental rift** (Over Dungeon, levels 9 to 20; or in the Keep's forge): A crack where the world's elements leak through. Monsters: Earth elemental, Water elemental, Fire elemental, Greater elementals. Strangers: A scholar studying it. Locations: The rift, Sulphur vents, Hot spring, Crystal grotto.
-- **The dwarven expedition's camp** (Over Dungeon, levels 8 to 18, near the Keep): Dwarves come to take back the keep, camped on the way down. Monsters: Golems roused by their digging. Strangers: Dwarven expedition, An undead dwarf. Locations: Expedition camp, Scholar's dig, Mine-head.
-- **The mushroom grove** (Over Dungeon, levels 8 to 16; or in the Deep Dark): Glowing fungus, dim light everywhere, spores. Monsters: Slime, Ooze, Floating eye, Snake. Strangers: Hermit. Locations: Mushroom grove, Mushroom farm, Glowing deep.
 
 ## Also noted
 

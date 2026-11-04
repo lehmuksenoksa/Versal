@@ -6137,9 +6137,8 @@
    "examples": [
     [
      "The Over Dungeon",
-     "The Dungeon Underneath (region, levels 1 to 6: the lich)",
+     "The Dungeon Underneath (region, levels 1 to 6: the lich), with the cult's sanctum (sub-region) inside",
      "The sewers (transition)",
-     "The plague cellars (sub-region)",
      "A flooded quarter (small Drowned City, level 9)",
      "The mines (transition)",
      "The Abandoned Dwarven Keep (end game: the dragon)"
@@ -6148,8 +6147,7 @@
      "The Over Dungeon",
      "The bandits' hold (sub-region)",
      "A goblin outpost (small Goblin Territory, level 5)",
-     "The Drowned City (region, levels 9 to 13: the eldritch horror)",
-     "The bone field (sub-region)",
+     "The Drowned City (region, levels 9 to 13: the eldritch horror), with the archive (sub-region) inside",
      "A breach (transition)",
      "The Deep Dark (end game: the dark elf prince)"
     ],
@@ -6158,8 +6156,7 @@
      "A dungeon wing (small Dungeon Underneath, level 3)",
      "Goblin Territory (region, levels 5 to 11: the goblin king)",
      "The mines (transition)",
-     "The dwarven expedition's camp (sub-region)",
-     "A dwarven hall (small Dwarven Keep, level 14)",
+     "A dwarven hall (small Dwarven Keep, level 14), with the archive (sub-region) inside",
      "The Drowned City (end game: the eldritch horror, at its strongest)"
     ]
    ]
@@ -6222,170 +6219,6 @@
      "Torture chamber",
      "Prison cells"
     ]
-   }
-  ],
-  "subRegionCandidates": [
-   {
-    "name": "The old faith's temple",
-    "where": "Over Dungeon, levels 3 to 12",
-    "theme": "The old faith",
-    "monsters": [
-     "The dead at its doors: Skeleton, Zombie, Wight"
-    ],
-    "strangers": [
-     "Priest",
-     "Pilgrims",
-     "Holy warriors"
-    ],
-    "places": [
-     "Temple",
-     "Chapel",
-     "Reliquary",
-     "Pilgrims' rest",
-     "Kept shrine"
-    ],
-    "line": "A holy place still kept, under siege by the dead: a refuge, and a fight at its doors"
-   },
-   {
-    "name": "The webs",
-    "where": "Over Dungeon, levels 3 to 14; or in the Deep Dark",
-    "theme": "Pests",
-    "monsters": [
-     "Spider",
-     "Giant spider"
-    ],
-    "strangers": [
-     "Cocooned victims to cut free"
-    ],
-    "places": [
-     "Spider nest",
-     "Webbed halls",
-     "Egg chambers"
-    ],
-    "line": "Caves strung with webs; the spiders feel you through them"
-   },
-   {
-    "name": "The plague cellars",
-    "where": "Over Dungeon, levels 1 to 8; or in the Dungeon Underneath",
-    "theme": "Pests",
-    "monsters": [
-     "Rat",
-     "Giant rat",
-     "Ooze"
-    ],
-    "strangers": [
-     "Ratcatchers"
-    ],
-    "places": [
-     "Larder",
-     "Storeroom",
-     "Infested rooms",
-     "A rats' nest"
-    ],
-    "line": "Cellars overrun by rats, and whatever they've bred into"
-   },
-   {
-    "name": "The pits",
-    "where": "Only in Goblin Territory",
-    "theme": "Goblins",
-    "monsters": [
-     "Goblin",
-     "Goblin chieftain",
-     "Wolf",
-     "Dire wolf",
-     "Ogre",
-     "Troll"
-    ],
-    "strangers": [
-     "Chained beast",
-     "Prisoners made to fight"
-    ],
-    "places": [
-     "Fighting pit",
-     "Beast pens",
-     "Crude prison"
-    ],
-    "line": "Where goblins keep beasts and make prisoners fight"
-   },
-   {
-    "name": "The bone field",
-    "where": "Over Dungeon, levels 10 to 18",
-    "theme": "The dead",
-    "monsters": [
-     "Bone heap",
-     "Skeleton warrior",
-     "Wight",
-     "Wraith",
-     "Ghost bat"
-    ],
-    "strangers": [
-     "Kindly ghost"
-    ],
-    "places": [
-     "Bone field",
-     "Crypt row",
-     "Ossuary"
-    ],
-    "line": "A vast cave of old bones that don't all stay still"
-   },
-   {
-    "name": "The elemental rift",
-    "where": "Over Dungeon, levels 9 to 20; or in the Keep's forge",
-    "theme": "(gives the elementals a home)",
-    "monsters": [
-     "Earth elemental",
-     "Water elemental",
-     "Fire elemental",
-     "Greater elementals"
-    ],
-    "strangers": [
-     "A scholar studying it"
-    ],
-    "places": [
-     "The rift",
-     "Sulphur vents",
-     "Hot spring",
-     "Crystal grotto"
-    ],
-    "line": "A crack where the world's elements leak through"
-   },
-   {
-    "name": "The dwarven expedition's camp",
-    "where": "Over Dungeon, levels 8 to 18, near the Keep",
-    "theme": "The dwarves",
-    "monsters": [
-     "Golems roused by their digging"
-    ],
-    "strangers": [
-     "Dwarven expedition",
-     "An undead dwarf"
-    ],
-    "places": [
-     "Expedition camp",
-     "Scholar's dig",
-     "Mine-head"
-    ],
-    "line": "Dwarves come to take back the keep, camped on the way down"
-   },
-   {
-    "name": "The mushroom grove",
-    "where": "Over Dungeon, levels 8 to 16; or in the Deep Dark",
-    "theme": "The deep",
-    "monsters": [
-     "Slime",
-     "Ooze",
-     "Floating eye",
-     "Snake"
-    ],
-    "strangers": [
-     "Hermit"
-    ],
-    "places": [
-     "Mushroom grove",
-     "Mushroom farm",
-     "Glowing deep"
-    ],
-    "line": "Glowing fungus, dim light everywhere, spores"
    }
   ]
  }
