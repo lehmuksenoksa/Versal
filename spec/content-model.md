@@ -42,6 +42,12 @@ Also each needs (my additions, agreed "pretty much"):
 - **how rare it is;**
 - **its story.**
 
+**Not every room is in an area** (yours, after round 26): "Areas are there to make random
+generated maps feel more designed by an actual sentient being." A level is a few areas set among
+loose rooms: corridors, ordinary rooms, storerooms, empty cells. The loose rooms come from the
+region's (or the Over Dungeon's) common rooms. How much of a level is areas and how much is loose
+is for generation (part 6).
+
 Duties (guarding a post, walking a round) belong to areas and rooms. A room has a common kind and a
 region's variant: a storeroom in the warrens isn't one in the keep.
 
