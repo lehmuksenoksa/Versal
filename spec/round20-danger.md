@@ -1,5 +1,7 @@
 # Round 20: the danger ladder
 
+**Folded into round 21.** There "rats" became a **danger rating** (a lone rat is 1), and the numbers are theoretical: the balance comes later.
+
 You asked: "What I want is to plan and understand the escalation of danger from top to bottom.
 The easiest is one lone rat and at the end of the scale there's the dragon. But everything in
 between and combinations. A dozen rats would and should be dangerous to level 1 adventurer.

@@ -202,13 +202,13 @@ function ladderView() {
     return `<div class="lrow"><div class="lnum">${b >= 999 ? a + "+" : a === b ? a : a + "–" + b}</div><div class="chips">${g.map(mchip).join("")}</div></div>`; }).join("");
   const bosses = ms.filter((m) => m.rank === "Boss").sort((x, y) => x.danger - y.danger);
   const rung = (st) => `<article class="rung">
-      <div class="rhead"><div class="rstep">${st.step}</div><div><b>${st.band[0].toUpperCase() + st.band.slice(1)}</b><div class="st">a fair fight: about ${st.fair} rats</div></div>
+      <div class="rhead"><div class="rstep">${st.step}</div><div><b>${st.band[0].toUpperCase() + st.band.slice(1)}</b><div class="st">a fair fight: danger about ${st.fair}</div></div>
         <div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></div>
       <div class="cols">
         <div class="col"><h3>New at this step</h3>${st.new.length ? `<div class="chips">${st.new.map((n) => mchip(ms.find((m) => m.name === n))).join("")}</div>` : `<span class="more">nothing new: bigger groups of what's here</span>`}</div>
         <div class="col"><h3>For example</h3><ul class="ex">${st.examples.map((e) => `<li><span class="lab ${e.label}">${e.label}</span> ${esc(e.what)} <span class="dn">${e.danger}</span>${e.narrow && e.label === "run" ? ` <span class="st">(one at a time: ${e.narrow})</span>` : ""}</li>`).join("")}</ul></div>
       </div></article>`;
-  return `<section><p class="note">How danger rises from top to bottom, for the whole world first (regions are placed on it after). Each monster's danger is counted in <b>rats</b>: a lone rat is 1. A group counts for more than its sum: each one after the first adds ${Math.round(L.grow * 100)}%, so twelve rats are about 23. Fought one at a time, in a narrow way, a group counts as its sum. Each step down the world has a fair fight: the biggest a character there should win. Examples are marked easy (under half of it), fair, hard (up to twice) or run. All numbers are a proposal for the shape of the climb; the real ones are tuned by simulated runs.</p>
+  return `<section><p class="note">How danger rises from top to bottom, for the whole world first (regions are placed on it after). Each monster has a <b>danger rating</b>: a lone rat is 1. A group counts for more than its sum: each one after the first adds ${Math.round(L.grow * 100)}%, so twelve rats are about 23. Fought one at a time, in a narrow way, a group counts as its sum. Each step down the world has a fair fight: the biggest a character there should win. Examples are marked easy (under half of it), fair, hard (up to twice) or run. All numbers are theoretical, the shape of the climb; the real balance comes later.</p>
     <h2>The scale</h2><div class="ladder-scale">${scale}<div class="lrow"><div class="lnum">Bosses</div><div class="chips">${bosses.map(mchip).join("")}</div></div></div>
     <h2>The ladder, step by step</h2>${L.steps.map(rung).join("")}</section>`;
 }

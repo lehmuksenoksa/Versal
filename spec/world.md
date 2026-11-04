@@ -22,19 +22,31 @@ cult's sanctum are **sub-regions** (a level or half a level, inside a region); t
 the **generic region** the branching ways are made of.
 
 A draft, to correct. The page: https://claude.ai/artifact/J78tDpCuv2GMniBu47AYru. The data:
-`data/catalogue.json`, under `world` and `ladder`. Monster danger is in rats (round 20); the
-numbers sketch the shape of the climb.
+`data/catalogue.json`, under `world` and `ladder`. Monster danger is a danger rating (a lone rat is 1; round 21 renamed it from "rats"); the
+numbers are theoretical, the shape of the climb, and the real balance comes later.
+
+## Round 21 (answered)
+
+- **Can be the end game:** the Dwarven Keep, the Deep Dark, the Drowned City.
+- **The end game's boss:** the same boss, stronger.
+- **Monsters by depth:** yes, a region's monsters are filtered by the level it's placed at.
+- **The Over Dungeon's mix:** fine.
+- **The five regions' cards:** fine.
+- **The bandits' hold, the archive and the cult's sanctum:** fine.
+- **The ladder:** "Rats doesn't sound right, let's rename it to danger rating. This is all
+  theoretical right now. We need to work a lot on balance later on."
+- **The Over Dungeon's deep end:** "Below level 18 should always be themed area anyway." The end
+  game takes levels 18 to 20, so the Over Dungeon stops at 17 and needs no deep kinds of its own.
 
 ## Twenty levels
 
 Shallow 1 to 7, middle 8 to 14, deep 15 to 20. A fair fight (the biggest a character at that
-level should win, in rats) grows 3, 4, 4, 5, 6, 7, 8, 10, 11, 13, 16, 19, 22, 26, 31, 36, 43, 50, 59, 70.
+level should win, as a danger rating) grows 3, 4, 4, 5, 6, 7, 8, 10, 11, 13, 16, 19, 22, 26, 31, 36, 43, 50, 59, 70.
 
 Critique:
 - **Pace.** A run of 2 to 4 hours (round 13) over twenty levels is 6 to 12 minutes a level: smaller
   levels, or longer runs. Regions' maps count as levels.
-- **The deep end grows thinner.** Nothing new turns up in the Over Dungeon below level 18. The
-  extra depth makes the question of a few deep kinds of its own more pressing.
+- **The deep end** is settled: below level 18 is always the end game (round 21).
 
 ## How a run is made
 

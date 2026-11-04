@@ -81,7 +81,7 @@
 <main>
   <header>
     <h1>The world plan</h1>
-    <p class="note">The world, top to bottom as you go down. First the Over Dungeon, the general dungeon where any monster can turn up, by depth. Then where the themed areas (regions, smaller regions, transitions and sub-regions) can appear, and a card for each: its monsters, its locations, and what's found only there. A draft from your outline (round 21), with your notes on 2 or 3 regions a run, their small versions, twenty levels, and at least five themed areas a run. Monster danger is counted in rats (round 20), and every number sketches the shape of the climb, to be tuned later.</p>
+    <p class="note">The world, top to bottom as you go down. First the Over Dungeon, the general dungeon where any monster can turn up, by depth. Then where the themed areas (regions, smaller regions, transitions and sub-regions) can appear, and a card for each: its monsters, its locations, and what's found only there. A draft from your outline (round 21), with your notes on 2 or 3 regions a run, their small versions, twenty levels, and at least five themed areas a run. Monster danger is a danger rating (round 20), and every number sketches the shape of the climb, to be tuned later.</p>
   </header>
   <div id="view"><p class="note">Loading the plan…</p></div>
 </main>
@@ -136,7 +136,7 @@ function render() {
     </div>
     <div class="card">
       <h3>The ladder: what first turns up at each level</h3>
-      <p class="note">A fair fight is the biggest a character at that level should win, in rats (a lone rat is 1; a group counts 8% more for each one after the first, or just its sum fought one at a time in a narrow way). Monsters found only in regions aren't listed.</p>
+      <p class="note">A fair fight is the biggest a character at that level should win, as a danger rating (a lone rat is 1; a group counts 8% more for each one after the first, or just its sum fought one at a time in a narrow way). Monsters found only in regions aren't listed.</p>
       <div class="wrap"><table><tr><th>Level</th><th>Depth</th><th>Fair fight</th><th>First turns up</th></tr>
         ${L.steps.map((st) => `<tr><td class="num">${st.step}</td><td class="band">${st.band}</td><td>about ${st.fair}<div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></td><td><div class="chips">${odNew(st).map((n) => mchip(n)).join("") || `<span class="note">nothing new: bigger groups of what's here</span>`}</div></td></tr>`).join("")}</table></div>
     </div>

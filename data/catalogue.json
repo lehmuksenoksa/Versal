@@ -5048,8 +5048,8 @@
   }
  ],
  "ladder": {
-  "unit": "rats",
-  "note": "A monster's danger in rats: a lone rat is 1. A group counts for more than its sum (each one after the first adds 8%), unless it can only come at you one at a time (a narrow way), when it counts as its sum. 'Fair' is the biggest fight a character at that step should win. Twenty levels deep (round 21): shallow 1 to 7, middle 8 to 14, deep 15 to 20.",
+  "unit": "danger rating",
+  "note": "A monster's danger rating: a lone rat is 1. A group counts for more than its sum (each one after the first adds 8%), unless it can only come at you one at a time (a narrow way), when it counts as its sum. 'Fair' is the biggest fight a character at that step should win. Twenty levels deep (round 21): shallow 1 to 7, middle 8 to 14, deep 15 to 20. Theoretical: the real balance comes later (round 21).",
   "grow": 0.08,
   "steps": [
    {
