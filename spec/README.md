@@ -105,7 +105,7 @@ Each part's state is one of:
 | 23 | Things to find, shallow ([`round23-things.md`](round23-things.md)) | answered |
 | 24 | Item tags, your idea ([`round24-item-tags.md`](round24-item-tags.md)) | answered |
 | 25 | What the Dungeon Underneath contains ([`round25-dungeon.md`](round25-dungeon.md)) | answered |
-| 26 | The Dungeon Underneath's areas, reworked ([`round26-dungeon-areas.md`](round26-dungeon-areas.md)) | on the choices page |
+| 26 | The Dungeon Underneath's areas, reworked ([`round26-dungeon-areas.md`](round26-dungeon-areas.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

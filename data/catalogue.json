@@ -15,7 +15,90 @@
    "inGame": true,
    "boss": "Lich",
    "depth": "shallow",
-   "depthProposed": true
+   "depthProposed": true,
+   "areas": [
+    "The barracks (and armoury)",
+    "The prison",
+    "The kitchens and stores",
+    "The hall",
+    "The chapel",
+    "The crypts",
+    "The lord's rooms",
+    "The flooded wing",
+    "The collapsed edge",
+    "The boss's lair"
+   ],
+   "guards": {
+    "gatehouse": "Where the region begins",
+    "guardPosts": "At the ways between areas",
+    "guardrooms": "Beside the prison and the lord's rooms",
+    "patrols": "Between areas",
+    "offDuty": "Asleep in the barracks, eating in the hall"
+   },
+   "adjacency": {
+    "nextTo": [
+     [
+      "The chapel",
+      "The crypts"
+     ],
+     [
+      "The crypts",
+      "The boss's lair"
+     ],
+     [
+      "The kitchens and stores",
+      "The hall"
+     ]
+    ],
+    "near": [
+     [
+      "The hall",
+      "The barracks (and armoury)"
+     ],
+     [
+      "The barracks (and armoury)",
+      "The prison"
+     ],
+     [
+      "The lord's rooms",
+      "The hall"
+     ]
+    ],
+    "apart": [
+     [
+      "The crypts",
+      "The kitchens and stores"
+     ],
+     [
+      "The chapel",
+      "The prison"
+     ],
+     [
+      "The lord's rooms",
+      "The collapsed edge"
+     ]
+    ]
+   },
+   "byHolder": {
+    "The dead garrison": {
+     "chapel": "Empty, its altar still holy",
+     "prisoners": "The dead's, long forgotten",
+     "boss": "Lich"
+    },
+    "The cult": {
+     "chapel": "Defiled: no priest, no rest at its altar",
+     "prisoners": "The cult's, for sacrifice",
+     "boss": "Lich"
+    },
+    "Outlaws": {
+     "chapel": "Kept by a friendly priest",
+     "prisoners": "The outlaws', for ransom",
+     "boss": "Bandit chief (stronger)",
+     "features": [
+      "Tripwires"
+     ]
+    }
+   }
   },
   {
    "id": "goblin-territory",
@@ -6901,5 +6984,10 @@
    "depth": "Tags follow depth through the danger ladder; makers by region, and rarer outside it"
   },
   "open": "Each maker's gameplay effect (your note)"
+ },
+ "adjacencyMeaning": {
+  "nextTo": "A door between them",
+  "near": "On the same level",
+  "apart": "At far ends or on different levels"
  }
 }
