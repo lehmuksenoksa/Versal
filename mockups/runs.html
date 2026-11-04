@@ -1,0 +1,240 @@
+<meta charset="utf-8">
+<title>Versal Run Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Texturina:opsz,wght@12..72,500;12..72,600;12..72,700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  /* Layout: a run generated from the world plan (data/catalogue.json), drawn
+     top to bottom as you go down: twenty levels, each a row of the maps on
+     it, lines for the ways down between them. Beside it, the paths through
+     the run and what each meets; under it, a thousand runs' worth of
+     figures. One dark look, as the plan and the catalogue. */
+  :root {
+    --ground: #0d0c0b;
+    --card: #15130f;
+    --chip: #1f1b16;
+    --paper: #f4eee2;
+    --text: #ddd6c6;
+    --dim: #8f877a;
+    --faint: #5d574f;
+    --line: #2e2a25;
+    --amber: #d9a53a;
+    --moss: #7f9a5a;
+    --slate: #6d7c8c;
+    --blood: #c0392b;
+    --letter: Texturina, Georgia, serif;
+    --log: "Crimson Pro", Georgia, serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--text); font: 17px/1.45 var(--log); }
+  main { max-width: 1180px; margin: 0 auto; padding-block: 32px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; }
+  h1 { font: 600 clamp(30px, 5vw, 44px)/1.05 var(--letter); margin: 0; color: var(--paper); }
+  h2 { margin: 0; font: 600 22px/1.2 var(--letter); color: var(--paper); }
+  h3 { margin: 0; font: 600 12px var(--letter); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+  p { margin: 0; }
+  .note { color: var(--dim); max-width: 78ch; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  button { font: 600 15px var(--letter); color: var(--ground); background: var(--paper); border: 0; border-radius: 3px; padding: 8px 16px; cursor: pointer; }
+  button.alt { background: transparent; color: var(--paper); border: 1px solid var(--faint); }
+  button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .seed { color: var(--dim); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border-radius: 6px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+  .wrap { overflow-x: auto; }
+  svg text { font-family: var(--log); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--dim); }
+  .legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .paths { display: grid; gap: 8px; }
+  .path { display: grid; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .path .ph { display: flex; gap: 10px; align-items: baseline; }
+  .path b { color: var(--paper); font: 600 15px var(--letter); }
+  .ok { color: var(--moss); font-weight: 600; }
+  .short { color: var(--blood); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .c { font-size: 14px; padding: 0 7px; border-radius: 3px; background: var(--chip); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { font: 600 12px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; color: var(--paper); }
+  ul.rules { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--text); }
+</style>
+
+<main>
+  <header>
+    <h1>The run simulator</h1>
+    <p class="note">Runs generated from the world plan, to see the branching paths you asked for. Twenty levels, top to bottom; each level holds one to three maps side by side, and the lines are the ways down between them. A way can split, so the player chooses, and two ways can join again. Each map is the Over Dungeon or part of a themed area: a region, a region's small version (a sub-region, as you said), a transition, or another sub-region. The rules are listed under the run; the figures at the bottom come from a thousand runs.</p>
+  </header>
+  <div class="bar">
+    <button id="again" type="button">A new run</button>
+    <span class="seed" id="seed"></span>
+  </div>
+  <div class="legend">
+    <span><i style="background: var(--amber)"></i>region</span>
+    <span><i style="background: rgba(217,165,58,0.4)"></i>small version (sub-region)</span>
+    <span><i style="background: var(--slate)"></i>transition</span>
+    <span><i style="background: var(--moss)"></i>sub-region</span>
+    <span><i style="background: var(--chip); border: 1px dashed var(--faint)"></i>the Over Dungeon</span>
+    <span>★ boss</span>
+  </div>
+  <div class="layout">
+    <div class="card"><h3>The run, top to bottom</h3><div class="wrap" id="map"></div></div>
+    <div class="card"><h3>The ways down, and the themed areas they meet</h3><div class="paths" id="paths"></div></div>
+  </div>
+  <div class="card">
+    <h3>A thousand runs</h3>
+    <div class="wrap" id="stats"></div>
+  </div>
+  <div class="card">
+    <h3>The rules this simulator follows (a proposal)</h3>
+    <ul class="rules" id="rules"></ul>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]);
+const LEVELS = 20, MAXW = 3, END = [18, 20];
+const P = { split: 0.3, merge: 0.3, fullRegion: 0.5, others: [1, 2], transitions: [1, 3], bandits: 0.6, archive: 0.5, sanctum: 0.5 };
+const RULES = [
+  `Twenty levels. Level 1 starts with one map; going down, a way splits in two about ${P.split * 100}% of the time (at most ${MAXW} maps on a level), and two neighbouring ways join about ${P.merge * 100}% of the time.`,
+  `The end game is one of the regions that can be (the Keep, the Deep Dark, the Drowned City). It takes levels ${END[0]} to ${END[1]}, and every way down joins into it by level ${END[0]}.`,
+  `One or two more regions come on the way: each full (half the time: its range, its maps, its boss on its last map) or as its small version (a sub-region of one or two maps, within its small range).`,
+  `One to three transitions, each one or two maps on one way, within its range.`,
+  `The bandits' hold more often than not, one map within levels 1 to 10. The archive and the cult's sanctum, each half the time, as one map inside a region where they can be.`,
+  `Everything else is the Over Dungeon.`,
+  `If a run has fewer than five themed areas, more transitions or small versions are added until it has five.`,
+];
+
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const range = (s) => { const m = String(s).match(/(\d+)(?:\D+(\d+))?/); return [Number(m[1]), Number(m[2] ?? m[1])]; };
+
+function generate(W, seed) {
+  const R = rng(seed), pick = (a) => a[Math.floor(R() * a.length)], int = (a, b) => a + Math.floor(R() * (b - a + 1));
+  // 1. the shape: levels of lanes, edges between them
+  let lanes = [0], nextId = 1; const levels = [], edges = [];
+  for (let d = 1; d <= LEVELS; d++) {
+    levels.push(lanes.map((id) => ({ id, d, area: null })));
+    if (d === LEVELS) break;
+    let next = [], from = [];
+    if (d + 1 >= END[0]) { next = [lanes[0]]; lanes.forEach((id) => from.push([id, lanes[0]])); }
+    else {
+      let room = MAXW - lanes.length;
+      for (const id of lanes) {
+        if (room > 0 && R() < P.split) { const n = nextId++; next.push(id, n); from.push([id, id], [id, n]); room--; }
+        else { next.push(id); from.push([id, id]); }
+      }
+      next = next.slice(0, MAXW); from = from.filter(([, b]) => next.includes(b));
+      if (next.length > 1 && R() < P.merge) { const i = int(0, next.length - 2); const gone = next[i + 1]; from = from.map(([a, b]) => [a, b === gone ? next[i] : b]); next.splice(i + 1, 1); }
+    }
+    [...new Set(from.map(([a, b]) => a + ">" + b))].forEach((k) => { const [a, b] = k.split(">").map(Number); edges.push({ d, a, b }); });
+    lanes = next;
+  }
+  const cell = (d, id) => levels[d - 1].find((c) => c.id === id);
+  const below = (d, id) => edges.filter((e) => e.d === d && e.a === id).map((e) => e.b);
+  const areas = [];
+  const place = (area, len, lo, hi) => {
+    for (let tries = 0; tries < 40; tries++) {
+      const s = int(lo, Math.max(lo, hi - len + 1)); if (s + len - 1 > hi || s < 1) continue;
+      let id = pick(levels[s - 1]).id, cells = [];
+      for (let k = 0; k < len; k++) { const c = cell(s + k, id); if (!c || c.area) { cells = null; break; } cells.push(c); if (k < len - 1) { const b = below(s + k, id); if (!b.length) { cells = null; break; } id = pick(b); } }
+      if (cells) { cells.forEach((c, i) => { c.area = area; c.first = i === 0; c.last = i === cells.length - 1; }); areas.push(area); return true; }
+    }
+    return false;
+  };
+  // 2. the end game
+  const endR = pick(W.regions.filter((r) => r.endGame));
+  for (let d = END[0]; d <= END[1]; d++) levels[d - 1].forEach((c, i) => { c.area = { name: endR.name, kind: "region", boss: endR.boss, end: true }; c.first = d === END[0]; c.last = d === END[1]; });
+  areas.push(levels[END[1] - 1][0].area);
+  // 3. regions on the way
+  const others = W.regions.filter((r) => r !== endR).sort(() => R() - 0.5).slice(0, int(...P.others));
+  for (const r of others) {
+    if (R() < P.fullRegion) { const [a, b] = range(r.full.maps); const [lo, hi] = r.full.steps; place({ name: r.name, kind: "region", boss: r.boss, region: r }, int(a, b), lo, Math.min(hi, END[0] - 1)); }
+    else { const [a, b] = range(r.small.maps); const [lo, hi] = r.small.steps; place({ name: r.small.name, kind: "small", of: r.name }, int(a, b), lo, Math.min(hi, END[0] - 1)); }
+  }
+  // 4. transitions
+  const ts = [...W.transitions].sort(() => R() - 0.5).slice(0, int(...P.transitions));
+  for (const t of ts) place({ name: t.name, kind: "transition" }, int(1, 2), t.steps[0], Math.min(t.steps[1], END[0] - 1));
+  // 5. sub-regions
+  const bh = W.subRegions.find((s) => s.name === "The bandits' hold");
+  if (R() < P.bandits) place({ name: bh.name, kind: "sub" }, 1, bh.steps[0], bh.steps[1]);
+  for (const [nm, p] of [["The archive", P.archive], ["The cult's sanctum", P.sanctum]]) {
+    if (R() >= p) continue;
+    const hosts = W.regions.filter((r) => r.subRegions.includes(nm)).map((r) => r.name);
+    const inside = levels.flat().filter((c) => c.area && c.area.kind === "region" && hosts.includes(c.area.name) && !c.sub);
+    if (inside.length) { const c = pick(inside); c.sub = nm; areas.push({ name: nm, kind: "sub", inside: c.area.name }); }
+  }
+  // 6. at least five themed areas
+  let guard = 0;
+  while (areas.length < 5 && guard++ < 20) {
+    if (R() < 0.5) { const t = pick(W.transitions); if (!areas.some((a) => a.name === t.name)) place({ name: t.name, kind: "transition" }, 1, t.steps[0], Math.min(t.steps[1], END[0] - 1)); }
+    else { const r = pick(W.regions.filter((r) => r !== endR && !areas.some((a) => a.of === r.name || a.name === r.name))); if (r) place({ name: r.small.name, kind: "small", of: r.name }, 1, r.small.steps[0], Math.min(r.small.steps[1], END[0] - 1)); }
+  }
+  // 7. paths
+  const paths = [];
+  const walk = (d, id, acc) => { const c = cell(d, id); const nacc = [...acc, c]; if (d === LEVELS) { paths.push(nacc); return; } for (const b of below(d, id)) walk(d + 1, b, nacc); };
+  walk(1, levels[0][0].id, []);
+  return { seed, levels, edges, paths, endR, areas };
+}
+
+const themedOn = (path) => { const set = []; for (const c of path) { if (c.area && !set.includes(c.area.name)) set.push(c.area.name); if (c.sub && !set.includes(c.sub)) set.push(c.sub); } return set; };
+const COLOR = { region: "var(--amber)", small: "rgba(217,165,58,0.4)", transition: "var(--slate)", sub: "var(--moss)" };
+
+function draw(run) {
+  const colW = 150, rowH = 40, left = 34, top = 14, nodeW = 136, nodeH = 28;
+  const width = left + MAXW * colW + 10, height = top + LEVELS * rowH + 10;
+  const pos = new Map();
+  run.levels.forEach((row, i) => { const off = (MAXW - row.length) * colW / 2; row.forEach((c, j) => pos.set(c.d + ":" + c.id, [left + off + j * colW + (colW - nodeW) / 2, top + i * rowH])); });
+  const lines = run.edges.map((e) => { const [x1, y1] = pos.get(e.d + ":" + e.a), [x2, y2] = pos.get(e.d + 1 + ":" + e.b); return `<line x1="${x1 + nodeW / 2}" y1="${y1 + nodeH}" x2="${x2 + nodeW / 2}" y2="${y2}" stroke="#5d574f" stroke-width="1.5"/>`; }).join("");
+  const bands = [[1, 7, "shallow"], [8, 14, "middle"], [15, 20, "deep"]].map(([a, b, n]) => `<text x="4" y="${top + (a - 1) * rowH + 12}" fill="#d9a53a" font-size="11" letter-spacing="1">${n.toUpperCase()}</text>`).join("");
+  const nums = run.levels.map((row, i) => `<text x="4" y="${top + i * rowH + 26}" fill="#5d574f" font-size="12">${i + 1}</text>`).join("");
+  const nodes = run.levels.flat().map((c) => {
+    const [x, y] = pos.get(c.d + ":" + c.id), a = c.area;
+    const fill = a ? COLOR[a.kind] : "#1f1b16";
+    const label = a ? a.name.replace(/^The /, "").replace(/^A /, "").replace("Abandoned ", "").replace("Dungeon Underneath", "Dungeon Under.") : "Over Dungeon";
+    const txt = a && a.kind === "small" ? "#f4eee2" : a ? (a.kind === "transition" ? "#f4eee2" : "#0d0c0b") : "#8f877a";
+    const star = a && a.boss && c.last ? " ★" : "";
+    return `<g><rect x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="4" fill="${fill}" ${a ? "" : 'stroke="#5d574f" stroke-dasharray="3 3"'}/>
+      <text x="${x + 7}" y="${y + 18}" fill="${txt}" font-size="13">${esc(label)}${star}</text>
+      ${c.sub ? `<circle cx="${x + nodeW - 8}" cy="${y + 8}" r="5" fill="#7f9a5a"><title>${esc(c.sub)}</title></circle>` : ""}
+      <title>${esc((a ? a.name + (a.kind === "small" ? " (small " + a.of + ")" : "") : "The Over Dungeon") + (c.sub ? ", with " + c.sub : ""))}</title></g>`;
+  }).join("");
+  $("#map").innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="The run's levels and the ways down">${bands}${nums}${lines}${nodes}</svg>`;
+  $("#seed").textContent = `Run ${run.seed}: ${run.paths.length} way${run.paths.length === 1 ? "" : "s"} down; end game ${run.endR.name}.`;
+  const groups = new Map();
+  run.paths.forEach((p) => { const t = themedOn(p); const k = t.join("|"); groups.set(k, { t, n: (groups.get(k)?.n || 0) + 1 }); });
+  $("#paths").innerHTML = `<p class="note">${run.paths.length} way${run.paths.length === 1 ? "" : "s"} down, grouped by the themed areas they meet.</p>` + [...groups.values()].sort((a, b) => b.t.length - a.t.length).map(({ t, n }) => `<div class="path"><div class="ph"><b>${n} way${n === 1 ? "" : "s"}</b><span class="${t.length >= 5 ? "ok" : "short"}">${t.length} themed area${t.length === 1 ? "" : "s"}</span></div><div class="chips">${t.map((x) => `<span class="c">${esc(x)}</span>`).join("")}</div></div>`).join("");
+}
+
+function stats(W) {
+  const N = 1000, rs = Array.from({ length: N }, (_, i) => generate(W, 1000 + i));
+  const ways = rs.map((r) => r.paths.length), per = rs.flatMap((r) => r.paths.map((p) => themedOn(p).length));
+  const avg = (a) => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1);
+  const pct = (n) => Math.round((n / N) * 100) + "%";
+  const maps = rs.flatMap((r) => r.levels.flat()), od = maps.filter((c) => !c.area).length;
+  const allFive = rs.filter((r) => r.paths.every((p) => themedOn(p).length >= 5)).length;
+  const anyFive = rs.filter((r) => r.paths.some((p) => themedOn(p).length >= 5)).length;
+  const runFive = rs.filter((r) => r.areas.length >= 5).length;
+  const ends = {}; rs.forEach((r) => (ends[r.endR.name] = (ends[r.endR.name] || 0) + 1));
+  const rows = [
+    ["Ways down in a run, on average", avg(ways)], ["Most ways down in one run", Math.max(...ways)],
+    ["Themed areas a way meets, on average", avg(per)], ["Maps that are the Over Dungeon", Math.round((od / maps.length) * 100) + "%"], ["Fewest a way meets", Math.min(...per)],
+    ["Runs with five or more themed areas in all", pct(runFive)], ["Runs where every way meets five or more", pct(allFive)], ["Runs where at least one way does", pct(anyFive)],
+    ...Object.entries(ends).map(([n, k]) => [`End game: ${n}`, pct(k)])];
+  $("#stats").innerHTML = `<table><tr><th>Over a thousand runs</th><th></th></tr>${rows.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="n">${b}</td></tr>`).join("")}</table>
+    <p class="note" style="margin-top:10px">With branching, five themed areas in a run isn't five on every way down: a player only meets what's on the way they take. The rule could be made per way, at the cost of fewer, larger areas or more transitions.</p>`;
+}
+
+let W, seed = 1;
+(async () => {
+  let C;
+  for (const url of ["catalogue.json", "../data/catalogue.json"]) { try { const r = await fetch(url); if (r.ok) { C = await r.json(); break; } } catch {} }
+  if (!C) { $("#map").textContent = "The world plan couldn't be loaded."; return; }
+  W = C.world;
+  $("#rules").innerHTML = RULES.map((r) => `<li>${esc(r)}</li>`).join("");
+  seed = 7; draw(generate(W, seed)); stats(W);
+  $("#again").addEventListener("click", () => { seed = Math.floor(Math.random() * 99999); draw(generate(W, seed)); });
+})();
+</script>

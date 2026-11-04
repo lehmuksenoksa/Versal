@@ -56,6 +56,18 @@ Critique: whichever region is the end game, its boss is the run's last test, so 
 horror or the dark elf prince fights at the dragon's level then, and at its own level when met on
 the way: one boss to draw, two sets of numbers.
 
+## Generation: sub-regions and diverging paths (your notes)
+
+- "I would consider the smaller versions of regions as sub-regions from generation point of
+  view." A region's small version is placed as a sub-region: a map or two, set where its range
+  allows.
+- "I'd also like diverging paths in the generated dungeon. The player can go down different ways
+  to different paths through the dungeon. One choice might lead to a Transition, one might lead to
+  Over Dungeon." The levels branch: a way down can split in two, and two ways can join again. Each
+  way can lead somewhere different.
+- "Can we simulate these kind of branching paths?" Yes: the run simulator
+  (`mockups/runs.html`).
+
 ## The Over Dungeon
 
 The general dungeon between and around the regions: any monster, by depth. Its ground changes with depth: built rooms near the top, falling in, then caves, then something deeper still.

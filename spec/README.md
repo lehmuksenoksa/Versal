@@ -100,7 +100,7 @@ Each part's state is one of:
 | 18 | Your roster of monsters, by family and rank ([`monsters.md`](monsters.md)); the heart of the game widened to fighting as well as stealth | decided |
 | 19 | The bosses and the eldritch family (yours); where each family lives, as one table | waiting: the world first (round 20) |
 | 20 | The danger ladder: how danger rises from a lone rat to the dragon ([`round20-danger.md`](round20-danger.md)) | folded into round 21 |
-| 21 | The world plan, from your outline: the Over Dungeon, then regions, transitions and themed areas ([`world.md`](world.md)) | on the choices page |
+| 21 | The world plan, from your outline (and the run simulator, `mockups/runs.html`): the Over Dungeon, then regions, transitions and themed areas ([`world.md`](world.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
