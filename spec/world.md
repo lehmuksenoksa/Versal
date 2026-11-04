@@ -100,6 +100,11 @@ the way: one boss to draw, two sets of numbers.
     - 38% of maps are the Over Dungeon;
     - 6.4 themed areas a way on average;
     - 71% of runs give five on every way.
+  - Your call: "Five per run is enough in the current way. I don't want to make themed areas
+    rarer." And: "archive & sanctum sub regions shouldn't be accessible through transitions or
+    over dungeon." So the rule is at least five themed areas a run. The archive and the sanctum
+    are side maps off a region's middle level, reached and left only through the region's own
+    maps, so only a region three levels long can hold one.
 
 ## The Over Dungeon
 
