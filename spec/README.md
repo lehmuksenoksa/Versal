@@ -102,6 +102,7 @@ Each part's state is one of:
 | 20 | The danger ladder: how danger rises from a lone rat to the dragon ([`round20-danger.md`](round20-danger.md)) | folded into round 21 |
 | 21 | The world plan, from your outline (and the run simulator, `mockups/runs.html`): the Over Dungeon, then regions, transitions and themed areas ([`world.md`](world.md)) | answered |
 | 22 | Environmental features, shallow ([`round22-features.md`](round22-features.md)) | answered |
+| 23 | Things to find, shallow ([`round23-things.md`](round23-things.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
