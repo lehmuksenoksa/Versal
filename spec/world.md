@@ -80,7 +80,7 @@ the way: one boss to draw, two sets of numbers.
   - keeps themed areas at least two levels apart;
   - lets a transition join only what it connects: the sewers the Dungeon Underneath and the
     Drowned City, the mines Goblin Territory, the Deep Dark and the Keep, a breach anything. Each
-    transition appears once in a run, over the two or three levels before the themed area it
+    transition appears once in a run, as the one level before the themed area it
     leads into, either as the only way or as one side of a fork with the Over Dungeon; there's
     never a fork between two plain maps;
   - gives a bigger region two maps side by side on its first and middle levels (more often than
@@ -105,6 +105,8 @@ the way: one boss to draw, two sets of numbers.
     over dungeon." So the rule is at least five themed areas a run. The archive and the sanctum
     are side maps off a region's middle level, reached and left only through the region's own
     maps, so only a region three levels long can hold one.
+  - "I don't like transitions spanning 2-3 levels." A transition is one level, just before the
+    themed area it leads into; a fork is that one level, the transition or the Over Dungeon.
 
 ## The Over Dungeon
 
