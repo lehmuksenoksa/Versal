@@ -1,5 +1,14 @@
 # Round 34: who holds the Keep, and what changes
 
+**Answered.** My picks taken, with these changes:
+- **Golems and animated armour come only with the dead** (not whoever holds it): with orcs, the
+  Keep's guardians are gone. Elementals, the mimic and the dragon whoever holds it.
+- **Out:** the orcs' trophies; the crypts tended; the fallen rising as the dead.
+- **Scholars come only with the dead** (not with orcs).
+- **The dragon: at war with all.** It eats whoever comes near; holders avoid that side of the Keep.
+- Still maybe: captives and crude traps with orcs; the ghost, the wight and the mimic in the Keep.
+- Nothing added under "anything missing".
+
 The last layer across the regions. Round 30: the Keep is held by one drawn each run, the dwarven
 dead, orcs who overran it, or both at war ("Both at war can be draw option"). Golems, elementals
 and the dragon are there whoever holds it. Like round 26's last grid for the Dungeon: what changes

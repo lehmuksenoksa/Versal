@@ -295,7 +295,7 @@
     "Orcs (overran it)",
     "Both, at war"
    ],
-   "holderNote": "Drawn each run (round 30). Golems, elementals and the dragon whoever holds it.",
+   "holderNote": "Drawn each run (round 30): the dwarven dead, orcs who overran it, or both at war. Elementals, the mimic and the dragon whoever holds it; golems and animated armour only with the dead (round 34).",
    "features": {
     "here": [
      "Forge and lava glow (Light that can't be put out)",
@@ -360,6 +360,66 @@
       "the dragon's hoard"
      ]
     ]
+   },
+   "byHolder": {
+    "The dwarven dead": {
+     "foes": [
+      "The dwarven dead",
+      "Ghost, wight (maybe)",
+      "Golems",
+      "Animated armour"
+     ],
+     "keeps": [
+      "Gates shut and barred",
+      "Rounds walked",
+      "Rune wards: cross one and the dead wake",
+      "The rune lord in the lords' rooms",
+      "The dark: no fires but the forge's"
+     ],
+     "strangers": [
+      "A kindly ghost",
+      "Tomb wardens",
+      "A scholar, a scholars' expedition"
+     ]
+    },
+    "Orcs": {
+     "foes": [
+      "Orcs"
+     ],
+     "bring": [
+      "Barricades",
+      "Campfires and torches",
+      "Plunder heaps",
+      "The forge relit",
+      "Captives (maybe)",
+      "Crude traps (maybe)"
+     ],
+     "strangers": [
+      "A prisoner"
+     ]
+    },
+    "Both, at war": {
+     "adds": [
+      "A front line: barricades and bodies",
+      "Each holds a part of the Keep",
+      "They fight on sight: lure one onto the other"
+     ],
+     "note": "Both sides' foes, things and strangers"
+    },
+    "Whoever holds it": {
+     "foes": [
+      "Fire and earth elementals",
+      "Mimic (maybe)",
+      "The dragon"
+     ],
+     "strangers": [
+      "A dwarven expedition",
+      "An undead dwarf",
+      "A golem",
+      "A treasure hunter"
+     ]
+    },
+    "The dragon": "At war with all: it eats whoever comes near, so holders avoid that side of the Keep"
    }
   },
   {
