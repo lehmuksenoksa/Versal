@@ -111,6 +111,7 @@ Each part's state is one of:
 | 29 | Who's there, in every region, shallow ([`round29-whos-there.md`](round29-whos-there.md)) | answered |
 | 30 | New foes from your comments: worms, spiders, the dwarven dead, orcs ([`round30-new-foes.md`](round30-new-foes.md)) | answered |
 | 31 | The Depth table ([`round31-depth-table.md`](round31-depth-table.md)) | answered |
+| 32 | Each region's features and containers, shallow ([`round32-features-by-region.md`](round32-features-by-region.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
