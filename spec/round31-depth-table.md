@@ -1,5 +1,22 @@
 # Round 31: the Depth table
 
+**Answered.** Everything as proposed, except seven marked shallower, without numbers. My reading,
+to correct if wrong:
+
+| | Proposed | Now |
+|---|---|---|
+| Short bow | 2 | 1 |
+| Ring of quiet steps | 6 | 4 |
+| Ring of strength | 10 | 7 |
+| Wand of fire | 9 | 6 |
+| Steel | 6 | 4 |
+| Silver | 9 | 6 |
+| Mithril | 15 | 12 |
+
+Round 30's new foes: Depths and ranks as listed, the orcs' ranks included. The Depths are in the
+catalogue (`data/catalogue.json`): on each stranger, thing and environmental feature, and the item
+tags' under `itemTags.depth`.
+
 Round 28 settled Depth: the level a thing starts to appear at, 1 to 20, not a limit. Monsters had
 theirs from the danger ladder. This is my proposal for everything else: strangers, things to find,
 item tags and environmental challenges, and round 30's new foes to confirm.

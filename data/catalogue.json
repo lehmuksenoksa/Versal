@@ -1759,7 +1759,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 1
   },
   {
    "id": "a-lone-survivor",
@@ -1771,7 +1772,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 3
   },
   {
    "id": "a-prisoner",
@@ -1791,7 +1793,8 @@
    "themes": [
     "cult",
     "goblins"
-   ]
+   ],
+   "depth": 1
   },
   {
    "id": "an-escaped-slave",
@@ -1809,7 +1812,8 @@
    "round": 6,
    "themes": [
     "goblins"
-   ]
+   ],
+   "depth": 4
   },
   {
    "id": "a-lost-miner",
@@ -1826,7 +1830,8 @@
    "round": 6,
    "themes": [
     "delvers"
-   ]
+   ],
+   "depth": 3
   },
   {
    "id": "a-hermit",
@@ -1843,7 +1848,8 @@
    "round": 6,
    "themes": [
     "deep"
-   ]
+   ],
+   "depth": 8
   },
   {
    "id": "an-exile",
@@ -1874,7 +1880,8 @@
    "round": 6,
    "themes": [
     "old-faith"
-   ]
+   ],
+   "depth": 2
   },
   {
    "id": "a-priest",
@@ -1891,7 +1898,8 @@
    "round": 6,
    "themes": [
     "old-faith"
-   ]
+   ],
+   "depth": 1
   },
   {
    "id": "a-scholar",
@@ -1906,7 +1914,8 @@
     "sanctum"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 5
   },
   {
    "id": "a-mapmaker",
@@ -1918,7 +1927,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 3
   },
   {
    "id": "a-peddler",
@@ -1930,7 +1940,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 1
   },
   {
    "id": "a-treasure-hunter",
@@ -1945,7 +1956,8 @@
     "hold"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 3
   },
   {
    "id": "a-smuggler",
@@ -1963,7 +1975,8 @@
    "themes": [
     "drowned",
     "outlaws"
-   ]
+   ],
+   "depth": 2
   },
   {
    "id": "a-trapper",
@@ -2021,7 +2034,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 6
+   "round": 6,
+   "depth": 2
   },
   {
    "id": "the-last-dwarf",
@@ -2038,7 +2052,8 @@
    "round": 6,
    "themes": [
     "dwarves"
-   ]
+   ],
+   "depth": 12
   },
   {
    "id": "a-kindly-ghost",
@@ -2056,7 +2071,8 @@
    "round": 6,
    "themes": [
     "the-dead"
-   ]
+   ],
+   "depth": 2
   },
   {
    "id": "refugees",
@@ -2081,7 +2097,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 2
   },
   {
    "id": "a-dwarven-expedition",
@@ -2098,7 +2115,8 @@
    "round": 7,
    "themes": [
     "dwarves"
-   ]
+   ],
+   "depth": 10
   },
   {
    "id": "a-rescue-party",
@@ -2124,7 +2142,8 @@
     "hold"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 8
   },
   {
    "id": "a-miners-crew",
@@ -2140,7 +2159,8 @@
    "round": 7,
    "themes": [
     "delvers"
-   ]
+   ],
+   "depth": 5
   },
   {
    "id": "monster-hunters",
@@ -2158,7 +2178,8 @@
    "round": 7,
    "themes": [
     "beasts"
-   ]
+   ],
+   "depth": 10
   },
   {
    "id": "holy-warriors",
@@ -2176,7 +2197,8 @@
    "themes": [
     "the-dead",
     "old-faith"
-   ]
+   ],
+   "depth": 3
   },
   {
    "id": "ratcatchers",
@@ -2193,21 +2215,23 @@
    "round": 7,
    "themes": [
     "pests"
-   ]
+   ],
+   "depth": 1
   },
   {
    "id": "tomb-wardens",
    "name": "Tomb wardens",
    "why": "Sworn to keep the old tombs",
    "company": "group",
-   "state": "unmarked",
+   "state": "keep",
    "fits": [
     "bones",
     "dungeon",
     "hold"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 6
   },
   {
    "id": "escaped-prisoners",
@@ -2222,7 +2246,8 @@
     "warrens"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 4
   },
   {
    "id": "deep-folk-travellers",
@@ -2240,7 +2265,8 @@
    "round": 7,
    "themes": [
     "deep"
-   ]
+   ],
+   "depth": 13
   },
   {
    "id": "a-surveying-party",
@@ -2284,7 +2310,8 @@
    "round": 7,
    "themes": [
     "dwarves"
-   ]
+   ],
+   "depth": 10
   },
   {
    "id": "a-wounded-knight",
@@ -2312,7 +2339,8 @@
    "round": 7,
    "themes": [
     "dwarves"
-   ]
+   ],
+   "depth": 12
   },
   {
    "id": "a-bound-spirit",
@@ -2326,7 +2354,8 @@
     "sanctum"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 8
   },
   {
    "id": "a-talking-raven",
@@ -2338,7 +2367,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 4
   },
   {
    "id": "a-dog",
@@ -2350,7 +2380,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 1
   },
   {
    "id": "a-chained-beast",
@@ -2367,7 +2398,8 @@
    "round": 7,
    "themes": [
     "goblins"
-   ]
+   ],
+   "depth": 5
   },
   {
    "id": "a-madman",
@@ -2379,7 +2411,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 6
   },
   {
    "id": "a-cook",
@@ -2405,7 +2438,8 @@
     "caverns"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 9
   },
   {
    "id": "a-bard",
@@ -2417,7 +2451,8 @@
     "anywhere"
    ],
    "comment": "",
-   "round": 7
+   "round": 7,
+   "depth": 3
   }
  ],
  "monsters": [
@@ -6937,7 +6972,8 @@
    "group": "Hiding and cover",
    "line": "Break line of sight and cast shadow",
    "state": "keep",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "feat-5",
@@ -6945,7 +6981,8 @@
    "group": "Hiding and cover",
    "line": "Cover to hide behind; some can be pushed",
    "state": "maybe",
-   "note": "in the game as furniture"
+   "note": "in the game as furniture",
+   "depth": 1
   },
   {
    "id": "feat-6",
@@ -6969,7 +7006,8 @@
    "group": "Light",
    "line": "Lit; can be put out (a turn or two, and a noise), and relit by monsters",
    "state": "keep",
-   "note": "in the game; decided, round 2"
+   "note": "in the game; decided, round 2",
+   "depth": 1
   },
   {
    "id": "feat-9",
@@ -6977,7 +7015,8 @@
    "group": "Light",
    "line": "Take it, or put it out",
    "state": "maybe",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-10",
@@ -6985,7 +7024,8 @@
    "group": "Light",
    "line": "Dim light everywhere that can't be put out, only cut away",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   },
   {
    "id": "feat-11",
@@ -6993,7 +7033,8 @@
    "group": "Light",
    "line": "Light that can't be put out",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 12
   },
   {
    "id": "feat-12",
@@ -7017,7 +7058,8 @@
    "group": "Sound underfoot",
    "line": "Loud to walk on",
    "state": "keep",
-   "note": "decided, round 2: the ground's sound"
+   "note": "decided, round 2: the ground's sound",
+   "depth": 1
   },
   {
    "id": "feat-15",
@@ -7025,7 +7067,8 @@
    "group": "Sound underfoot",
    "line": "Crunch underfoot, loud",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-16",
@@ -7033,7 +7076,8 @@
    "group": "Sound underfoot",
    "line": "Wading: slow and loud",
    "state": "keep",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "feat-17",
@@ -7041,7 +7085,8 @@
    "group": "Sound underfoot",
    "line": "Quiet to walk on",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 3
   },
   {
    "id": "feat-18",
@@ -7049,7 +7094,8 @@
    "group": "Sound underfoot",
    "line": "Creak, loud",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-19",
@@ -7057,7 +7103,8 @@
    "group": "Sound underfoot",
    "line": "A waterfall or rapids that cover your noise, and theirs",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 4
   },
   {
    "id": "feat-20",
@@ -7065,7 +7112,8 @@
    "group": "Water",
    "line": "Swim: silent, but the lamp goes out",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 3
   },
   {
    "id": "feat-21",
@@ -7073,7 +7121,8 @@
    "group": "Water",
    "line": "Carries you along, one way",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "feat-22",
@@ -7081,7 +7130,8 @@
    "group": "Water",
    "line": "Where leeches and worse wait",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "feat-23",
@@ -7089,7 +7139,8 @@
    "group": "Height and drops",
    "line": "Drop down, but can't climb back",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 2
   },
   {
    "id": "feat-24",
@@ -7097,7 +7148,8 @@
    "group": "Height and drops",
    "line": "Can't be crossed but by a bridge; shove things in",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 6
   },
   {
    "id": "feat-25",
@@ -7105,7 +7157,8 @@
    "group": "Height and drops",
    "line": "Cross it, or cut it behind you",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "feat-26",
@@ -7113,7 +7166,8 @@
    "group": "Height and drops",
    "line": "A dais, a balcony or a gallery: see further, shoot down, hold it",
    "state": "keep",
-   "note": "for your 'retreating to a better position'"
+   "note": "for your 'retreating to a better position'",
+   "depth": 1
   },
   {
    "id": "feat-27",
@@ -7121,7 +7175,8 @@
    "group": "Height and drops",
    "line": "A fall to the level below",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "feat-28",
@@ -7129,7 +7184,8 @@
    "group": "Doors and ways",
    "line": "Open, close; monsters open them too",
    "state": "keep",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "feat-29",
@@ -7137,7 +7193,8 @@
    "group": "Doors and ways",
    "line": "A key, or picked (time and noise)",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 1
   },
   {
    "id": "feat-30",
@@ -7145,7 +7202,8 @@
    "group": "Doors and ways",
    "line": "Found by searching, hinted by rubble or marks on the floor",
    "state": "keep",
-   "note": "in the game; hints yours, round 6"
+   "note": "in the game; hints yours, round 6",
+   "depth": 2
   },
   {
    "id": "feat-31",
@@ -7153,7 +7211,8 @@
    "group": "Doors and ways",
    "line": "A portcullis to drop between you and them; never blocks the way on",
    "state": "keep",
-   "note": "decided, round 6"
+   "note": "decided, round 6",
+   "depth": 3
   },
   {
    "id": "feat-32",
@@ -7161,7 +7220,8 @@
    "group": "Doors and ways",
    "line": "Block a door, or break through one",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-33",
@@ -7169,7 +7229,8 @@
    "group": "Doors and ways",
    "line": "A crawlway or crack: one at a time, so a swarm can be fought there",
    "state": "keep",
-   "note": "yours, round 16"
+   "note": "yours, round 16",
+   "depth": 1
   },
   {
    "id": "feat-34",
@@ -7177,7 +7238,8 @@
    "group": "Doors and ways",
    "line": "Dug through with a pickaxe",
    "state": "keep",
-   "note": "decided, round 6: digging"
+   "note": "decided, round 6: digging",
+   "depth": 2
   },
   {
    "id": "feat-35",
@@ -7185,7 +7247,8 @@
    "group": "Doors and ways",
    "line": "Opens a gate or a hidden way",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 3
   },
   {
    "id": "feat-36",
@@ -7193,7 +7256,8 @@
    "group": "Traps",
    "line": "Rings a bell: an alarm",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 1
   },
   {
    "id": "feat-37",
@@ -7201,7 +7265,8 @@
    "group": "Traps",
    "line": "Darts or spikes",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "feat-38",
@@ -7209,7 +7274,8 @@
    "group": "Traps",
    "line": "A hidden pit",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 4
   },
   {
    "id": "feat-39",
@@ -7217,7 +7283,8 @@
    "group": "Traps",
    "line": "The ceiling comes down",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 6
   },
   {
    "id": "feat-40",
@@ -7225,7 +7292,8 @@
    "group": "Traps",
    "line": "Holds you fast",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 4
   },
   {
    "id": "feat-41",
@@ -7233,7 +7301,8 @@
    "group": "Traps",
    "line": "A cloud of gas or spores",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   },
   {
    "id": "feat-42",
@@ -7241,7 +7310,8 @@
    "group": "Hazards",
    "line": "Spreads, burns, and lights the place",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "feat-43",
@@ -7249,7 +7319,8 @@
    "group": "Hazards",
    "line": "Deadly to touch; lights everything",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 13
   },
   {
    "id": "feat-44",
@@ -7257,7 +7328,8 @@
    "group": "Hazards",
    "line": "Scald, but the steam hides you",
    "state": "maybe",
-   "note": ""
+   "note": "",
+   "depth": 10
   },
   {
    "id": "feat-45",
@@ -7265,7 +7337,8 @@
    "group": "Hazards",
    "line": "Stick to you; the spiders feel you through them",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-46",
@@ -7273,7 +7346,8 @@
    "group": "Hazards",
    "line": "Gives way under weight",
    "state": "maybe",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "feat-47",
@@ -7281,7 +7355,8 @@
    "group": "Containers",
    "line": "Holds the better things; may be locked or trapped",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-48",
@@ -7289,7 +7364,8 @@
    "group": "Containers",
    "line": "Break them open: noise, and something or nothing inside",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-49",
@@ -7297,7 +7373,8 @@
    "group": "Containers",
    "line": "Quick to search, small things",
    "state": "maybe",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-50",
@@ -7305,7 +7382,8 @@
    "group": "Containers",
    "line": "Grave goods; disturbing them may wake the dead",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-51",
@@ -7313,7 +7391,8 @@
    "group": "Containers",
    "line": "Grave goods, and maybe their owner",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "feat-52",
@@ -7321,7 +7400,8 @@
    "group": "Containers",
    "line": "Gear in the armoury or the guardroom",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "feat-53",
@@ -7329,7 +7409,8 @@
    "group": "Containers",
    "line": "What those before you carried",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "feat-54",
@@ -7337,7 +7418,8 @@
    "group": "Containers",
    "line": "What a beast, a goblin or the dragon has gathered",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "feat-55",
@@ -7345,7 +7427,8 @@
    "group": "Containers",
    "line": "Behind a loose stone or under the floor: found by searching",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "feat-56",
@@ -7353,7 +7436,8 @@
    "group": "Things to use",
    "line": "A spill or a barrel to set alight",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "feat-57",
@@ -7361,7 +7445,8 @@
    "group": "Things to use",
    "line": "Lifts curses; holy ground to rest",
    "state": "keep",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "feat-58",
@@ -7369,7 +7454,8 @@
    "group": "Things to use",
    "line": "A hot spring, a bath, a kept shrine: rest is safer there",
    "state": "keep",
-   "note": "decided, round 6"
+   "note": "decided, round 6",
+   "depth": 1
   },
   {
    "id": "feat-59",
@@ -7377,7 +7463,8 @@
    "group": "Things to use",
    "line": "Open them to let beasts loose on your foes",
    "state": "keep",
-   "note": "decided, round 6"
+   "note": "decided, round 6",
+   "depth": 4
   },
   {
    "id": "feat-60",
@@ -7385,7 +7472,8 @@
    "group": "Things to use",
    "line": "Notes and scrolls to find; reading needs light",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "feat-61",
@@ -7393,7 +7481,8 @@
    "group": "Things to use",
    "line": "Ride it (fast, loud) or push it into things",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "feat-62",
@@ -7401,7 +7490,8 @@
    "group": "Things to use",
    "line": "Ring it to draw monsters where you want them",
    "state": "maybe",
-   "note": ""
+   "note": "",
+   "depth": 3
   }
  ],
  "itemTags": {
@@ -7458,7 +7548,45 @@
    "order": "condition, quality, maker, material, the thing, of …",
    "depth": "Tags follow depth through the danger ladder; makers by region, and rarer outside it"
   },
-  "open": "Each maker's gameplay effect (your note)"
+  "open": "Each maker's gameplay effect (your note)",
+  "depth": {
+   "Crude": 1,
+   "Fine": 4,
+   "Masterwork": 10,
+   "Goblin-made": 2,
+   "Cultist": 3,
+   "Ancient": 8,
+   "Dwarven": 8,
+   "Dark elven": 12,
+   "Stone": 1,
+   "Bronze": 1,
+   "Iron": 1,
+   "Steel": 4,
+   "Silver": 6,
+   "Mithril": 12,
+   "Rusty": 1,
+   "Heavy": 2,
+   "Padded": 2,
+   "Sharp": 3,
+   "Sturdy": 3,
+   "Cursed": 4,
+   "Spiked": 5,
+   "Of spider slaying": 4,
+   "Of goblin slaying": 4,
+   "Of undead slaying": 6,
+   "Of beast slaying": 7,
+   "Of elf slaying": 12,
+   "Of horror slaying": 12,
+   "Of dragon slaying": 16,
+   "Of light": 5,
+   "Of fire": 8,
+   "Of silence": 8,
+   "Of venom": 9,
+   "Of shadows": 10,
+   "Of warding": 10,
+   "Of returning": 11,
+   "Of swiftness": 12
+  }
  },
  "adjacencyMeaning": {
   "nextTo": "A door between them",
@@ -7472,7 +7600,8 @@
    "group": "Melee weapons",
    "line": "Quick: strikes twice where others strike once; best for a sneak attack",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-2",
@@ -7480,7 +7609,8 @@
    "group": "Melee weapons",
    "line": "Balanced: hits often, hits fair",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-3",
@@ -7488,7 +7618,8 @@
    "group": "Melee weapons",
    "line": "Sweeps: can hit two beside each other",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-4",
@@ -7496,7 +7627,8 @@
    "group": "Melee weapons",
    "line": "Two hands; heavy blows that stun",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 4
   },
   {
    "id": "thing-5",
@@ -7504,7 +7636,8 @@
    "group": "Melee weapons",
    "line": "Reaches two squares: strike from behind someone, or across a gap",
    "state": "keep",
-   "note": "decided, round 2: weapons that differ"
+   "note": "decided, round 2: weapons that differ",
+   "depth": 2
   },
   {
    "id": "thing-6",
@@ -7512,7 +7645,8 @@
    "group": "Melee weapons",
    "line": "Crushes: good against armour and bone",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-7",
@@ -7520,7 +7654,8 @@
    "group": "Melee weapons",
    "line": "Crude and common; goblins carry them",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "thing-8",
@@ -7528,7 +7663,8 @@
    "group": "Melee weapons",
    "line": "Two hands; for those who cast",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "thing-9",
@@ -7536,7 +7672,8 @@
    "group": "Weapons that shoot",
    "line": "Quiet; any stone will do",
    "state": "keep",
-   "note": "decided, round 2: shooting"
+   "note": "decided, round 2: shooting",
+   "depth": 1
   },
   {
    "id": "thing-10",
@@ -7544,7 +7681,8 @@
    "group": "Weapons that shoot",
    "line": "Quick shots, fair range",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 1
   },
   {
    "id": "thing-11",
@@ -7552,7 +7690,8 @@
    "group": "Weapons that shoot",
    "line": "Strong, slow to load, loud",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 4
   },
   {
    "id": "thing-12",
@@ -7560,7 +7699,8 @@
    "group": "Weapons that shoot",
    "line": "Ammunition: some can be picked up again",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "thing-13",
@@ -7568,7 +7708,8 @@
    "group": "Weapons that shoot",
    "line": "Fire, blunt (knock down), whistling (a lure)",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 6
   },
   {
    "id": "thing-14",
@@ -7576,7 +7717,8 @@
    "group": "Armour",
    "line": "Head",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-15",
@@ -7584,7 +7726,8 @@
    "group": "Armour",
    "line": "Body: good protection, some noise",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 3
   },
   {
    "id": "thing-16",
@@ -7592,7 +7735,8 @@
    "group": "Armour",
    "line": "Body: less protection, quiet",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "thing-17",
@@ -7600,7 +7744,8 @@
    "group": "Armour",
    "line": "Body: the best protection; heavy, loud, slower",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   },
   {
    "id": "thing-18",
@@ -7608,7 +7753,8 @@
    "group": "Armour",
    "line": "Off hand: block blows and arrows",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-19",
@@ -7616,7 +7762,8 @@
    "group": "Armour",
    "line": "Harder to notice in the dark",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-20",
@@ -7624,7 +7771,8 @@
    "group": "Armour",
    "line": "Quieter steps",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "thing-21",
@@ -7632,7 +7780,8 @@
    "group": "Light",
    "line": "Keeps the lamp lit (the run's clock)",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 1
   },
   {
    "id": "thing-22",
@@ -7640,7 +7789,8 @@
    "group": "Light",
    "line": "A light to set down and leave behind",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 1
   },
   {
    "id": "thing-23",
@@ -7648,7 +7798,8 @@
    "group": "Light",
    "line": "A brighter light to carry or set down, burning out",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 1
   },
   {
    "id": "thing-24",
@@ -7656,7 +7807,8 @@
    "group": "Things to throw",
    "line": "A noise where they land: monsters go to look",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 1
   },
   {
    "id": "thing-25",
@@ -7664,7 +7816,8 @@
    "group": "Things to throw",
    "line": "A quiet hit at range",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-26",
@@ -7680,7 +7833,8 @@
    "group": "Things to throw",
    "line": "Slow and hurt those who follow you",
    "state": "keep",
-   "note": "decided, round 2"
+   "note": "decided, round 2",
+   "depth": 3
   },
   {
    "id": "thing-28",
@@ -7688,7 +7842,8 @@
    "group": "Things to throw",
    "line": "Fire where it lands",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "thing-29",
@@ -7696,7 +7851,8 @@
    "group": "Potions",
    "line": "Health back",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-30",
@@ -7704,7 +7860,8 @@
    "group": "Potions",
    "line": "Unknown until drunk: all heal, or all poison, a run's luck",
    "state": "in game",
-   "note": "in the game"
+   "note": "in the game",
+   "depth": 1
   },
   {
    "id": "thing-31",
@@ -7712,7 +7869,8 @@
    "group": "Potions",
    "line": "Cures poison",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-32",
@@ -7720,7 +7878,8 @@
    "group": "Potions",
    "line": "See in the dark for a while",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 4
   },
   {
    "id": "thing-33",
@@ -7728,7 +7887,8 @@
    "group": "Potions",
    "line": "More Brawn for a while",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "thing-34",
@@ -7736,7 +7896,8 @@
    "group": "Potions",
    "line": "Dread falls (your name for courage)",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "thing-35",
@@ -7744,7 +7905,8 @@
    "group": "Scrolls",
    "line": "A patch of the dark where you need it",
    "state": "keep",
-   "note": "decided, round 3: spells"
+   "note": "decided, round 3: spells",
+   "depth": 3
   },
   {
    "id": "thing-36",
@@ -7752,7 +7914,8 @@
    "group": "Scrolls",
    "line": "Your steps make no sound for a while",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 4
   },
   {
    "id": "thing-37",
@@ -7760,7 +7923,8 @@
    "group": "Scrolls",
    "line": "Those near fall asleep",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 5
   },
   {
    "id": "thing-38",
@@ -7768,7 +7932,8 @@
    "group": "Scrolls",
    "line": "A step of a few squares",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 6
   },
   {
    "id": "thing-39",
@@ -7776,7 +7941,8 @@
    "group": "Scrolls",
    "line": "See what's near for a while",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 7
   },
   {
    "id": "thing-40",
@@ -7792,7 +7958,8 @@
    "group": "Scrolls",
    "line": "Keeps the dead back",
    "state": "keep",
-   "note": "decided, round 3"
+   "note": "decided, round 3",
+   "depth": 6
   },
   {
    "id": "thing-42",
@@ -7800,7 +7967,8 @@
    "group": "Scrolls",
    "line": "Shows the level",
    "state": "keep",
-   "note": "decided, round 6: maps"
+   "note": "decided, round 6: maps",
+   "depth": 2
   },
   {
    "id": "thing-43",
@@ -7808,7 +7976,8 @@
    "group": "Scrolls",
    "line": "Identifies an item (your name for knowing)",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-44",
@@ -7816,7 +7985,8 @@
    "group": "Scrolls",
    "line": "Lifts a curse without an altar",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "thing-45",
@@ -7824,7 +7994,8 @@
    "group": "Charms",
    "line": "You're harder to hear",
    "state": "keep",
-   "note": "decided, round 2: charms"
+   "note": "decided, round 2: charms",
+   "depth": 4
   },
   {
    "id": "thing-46",
@@ -7832,7 +8003,8 @@
    "group": "Charms",
    "line": "See further in the dark",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   },
   {
    "id": "thing-47",
@@ -7840,7 +8012,8 @@
    "group": "Charms",
    "line": "One more to an attribute",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 7
   },
   {
    "id": "thing-48",
@@ -7848,7 +8021,8 @@
    "group": "Charms",
    "line": "The dead notice you less",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 7
   },
   {
    "id": "thing-49",
@@ -7856,7 +8030,8 @@
    "group": "Charms",
    "line": "Dread rises slower",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 9
   },
   {
    "id": "thing-50",
@@ -7864,7 +8039,8 @@
    "group": "Charms",
    "line": "Heal slowly as you go",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 12
   },
   {
    "id": "thing-51",
@@ -7872,7 +8048,8 @@
    "group": "Wands",
    "line": "Puts one to sleep, a few charges",
    "state": "keep",
-   "note": "decided, round 2: wands"
+   "note": "decided, round 2: wands",
+   "depth": 6
   },
   {
    "id": "thing-52",
@@ -7880,7 +8057,8 @@
    "group": "Wands",
    "line": "A burst of fire",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 6
   },
   {
    "id": "thing-53",
@@ -7888,7 +8066,8 @@
    "group": "Wands",
    "line": "Slows a foe",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   },
   {
    "id": "thing-54",
@@ -7896,7 +8075,8 @@
    "group": "Wands",
    "line": "A foe flees",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 10
   },
   {
    "id": "thing-55",
@@ -7904,7 +8084,8 @@
    "group": "Wands",
    "line": "Digs a tunnel through rock",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 12
   },
   {
    "id": "thing-56",
@@ -7912,7 +8093,8 @@
    "group": "Keys and tools",
    "line": "Opens one locked door",
    "state": "keep",
-   "note": "decided, round 2: keys"
+   "note": "decided, round 2: keys",
+   "depth": 1
   },
   {
    "id": "thing-57",
@@ -7920,7 +8102,8 @@
    "group": "Keys and tools",
    "line": "Pick locks faster and quieter",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 3
   },
   {
    "id": "thing-58",
@@ -7928,7 +8111,8 @@
    "group": "Keys and tools",
    "line": "Dig through a collapse, or a new way",
    "state": "keep",
-   "note": "decided, round 6: digging"
+   "note": "decided, round 6: digging",
+   "depth": 4
   },
   {
    "id": "thing-59",
@@ -7936,7 +8120,8 @@
    "group": "Keys and tools",
    "line": "Climb back up a ledge, or down a pit",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 2
   },
   {
    "id": "thing-60",
@@ -7944,7 +8129,8 @@
    "group": "Treasure",
    "line": "To trade with the peddler and others",
    "state": "keep",
-   "note": "decided, round 6: trade"
+   "note": "decided, round 6: trade",
+   "depth": 1
   },
   {
    "id": "thing-61",
@@ -7952,7 +8138,8 @@
    "group": "Treasure",
    "line": "Worth more, light to carry",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 5
   },
   {
    "id": "thing-62",
@@ -7960,7 +8147,8 @@
    "group": "Treasure",
    "line": "Worth a lot to the right stranger",
    "state": "keep",
-   "note": ""
+   "note": "",
+   "depth": 8
   }
  ],
  "overDungeonLooseRooms": {

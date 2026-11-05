@@ -110,7 +110,7 @@ Each part's state is one of:
 | 28 | Depth and Level, your idea ([`round28-depth-level.md`](round28-depth-level.md)) | answered |
 | 29 | Who's there, in every region, shallow ([`round29-whos-there.md`](round29-whos-there.md)) | answered |
 | 30 | New foes from your comments: worms, spiders, the dwarven dead, orcs ([`round30-new-foes.md`](round30-new-foes.md)) | answered |
-| 31 | The Depth table ([`round31-depth-table.md`](round31-depth-table.md)) | on the choices page |
+| 31 | The Depth table ([`round31-depth-table.md`](round31-depth-table.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
