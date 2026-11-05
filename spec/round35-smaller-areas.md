@@ -1,5 +1,18 @@
 # Round 35: the smaller themed areas, shallow
 
+**Answered.** My picks taken, with these changes:
+- **The sewers:** the drowned dead (zombies) in; the exile out.
+- **The mines:** the great worm and the dwarven dead in; the mine cart out; falling rocks maybe.
+- **The underground river:** the water elemental in; the waterfall and the boat landing out.
+- **The ledge path:** the spitting spider in.
+- **The great stairway:** the ghost in.
+- **The bandits' hold:** the fighting pit, the ogre and escaped prisoners out.
+- **The cult's sanctum:** the turncoats out.
+- A breach and the archive: as proposed. Nothing added under "anything missing".
+
+Each place's contents are in the catalogue (`world.transitions`, `world.smallerRegions`,
+`world.subRegions`, under `contents`).
+
 The other half of a run's themed areas: the six transitions, the bandits' hold, and the two
 sub-regions. Until now each had only a line, its levels and a short list from the world plan.
 One grid each, everything that's there: areas, foes, strangers, features. Foes come by their Depth

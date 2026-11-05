@@ -7011,7 +7011,48 @@
      2,
      2
     ],
-    "size": "medium"
+    "size": "medium",
+    "contents": {
+     "areas": {
+      "here": [
+       "Channels",
+       "A cistern",
+       "A smugglers' hole"
+      ],
+      "maybe": [
+       "A flooded wing"
+      ]
+     },
+     "foes": {
+      "here": [
+       "Rat",
+       "Giant rat",
+       "Slime",
+       "Ooze",
+       "Eel",
+       "Leech",
+       "Thief",
+       "Zombie"
+      ],
+      "maybe": []
+     },
+     "strangers": {
+      "here": [
+       "Ratcatchers",
+       "A smuggler"
+      ],
+      "maybe": []
+     },
+     "features": {
+      "here": [
+       "A current",
+       "Still water"
+      ],
+      "maybe": [
+       "Sluice gates"
+      ]
+     }
+    }
    },
    {
     "name": "The mines",
@@ -7042,7 +7083,50 @@
      2,
      3
     ],
-    "size": "small"
+    "size": "small",
+    "contents": {
+     "areas": {
+      "here": [
+       "A mine-head",
+       "A cave-in maze",
+       "A miners' pocket",
+       "A winch room"
+      ],
+      "maybe": [
+       "A crystal grotto"
+      ]
+     },
+     "foes": {
+      "here": [
+       "Bat",
+       "Giant centipede",
+       "Worm",
+       "Great worm",
+       "Earth elemental",
+       "Goblin",
+       "The dwarven dead"
+      ],
+      "maybe": []
+     },
+     "strangers": {
+      "here": [
+       "A lost miner",
+       "A miners' crew",
+       "A dwarven expedition",
+       "An undead dwarf"
+      ],
+      "maybe": []
+     },
+     "features": {
+      "here": [
+       "Shafts and ledges",
+       "Scaffolds"
+      ],
+      "maybe": [
+       "Falling rocks"
+      ]
+     }
+    }
    },
    {
     "name": "A breach",
@@ -7064,7 +7148,32 @@
      1,
      1
     ],
-    "size": "small"
+    "size": "small",
+    "contents": {
+     "areas": {
+      "here": [
+       "The broken wall"
+      ],
+      "maybe": []
+     },
+     "foes": {
+      "here": [
+       "Both sides' foes"
+      ],
+      "maybe": [
+       "Something from deeper"
+      ]
+     },
+     "features": {
+      "here": [
+       "Rubble floor"
+      ],
+      "maybe": [
+       "Unstable floor",
+       "Falling rocks"
+      ]
+     }
+    }
    },
    {
     "name": "The underground river",
@@ -7093,7 +7202,45 @@
      2,
      2
     ],
-    "size": "medium"
+    "size": "medium",
+    "contents": {
+     "areas": {
+      "here": [
+       "Riverbanks",
+       "A river crossing"
+      ],
+      "maybe": []
+     },
+     "foes": {
+      "here": [
+       "Eel",
+       "Leech",
+       "Snake",
+       "Cave crab",
+       "Water elemental"
+      ],
+      "maybe": [
+       "Goblin"
+      ]
+     },
+     "strangers": {
+      "here": [],
+      "maybe": [
+       "A smuggler",
+       "A hermit"
+      ]
+     },
+     "features": {
+      "here": [
+       "A current",
+       "Deep water",
+       "Rushing water"
+      ],
+      "maybe": [
+       "Rope bridge"
+      ]
+     }
+    }
    },
    {
     "name": "The ledge path",
@@ -7120,7 +7267,38 @@
      1,
      1
     ],
-    "size": "small"
+    "size": "small",
+    "contents": {
+     "areas": {
+      "here": [
+       "A ledge path",
+       "A chasm bridge"
+      ],
+      "maybe": []
+     },
+     "foes": {
+      "here": [
+       "Bat",
+       "Giant spider",
+       "Spitting spider"
+      ],
+      "maybe": [
+       "Cave lion",
+       "Troll"
+      ]
+     },
+     "features": {
+      "here": [
+       "Ledge",
+       "Chasm",
+       "Rope bridge",
+       "Falling rocks"
+      ],
+      "maybe": [
+       "Webs"
+      ]
+     }
+    }
    },
    {
     "name": "The great stairway",
@@ -7149,7 +7327,42 @@
      2,
      3
     ],
-    "size": "small"
+    "size": "small",
+    "contents": {
+     "areas": {
+      "here": [
+       "The stairway",
+       "A gatehouse"
+      ],
+      "maybe": [
+       "Landing guardrooms",
+       "A statue gallery"
+      ]
+     },
+     "foes": {
+      "here": [
+       "The Keep's holder's foes",
+       "Animated armour",
+       "Ghost"
+      ],
+      "maybe": []
+     },
+     "strangers": {
+      "here": [],
+      "maybe": [
+       "A dwarven expedition"
+      ]
+     },
+     "features": {
+      "here": [
+       "Gate",
+       "Lever"
+      ],
+      "maybe": [
+       "A drop beside the stair"
+      ]
+     }
+    }
    }
   ],
   "run": {
@@ -7199,7 +7412,52 @@
      "Alchemist's room",
      "Scholar's dig",
      "Statue gallery"
-    ]
+    ],
+    "contents": {
+     "areas": {
+      "here": [
+       "A library",
+       "An alchemist's room",
+       "A scholar's dig",
+       "A statue gallery"
+      ],
+      "maybe": [
+       "A sealed wing",
+       "A summoning circle"
+      ]
+     },
+     "foes": {
+      "here": [
+       "Floating eye",
+       "Mimic",
+       "Animated armour",
+       "Golem"
+      ],
+      "maybe": [
+       "Ghost",
+       "Cultist"
+      ]
+     },
+     "strangers": {
+      "here": [
+       "A scholar",
+       "A scholars' expedition",
+       "A kindly ghost",
+       "A golem",
+       "A bound spirit"
+      ],
+      "maybe": [
+       "A runaway apprentice"
+      ]
+     },
+     "features": {
+      "here": [
+       "Bookshelves",
+       "Secret doors"
+      ],
+      "maybe": []
+     }
+    }
    },
    {
     "name": "The cult's sanctum",
@@ -7218,7 +7476,53 @@
      "Summoning circle",
      "Torture chamber",
      "Prison cells"
-    ]
+    ],
+    "contents": {
+     "areas": {
+      "here": [
+       "A temple",
+       "A sacrifice room",
+       "A summoning circle",
+       "A torture chamber",
+       "Prison cells"
+      ],
+      "maybe": [
+       "An ossuary",
+       "A pool room"
+      ]
+     },
+     "foes": {
+      "here": [
+       "Cultist",
+       "Cultist archer",
+       "Cultist warrior",
+       "Cult priest",
+       "Skeleton",
+       "Zombie"
+      ],
+      "maybe": [
+       "Bone heap",
+       "Wraith"
+      ]
+     },
+     "strangers": {
+      "here": [
+       "A prisoner",
+       "Escaped prisoners",
+       "Holy warriors",
+       "A bound spirit"
+      ],
+      "maybe": []
+     },
+     "features": {
+      "here": [
+       "A defiled altar",
+       "Candles and braziers",
+       "Secret doors"
+      ],
+      "maybe": []
+     }
+    }
    }
   ],
   "smallerRegions": [
@@ -7243,7 +7547,50 @@
      1,
      10
     ],
-    "id": "bandits"
+    "id": "bandits",
+    "contents": {
+     "areas": {
+      "here": [
+       "A hideout",
+       "Storerooms",
+       "A smugglers' stash",
+       "A jail",
+       "A feast hall",
+       "An armoury"
+      ],
+      "maybe": [
+       "Beast pens"
+      ]
+     },
+     "foes": {
+      "here": [
+       "Bandit",
+       "Bandit archer",
+       "Bandit chief",
+       "Thief",
+       "Wolf"
+      ],
+      "maybe": []
+     },
+     "strangers": {
+      "here": [
+       "A prisoner",
+       "A chained beast",
+       "A smuggler"
+      ],
+      "maybe": []
+     },
+     "features": {
+      "here": [
+       "Tripwires",
+       "Barricades",
+       "Campfires"
+      ],
+      "maybe": [
+       "An alarm bell"
+      ]
+     }
+    }
    }
   ],
   "sizes": {
