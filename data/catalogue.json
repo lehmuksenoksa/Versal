@@ -2217,7 +2217,7 @@
    "answer": "Light holds them off; alone they're weak",
    "answerKind": "Light",
    "danger": 1,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "giant-rat",
@@ -2231,7 +2231,7 @@
    "themes": [],
    "comment": "",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "bat",
@@ -2255,7 +2255,7 @@
    "answer": "Startled by light, they shriek and wake others: pass in the dark",
    "answerKind": "Darkness",
    "danger": 1,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "spider",
@@ -2280,7 +2280,7 @@
    "answer": "Waits still by its web; light shows it",
    "answerKind": "Light",
    "danger": 2,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "giant-spider",
@@ -2301,7 +2301,7 @@
    "answer": "Fire drives it off",
    "answerKind": "Fire",
    "danger": 8,
-   "fromStep": 7
+   "depth": 7
   },
   {
    "id": "wolf",
@@ -2326,7 +2326,7 @@
    "answer": "Follows your scent: water breaks the trail",
    "answerKind": "Water",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "dire-wolf",
@@ -2340,7 +2340,7 @@
    "themes": [],
    "comment": "",
    "danger": 9,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "cave-bear",
@@ -2362,7 +2362,7 @@
    "answer": "Asleep: don't wake it",
    "answerKind": "Silence",
    "danger": 12,
-   "fromStep": 10
+   "depth": 10
   },
   {
    "id": "cave-lion",
@@ -2387,7 +2387,7 @@
    "answerKind": "Light",
    "was": "Cave cat",
    "danger": 12,
-   "fromStep": 10
+   "depth": 10
   },
   {
    "id": "giant-centipede",
@@ -2411,7 +2411,7 @@
    "answer": "Under rubble; light shows it",
    "answerKind": "Light",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "worm",
@@ -2433,7 +2433,7 @@
    "answerKind": "Silence",
    "was": "Deep worm",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "eel",
@@ -2456,7 +2456,7 @@
    "answer": "Strikes from deep water: keep out of it",
    "answerKind": "Water",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "cave-crab",
@@ -2479,7 +2479,7 @@
    "answer": "Waits in the shallows; slow on land, so go round",
    "answerKind": "Distance",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "leech",
@@ -2503,7 +2503,7 @@
    "answerKind": "Water",
    "was": "Leeches",
    "danger": 1,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "snake",
@@ -2517,7 +2517,7 @@
    "themes": [],
    "comment": "",
    "danger": 2,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "slime",
@@ -2541,7 +2541,7 @@
    "answer": "Drops from the ceiling; light shows it, fire burns it",
    "answerKind": "Light",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "ooze",
@@ -2555,7 +2555,7 @@
    "themes": [],
    "comment": "",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "floating-eye",
@@ -2579,7 +2579,7 @@
    "answerKind": "Cover",
    "was": "Watcher",
    "danger": 6,
-   "fromStep": 5
+   "depth": 5
   },
   {
    "id": "mimic",
@@ -2600,7 +2600,7 @@
    "answer": "A chest that isn't: search before you open, or throw something at it",
    "answerKind": "Searching",
    "danger": 6,
-   "fromStep": 5
+   "depth": 5
   },
   {
    "id": "golem",
@@ -2623,7 +2623,7 @@
    "answer": "Goes by sound: sneak past it in silence",
    "answerKind": "Silence",
    "danger": 18,
-   "fromStep": 12
+   "depth": 12
   },
   {
    "id": "bronze-golem",
@@ -2637,7 +2637,7 @@
    "themes": [],
    "comment": "",
    "danger": 25,
-   "fromStep": 14
+   "depth": 14
   },
   {
    "id": "iron-golem",
@@ -2651,7 +2651,7 @@
    "themes": [],
    "comment": "",
    "danger": 35,
-   "fromStep": 16
+   "depth": 16
   },
   {
    "id": "steel-golem",
@@ -2665,7 +2665,7 @@
    "themes": [],
    "comment": "",
    "danger": 50,
-   "fromStep": 18
+   "depth": 18
   },
   {
    "id": "animated-armour",
@@ -2688,7 +2688,7 @@
    "answer": "Stands in a row of empty suits and wakes when you pass close: go round",
    "answerKind": "Distance",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "bone-heap",
@@ -2711,7 +2711,7 @@
    "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
    "answerKind": "Distraction",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "skeleton",
@@ -2735,7 +2735,7 @@
    "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
    "answerKind": "Timing",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "skeleton-warrior",
@@ -2749,7 +2749,7 @@
    "themes": [],
    "comment": "",
    "danger": 7,
-   "fromStep": 6
+   "depth": 6
   },
   {
    "id": "skeleton-archer",
@@ -2763,7 +2763,7 @@
    "themes": [],
    "comment": "",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "zombie",
@@ -2787,7 +2787,7 @@
    "answer": "Slow but never stops: outpace it, shut doors behind you",
    "answerKind": "Distance",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "wight",
@@ -2810,7 +2810,7 @@
    "answer": "Sees in the dark; holy ground keeps it out",
    "answerKind": "Holy ground",
    "danger": 12,
-   "fromStep": 10
+   "depth": 10
   },
   {
    "id": "ghost",
@@ -2832,7 +2832,7 @@
    "answer": "Through walls; holy ground keeps it out",
    "answerKind": "Holy ground",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "wraith",
@@ -2855,7 +2855,7 @@
    "answer": "Darkness that moves; light hurts it",
    "answerKind": "Light",
    "danger": 22,
-   "fromStep": 13
+   "depth": 13
   },
   {
    "id": "lich",
@@ -2869,7 +2869,7 @@
    "themes": [],
    "comment": "The Dungeon Underneath's boss, leading the cult or the undead (your words): whichever holds it that run",
    "danger": 30,
-   "fromStep": 6
+   "depth": 6
   },
   {
    "id": "will-o-wisp",
@@ -2893,7 +2893,7 @@
    "answer": "Shines a small light that shows you to others: don't follow it",
    "answerKind": "Searching",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "ghost-bat",
@@ -2907,7 +2907,7 @@
    "themes": [],
    "comment": "",
    "danger": 5,
-   "fromStep": 4
+   "depth": 4
   },
   {
    "id": "goblin",
@@ -2931,7 +2931,7 @@
    "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
    "answerKind": "Distraction",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "goblin-warrior",
@@ -2953,7 +2953,7 @@
    "answer": "Fell it and its pack falters",
    "answerKind": "Fell the leader",
    "danger": 7,
-   "fromStep": 6
+   "depth": 6
   },
   {
    "id": "goblin-archer",
@@ -2975,7 +2975,7 @@
    "answer": "Shoots what it sees: get into cover, then close",
    "answerKind": "Cover",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "goblin-chieftain",
@@ -2989,7 +2989,7 @@
    "themes": [],
    "comment": "",
    "danger": 15,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "goblin-shaman",
@@ -3011,7 +3011,7 @@
    "answer": "Lights and puts out fires: take it unaware first",
    "answerKind": "Strike first",
    "danger": 8,
-   "fromStep": 7
+   "depth": 7
   },
   {
    "id": "goblin-king",
@@ -3032,7 +3032,7 @@
    "answer": "Waits with his guard: get past, or kill him",
    "answerKind": "Get past",
    "danger": 45,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "goblin-beasthound",
@@ -3046,7 +3046,7 @@
    "themes": [],
    "comment": "",
    "danger": 5,
-   "fromStep": 4
+   "depth": 4
   },
   {
    "id": "cultist",
@@ -3069,7 +3069,7 @@
    "answer": "Its lantern shows it coming: keep out of its light",
    "answerKind": "Light",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "cultist-warrior",
@@ -3083,7 +3083,7 @@
    "themes": [],
    "comment": "",
    "danger": 7,
-   "fromStep": 6
+   "depth": 6
   },
   {
    "id": "cultist-archer",
@@ -3097,7 +3097,7 @@
    "themes": [],
    "comment": "",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "cult-priest",
@@ -3119,7 +3119,7 @@
    "answer": "Raises the dead: kill it first, or keep its dead apart from it",
    "answerKind": "Strike first",
    "danger": 9,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "troll",
@@ -3143,7 +3143,7 @@
    "answer": "Heals as it goes; fire stops that",
    "answerKind": "Fire",
    "danger": 20,
-   "fromStep": 13
+   "depth": 13
   },
   {
    "id": "ogre",
@@ -3166,7 +3166,7 @@
    "answer": "Smells you: water or wind hides your scent; it's slow",
    "answerKind": "Water",
    "danger": 15,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "bandit",
@@ -3188,7 +3188,7 @@
    "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
    "answerKind": "Cover",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "bandit-archer",
@@ -3202,7 +3202,7 @@
    "themes": [],
    "comment": "",
    "danger": 4,
-   "fromStep": 2
+   "depth": 2
   },
   {
    "id": "bandit-chief",
@@ -3223,7 +3223,7 @@
    "answer": "Fell it and the outlaws falter",
    "answerKind": "Fell the leader",
    "danger": 15,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "thief",
@@ -3246,7 +3246,7 @@
    "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
    "answerKind": "Darkness",
    "danger": 3,
-   "fromStep": 1
+   "depth": 1
   },
   {
    "id": "dark-elf",
@@ -3270,7 +3270,7 @@
    "answer": "Sees in the dark and thinks: bright light blinds it",
    "answerKind": "Light",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "dark-elf-warrior",
@@ -3284,7 +3284,7 @@
    "themes": [],
    "comment": "",
    "danger": 14,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "dark-elf-archer",
@@ -3298,7 +3298,7 @@
    "themes": [],
    "comment": "",
    "danger": 11,
-   "fromStep": 9
+   "depth": 9
   },
   {
    "id": "dark-elf-prince",
@@ -3312,7 +3312,7 @@
    "themes": [],
    "comment": "Leads the dark elves; the Deep Dark's boss (your words)",
    "danger": 90,
-   "fromStep": 18
+   "depth": 18
   },
   {
    "id": "dark-elf-wizard",
@@ -3326,7 +3326,7 @@
    "themes": [],
    "comment": "",
    "danger": 18,
-   "fromStep": 12
+   "depth": 12
   },
   {
    "id": "earth-elemental",
@@ -3340,7 +3340,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 13
+   "depth": 13
   },
   {
    "id": "water-elemental",
@@ -3354,7 +3354,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 13
+   "depth": 13
   },
   {
    "id": "fire-elemental",
@@ -3368,7 +3368,7 @@
    "themes": [],
    "comment": "",
    "danger": 20,
-   "fromStep": 13
+   "depth": 13
   },
   {
    "id": "greater-earth-elemental",
@@ -3382,7 +3382,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 17
+   "depth": 17
   },
   {
    "id": "greater-water-elemental",
@@ -3396,7 +3396,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 17
+   "depth": 17
   },
   {
    "id": "greater-fire-elemental",
@@ -3410,7 +3410,7 @@
    "themes": [],
    "comment": "",
    "danger": 40,
-   "fromStep": 17
+   "depth": 17
   },
   {
    "id": "dragon",
@@ -3424,7 +3424,7 @@
    "themes": [],
    "comment": "The Dwarven Keep's boss (your words)",
    "danger": 150,
-   "fromStep": 20
+   "depth": 20
   },
   {
    "id": "drowned-dead",
@@ -3644,7 +3644,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 10,
-   "fromStep": 8
+   "depth": 8
   },
   {
    "id": "lurker",
@@ -3662,7 +3662,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 14,
-   "fromStep": 11
+   "depth": 11
   },
   {
    "id": "abomination",
@@ -3680,7 +3680,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 30,
-   "fromStep": 15
+   "depth": 15
   },
   {
    "id": "eldritch-horror",
@@ -3698,7 +3698,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 60,
-   "fromStep": 13
+   "depth": 13
   }
  ],
  "tags": [
@@ -5728,7 +5728,8 @@
      }
     ]
    }
-  ]
+  ],
+  "depthNote": "A monster's 'depth' (yours, after round 27): the level it starts to appear at, 1 to 20. Not a limit: it can appear deeper, scaled by its Level."
  },
  "world": {
   "overDungeon": {

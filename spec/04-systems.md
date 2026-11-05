@@ -93,3 +93,27 @@ come with the content.
   - **Light:** you see the traps, fight well, hold off vermin, read, and gain ground (and
     experience) faster; it costs oil and draws eyes.
   - **Dark:** you go unseen, but blind to traps, fighting badly, while dread rises.
+
+## Depth and Level (yours, after round 27)
+
+In your words: "Items, strangers and monsters, and environmental challenges should all have a
+property that tells at what depth do they start to appear. To guide generation: the deeper we go,
+the more dangerous it gets, but the rewards become bigger as well."
+
+- **Depth:** one number, 1 to 20, on every monster, stranger, item and environmental challenge: the
+  level it starts to appear at. Not a limit: rats have Depth 1 and still appear deeper.
+- **The end game's three** (the dark elf prince, the dragon, the steel golem): a Depth of 18 to 20,
+  one number each, not yet chosen. They almost always appear only in the end game, or very, very
+  rarely a bit higher up.
+- **A monster's Level** scales with how deep the player is or with the player's level (not yet
+  chosen). A rat met at depth 10 is not as weak as one at depth 1, and not as tough as a monster of
+  Depth 10.
+- **A monster's base stats follow its Depth; its final stats are changed by its Level.**
+- **Items have Depth too.** Together these set how the game's power scales.
+
+In the catalogue, the monsters' `fromStep` (the danger ladder's step) is now `depth`: the same
+numbers.
+
+Open, for a round: what a monster's Level follows; how far Level closes the gap; how common a thing
+stays below its Depth; whether item tags have a Depth of their own; what Depth means for strangers
+and challenges; and the end game's three exact numbers.

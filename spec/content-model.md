@@ -73,7 +73,8 @@ What we have is marked ✓. The rest is to be decided, in about this order.
 | Tags | Its type's tags, and the extras it may have (round 10) | 2 | — |
 | **Role** | Guard, patroller, ambusher, swarm, tracker, alarm-raiser, hunter, brute, caster, leader, boss… | 2 | round 16 |
 | **Answer** | What gets you past it | 2 | round 16 |
-| Depth band | How deep it's found (shallow, middle, deep) | 1 | — |
+| **Depth** | The level (1 to 20) it starts to appear at; not a limit (yours, after round 27) | 1 | ✓ (from the danger ladder) |
+| **Level** | Scales its stats where it's met (yours, after round 27) | 1 | — |
 | Group | Alone, a pair, a pack (how many) | 1 | — |
 | Rarity | Common, uncommon, rare | 1 | — |
 | Regions, themes | Where it belongs | 3 | ✓ (regions proposed) |
@@ -89,7 +90,7 @@ What we have is marked ✓. The rest is to be decided, in about this order.
 | Needs | What it requires (water, a drop, a wall to stand against) | 1 | — |
 | Occupants | Who's in it (a theme, a holder, nobody) | 3 | partly (themes) |
 | Rarity | Common, uncommon, rare (as your goblin halls: rare, camps: common) | 1 | partly |
-| Depth band | | 1 | — |
+| Depth | The level it starts to appear at | 1 | — |
 | Regions, themes | | 3 | ✓ |
 | Tier, drawing | New furniture or ground | 4 | — |
 
@@ -109,7 +110,7 @@ What we have is marked ✓. The rest is to be decided, in about this order.
 
 ### Strangers
 
-Name, why, alone or a group, regions, themes (✓); **what they offer** (trade, a tip, help, to
+Name, why, alone or a group, regions, themes (✓); **Depth**; **what they offer** (trade, a tip, help, to
 follow you, a choice); rarity; tier.
 
 ## Left for building
