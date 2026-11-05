@@ -1,5 +1,19 @@
 # Round 32: each region's features and containers, shallow
 
+**Answered.** My picks taken, with these changes:
+- **Everywhere:** sacks and baskets in.
+- **Goblin Territory:** high ground and falling rocks out; chasms, moss and soft earth, and weapon
+  and armour racks in.
+- **The Dwarven Keep:** high ground, gas vents and the bell out; the mine cart and falling rocks
+  maybe; the altar (the ancestors' shrine) and bookshelves (the map room) in.
+- **The Drowned City:** gas vents and nests and hoards out; ledges and unstable floors maybe; the
+  altar and urns in.
+- **The Deep Dark:** high ground out; pits, falling rocks, rushing water, and nests and hoards
+  maybe; weapon and armour racks and cages and pens in.
+- Nothing added under "anything missing".
+
+The lists are in the catalogue: `featuresEverywhere`, and each region's `features`.
+
 The next layer across the regions (round 27's plan): environmental features and containers
 (round 22), where they belong. The Dungeon Underneath had its own in round 25. First the ones
 found everywhere, then each region's own.

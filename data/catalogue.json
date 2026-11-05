@@ -164,6 +164,26 @@
     "maybe": [
      "A treasure hunter"
     ]
+   },
+   "features": {
+    "here": [
+     "Campfires (The camps' fires: put out, and goblins come to relight them)",
+     "Ledge",
+     "Pit (The pits)",
+     "Chasm",
+     "Rope bridge (Goblin-made, over drops; cut it behind you)",
+     "Wooden boards and bridges (Crude walkways, loud)",
+     "Bones (Gnawed, round the cookpots; loud)",
+     "Moss and soft earth",
+     "Net trap (Goblin nets)",
+     "A gong (At the guard posts: rung, it wakes the warrens (the bell))",
+     "Cages and pens (The beast pens: let them loose on your foes)",
+     "Nests and hoards (Goblin stashes, the king's hoard)",
+     "Weapon and armour racks"
+    ],
+    "maybe": [
+     "Webs (Where spiders nest)"
+    ]
    }
   },
   {
@@ -235,7 +255,32 @@
     "Orcs (overran it)",
     "Both, at war"
    ],
-   "holderNote": "Drawn each run (round 30). Golems, elementals and the dragon whoever holds it."
+   "holderNote": "Drawn each run (round 30). Golems, elementals and the dragon whoever holds it.",
+   "features": {
+    "here": [
+     "Forge and lava glow (Light that can't be put out)",
+     "Lava (In the forge's channels)",
+     "Gate (The great gates, portcullises)",
+     "Lever (Opens gates and hidden ways)",
+     "Columns (The pillared halls)",
+     "Chasm (Deep shafts)",
+     "Steam vents (The forge and the engine works)",
+     "Weapon and armour racks",
+     "Coffins and sarcophagi (The ancestors' crypts)",
+     "Nests and hoards (The dragon's hoard)",
+     "Places to rest (The baths)",
+     "Altar (The ancestors' shrine)",
+     "Bookshelves (The map room)"
+    ],
+    "maybe": [
+     "Ledge",
+     "Unstable floor (In the fallen rooms)",
+     "Mine cart (Rails from the mines: ride it or push it into things)",
+     "Rushing water (The water wheels)",
+     "Falling rocks (Dwarven traps by the vaults)",
+     "Urns"
+    ]
+   }
   },
   {
    "id": "deep-dark",
@@ -304,6 +349,34 @@
      "An escaped slave",
      "A runaway apprentice"
     ]
+   },
+   "features": {
+    "here": [
+     "Glowing fungus (Dim light that can't be put out, only cut away)",
+     "Webs (The spiders feel you through them)",
+     "Chasm (The rift)",
+     "Ledge",
+     "Rope bridge (The dark elves')",
+     "Moss and soft earth (Quiet to walk on)",
+     "Bones (The bone field)",
+     "Still water",
+     "Steam vents (The sulphur vents)",
+     "Gas vent (Spores and sulphur)",
+     "Weapon and armour racks (The dark elf outpost)",
+     "Cages and pens (The dark elves' captives)",
+     "Places to rest (The hot spring)"
+    ],
+    "maybe": [
+     "Pit",
+     "Falling rocks",
+     "Unstable floor",
+     "Deep water",
+     "Rushing water (The underground river)",
+     "Lava",
+     "Net trap (The dark elves')",
+     "Nests and hoards (Beasts' lairs)",
+     "Altar (A dark elf shrine)"
+    ]
    }
   },
   {
@@ -361,6 +434,28 @@
     "maybe": [
      "A pilgrim",
      "A priest"
+    ]
+   },
+   "features": {
+    "here": [
+     "Deep water (Swim: silent, but the lamp goes out)",
+     "A current (Carries you along, one way)",
+     "Still water (Where leeches and worse wait)",
+     "Rushing water (Where the river runs through)",
+     "High ground (Rooftops and upper floors)",
+     "Wooden boards and bridges (Piers, planks between rooftops)",
+     "Altar (The drowned temple)",
+     "Urns"
+    ],
+    "maybe": [
+     "Ledge",
+     "Rope bridge",
+     "Unstable floor (Rotten floors)",
+     "Pit (Sinkholes)",
+     "Columns (The temple)",
+     "Places to rest (The baths)",
+     "Bookshelves (A drowned library)",
+     "A bell (The drowned bell: rung, it wakes what sleeps below)"
     ]
    }
   },
@@ -8164,5 +8259,23 @@
    "Chambers and tunnels",
    "Pools and drops"
   ]
- }
+ },
+ "featuresEverywhere": [
+  "Door, locked door (Monsters open doors too)",
+  "Secret door (Hinted by rubble or marks)",
+  "Barricade",
+  "Narrow way (One at a time: a swarm can be fought there)",
+  "Collapsed passage (Dug through with a pickaxe)",
+  "Braziers, candles, campfires (Each region its own kind)",
+  "Rubble floor (Loud)",
+  "Shallow water (Slow and loud)",
+  "Pressure plate (Darts or spikes)",
+  "Pit trap",
+  "Fire and oil (A spill to set alight)",
+  "Chest",
+  "Crates and barrels",
+  "Sacks and baskets",
+  "Bodies (What those before you carried)",
+  "Hidden caches"
+ ]
 }
