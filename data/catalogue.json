@@ -184,6 +184,46 @@
     "maybe": [
      "Webs (Where spiders nest)"
     ]
+   },
+   "adjacency": {
+    "nextTo": [
+     [
+      "The warrens",
+      "the camps"
+     ],
+     [
+      "The beast pens",
+      "the fighting pit"
+     ],
+     [
+      "The king's halls",
+      "the throne room"
+     ]
+    ],
+    "near": [
+     [
+      "The camps",
+      "the guard posts"
+     ],
+     [
+      "The cookpots",
+      "the camps"
+     ],
+     [
+      "The cookpots",
+      "the crude prison"
+     ],
+     [
+      "The crude prison",
+      "the fighting pit"
+     ]
+    ],
+    "apart": [
+     [
+      "The throne room",
+      "the warrens"
+     ]
+    ]
    }
   },
   {
@@ -279,6 +319,46 @@
      "Rushing water (The water wheels)",
      "Falling rocks (Dwarven traps by the vaults)",
      "Urns"
+    ]
+   },
+   "adjacency": {
+    "nextTo": [
+     [
+      "The gates",
+      "the halls"
+     ],
+     [
+      "The forge",
+      "the engine works"
+     ],
+     [
+      "The lords' rooms",
+      "the vaults"
+     ]
+    ],
+    "near": [
+     [
+      "The halls",
+      "the living quarters"
+     ],
+     [
+      "The vaults",
+      "the dragon's hoard"
+     ]
+    ],
+    "apart": [
+     [
+      "The forge",
+      "the living quarters"
+     ],
+     [
+      "The ancestors' crypts",
+      "the living quarters"
+     ],
+     [
+      "The gates",
+      "the dragon's hoard"
+     ]
     ]
    }
   },
@@ -377,6 +457,46 @@
      "Nests and hoards (Beasts' lairs)",
      "Altar (A dark elf shrine)"
     ]
+   },
+   "adjacency": {
+    "nextTo": [
+     [
+      "The glowing deep",
+      "the mushroom grove"
+     ]
+    ],
+    "near": [
+     [
+      "The underwood",
+      "the mushroom grove"
+     ],
+     [
+      "The sulphur vents",
+      "the crystal grotto"
+     ],
+     [
+      "The webs",
+      "the bone field"
+     ],
+     [
+      "A dark elf outpost",
+      "the rift"
+     ],
+     [
+      "A dark elf outpost",
+      "the prince's court"
+     ]
+    ],
+    "apart": [
+     [
+      "The webs",
+      "a dark elf outpost"
+     ],
+     [
+      "The prince's court",
+      "the webs"
+     ]
+    ]
    }
   },
   {
@@ -456,6 +576,43 @@
      "Places to rest (The baths)",
      "Bookshelves (A drowned library)",
      "A bell (The drowned bell: rung, it wakes what sleeps below)"
+    ]
+   },
+   "adjacency": {
+    "nextTo": [
+     [
+      "The flooded streets",
+      "the sunken plaza"
+     ],
+     [
+      "The temple",
+      "the sunken plaza"
+     ],
+     [
+      "The harbour",
+      "the river crossing"
+     ]
+    ],
+    "near": [
+     [
+      "The baths",
+      "cisterns",
+      "the temple"
+     ],
+     [
+      "The high houses",
+      "the flooded streets"
+     ],
+     [
+      "The horror's pool",
+      "the temple"
+     ]
+    ],
+    "apart": [
+     [
+      "The high houses",
+      "the harbour"
+     ]
     ]
    }
   },
@@ -8277,5 +8434,27 @@
   "Sacks and baskets",
   "Bodies (What those before you carried)",
   "Hidden caches"
- ]
+ ],
+ "areaRules": {
+  "The boss's lair at the far end": {
+   "line": "On the region's last level, far from where you came in",
+   "state": "keep"
+  },
+  "Guard posts at the ways in": {
+   "line": "And at the ways between areas (round 26's guards spread out)",
+   "state": "maybe"
+  },
+  "Treasure beside its keeper": {
+   "line": "The vaults by the lords' rooms, the hoard by its owner",
+   "state": "keep"
+  },
+  "A prison near its jailers": {
+   "line": "And away from the way out",
+   "state": "keep"
+  },
+  "Water lies low": {
+   "line": "Flooded areas on lower ground or deeper levels than dry ones",
+   "state": "maybe"
+  }
+ }
 }

@@ -1,5 +1,9 @@
 # Round 33: which areas go together, every region
 
+**Answered.** All my picks, except one rule: **guard posts at the ways in** is maybe, not a rule for
+every region. "Water lies low" stays maybe. The rules and each region's pairs are in the
+catalogue (`areaRules`, and each region's `adjacency`).
+
 The last-but-one layer across the regions (round 27's plan). Round 26 did this for the Dungeon
 Underneath: **next to** is a door between them, **near** is on the same level, **apart** is at far ends
 or on different levels. Between areas lie loose rooms (round 27).
