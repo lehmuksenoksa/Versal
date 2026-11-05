@@ -98,7 +98,14 @@
       "Tripwires"
      ]
     }
-   }
+   },
+   "looseRooms": [
+    "Corridors",
+    "Storerooms",
+    "Well rooms",
+    "Galleries",
+    "Empty cells"
+   ]
   },
   {
    "id": "goblin-territory",
@@ -107,7 +114,23 @@
    "line": "The goblin king's halls, the warrens and the pits",
    "boss": "Goblin king",
    "depth": "middle",
-   "depthProposed": true
+   "depthProposed": true,
+   "areas": [
+    "Goblin camps",
+    "Goblin guard posts",
+    "The warrens",
+    "The beast pens",
+    "The crude prison",
+    "The fighting pit",
+    "The cookpots",
+    "The king's halls (rare)",
+    "The throne room (the boss's lair)"
+   ],
+   "looseRooms": [
+    "Rough caves, mostly natural",
+    "Narrow crawls",
+    "Storeholes"
+   ]
   },
   {
    "id": "dwarven-keep",
@@ -116,7 +139,25 @@
    "line": "A fallen dwarf city and its forge",
    "boss": "Dragon",
    "depth": "deep",
-   "depthProposed": true
+   "depthProposed": true,
+   "areas": [
+    "The gates",
+    "The halls",
+    "The forge",
+    "The living quarters",
+    "The vaults",
+    "The ancestors' crypts",
+    "The lords' rooms",
+    "The engine works",
+    "The dragon's hoard (the boss's lair)"
+   ],
+   "looseRooms": [
+    "Carved corridors and stairs",
+    "Storerooms",
+    "Guardrooms",
+    "Fallen rooms",
+    "Cold workshops"
+   ]
   },
   {
    "id": "deep-dark",
@@ -125,7 +166,26 @@
    "line": "Natural caves and what lives in them: glowing fungus, webs, vents, the rift, bones, roots",
    "boss": "Dark elf prince",
    "depth": "deep",
-   "depthProposed": true
+   "depthProposed": true,
+   "areas": [
+    "The glowing deep",
+    "A mushroom grove",
+    "A crystal grotto",
+    "The webs",
+    "The sulphur vents",
+    "The rift",
+    "The bone field",
+    "The underwood",
+    "A dark elf outpost",
+    "The prince's court (the boss's lair)"
+   ],
+   "looseRooms": [
+    "Cave chambers",
+    "Tunnels and crawls",
+    "Still pools",
+    "Drops and shelves",
+    "Old dug passages"
+   ]
   },
   {
    "id": "drowned-city",
@@ -134,7 +194,22 @@
    "line": "Ruins half under black water",
    "boss": "Eldritch horror",
    "depth": "middle",
-   "depthProposed": true
+   "depthProposed": true,
+   "areas": [
+    "Flooded streets",
+    "A sunken plaza",
+    "The temple",
+    "The baths and cisterns",
+    "The high houses",
+    "A river crossing",
+    "The harbour",
+    "The horror's pool (the boss's lair)"
+   ],
+   "looseRooms": [
+    "Half-flooded houses",
+    "Upper floors and rooftops",
+    "Collapsed rooms"
+   ]
   },
   {
    "id": "mines",
@@ -7488,5 +7563,19 @@
    "state": "keep",
    "note": ""
   }
- ]
+ ],
+ "overDungeonLooseRooms": {
+  "built (near the top)": [
+   "Corridors and plain rooms",
+   "Storerooms, guardrooms, cells"
+  ],
+  "falling in (lower down)": [
+   "Rooms half full of rubble",
+   "Rooms broken into caves"
+  ],
+  "caves (deeper)": [
+   "Chambers and tunnels",
+   "Pools and drops"
+  ]
+ }
 }

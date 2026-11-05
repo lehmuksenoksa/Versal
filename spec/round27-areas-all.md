@@ -1,5 +1,14 @@
 # Round 27: every region's areas and loose rooms, shallow
 
+**Answered.** My picks taken, with these changes:
+- **Out:** the goblins' nursery; the Dungeon Underneath's stair tower.
+- **From maybe to here:** the Keep's lords' rooms, engine works and cold workshops; the Drowned
+  City's harbour; the Deep Dark's old dug passages; the Dungeon Underneath's empty cells.
+- **Left unmarked** (so not in, for now): the goblins' broken-into rooms and cold camps; the
+  Drowned City's well rooms and statue galleries.
+- **Goblin Territory's loose rooms:** "Mostly natural caves, I think."
+- Nothing added under "anything missing".
+
 Your choice: all five regions at one depth before going deeper into any. This round asks only
 two things of each region: its **areas** (groups of rooms that make it feel made by someone) and
 its **loose rooms** (what lies between the areas: "not all rooms need to be in designated areas").
