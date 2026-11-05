@@ -116,6 +116,7 @@ Each part's state is one of:
 | 34 | Who holds the Keep, and what changes ([`round34-keep-holders.md`](round34-keep-holders.md)) | answered |
 | 35 | The smaller themed areas, shallow: transitions, the bandits' hold, the archive, the sanctum ([`round35-smaller-areas.md`](round35-smaller-areas.md)) | answered |
 | 36 | What strangers offer, shallow ([`round36-strangers-offer.md`](round36-strangers-offer.md)) | answered |
+| 37 | Which stranger offers what ([`round37-who-offers-what.md`](round37-who-offers-what.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
