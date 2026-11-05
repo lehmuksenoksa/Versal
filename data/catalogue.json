@@ -315,7 +315,6 @@
     "maybe": [
      "Ledge",
      "Unstable floor (In the fallen rooms)",
-     "Mine cart (Rails from the mines: ride it or push it into things)",
      "Rushing water (The water wheels)",
      "Falling rocks (Dwarven traps by the vaults)",
      "Urns"
@@ -8139,9 +8138,10 @@
    "name": "Mine cart",
    "group": "Things to use",
    "line": "Ride it (fast, loud) or push it into things",
-   "state": "keep",
+   "state": "drop",
    "note": "",
-   "depth": 5
+   "depth": 5,
+   "comment": "Dropped after round 36 (in chat)"
   },
   {
    "id": "feat-62",
@@ -8863,5 +8863,36 @@
    "line": "Flooded areas on lower ground or deeper levels than dry ones",
    "state": "maybe"
   }
+ },
+ "strangerRules": {
+  "offers": {
+   "here": [
+    "Trade",
+    "Lamp oil",
+    "A map",
+    "Healing or a cure",
+    "A safe rest",
+    "Identify",
+    "Follow you"
+   ],
+   "maybe": [
+    "A tip",
+    "The story",
+    "A bargain",
+    "Teach",
+    "Mend or improve gear",
+    "A distraction",
+    "Nothing, at first"
+   ],
+   "out": [
+    "A task",
+    "A rescue"
+   ]
+  },
+  "followers": 1,
+  "wronged": "They turn on you: fight or flee, and won't deal with you again",
+  "price": "Coins and finds only",
+  "captives": "Freeing one is how you reach its offer",
+  "metAgain": "Some are met again deeper: the peddler, a rival party, a follower you sent off"
  }
 }

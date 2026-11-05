@@ -1,5 +1,19 @@
 # Round 36: what strangers offer, shallow
 
+**Answered.**
+- **The kinds of offer.** Here: trade, lamp oil, a map, healing or a cure, a safe rest, identify,
+  follow you. Maybe: a tip, the story, a bargain, teach, mend or improve gear, a distraction,
+  nothing at first. Out: a task, a rescue.
+- **How many can follow you:** one.
+- **When you wrong a stranger:** they turn on you.
+- **What they want in return:** coins and finds only (settled in chat: "a favour" was a task, and
+  tasks are out). No task tracking.
+- **Captives** (a prisoner, an escaped slave, a chained beast): freeing one is how you reach its
+  offer (it might follow you, give a map, share oil). No reward system of its own (in chat).
+- **Where strangers go:** some are met again deeper: the peddler, a rival party, a follower you
+  sent off (in chat).
+- **The mine cart** (round 35's loose end): dropped (in chat).
+
 The last empty field for strangers (the content model: "what they offer: trade, a tip, help, to
 follow you, a choice"). Shallow first: the kinds of offer, and a few rules for all strangers.
 Which stranger offers what comes next, as a grid, once the kinds are settled. Strangers have a
