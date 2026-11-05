@@ -1,5 +1,17 @@
 # Round 37: which stranger offers what
 
+**Answered.** "Remove the ones I marked change." Nine strangers removed from the game: a treasure
+hunter, a kindly ghost, a bard, a talking raven, a runaway apprentice, a madman, a bound spirit, a
+golem, the last dwarf. The other 26 keep the offers below.
+
+That settles round 36's maybe kinds, as said with the round (an unticked row puts its kind in):
+- **In:** a tip, the story, teach, mend or improve gear.
+- **Out:** a bargain, a distraction, nothing at first (only removed strangers used them).
+
+The kinds now: trade, lamp oil, a map, healing or a cure, a safe rest, identify, follow you, a tip,
+the story, teach, mend or improve gear. The offers are on each stranger in the catalogue
+(`offers`); the removed ones are gone from every region's and place's lists.
+
 From round 36's kinds: in, trade, lamp oil, a map, healing or a cure, a safe rest, identify, follow
 you; maybe, a tip, the story, a bargain, teach, mend or improve gear, a distraction, nothing at first.
 One or two each. Captives give what they offer once freed. One follower at a time. Paid in coins

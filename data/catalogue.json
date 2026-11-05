@@ -161,9 +161,7 @@
      "An escaped slave",
      "A chained beast"
     ],
-    "maybe": [
-     "A treasure hunter"
-    ]
+    "maybe": []
    },
    "features": {
     "here": [
@@ -281,11 +279,8 @@
     "here": [
      "A dwarven expedition",
      "An undead dwarf",
-     "A golem",
-     "A kindly ghost",
      "A scholar",
      "A scholars' expedition",
-     "A treasure hunter",
      "Tomb wardens"
     ],
     "maybe": []
@@ -376,7 +371,6 @@
       "The dark: no fires but the forge's"
      ],
      "strangers": [
-      "A kindly ghost",
       "Tomb wardens",
       "A scholar, a scholars' expedition"
      ]
@@ -413,9 +407,7 @@
      ],
      "strangers": [
       "A dwarven expedition",
-      "An undead dwarf",
-      "A golem",
-      "A treasure hunter"
+      "An undead dwarf"
      ]
     },
     "The dragon": "At war with all: it eats whoever comes near, so holders avoid that side of the Keep"
@@ -481,12 +473,10 @@
     "here": [
      "A hermit",
      "Monster hunters",
-     "Deep-folk travellers",
-     "A bound spirit"
+     "Deep-folk travellers"
     ],
     "maybe": [
-     "An escaped slave",
-     "A runaway apprentice"
+     "An escaped slave"
     ]
    },
    "features": {
@@ -606,9 +596,7 @@
     "here": [
      "A scholar",
      "A scholars' expedition",
-     "A treasure hunter",
-     "A smuggler",
-     "A kindly ghost"
+     "A smuggler"
     ],
     "maybe": [
      "A pilgrim",
@@ -2071,7 +2059,11 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "Lamp oil",
+    "A tip"
+   ]
   },
   {
    "id": "a-lone-survivor",
@@ -2084,7 +2076,11 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 3
+   "depth": 3,
+   "offers": [
+    "Follow you",
+    "A tip"
+   ]
   },
   {
    "id": "a-prisoner",
@@ -2105,7 +2101,11 @@
     "cult",
     "goblins"
    ],
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "Follow you",
+    "A map"
+   ]
   },
   {
    "id": "an-escaped-slave",
@@ -2124,7 +2124,11 @@
    "themes": [
     "goblins"
    ],
-   "depth": 4
+   "depth": 4,
+   "offers": [
+    "A map",
+    "Follow you"
+   ]
   },
   {
    "id": "a-lost-miner",
@@ -2142,7 +2146,10 @@
    "themes": [
     "delvers"
    ],
-   "depth": 3
+   "depth": 3,
+   "offers": [
+    "A map"
+   ]
   },
   {
    "id": "a-hermit",
@@ -2160,7 +2167,11 @@
    "themes": [
     "deep"
    ],
-   "depth": 8
+   "depth": 8,
+   "offers": [
+    "A safe rest",
+    "Healing or a cure"
+   ]
   },
   {
    "id": "an-exile",
@@ -2192,7 +2203,11 @@
    "themes": [
     "old-faith"
    ],
-   "depth": 2
+   "depth": 2,
+   "offers": [
+    "Lamp oil",
+    "A safe rest"
+   ]
   },
   {
    "id": "a-priest",
@@ -2210,7 +2225,11 @@
    "themes": [
     "old-faith"
    ],
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "Healing or a cure",
+    "A safe rest"
+   ]
   },
   {
    "id": "a-scholar",
@@ -2226,7 +2245,11 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 5
+   "depth": 5,
+   "offers": [
+    "Identify",
+    "Teach"
+   ]
   },
   {
    "id": "a-mapmaker",
@@ -2239,7 +2262,11 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 3
+   "depth": 3,
+   "offers": [
+    "A map",
+    "Trade"
+   ]
   },
   {
    "id": "a-peddler",
@@ -2252,21 +2279,24 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "Trade"
+   ]
   },
   {
    "id": "a-treasure-hunter",
    "name": "A treasure hunter",
    "why": "After the tombs and vaults",
    "company": "alone, or a crew",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "bones",
     "drowned",
     "dungeon",
     "hold"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 6,
    "depth": 3
   },
@@ -2287,7 +2317,10 @@
     "drowned",
     "outlaws"
    ],
-   "depth": 2
+   "depth": 2,
+   "offers": [
+    "Trade"
+   ]
   },
   {
    "id": "a-trapper",
@@ -2346,20 +2379,23 @@
    ],
    "comment": "",
    "round": 6,
-   "depth": 2
+   "depth": 2,
+   "offers": [
+    "Follow you"
+   ]
   },
   {
    "id": "the-last-dwarf",
    "name": "The last dwarf",
    "why": "Of the fallen hold",
    "company": "alone",
-   "state": "maybe",
+   "state": "drop",
    "fits": [
     "forge",
     "hold",
     "mines"
    ],
-   "comment": "A friendly undead dwarf could be a nice twist.",
+   "comment": "Removed in round 37",
    "round": 6,
    "themes": [
     "dwarves"
@@ -2371,14 +2407,14 @@
    "name": "A kindly ghost",
    "why": "One of the dead who isn't hostile",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "archive",
     "drowned",
     "dungeon",
     "hold"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 6,
    "themes": [
     "the-dead"
@@ -2409,7 +2445,11 @@
    ],
    "comment": "",
    "round": 7,
-   "depth": 2
+   "depth": 2,
+   "offers": [
+    "Trade",
+    "Lamp oil"
+   ]
   },
   {
    "id": "a-dwarven-expedition",
@@ -2427,7 +2467,11 @@
    "themes": [
     "dwarves"
    ],
-   "depth": 10
+   "depth": 10,
+   "offers": [
+    "Mend or improve gear",
+    "A safe rest"
+   ]
   },
   {
    "id": "a-rescue-party",
@@ -2454,7 +2498,11 @@
    ],
    "comment": "",
    "round": 7,
-   "depth": 8
+   "depth": 8,
+   "offers": [
+    "Identify",
+    "Trade"
+   ]
   },
   {
    "id": "a-miners-crew",
@@ -2471,7 +2519,11 @@
    "themes": [
     "delvers"
    ],
-   "depth": 5
+   "depth": 5,
+   "offers": [
+    "Lamp oil",
+    "A map"
+   ]
   },
   {
    "id": "monster-hunters",
@@ -2490,7 +2542,11 @@
    "themes": [
     "beasts"
    ],
-   "depth": 10
+   "depth": 10,
+   "offers": [
+    "A tip",
+    "Trade"
+   ]
   },
   {
    "id": "holy-warriors",
@@ -2509,7 +2565,11 @@
     "the-dead",
     "old-faith"
    ],
-   "depth": 3
+   "depth": 3,
+   "offers": [
+    "Healing or a cure",
+    "A safe rest"
+   ]
   },
   {
    "id": "ratcatchers",
@@ -2527,7 +2587,11 @@
    "themes": [
     "pests"
    ],
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "A safe rest",
+    "Trade"
+   ]
   },
   {
    "id": "tomb-wardens",
@@ -2542,7 +2606,11 @@
    ],
    "comment": "",
    "round": 7,
-   "depth": 6
+   "depth": 6,
+   "offers": [
+    "A safe rest",
+    "The story"
+   ]
   },
   {
    "id": "escaped-prisoners",
@@ -2558,7 +2626,11 @@
    ],
    "comment": "",
    "round": 7,
-   "depth": 4
+   "depth": 4,
+   "offers": [
+    "A map",
+    "Follow you"
+   ]
   },
   {
    "id": "deep-folk-travellers",
@@ -2577,7 +2649,11 @@
    "themes": [
     "deep"
    ],
-   "depth": 13
+   "depth": 13,
+   "offers": [
+    "Trade",
+    "A map"
+   ]
   },
   {
    "id": "a-surveying-party",
@@ -2622,7 +2698,11 @@
    "themes": [
     "dwarves"
    ],
-   "depth": 10
+   "depth": 10,
+   "offers": [
+    "The story",
+    "Mend or improve gear"
+   ]
   },
   {
    "id": "a-wounded-knight",
@@ -2641,12 +2721,12 @@
    "name": "A golem",
    "why": "Still keeping its last order, and not against you",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "archive",
     "hold"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "themes": [
     "dwarves"
@@ -2658,13 +2738,13 @@
    "name": "A bound spirit",
    "why": "Trapped here, asking to be freed",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "archive",
     "bones",
     "sanctum"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "depth": 8
   },
@@ -2673,11 +2753,11 @@
    "name": "A talking raven",
    "why": "Someone's familiar, outliving its master",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "anywhere"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "depth": 4
   },
@@ -2692,7 +2772,10 @@
    ],
    "comment": "",
    "round": 7,
-   "depth": 1
+   "depth": 1,
+   "offers": [
+    "Follow you"
+   ]
   },
   {
    "id": "a-chained-beast",
@@ -2710,18 +2793,21 @@
    "themes": [
     "goblins"
    ],
-   "depth": 5
+   "depth": 5,
+   "offers": [
+    "Follow you"
+   ]
   },
   {
    "id": "a-madman",
    "name": "A madman",
    "why": "Been down too long; useful truths among the ravings",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "anywhere"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "depth": 6
   },
@@ -2743,12 +2829,12 @@
    "name": "A runaway apprentice",
    "why": "Fled a wizard's service with a stolen book",
    "company": "alone",
-   "state": "unmarked",
+   "state": "drop",
    "fits": [
     "archive",
     "caverns"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "depth": 9
   },
@@ -2757,11 +2843,11 @@
    "name": "A bard",
    "why": "Come down for a song worth singing",
    "company": "alone",
-   "state": "keep",
+   "state": "drop",
    "fits": [
     "anywhere"
    ],
-   "comment": "",
+   "comment": "Removed in round 37",
    "round": 7,
    "depth": 3
   }
@@ -7440,14 +7526,9 @@
      "strangers": {
       "here": [
        "A scholar",
-       "A scholars' expedition",
-       "A kindly ghost",
-       "A golem",
-       "A bound spirit"
+       "A scholars' expedition"
       ],
-      "maybe": [
-       "A runaway apprentice"
-      ]
+      "maybe": []
      },
      "features": {
       "here": [
@@ -7508,8 +7589,7 @@
       "here": [
        "A prisoner",
        "Escaped prisoners",
-       "Holy warriors",
-       "A bound spirit"
+       "Holy warriors"
       ],
       "maybe": []
      },
@@ -8873,20 +8953,19 @@
     "Healing or a cure",
     "A safe rest",
     "Identify",
-    "Follow you"
-   ],
-   "maybe": [
+    "Follow you",
     "A tip",
     "The story",
-    "A bargain",
     "Teach",
-    "Mend or improve gear",
-    "A distraction",
-    "Nothing, at first"
+    "Mend or improve gear"
    ],
+   "maybe": [],
    "out": [
     "A task",
-    "A rescue"
+    "A rescue",
+    "A bargain",
+    "A distraction",
+    "Nothing, at first"
    ]
   },
   "followers": 1,
