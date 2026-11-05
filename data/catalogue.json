@@ -142,10 +142,13 @@
      "Wolf",
      "Dire wolf",
      "Ogre",
-     "Rat"
+     "Rat",
+     "Cave spider",
+     "Spitting spider"
     ],
     "maybe": [
-     "Spider"
+     "Spider",
+     "Spider queen"
     ]
    },
    "comments29": {
@@ -200,13 +203,15 @@
      "Greater fire elemental",
      "Earth elemental",
      "Greater earth elemental",
-     "Skeleton warrior",
-     "Dragon"
+     "Dragon",
+     "The dwarven dead (guard, crossbowman, high guard, rune lord)",
+     "Orcs (spearman, blood warrior, berserker, blood sorcerer, warlord)"
     ],
     "maybe": [
      "Ghost",
      "Wight",
-     "Mimic"
+     "Mimic",
+     "Skeleton warrior"
     ]
    },
    "comments29": {
@@ -224,7 +229,13 @@
      "Tomb wardens"
     ],
     "maybe": []
-   }
+   },
+   "holders": [
+    "The dwarven dead",
+    "Orcs (overran it)",
+    "Both, at war"
+   ],
+   "holderNote": "Drawn each run (round 30). Golems, elementals and the dragon whoever holds it."
   },
   {
    "id": "deep-dark",
@@ -268,12 +279,15 @@
      "Troll",
      "Earth elemental",
      "Wraith",
-     "Floating eye"
+     "Floating eye",
+     "Great worm",
+     "Cave spider",
+     "Spitting spider"
     ],
     "maybe": [
-     "Worm",
      "Ogre",
-     "Greater earth elemental"
+     "Greater earth elemental",
+     "Spider queen"
     ]
    },
    "comments29": {
@@ -2634,20 +2648,20 @@
    "kind": "Beasts",
    "rank": "Common",
    "state": "keep",
-   "line": "Huge; digs through rock; hunts by sound",
+   "line": "Small and easy alone, but breeds fast",
    "fits": [
     "mines",
     "caverns",
     "rift"
    ],
    "themes": [],
-   "comment": "",
-   "role": "Hunter",
-   "answer": "Hunts by the ground's tremor: stand still and it passes",
-   "answerKind": "Silence",
+   "comment": "Round 30: your worms, made shallow",
+   "role": "Breeder",
+   "answer": "Kill them before they breed, or get away",
+   "answerKind": "Fight",
    "was": "Deep worm",
-   "danger": 10,
-   "depth": 8
+   "danger": 1,
+   "depth": 1
   },
   {
    "id": "eel",
@@ -3894,7 +3908,7 @@
    ],
    "comment": "Your addition (round 19)",
    "danger": 30,
-   "depth": 15
+   "depth": 12
   },
   {
    "id": "eldritch-horror",
@@ -3913,6 +3927,230 @@
    "comment": "Your addition (round 19)",
    "danger": 60,
    "depth": 13
+  },
+  {
+   "id": "great-worm",
+   "name": "Great worm",
+   "family": "Worm",
+   "kind": "Beasts",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "Huge; digs through rock; hunts by sound",
+   "fits": [
+    "caverns",
+    "rift"
+   ],
+   "themes": [],
+   "comment": "Round 30: the old worm, the Deep Dark's dangerous kind",
+   "depth": 13,
+   "danger": 20
+  },
+  {
+   "id": "cave-spider",
+   "name": "Cave spider",
+   "family": "Spiders",
+   "kind": "Beasts",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Hunts in the open, quick; poison",
+   "fits": [
+    "halls",
+    "warrens",
+    "caverns",
+    "webs"
+   ],
+   "themes": [],
+   "comment": "Round 30",
+   "depth": 3,
+   "danger": 4
+  },
+  {
+   "id": "spitting-spider",
+   "name": "Spitting spider",
+   "family": "Spiders",
+   "kind": "Beasts",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "Spits web from afar; held for a few turns",
+   "fits": [
+    "halls",
+    "warrens",
+    "caverns",
+    "webs"
+   ],
+   "themes": [],
+   "comment": "Round 30",
+   "depth": 6,
+   "danger": 6
+  },
+  {
+   "id": "spider-queen",
+   "name": "Spider queen",
+   "family": "Spiders",
+   "kind": "Beasts",
+   "rank": "Leader",
+   "state": "maybe",
+   "line": "The nest's mother; guarded, lays eggs",
+   "fits": [
+    "webs"
+   ],
+   "themes": [],
+   "comment": "Round 30",
+   "depth": 11,
+   "danger": 15
+  },
+  {
+   "id": "undead-dwarven-guard",
+   "name": "Undead dwarven guard",
+   "family": "The dwarven dead",
+   "kind": "Undead",
+   "rank": "Common",
+   "state": "keep",
+   "line": "The fallen hold's soldiers",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours (the basic one)",
+   "depth": 8,
+   "danger": 10
+  },
+  {
+   "id": "undead-dwarven-crossbowman",
+   "name": "Undead dwarven crossbowman",
+   "family": "The dwarven dead",
+   "kind": "Undead",
+   "rank": "Archer",
+   "state": "keep",
+   "line": "",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours",
+   "depth": 8,
+   "danger": 10
+  },
+  {
+   "id": "undead-dwarven-high-guard",
+   "name": "Undead dwarven high guard",
+   "family": "The dwarven dead",
+   "kind": "Undead",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "Noticeably tougher; not just sitting at doors",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours",
+   "depth": 12,
+   "danger": 18
+  },
+  {
+   "id": "undead-dwarven-rune-lord",
+   "name": "Undead dwarven rune lord",
+   "family": "The dwarven dead",
+   "kind": "Undead",
+   "rank": "Caster",
+   "state": "keep",
+   "line": "Casts with runes",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours",
+   "depth": 14,
+   "danger": 22
+  },
+  {
+   "id": "orc-spearman",
+   "name": "Orc spearman",
+   "family": "Orcs",
+   "kind": "Humanoids",
+   "rank": "Common",
+   "state": "keep",
+   "line": "Reaches two squares; the war band's line",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours; rank and Depth proposed",
+   "depth": 6,
+   "danger": 7
+  },
+  {
+   "id": "orc-blood-warrior",
+   "name": "Orc blood warrior",
+   "family": "Orcs",
+   "kind": "Humanoids",
+   "rank": "Warrior",
+   "state": "keep",
+   "line": "",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours; rank and Depth proposed",
+   "depth": 8,
+   "danger": 10
+  },
+  {
+   "id": "orc-berserker",
+   "name": "Orc berserker",
+   "family": "Orcs",
+   "kind": "Humanoids",
+   "rank": "Greater",
+   "state": "keep",
+   "line": "Charges, doesn't stop for wounds",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours; rank and Depth proposed",
+   "depth": 10,
+   "danger": 13
+  },
+  {
+   "id": "orc-blood-sorcerer",
+   "name": "Orc blood sorcerer",
+   "family": "Orcs",
+   "kind": "Humanoids",
+   "rank": "Caster",
+   "state": "keep",
+   "line": "",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours; rank and Depth proposed",
+   "depth": 11,
+   "danger": 15
+  },
+  {
+   "id": "orc-warlord",
+   "name": "Orc warlord",
+   "family": "Orcs",
+   "kind": "Humanoids",
+   "rank": "Leader",
+   "state": "keep",
+   "line": "The war band's chief",
+   "fits": [
+    "hold",
+    "forge"
+   ],
+   "themes": [],
+   "comment": "Round 30: yours; rank and Depth proposed",
+   "depth": 13,
+   "danger": 22
   }
  ],
  "tags": [
@@ -5317,6 +5555,22 @@
    "homes": [
     "world-deep",
     "drowned-city"
+   ]
+  },
+  {
+   "name": "The dwarven dead",
+   "kind": "Undead",
+   "homes": [
+    "dwarven-keep"
+   ]
+  },
+  {
+   "name": "Orcs",
+   "kind": "Humanoids",
+   "homes": [
+    "dwarven-keep",
+    "world-middle",
+    "world-deep"
    ]
   }
  ],

@@ -1,5 +1,24 @@
 # Round 30: new foes, from your round 29 comments
 
+**Answered.**
+- **Worms:** the worm (Depth 1, breeds fast) and the great worm (Depth 13) in; the worm mother out.
+- **Spiders:** the cave spider and the spitting spider in; the spider queen maybe; the trapdoor
+  spider out.
+- **The dwarven dead: their own family.** Your ranks: "guard < basic, crossbowman < archer, high
+  guard < noticeably tougher variation - not just sitting at doors, rune lord < caster". So: the
+  undead dwarven guard (common), crossbowman (archer), high guard (greater: tougher, not just a door
+  holder) and rune lord (caster). The plain skeleton warrior in the Keep too: maybe.
+- **Orcs: a family.** Your members: "Orc Blood Warrior, Orc Berserker, Orc Spearman, Orc Blood
+  Sorcerer, Orc Warlord" (my orc, orc archer and orc shaman out). Ranks and Depths proposed (to
+  confirm with the Depth table): the spearman common (6), the blood warrior warrior (8), the
+  berserker greater (10), the blood sorcerer caster (11), the warlord leader (13).
+- **Who holds the Keep: drawn each run.** "Both at war can be draw option." So one of three: the
+  dwarven dead, orcs who overran it, or both at war. Golems, elementals and the dragon whoever holds
+  it.
+- **Orcs elsewhere:** the Over Dungeon too, by depth.
+- **The abomination's Depth:** 12.
+- **The Deep Dark's exile:** not here.
+
 Your comments:
 - "We could add some more dangerous spiders that would fit here and in the deep dark."
 - "Skeleton warrior > Maybe Undead dwarven warrior. There could be some additional variation here

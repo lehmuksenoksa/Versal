@@ -109,7 +109,7 @@ Each part's state is one of:
 | 27 | Every region's areas and loose rooms, shallow ([`round27-areas-all.md`](round27-areas-all.md)) | answered |
 | 28 | Depth and Level, your idea ([`round28-depth-level.md`](round28-depth-level.md)) | answered |
 | 29 | Who's there, in every region, shallow ([`round29-whos-there.md`](round29-whos-there.md)) | answered |
-| 30 | New foes from your comments: worms, spiders, the dwarven dead, orcs ([`round30-new-foes.md`](round30-new-foes.md)) | on the choices page |
+| 30 | New foes from your comments: worms, spiders, the dwarven dead, orcs ([`round30-new-foes.md`](round30-new-foes.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

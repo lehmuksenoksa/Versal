@@ -84,6 +84,9 @@ Maybe: delvers. Lists in `round15-themes.md` and the catalogue.
 **The castle-like dungeon** (the garrison's rooms) is held by one holder drawn each run: the dead
 garrison, the cult, or outlaws.
 
+**The Dwarven Keep** is held by one drawn each run (round 30): the dwarven dead, orcs who overran
+it, or both at war. Golems, elementals and the dragon are there whoever holds it.
+
 **Goblins:** halls and the throne room rare; camps, guard posts, warrens, pits and crude prisons
 common.
 
