@@ -1,5 +1,18 @@
 # Round 28: Depth and Level, your idea
 
+**Answered.** All my picks, except one:
+- **Level follows:** depth.
+- **How far Level closes the gap:** two fifths. "We will need to playtest this at some point. Hard
+  to decide now with limited information."
+- **How common a monster stays deeper:** peaks, then fades, never gone.
+- **An item's Depth:** the deepest of its parts.
+- **The Deep Dark when it isn't the end game:** a lesser boss early, the dark elf wizard made
+  stronger.
+- **Strangers and challenges:** Depth **and Level** (not my pick): traps hurt more deeper, strangers
+  offer more deeper.
+- **Words:** depth 1 to 20 for the dungeon; Level only for power.
+- **The end game's three:** as now: the prince 18, the steel golem 18, the dragon 20.
+
 In your words: "Items, strangers and monsters, and environmental challenges should all have a
 property that tells at what depth do they start to appear. To guide generation: the deeper we go,
 the more dangerous it gets, but the rewards become bigger as well." Recorded in

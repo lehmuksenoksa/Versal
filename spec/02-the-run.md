@@ -93,7 +93,8 @@ common.
   outlaws hold it, a stronger bandit chief instead (round 25).
 - Goblin Territory: the goblin king.
 - The Abandoned Dwarven Keep: the dragon.
-- The Deep Dark: the dark elf prince.
+- The Deep Dark: the dark elf prince. When the Deep Dark comes before the end game, the dark elf
+  wizard made stronger instead; the prince is kept for the end game (round 28).
 - The Drowned City: an eldritch horror.
 
 ## Open

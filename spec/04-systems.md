@@ -114,6 +114,16 @@ the more dangerous it gets, but the rewards become bigger as well."
 In the catalogue, the monsters' `fromStep` (the danger ladder's step) is now `depth`: the same
 numbers.
 
-Open, for a round: what a monster's Level follows; how far Level closes the gap; how common a thing
-stays below its Depth; whether item tags have a Depth of their own; what Depth means for strangers
-and challenges; and the end game's three exact numbers.
+Settled in round 28 (`round28-depth-level.md`):
+- **Level follows depth**, not the player's level.
+- **Level closes two fifths of the gap:** a monster's Level is its Depth plus two fifths of the way
+  to the depth where it's met. A rat met at depth 10 is Level 4.6. A starting point, to playtest.
+- **A monster is most common from its Depth to a few levels deeper, then rarer, never gone.**
+  Bosses and the end game's three don't spread. This one rule replaces the Over Dungeon's 6/3/1 mix.
+- **An item's Depth is the deepest of its parts:** the thing and each tag have a Depth. Items have
+  no Level: their tags scale them.
+- **Strangers and environmental challenges have a Depth and a Level:** traps hurt more deeper,
+  strangers offer more deeper.
+- **The end game's three:** the dark elf prince 18, the steel golem 18, the dragon 20.
+- **Words:** the dungeon's levels are **depth 1 to 20**; **Level** means only power (the player's,
+  a monster's, a stranger's or a challenge's).

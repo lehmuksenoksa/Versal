@@ -184,7 +184,8 @@
     "Still pools",
     "Drops and shelves",
     "Old dug passages"
-   ]
+   ],
+   "bossEarly": "Dark elf wizard (stronger)"
   },
   {
    "id": "drowned-city",
@@ -5803,7 +5804,13 @@
     ]
    }
   ],
-  "depthNote": "A monster's 'depth' (yours, after round 27): the level it starts to appear at, 1 to 20. Not a limit: it can appear deeper, scaled by its Level."
+  "depthNote": "A monster's 'depth' (yours, after round 27): the level it starts to appear at, 1 to 20. Not a limit: it can appear deeper, scaled by its Level.",
+  "level": {
+   "follows": "depth",
+   "closes": 0.4,
+   "note": "A monster's Level = its Depth + 0.4 x (the depth where it's met - its Depth). To playtest (round 28)."
+  },
+  "spread": "Most common from its Depth to a few levels deeper, then rarer, never gone; bosses and the end game's three don't spread (round 28)"
  },
  "world": {
   "overDungeon": {
