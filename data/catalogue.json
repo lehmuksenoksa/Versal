@@ -6989,5 +6989,503 @@
   "nextTo": "A door between them",
   "near": "On the same level",
   "apart": "At far ends or on different levels"
- }
+ },
+ "things": [
+  {
+   "id": "thing-1",
+   "name": "Dagger",
+   "group": "Melee weapons",
+   "line": "Quick: strikes twice where others strike once; best for a sneak attack",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-2",
+   "name": "Sword",
+   "group": "Melee weapons",
+   "line": "Balanced: hits often, hits fair",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-3",
+   "name": "Axe",
+   "group": "Melee weapons",
+   "line": "Sweeps: can hit two beside each other",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-4",
+   "name": "Warhammer",
+   "group": "Melee weapons",
+   "line": "Two hands; heavy blows that stun",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-5",
+   "name": "Spear",
+   "group": "Melee weapons",
+   "line": "Reaches two squares: strike from behind someone, or across a gap",
+   "state": "keep",
+   "note": "decided, round 2: weapons that differ"
+  },
+  {
+   "id": "thing-6",
+   "name": "Mace",
+   "group": "Melee weapons",
+   "line": "Crushes: good against armour and bone",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-7",
+   "name": "Club",
+   "group": "Melee weapons",
+   "line": "Crude and common; goblins carry them",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-8",
+   "name": "Staff",
+   "group": "Melee weapons",
+   "line": "Two hands; for those who cast",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-9",
+   "name": "Sling",
+   "group": "Weapons that shoot",
+   "line": "Quiet; any stone will do",
+   "state": "keep",
+   "note": "decided, round 2: shooting"
+  },
+  {
+   "id": "thing-10",
+   "name": "Short bow",
+   "group": "Weapons that shoot",
+   "line": "Quick shots, fair range",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-11",
+   "name": "Crossbow",
+   "group": "Weapons that shoot",
+   "line": "Strong, slow to load, loud",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-12",
+   "name": "Arrows and bolts",
+   "group": "Weapons that shoot",
+   "line": "Ammunition: some can be picked up again",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-13",
+   "name": "Special arrows",
+   "group": "Weapons that shoot",
+   "line": "Fire, blunt (knock down), whistling (a lure)",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-14",
+   "name": "Helmet",
+   "group": "Armour",
+   "line": "Head",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-15",
+   "name": "Chainmail",
+   "group": "Armour",
+   "line": "Body: good protection, some noise",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-16",
+   "name": "Leather armour",
+   "group": "Armour",
+   "line": "Body: less protection, quiet",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-17",
+   "name": "Plate",
+   "group": "Armour",
+   "line": "Body: the best protection; heavy, loud, slower",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-18",
+   "name": "Shield",
+   "group": "Armour",
+   "line": "Off hand: block blows and arrows",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-19",
+   "name": "Cloak",
+   "group": "Armour",
+   "line": "Harder to notice in the dark",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-20",
+   "name": "Soft boots",
+   "group": "Armour",
+   "line": "Quieter steps",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-21",
+   "name": "Lamp oil",
+   "group": "Light",
+   "line": "Keeps the lamp lit (the run's clock)",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-22",
+   "name": "Candles",
+   "group": "Light",
+   "line": "A light to set down and leave behind",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-23",
+   "name": "Torch",
+   "group": "Light",
+   "line": "A brighter light to carry or set down, burning out",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-24",
+   "name": "Stones",
+   "group": "Things to throw",
+   "line": "A noise where they land: monsters go to look",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-25",
+   "name": "Darts and throwing knives",
+   "group": "Things to throw",
+   "line": "A quiet hit at range",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-26",
+   "name": "Net",
+   "group": "Things to throw",
+   "line": "Holds a foe for a few turns",
+   "state": "unmarked",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-27",
+   "name": "Caltrops",
+   "group": "Things to throw",
+   "line": "Slow and hurt those who follow you",
+   "state": "keep",
+   "note": "decided, round 2"
+  },
+  {
+   "id": "thing-28",
+   "name": "Oil flask",
+   "group": "Things to throw",
+   "line": "Fire where it lands",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-29",
+   "name": "Healing",
+   "group": "Potions",
+   "line": "Health back",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-30",
+   "name": "Murky",
+   "group": "Potions",
+   "line": "Unknown until drunk: all heal, or all poison, a run's luck",
+   "state": "in game",
+   "note": "in the game"
+  },
+  {
+   "id": "thing-31",
+   "name": "Antidote",
+   "group": "Potions",
+   "line": "Cures poison",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-32",
+   "name": "Dark-sight",
+   "group": "Potions",
+   "line": "See in the dark for a while",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-33",
+   "name": "Strength",
+   "group": "Potions",
+   "line": "More Brawn for a while",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-34",
+   "name": "Strong spirits",
+   "group": "Potions",
+   "line": "Dread falls (your name for courage)",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-35",
+   "name": "Darkness",
+   "group": "Scrolls",
+   "line": "A patch of the dark where you need it",
+   "state": "keep",
+   "note": "decided, round 3: spells"
+  },
+  {
+   "id": "thing-36",
+   "name": "Silence",
+   "group": "Scrolls",
+   "line": "Your steps make no sound for a while",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-37",
+   "name": "Sleep",
+   "group": "Scrolls",
+   "line": "Those near fall asleep",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-38",
+   "name": "Blink",
+   "group": "Scrolls",
+   "line": "A step of a few squares",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-39",
+   "name": "Sight through walls",
+   "group": "Scrolls",
+   "line": "See what's near for a while",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-40",
+   "name": "Douse",
+   "group": "Scrolls",
+   "line": "Puts out a light from afar",
+   "state": "unmarked",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-41",
+   "name": "Ward",
+   "group": "Scrolls",
+   "line": "Keeps the dead back",
+   "state": "keep",
+   "note": "decided, round 3"
+  },
+  {
+   "id": "thing-42",
+   "name": "Map",
+   "group": "Scrolls",
+   "line": "Shows the level",
+   "state": "keep",
+   "note": "decided, round 6: maps"
+  },
+  {
+   "id": "thing-43",
+   "name": "Identify",
+   "group": "Scrolls",
+   "line": "Identifies an item (your name for knowing)",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-44",
+   "name": "Remove curse",
+   "group": "Scrolls",
+   "line": "Lifts a curse without an altar",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-45",
+   "name": "Ring of quiet steps",
+   "group": "Charms",
+   "line": "You're harder to hear",
+   "state": "keep",
+   "note": "decided, round 2: charms"
+  },
+  {
+   "id": "thing-46",
+   "name": "Ring of dark-sight",
+   "group": "Charms",
+   "line": "See further in the dark",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-47",
+   "name": "Ring of strength",
+   "group": "Charms",
+   "line": "One more to an attribute",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-48",
+   "name": "Amulet of warding",
+   "group": "Charms",
+   "line": "The dead notice you less",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-49",
+   "name": "Amulet of courage",
+   "group": "Charms",
+   "line": "Dread rises slower",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-50",
+   "name": "Ring of mending",
+   "group": "Charms",
+   "line": "Heal slowly as you go",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-51",
+   "name": "Wand of sleep",
+   "group": "Wands",
+   "line": "Puts one to sleep, a few charges",
+   "state": "keep",
+   "note": "decided, round 2: wands"
+  },
+  {
+   "id": "thing-52",
+   "name": "Wand of fire",
+   "group": "Wands",
+   "line": "A burst of fire",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-53",
+   "name": "Wand of slowing",
+   "group": "Wands",
+   "line": "Slows a foe",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-54",
+   "name": "Wand of fear",
+   "group": "Wands",
+   "line": "A foe flees",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-55",
+   "name": "Wand of digging",
+   "group": "Wands",
+   "line": "Digs a tunnel through rock",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-56",
+   "name": "Key",
+   "group": "Keys and tools",
+   "line": "Opens one locked door",
+   "state": "keep",
+   "note": "decided, round 2: keys"
+  },
+  {
+   "id": "thing-57",
+   "name": "Lockpicks",
+   "group": "Keys and tools",
+   "line": "Pick locks faster and quieter",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-58",
+   "name": "Pickaxe",
+   "group": "Keys and tools",
+   "line": "Dig through a collapse, or a new way",
+   "state": "keep",
+   "note": "decided, round 6: digging"
+  },
+  {
+   "id": "thing-59",
+   "name": "Rope",
+   "group": "Keys and tools",
+   "line": "Climb back up a ledge, or down a pit",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-60",
+   "name": "Coins",
+   "group": "Treasure",
+   "line": "To trade with the peddler and others",
+   "state": "keep",
+   "note": "decided, round 6: trade"
+  },
+  {
+   "id": "thing-61",
+   "name": "Gems",
+   "group": "Treasure",
+   "line": "Worth more, light to carry",
+   "state": "keep",
+   "note": ""
+  },
+  {
+   "id": "thing-62",
+   "name": "Relics",
+   "group": "Treasure",
+   "line": "Worth a lot to the right stranger",
+   "state": "keep",
+   "note": ""
+  }
+ ]
 }

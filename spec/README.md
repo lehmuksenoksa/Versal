@@ -42,7 +42,7 @@ make the key decisions. When the whole of it is written and you say go, building
 ## The catalogue
 
 Everything the brainstorms kept is in one data file, `data/catalogue.json`: regions, places,
-strangers, monsters, tags, features, ways to tell the story, and surprises. From round 11 on it is
+strangers, monsters, tags, features, ways to tell the story, surprises, environmental features and containers, things to find, and item tags. From round 11 on it is
 the source; the round files are its history. The game will later load its content from data like
 it. A page to browse it, by region and with the holes shown: `mockups/catalogue.html`.
 

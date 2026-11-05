@@ -89,8 +89,8 @@
   .rhead { display: grid; grid-template-columns: 44px 220px 1fr; gap: 12px; align-items: center; }
   .rstep { font: 700 28px var(--letter); color: var(--paper); }
   .rhead b { color: var(--paper); font: 600 16px var(--letter); }
-  .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: var(--amber); }
+  .meter { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .meter span { display: block; height: 100%; background: var(--amber); }
   ul.ex { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
   .lab { display: inline-block; min-width: 44px; text-align: center; font: 600 11px var(--letter); letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; background: var(--chip); color: var(--dim); }
   .lab.fair { color: var(--moss); } .lab.hard { color: var(--amber); } .lab.run { color: var(--blood); } .lab.boss { color: var(--paper); border: 1px solid var(--amber); }
@@ -115,7 +115,7 @@
 <main>
   <header>
     <h1>The catalogue</h1>
-    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 20), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
+    <p>Everything kept from the spec's brainstorms so far (rounds 4 to 27), in one place: <code>data/catalogue.json</code> in the repository, which the game will later load as its content. Shaped as the world of rounds 12 and 13. Which monsters and strangers fit which region is my proposal, to be culled region by region.</p>
   </header>
   <nav class="bar" aria-label="Views">
     <a href="#regions">By region</a>
@@ -129,6 +129,9 @@
     <a href="#strangers">Strangers</a>
     <a href="#places">Places</a>
     <a href="#tags">Tags</a>
+    <a href="#environment">Environment</a>
+    <a href="#things">Things to find</a>
+    <a href="#itemtags">Item tags</a>
     <a href="#more">Features, story, surprises</a>
     <span class="show" role="group" aria-label="Show">
       <label><input type="checkbox" id="show-maybe" checked> maybe</label>
@@ -145,7 +148,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 let C = null;
 const KIND = { world: "The world", region: "Region", transition: "Transition", themed: "Themed area" };
-const VIEWS = ["ladder", "regions", "bestiary", "where", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "more"];
+const VIEWS = ["ladder", "regions", "bestiary", "where", "roles", "themes", "holes", "monsters", "strangers", "places", "tags", "environment", "things", "itemtags", "more"];
 
 function shown(x) {
   if (x.state === "maybe") return $("#show-maybe").checked;
@@ -203,7 +206,7 @@ function ladderView() {
   const bosses = ms.filter((m) => m.rank === "Boss").sort((x, y) => x.danger - y.danger);
   const rung = (st) => `<article class="rung">
       <div class="rhead"><div class="rstep">${st.step}</div><div><b>${st.band[0].toUpperCase() + st.band.slice(1)}</b><div class="st">a fair fight: danger about ${st.fair}</div></div>
-        <div class="bar"><span style="width:${(st.fair / max) * 100}%"></span></div></div>
+        <div class="meter"><span style="width:${(st.fair / max) * 100}%"></span></div></div>
       <div class="cols">
         <div class="col"><h3>New at this step</h3>${st.new.length ? `<div class="chips">${st.new.map((n) => mchip(ms.find((m) => m.name === n))).join("")}</div>` : `<span class="more">nothing new: bigger groups of what's here</span>`}</div>
         <div class="col"><h3>For example</h3><ul class="ex">${st.examples.map((e) => `<li><span class="lab ${e.label}">${e.label}</span> ${esc(e.what)} <span class="dn">${e.danger}</span>${e.narrow && e.label === "run" ? ` <span class="st">(one at a time: ${e.narrow})</span>` : ""}</li>`).join("")}</ul></div>
@@ -286,6 +289,22 @@ function tagsView() {
   return `<section><p class="note">As cleaned in spec/tags.md. Which are a type's own and which extras, and which monsters carry which, come later.</p>
     ${sorts.map((s) => `<div class="region"><h2>${esc(s)}</h2><div class="chips">${C.tags.filter((t) => t.sort === s && shown(t)).map(chip).join("")}</div></div>`).join("")}</section>`;
 }
+function groupedView(list, note) {
+  const groups = [...new Set(list.map((x) => x.group))];
+  return `<section><p class="note">${note}</p>
+    ${groups.map((g) => { const xs = list.filter((x) => x.group === g && shown(x));
+      return `<div class="region"><h2>${esc(g)}</h2>${xs.length ? `<div class="wrap"><table><tbody>${xs.map((x) => `<tr><td>${chip(x)}</td><td>${esc(x.line)}</td><td><span class="st">${esc(x.note || "")}</span></td></tr>`).join("")}</tbody></table></div>` : `<span class="none">none shown</span>`}</div>`; }).join("")}</section>`;
+}
+function itemTagsView() {
+  const T = C.itemTags;
+  const kv = (o) => Array.isArray(o) ? `<div class="chips">${o.map((k) => `<span class="c">${esc(k)}</span>`).join("")}</div>`
+    : `<div class="wrap"><table><tbody>${Object.entries(o).map(([k, v]) => `<tr><td><span class="c">${esc(k)}</span></td><td>${esc(v)}</td></tr>`).join("")}</tbody></table></div>`;
+  const block = (title, body) => `<div class="region"><h2>${title}</h2>${body}</div>`;
+  return `<section><p class="note">Round 24: what goes on top of a thing to make it a crude dagger, a dwarven masterwork axe or a dagger of spider slaying. Still open: ${esc(T.open)}.</p>
+    ${block("How they combine", kv(T.rules))}
+    ${block("Quality", kv(T.quality))}${block("Maker", kv(T.maker))}${block("Material", kv(T.material))}${block("Condition", kv(T.condition))}
+    ${block("Of … slaying", kv(T.slaying))}${block("Of … (enchantments)", kv(T.enchantment))}</section>`;
+}
 function moreView() {
   const block = (title, list) => `<div class="region"><h2>${title}</h2>${chips(list.filter(shown))}</div>`;
   return `<section>${block("Features", C.features)}${block("Ways to tell the story", C.story)}${block("Surprises", C.surprises)}</section>`;
@@ -307,6 +326,9 @@ function render() {
     strangers: () => listView(C.strangers, [["Stranger", named], ["Why down here", (x) => esc(x.why)], ["Company", (x) => esc(x.company)], ["Fits", (x) => esc(regionNames(x))]]),
     places: () => listView(C.places, [["Place", named], ["Size", (x) => esc(x.size)], ["Allows", (x) => esc(x.plays)], ["Tells", (x) => esc(x.tells)], ["Fits", (x) => esc(regionNames(x))]]),
     tags: tagsView,
+    environment: () => groupedView(C.environment, "Round 22: environmental features and containers, grouped by what they do. Where each goes, how it's drawn and its numbers come later."),
+    things: () => groupedView(C.things, "Round 23: things to find, grouped by kind. Their tags (quality, maker, material…) are under Item tags. Unmarked here: the net and douse, left unmarked in round 23."),
+    itemtags: itemTagsView,
     more: moreView,
   }[v]();
 }
