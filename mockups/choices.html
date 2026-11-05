@@ -113,6 +113,7 @@ const Q = [
 ];
 
 const state = {};  // id -> { choice: [], comment: "" }
+const pending = {};  // id -> saves still on their way; snapshots for it wait until they land
 let db = null;
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -171,10 +172,12 @@ function status(q, text, ok) {
 async function store(q) {
   if (!db) { status(q, "Not saved: open on claude.ai to save."); return; }
   status(q, "Saving…");
+  pending[q.id] = (pending[q.id] ?? 0) + 1;
   try {
     await db.collection("answers").doc(q.id).set({ question: q.title, choice: state[q.id].choice, comment: state[q.id].comment, at: new Date().toISOString() });
     status(q, "Saved", true);
   } catch (e) { status(q, `Not saved (${e?.code ?? "error"}). Try again.`); }
+  finally { pending[q.id]--; }
 }
 
 function pick(q, k) {
@@ -206,7 +209,7 @@ build();
   db.collection("answers").onSnapshot((snap) => {
     for (const d of snap.docs) {
       const v = d.data(), s = state[d.id];
-      if (!s || !v) continue;
+      if (!s || !v || pending[d.id] > 0) continue;  // a quick second click mustn't be undone by the first one's echo
       s.choice = Array.isArray(v.choice) ? v.choice.map(String) : [];
       s.comment = typeof v.comment === "string" ? v.comment : "";
     }

@@ -4,8 +4,9 @@
 - **Out:** the goblins' nursery; the Dungeon Underneath's stair tower.
 - **From maybe to here:** the Keep's lords' rooms, engine works and cold workshops; the Drowned
   City's harbour; the Deep Dark's old dug passages; the Dungeon Underneath's empty cells.
-- **Left unmarked** (so not in, for now): the goblins' broken-into rooms and cold camps; the
-  Drowned City's well rooms and statue galleries.
+- **Nothing saved for five rows:** the goblins' broken-into rooms and cold camps; the Drowned
+  City's well rooms and statue galleries; the Dungeon Underneath's well rooms. Likely lost clicks:
+  the choices page could drop a quick second click (fixed after this round). To confirm with you.
 - **Goblin Territory's loose rooms:** "Mostly natural caves, I think."
 - Nothing added under "anything missing".
 
