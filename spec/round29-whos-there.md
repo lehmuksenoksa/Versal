@@ -1,5 +1,21 @@
 # Round 29: who's there, in every region, shallow
 
+**Answered.** Most of my picks taken. Changes:
+- **Goblin Territory:** the troll out; the cook and the lost miner out. "We could add some more
+  dangerous spiders that would fit here and in the deep dark."
+- **The Dwarven Keep:** both earth elementals in; the ghost, the wight and the mimic maybe; the last
+  dwarf, the pilgrim and the priest out; the tomb wardens in. "Skeleton warrior > Maybe Undead
+  dwarven warrior. There could be some additional variation here as well, undead with dwarven
+  flavor: Undead dwarven crossbowman, Undead dwarven high guard, Undead dwarden rune lord. In an
+  over run drarven keep, there might be orc monster family."
+- **The Drowned City:** the abomination and the floating eye in.
+- **The Deep Dark:** spiders and the floating eye in; the cave bear and the cave lion out; the worm
+  maybe; the trapper, the miners' crew and the lost miner out. "Worms should be shallow depth
+  monster: easy to kill when alone, but they breed fast. In Deep Dark there might be some more
+  dangerous variety."
+- **Not answered:** the Deep Dark's exile.
+- Followed up in round 30 (`round30-new-foes.md`).
+
 The next layer across the regions (round 27's plan): each region's foes and strangers. The
 Dungeon Underneath was settled in round 25, so it isn't asked again.
 

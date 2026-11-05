@@ -129,7 +129,39 @@
     "Rough caves, mostly natural",
     "Narrow crawls",
     "Storeholes"
-   ]
+   ],
+   "foes": {
+    "here": [
+     "Goblin",
+     "Goblin archer",
+     "Goblin beasthound",
+     "Goblin warrior",
+     "Goblin shaman",
+     "Goblin chieftain",
+     "Goblin king",
+     "Wolf",
+     "Dire wolf",
+     "Ogre",
+     "Rat"
+    ],
+    "maybe": [
+     "Spider"
+    ]
+   },
+   "comments29": {
+    "foes": "We could add some more dangerous spiders that would fit here and in the deep dark."
+   },
+   "strangers": {
+    "here": [
+     "A prisoner",
+     "Escaped prisoners",
+     "An escaped slave",
+     "A chained beast"
+    ],
+    "maybe": [
+     "A treasure hunter"
+    ]
+   }
   },
   {
    "id": "dwarven-keep",
@@ -156,7 +188,43 @@
     "Guardrooms",
     "Fallen rooms",
     "Cold workshops"
-   ]
+   ],
+   "foes": {
+    "here": [
+     "Animated armour",
+     "Golem",
+     "Bronze golem",
+     "Iron golem",
+     "Steel golem",
+     "Fire elemental",
+     "Greater fire elemental",
+     "Earth elemental",
+     "Greater earth elemental",
+     "Skeleton warrior",
+     "Dragon"
+    ],
+    "maybe": [
+     "Ghost",
+     "Wight",
+     "Mimic"
+    ]
+   },
+   "comments29": {
+    "foes": "Skeleton warrior > Maybe Undead dwarven warrior. There could be some additional variation here as well, undead with dwarven flavor: Undead dwarven crossbowman, Undead dwarven high guard, Undead dwarden rune lord. In an over run drarven keep, there might be orc monster family"
+   },
+   "strangers": {
+    "here": [
+     "A dwarven expedition",
+     "An undead dwarf",
+     "A golem",
+     "A kindly ghost",
+     "A scholar",
+     "A scholars' expedition",
+     "A treasure hunter",
+     "Tomb wardens"
+    ],
+    "maybe": []
+   }
   },
   {
    "id": "deep-dark",
@@ -185,7 +253,44 @@
     "Drops and shelves",
     "Old dug passages"
    ],
-   "bossEarly": "Dark elf wizard (stronger)"
+   "bossEarly": "Dark elf wizard (stronger)",
+   "foes": {
+    "here": [
+     "Dark elf",
+     "Dark elf archer",
+     "Dark elf warrior",
+     "Dark elf wizard",
+     "Dark elf prince",
+     "Bat",
+     "Giant spider",
+     "Spider",
+     "Ooze",
+     "Troll",
+     "Earth elemental",
+     "Wraith",
+     "Floating eye"
+    ],
+    "maybe": [
+     "Worm",
+     "Ogre",
+     "Greater earth elemental"
+    ]
+   },
+   "comments29": {
+    "foes": "Worms should be shallow depth monster: easy to kill when alone, but they breed fast. In Deep Dark there might be some more  dangerous variety."
+   },
+   "strangers": {
+    "here": [
+     "A hermit",
+     "Monster hunters",
+     "Deep-folk travellers",
+     "A bound spirit"
+    ],
+    "maybe": [
+     "An escaped slave",
+     "A runaway apprentice"
+    ]
+   }
   },
   {
    "id": "drowned-city",
@@ -209,7 +314,41 @@
     "Half-flooded houses",
     "Upper floors and rooftops",
     "Collapsed rooms"
-   ]
+   ],
+   "foes": {
+    "here": [
+     "Eel",
+     "Cave crab",
+     "Leech",
+     "Slime",
+     "Ooze",
+     "Water elemental",
+     "Shadow",
+     "Lurker",
+     "Abomination",
+     "Eldritch horror",
+     "Zombie",
+     "Ghost",
+     "Will-o'-wisp",
+     "Cultist",
+     "Cult priest",
+     "Floating eye"
+    ],
+    "maybe": []
+   },
+   "strangers": {
+    "here": [
+     "A scholar",
+     "A scholars' expedition",
+     "A treasure hunter",
+     "A smuggler",
+     "A kindly ghost"
+    ],
+    "maybe": [
+     "A pilgrim",
+     "A priest"
+    ]
+   }
   },
   {
    "id": "mines",
