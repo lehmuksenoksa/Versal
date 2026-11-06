@@ -79,3 +79,25 @@ in the dark until they find more; an oil gauge in the ledger.
 - **The budget** (proposed, to test): on an average level, the oil found keeps the lamp lit for
   about half the turns it takes to cross it. The player chooses where light is worth it.
 - **A warning** (proposed): in the lamp's last tenth, it gutters: its bands shrink and it flickers.
+
+## 4. Dread
+
+Decided in round 3: dread rises in the dark and falls in light; high, it brings false noises,
+shaking hands (worse blows) and, at worst, a turn of panic; fervor resists it; resting in the dark
+builds it.
+
+- **Only the dark raises it** (yours: "Dark only"): no frights. It is the lamp's twin.
+- **Felt, not shown** (yours: "felt only"): no gauge; its effects show it, with a word in the ledger
+  (steady, uneasy, afraid, terrified). Oil, the clock, stays a gauge.
+- **A number from 0 to 100** (proposed, kept hidden).
+- **It rises each turn the player is in the dark** (the lamp out and the player's square not lit):
+  from 0 to 100 in about 300 turns (test). **It falls each turn in light**, about twice as fast
+  (test). **Fervor slows the rise.**
+- **Thresholds, certain** (proposed):
+
+  | Dread | Word | What happens |
+  |---|---|---|
+  | 0 to 39 | Steady | Nothing |
+  | 40 to 69 | Uneasy | False noises: noise words in the dark that can't be told from real ones |
+  | 70 to 99 | Afraid | Shaking hands as well: blows and shots worse |
+  | 100 | Terrified | A turn of panic: the player flees a step; dread falls back to 85 |
