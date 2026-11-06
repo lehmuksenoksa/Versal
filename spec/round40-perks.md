@@ -1,5 +1,51 @@
 # Round 40: perks for slice 1
 
+**Answered.** 31 yes, 12 no. Out: still as stone, quiet hinges, throw your voice, lucky, light
+fingers; long reach, ringing blow, wide arc ("I don't like weapon specific ones."); steady aim;
+lamp-keeper, iron stomach, light sleeper. Your comments made these changes:
+
+| Family | Perk | What it does | Kind |
+|---|---|---|---|
+| Shadow | Shadow step | The first step into dim counts as dark; the first into lit counts as dim (yours: renamed from Light-footed, and changed) | Rule |
+| Shadow | Soft tread | Rubble, bones and boards count as plain floor for your steps | Rule |
+| Shadow | Night eyes | Your dark sight is 5 steps, not 3 | Number |
+| Shadow | Keen ears | You hear sounds from twice as far | Number |
+| Shadow | Light-footed | A sneaking step takes 120 ticks, not 150 (yours: renamed from Shadow-step) | Number |
+| Shadow | Silent kill | A sneak attack that kills makes no sound | Rule |
+| Shadow | Snuffer | Putting out a light takes one turn, and makes no sound | Rule |
+| Shadow | Slip away (to rename) | A monster searching for you gives up in half the time | Rule |
+| Shadow | Cat's feet | Running is no louder than walking | Rule |
+| Blade | Backstabber | Sneak attacks with any weapon do ×4 | Rule |
+| Blade | Back to the wall | Being surrounded gives foes no bonus against you | Rule |
+| Blade | Heavy shove | A shove pushes two squares, and moves bigger foes | Rule |
+| Blade | Quick hands | Weapon actions take 0.8× the ticks (yours: not only daggers) | Number |
+| Blade | Flowing strike | Killing a foe gives an automatic blow at another next to you (yours: renamed from Cleave; automatic) | Rule |
+| Blade | Opportunity strike | A foe that misses you is open: your next blow at it can't miss (yours: renamed from Open guard) | Rule |
+| Blade | Gatekeeper | Holding a doorway or narrow way, you take a third less damage (yours: renamed from Doorway warden) | Rule |
+| Blade | Charge | Run into a foe to strike it with a running start: double damage, and loud | New action |
+| Blade | Last stand | Below a third of your health, your blows do more | Rule |
+| Eye | Quick draw | Shots take 70 ticks, not 100 | Number |
+| Eye | Scavenger | Arrows you've shot are more likely to be found again (yours: more likely, not always) | Rule |
+| Eye | Long shot | Your bow and sling reach 3 steps further | Number |
+| Eye | Silent shot | Your bow shots make no sound | Rule |
+| Eye | Hobbling shot | An arrow that hits slows its target for good (yours: renamed from Pinning shot; permanent) | Rule |
+| Eye | Point blank | Shooting a foe next to you is no worse than further off | Rule |
+| Eye | Double shot | Two arrows at once, for the time of one. Rare | Rule |
+| Endurance | Meditation | Resting doesn't raise dread (yours: in place of Calm breath) | Rule |
+| Endurance | Frugal flame | The lamp burns a third less oil | Number |
+| Endurance | Hard to kill | Once a level, a blow that would kill you leaves you with 1 health. Rare | Rule |
+| Endurance | Second wind | Resting heals twice as fast | Number |
+| Endurance | At home in the dark | Dread only starts to rise after 50 turns in the dark | Rule |
+| Endurance | Fire-hardened | Fire hurts you half as much | Number |
+
+Also, from your comments:
+- **No weapon-specific perks** ("I don't like weapon specific ones.").
+- **Resting always stops when the player sees a monster** (a rule for resting, not a perk: "Resting
+  should always stop when player sees a monster").
+- **Slip away needs a better name.**
+
+The pool is in the catalogue (`perks`).
+
 Back on the choices page for this (yours: "Generate more, and here the choice tool might be best").
 What a perk may be (`03-the-character.md`): it bends a rule, opens something new to do, or adds to
 a number no attribute drives (dark sight, hearing, oil, speeds); accuracy, damage and health are
