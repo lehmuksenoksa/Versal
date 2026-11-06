@@ -118,7 +118,7 @@ Each part's state is one of:
 | 36 | What strangers offer, shallow ([`round36-strangers-offer.md`](round36-strangers-offer.md)) | answered |
 | 37 | Which stranger offers what ([`round37-who-offers-what.md`](round37-who-offers-what.md)) | answered |
 | 38 | Monsters' states, shallow ([`round38-monster-states.md`](round38-monster-states.md)) | answered |
-| — | A breather: the scope cut to slices; slice 1 is the Over Dungeon then Goblin Territory, six maps ([`11-getting-there.md`](11-getting-there.md)) | decided in chat |
+| — | A breather: the scope cut to slices; slice 1 is the plain Over Dungeon, depths 1 to 6 ([`11-getting-there.md`](11-getting-there.md)) | decided in chat |
 | 39 | Slice 1's mechanics, the rebuild, height ([`round39-slice1-mechanics.md`](round39-slice1-mechanics.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |

@@ -1,7 +1,7 @@
 # Round 39: slice 1's mechanics
 
-Slice 1 (`11-getting-there.md`): 3 or 4 maps of the Over Dungeon, then 2 or 3 of Goblin Territory,
-the goblin king at the bottom. This round: which of the decided systems come into slice 1, and the
+Slice 1 (`11-getting-there.md`): the plain Over Dungeon, depths 1 to 6 (changed in chat while
+this round was up: it was 3 or 4 maps of the Over Dungeon, then 2 or 3 of Goblin Territory). This round: which of the decided systems come into slice 1, and the
 rebuild it carries. Every system was decided in outline in rounds 2 and 3 and later; slice 1 takes
 a few and specifies them in depth. The rest wait.
 
@@ -17,7 +17,7 @@ Aim for two or three new ones. Each is a system to specify, build, balance and g
 | Level-up choices | One of three at each level up, +1 to an attribute (round 3). Answers "why play twice" (needs the attributes) | Here |
 | The five attributes | Grit, brawn, cunning, fervor, acumen driving the numbers (round 3) (goes with level-ups) | Here |
 | Oil and dread | The run's clock: the lamp burns oil; the dark builds dread (round 3) | Here |
-| Alarms | The goblins' gong: reaches so many steps, rouses some (round 38) (the goblins' own) | Here |
+| Alarms | A gong or bell: reaches so many steps, rouses some (round 38) (goblin camps and guard posts have gongs) | Here |
 | The hidden awareness meter | Senses by monster and state (round 38): reworks what's there (a rework, not new) | Maybe |
 | Throwing for noise | A stone thrown to draw a monster away (round 2) (small) | Maybe |
 | Shooting | Bows and slings, for you and for goblin archers (round 2) | Maybe |
