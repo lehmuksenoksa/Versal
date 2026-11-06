@@ -101,3 +101,29 @@ builds it.
   | 40 to 69 | Uneasy | False noises: noise words in the dark that can't be told from real ones |
   | 70 to 99 | Afraid | Shaking hands as well: blows and shots worse |
   | 100 | Terrified | A turn of panic: the player flees a step; dread falls back to 85 |
+
+## 5. Putting lights out and relighting them
+
+Decided in outline in round 2 (lights put out in a turn or two, with a noise; monsters may relight
+them or grow suspicious); made exact here (agreed in chat).
+
+- **Every light is lit or out.**
+- **The player puts one out** from next to it: a candle or a wall torch in 1 turn, with a small
+  sound (as a door, `stealth.md`, section 5); a brazier or a campfire in 2 turns, smothered, with a
+  louder sound (test: as a blow).
+- **The player relights one** from next to it with the lamp lit: 1 turn, no sound.
+- **Monsters notice a light going out** when they can see it, or stand in its light, as it goes: as
+  a glimpse (`stealth.md`, section 7): suspicious, their guess at the light itself. So putting out a
+  light near watchers is a lure as much as a cost.
+- **Those who tend lights relight them:** goblins, cultists and others with fires or lanterns,
+  reaching an unlit light of theirs, relight it in 1 turn. Beasts and the dead don't.
+- **A flask of oil thrown on a light** flares it and burns (the flask's "fire now", section 3).
+- Lights that can't be put out (a forge, lava): not in slice 1.
+
+## 6. The balance between oil and dread
+
+Checked first with plain maths (`10-building-it.md`), then in play:
+- always-dark play reaches "afraid" before the end of an average level;
+- always-lit play runs out of oil before the end of a run.
+
+Neither should win; the player should keep choosing.
