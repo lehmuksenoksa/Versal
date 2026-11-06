@@ -6,11 +6,11 @@ dread, what light is worth) and `stealth.md` (light levels: dark 0, dim 1, lit 2
 
 ## 1. How light spreads
 
-- **Every light has three bands, as in the proof of concept** (corrected in chat: "I think the dim
-  band is a lot less in PoC, and player can see 3 steps beyond it into the dark. This could be
-  tweaked."): a **lit** band; a narrow **dim** band; and a **faint** band beyond, dark for stealth
-  (monsters see nothing more there) but where the player sees the ground's shape and that something
-  is there. Distance in steps (`stealth.md`, section 1).
+- **Every light has two bands for play, drawn as three** (yours: "Can we treat dim and faint band
+  same from gameplay perspective, but show them differently visually? Then the ring wouldn't be
+  thin"). For play: **lit**, then **dim**, then dark. On the map the dim band is drawn in two tones,
+  as the proof of concept's dim and faint bands are now; both play as dim. So the dim ring is wide,
+  not a single step. Distance in steps (`stealth.md`, section 1).
 - **Light follows line of sight:** walls and closed doors stop it. A square takes the brightest
   light that reaches it.
 - **Dim light comes only from the rings** in slice 1 (yours: "Yes, keep dim to rings for slice
@@ -24,20 +24,19 @@ dread, what light is worth) and `stealth.md` (light levels: dark 0, dim 1, lit 2
 - The proof of concept already gives its lights a full band and a dim band (`LIGHTS` in
   `levelgen.js`), so this model is close to what's built.
 
-| Light | Lit within | Dim, a band of | Faint, a band of |
-|---|---|---|---|
-| The player's lamp | 5 | 1 | 3 |
-| The lamp out | — | — | 3 (the player's dark sight) |
-| A cultist's lantern | 2 | 1 | 1½ |
-| A brazier | 2½ | 1½ | 1½ |
-| A campfire | 3½ | 2 | 2 |
-| Candles | 1¼ | 1¼ | 1½ |
-| A torch on the wall | 1½ (test) | 1 (test) | 1½ (test) |
+| Light | Lit within | Dim, a band of (drawn: dim, then faint) |
+|---|---|---|
+| The player's lamp | 5 | 4 (1 + 3) |
+| A cultist's lantern | 2 | 2½ (1 + 1½) |
+| A brazier | 2½ | 3 (1½ + 1½) |
+| A campfire | 3½ | 4 (2 + 2) |
+| Candles | 1¼ | 2¾ (1¼ + 1½) |
+| A torch on the wall | 1½ (test) | 2½ (1 + 1½) (test) |
 
-Starting values from the proof of concept (`levelgen.js` `LIGHTS`, `expression.js` and `render.js`:
-the lamp's `lightFull` 5, `lightDim` 1, `lightDark` 2, the lamp out 3½); all to test.
+Starting values from the proof of concept (`levelgen.js` `LIGHTS`; the lamp's in `expression.js`);
+all to test.
 
-A new light is three numbers in the data.
+A new light is two numbers in the data for play, and one more for how its dim band is drawn.
 
 ## 2. The player's sight
 
@@ -45,10 +44,11 @@ Mirrors the monsters' (`stealth.md`), so one set of rules covers both.
 
 - **The player sees every lit or dim square in line of sight, however far.** A brazier-lit hall is
   seen whole from a dark corridor: watching from the dark.
-- **The player sees 3 steps into the dark beyond the edge of their own light** (yours: "player can
-  see 3 steps beyond it into the dark"): with the lamp on, past its dim band; with it out, 3 steps
-  round them. That is the faint band of the player's light (section 1): the ground's shape, and that
-  something is there. (Test.)
+- **The player's dark sight: 3 steps round them** (as the proof of concept: "player can see 3 steps
+  beyond it into the dark", now carried by the lamp's wider dim band). This is sight, not light: it
+  shows the ground's shape and that something is there, and lights nothing, so it doesn't make the
+  player seen. It matters with the lamp out; with it lit, the lamp's dim band reaches further.
+  (Test.)
 - **What the player can tell, by the light where a thing is:**
 
   | Where it is | What the player can tell |
