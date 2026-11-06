@@ -189,7 +189,7 @@ The numbers (Vision, Hearing, loudness) come with balance.
 - **Telling others:** an alert monster rouses others of its kind nearby, not all of them on the
   level, and not other kinds: "An alert goblin should alert other goblins nearby, not all goblins
   on the map. An alert goblin maybe shouldn't rouse a nearby rat to attack player as well. I don't
-  know how to accomplish this." How: proposed in chat, to decide.
+  know how to accomplish this." How: sides, below (agreed: "Sure").
 
 ## Stealth: two controls, and the ladder (discussed in chat)
 
@@ -221,3 +221,32 @@ The numbers (Vision, Hearing, loudness) come with balance.
 - **To test:** the glimpse's range and conditions; the ranges in the dark (one step or two); dim
   light's numbers. If glimpses should add up after all, a small count can be added to the
   suspicious mood later.
+
+## Stealth: sides, shouts and alarms (agreed in chat)
+
+- **Each family has a side**, one word in its data: goblins with their wolves and beasthounds; the
+  cult with its raised dead; each beast on its own; vermin (rats, spiders, bats) on none. A
+  holder's side includes what it raised.
+- **A shout is a sound.** An alert monster shouts; the shout carries its side and spreads like any
+  sound: it reaches so far, and walls and doors muffle it. A gong or a bell is the same, much louder.
+- **Who answers:** the same side becomes alert and comes; another side hears a noise, turns
+  suspicious and comes to look; monsters tagged as ignoring noises (rats, bats, sleepers) do
+  nothing.
+- **No chains:** only a monster that senses the player itself shouts; one roused by a shout comes
+  but doesn't pass it on. A gong is the deliberate exception: one big sound.
+- **Sound spreads step by step**, not in a straight line through walls (the proof of concept's
+  noises go straight; its chase map already spreads step by step).
+- **Not in slice 1:** sides fighting each other when they meet.
+- **Feasible:** most of it reshapes what the proof of concept has (noise events, packs and leaders,
+  the chase map). Watch in playtests: packs no longer alert each other out of earshot.
+
+## Stealth, in sum
+
+The full summary is in the chat after these were agreed, and here in short:
+- two controls: the lamp (light) and the pace (sound);
+- each monster: Vision, Hearing, maybe dark-vision; its state changes them;
+- sight reads how lit the player is, hearing how loud; certain, with a glimpse;
+- a ladder of moods (calm, suspicious, alert, searching, wary) and where it thinks the player is;
+- the dark isn't invisibility: by mood, a monster sees the player close by in the dark;
+- sides, shouts and gongs carry by sound;
+- items and perks bend the player's light or sound.
