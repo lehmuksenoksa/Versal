@@ -13,25 +13,25 @@ lamp-keeper, iron stomach, light sleeper. Your comments made these changes:
 | Shadow | Light-footed | A sneaking step takes 120 ticks, not 150 (yours: renamed from Shadow-step) | Number |
 | Shadow | Silent kill | A sneak attack that kills makes no sound | Rule |
 | Shadow | Snuffer | Putting out a light takes one turn, and makes no sound | Rule |
-| Shadow | Slip away (to rename) | A monster searching for you gives up in half the time | Rule |
+| Shadow | Gone to ground | A monster searching for you gives up in half the time | Rule |
 | Shadow | Cat's feet | Running is no louder than walking | Rule |
 | Blade | Backstabber | Sneak attacks with any weapon do ×4 | Rule |
 | Blade | Back to the wall | Being surrounded gives foes no bonus against you | Rule |
 | Blade | Heavy shove | A shove pushes two squares, and moves bigger foes | Rule |
-| Blade | Quick hands | Weapon actions take 0.8× the ticks (yours: not only daggers) | Number |
+| Blade | Quick hands | Melee blows take 0.8× the ticks (yours: not only daggers; melee only, agreed in chat) | Number |
 | Blade | Flowing strike | Killing a foe gives an automatic blow at another next to you (yours: renamed from Cleave; automatic) | Rule |
 | Blade | Opportunity strike | A foe that misses you is open: your next blow at it can't miss (yours: renamed from Open guard) | Rule |
 | Blade | Gatekeeper | Holding a doorway or narrow way, you take a third less damage (yours: renamed from Doorway warden) | Rule |
 | Blade | Charge | Run into a foe to strike it with a running start: double damage, and loud | New action |
 | Blade | Last stand | Below a third of your health, your blows do more | Rule |
-| Eye | Quick draw | Shots take 70 ticks, not 100 | Number |
+| Eye | Quick draw | Shots take 0.8× the ticks | Number |
 | Eye | Scavenger | Arrows you've shot are more likely to be found again (yours: more likely, not always) | Rule |
 | Eye | Long shot | Your bow and sling reach 3 steps further | Number |
 | Eye | Silent shot | Your bow shots make no sound | Rule |
 | Eye | Hobbling shot | An arrow that hits slows its target for good (yours: renamed from Pinning shot; permanent) | Rule |
 | Eye | Point blank | Shooting a foe next to you is no worse than further off | Rule |
 | Eye | Double shot | Two arrows at once, for the time of one. Rare | Rule |
-| Endurance | Meditation | Resting doesn't raise dread (yours: in place of Calm breath) | Rule |
+| Endurance | Meditation | Resting doesn't raise dread (yours: in place of Calm breath). Rare | Rule |
 | Endurance | Frugal flame | The lamp burns a third less oil | Number |
 | Endurance | Hard to kill | Once a level, a blow that would kill you leaves you with 1 health. Rare | Rule |
 | Endurance | Second wind | Resting heals twice as fast | Number |
@@ -42,7 +42,11 @@ Also, from your comments:
 - **No weapon-specific perks** ("I don't like weapon specific ones.").
 - **Resting always stops when the player sees a monster** (a rule for resting, not a perk: "Resting
   should always stop when player sees a monster").
-- **Slip away needs a better name.**
+- **Slip away is renamed Gone to ground** (yours, in chat).
+- **Quick hands is melee only, Quick draw shots only, both 0.8×** (agreed in chat).
+- **Meditation is rare** (agreed in chat): with it, resting in the dark costs nothing but the risk of
+  a wanderer.
+- **Slice 1 builds about 15** of the 31; the rest wait (yours: "Propose which 15"). Proposed in chat.
 
 The pool is in the catalogue (`perks`).
 
@@ -103,7 +107,7 @@ Bending shooting (fighting.md).
 | Perk | What it does | Kind | My pick |
 |---|---|---|---|
 | Steady aim | Shooting into the dark is no worse than into dim light | Rule | Here |
-| Quick draw | Shots take 70 ticks, not 100 | Number | Here |
+| Quick draw | Shots take 0.8× the ticks | Number | Here |
 | Scavenger | Arrows you've shot are always found again | Rule | Here |
 | Long shot | Your bow and sling reach 3 steps further | Number | Here |
 | Silent shot | Your bow shots make no sound | Rule | Here |

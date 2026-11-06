@@ -9030,217 +9030,248 @@
    "name": "Shadow step",
    "line": "The first step into dim counts as dark; the first into lit counts as dim (yours: renamed from Light-footed, and changed)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Soft tread",
    "line": "Rubble, bones and boards count as plain floor for your steps",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Night eyes",
    "line": "Your dark sight is 5 steps, not 3",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Keen ears",
    "line": "You hear sounds from twice as far",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Light-footed",
    "line": "A sneaking step takes 120 ticks, not 150 (yours: renamed from Shadow-step)",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Silent kill",
    "line": "A sneak attack that kills makes no sound",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Snuffer",
    "line": "Putting out a light takes one turn, and makes no sound",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Shadow",
-   "name": "Slip away (to rename)",
+   "name": "Gone to ground",
    "line": "A monster searching for you gives up in half the time",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Shadow",
    "name": "Cat's feet",
    "line": "Running is no louder than walking",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Blade",
    "name": "Backstabber",
    "line": "Sneak attacks with any weapon do ×4",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Blade",
    "name": "Back to the wall",
    "line": "Being surrounded gives foes no bonus against you",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Blade",
    "name": "Heavy shove",
    "line": "A shove pushes two squares, and moves bigger foes",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Blade",
    "name": "Quick hands",
-   "line": "Weapon actions take 0.8× the ticks (yours: not only daggers)",
+   "line": "Melee blows take 0.8× the ticks (yours: not only daggers; melee only, agreed in chat)",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Blade",
    "name": "Flowing strike",
    "line": "Killing a foe gives an automatic blow at another next to you (yours: renamed from Cleave; automatic)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Blade",
    "name": "Opportunity strike",
    "line": "A foe that misses you is open: your next blow at it can't miss (yours: renamed from Open guard)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Blade",
    "name": "Gatekeeper",
    "line": "Holding a doorway or narrow way, you take a third less damage (yours: renamed from Doorway warden)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Blade",
    "name": "Charge",
    "line": "Run into a foe to strike it with a running start: double damage, and loud",
    "kind": "New action",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Blade",
    "name": "Last stand",
    "line": "Below a third of your health, your blows do more",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Eye",
    "name": "Quick draw",
-   "line": "Shots take 70 ticks, not 100",
+   "line": "Shots take 0.8× the ticks (agreed in chat, to match Quick hands)",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Eye",
    "name": "Scavenger",
    "line": "Arrows you've shot are more likely to be found again (yours: more likely, not always)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Eye",
    "name": "Long shot",
    "line": "Your bow and sling reach 3 steps further",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Eye",
    "name": "Silent shot",
    "line": "Your bow shots make no sound",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Eye",
    "name": "Hobbling shot",
    "line": "An arrow that hits slows its target for good (yours: renamed from Pinning shot; permanent)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Eye",
    "name": "Point blank",
    "line": "Shooting a foe next to you is no worse than further off",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Eye",
    "name": "Double shot",
    "line": "Two arrows at once, for the time of one. Rare",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Endurance",
    "name": "Meditation",
-   "line": "Resting doesn't raise dread (yours: in place of Calm breath)",
+   "line": "Resting doesn't raise dread (yours: in place of Calm breath). Rare (agreed in chat)",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Endurance",
    "name": "Frugal flame",
    "line": "The lamp burns a third less oil",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Endurance",
    "name": "Hard to kill",
    "line": "Once a level, a blow that would kill you leaves you with 1 health. Rare",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Endurance",
    "name": "Second wind",
    "line": "Resting heals twice as fast",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   },
   {
    "family": "Endurance",
    "name": "At home in the dark",
    "line": "Dread only starts to rise after 50 turns in the dark",
    "kind": "Rule",
-   "state": "keep"
+   "state": "keep",
+   "tier": "slice 1 (proposed)"
   },
   {
    "family": "Endurance",
    "name": "Fire-hardened",
    "line": "Fire hurts you half as much",
    "kind": "Number",
-   "state": "keep"
+   "state": "keep",
+   "tier": "later (proposed)"
   }
  ]
 }
