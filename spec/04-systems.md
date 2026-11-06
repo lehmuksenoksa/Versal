@@ -148,7 +148,7 @@ right?" No awareness meter as such. Each turn, each monster that isn't dormant c
 
 - **Sight.** Needs a line of sight (walls and columns block it). How far depends on the monster's
   **Vision** (how far it sees in good light), its state, and **how lit the player's square is**:
-  fully lit, the monster's Vision; dim, less; dark, not at all (unless next to it). Monsters with
+  fully lit, the monster's Vision; dim, less; dark, not at all. Monsters with
   **dark-vision** see in the dark, and are dazzled in full light. The player's lamp lights the
   player's own square.
 - **Hearing.** Of sounds the player makes, not of the player. A monster's **Hearing** is how far it
@@ -164,6 +164,27 @@ right?" No awareness meter as such. Each turn, each monster that isn't dormant c
   comes to look; seeing the player clearly makes it alert. Yours: "Something like this. The range
   and conditions of a 'glimpse' needs to be tested to decide exactly how it should be."
 
-Proposed, not yet decided: a lamp's glow seen from further than the player (suspicious, not
-alert); next to a monster always means noticed, unless it's asleep or dormant. The numbers
-(Vision, Hearing, loudness) come with balance.
+- **A lamp's glow is seen from further than the player** (agreed): it makes a monster suspicious,
+  not alert.
+- **Next to a monster is not always noticed** (yours: "No, we need those stealth kills. Also we need
+  room for things like Potion of Invisibility"). Being next to it is just the shortest range: the
+  same sight and hearing rules apply.
+
+The numbers (Vision, Hearing, loudness) come with balance.
+
+## Stealth: after noticing (discussed in chat)
+
+- **Suspicious** (a glimpse, a sound, a lamp's glow): it goes to look, alone, then goes back to
+  what it was doing. Yours: "This should be used to lure single enemies away from groups as well."
+  So a suspicious monster doesn't call the others.
+- **Only seeing the player clearly makes it alert.** Glimpses don't add up: "I think a player should
+  be able to lure a monster with glimpses. So only clearly seeing should turn alert. But this needs
+  to be tested as well."
+- **Alert:** it acts by its role (round 16).
+- **Losing the player:** it goes to where it last sensed the player and searches (round 2).
+  "Different monsters should behave a bit different as well. But maybe this can be done later."
+- **After it gives up:** more alert for a while, then fully calm.
+- **Telling others:** an alert monster rouses others of its kind nearby, not all of them on the
+  level, and not other kinds: "An alert goblin should alert other goblins nearby, not all goblins
+  on the map. An alert goblin maybe shouldn't rouse a nearby rat to attack player as well. I don't
+  know how to accomplish this." How: proposed in chat, to decide.
