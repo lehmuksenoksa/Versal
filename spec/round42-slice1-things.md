@@ -11,8 +11,17 @@
   they start with." Discussed in chat.
 - **Invisibility:** "You can't get seen - not you count as dark." So sight never finds the player
   while it lasts; hearing still does.
-- Yes to coins, identify, remove curse and the cursed tag also says yes to trade, unknown things and
-  curses in slice 1: discussed in chat.
+- **Split by cost** (agreed in chat: "Your suggestion is fine"):
+  - **Step A:** flask of oil, stones, candles, torch (lights as items, below); healing, murky,
+    antidote, strong spirits, strength, invisibility, dark-sight (yours: "sure"); map; rings of quiet
+    steps, strength and dark-sight. Tags: crude, fine, goblin-made, iron, steel, rusty, sharp.
+  - **Step B:** darts and throwing knives, caltrops; wands of sleep, fire and slowing. Tags: silver,
+    of spider, goblin and undead slaying, of light.
+  - **Slice 2:** unknown things with identify and curses (remove curse, the cursed tag), as one
+    package; coins and gems with trade, which comes with strangers. So slice 1 has no strangers, and
+    murky potions stay its one unknown thing.
+- **Lights as items** (step A): the lamp, a torch and candles are carried; any can be set down. The
+  rules: to discuss.
 
 For the plain Over Dungeon, depths 1 to 6. Weapons and armour are set (`fighting.md`); the flask of
 oil is decided (`light-and-dread.md`). The rest of round 23's list, with Depths (round 31), and the

@@ -8567,21 +8567,27 @@
    "Of returning": 11,
    "Of swiftness": 12
   },
-  "slice1": [
-   "Crude",
-   "Fine",
-   "Goblin-made",
-   "Iron",
-   "Steel",
-   "Silver",
-   "Rusty",
-   "Sharp",
-   "Cursed",
-   "Of spider slaying",
-   "Of goblin slaying",
-   "Of undead slaying",
-   "Of light"
-  ],
+  "slice1": {
+   "A": [
+    "Crude",
+    "Fine",
+    "Goblin-made",
+    "Iron",
+    "Steel",
+    "Rusty",
+    "Sharp"
+   ],
+   "B": [
+    "Silver",
+    "Of spider slaying",
+    "Of goblin slaying",
+    "Of undead slaying",
+    "Of light"
+   ],
+   "slice 2": [
+    "Cursed"
+   ]
+  },
   "removed": [
    "Cultist"
   ]
@@ -8800,7 +8806,8 @@
    "note": "decided, round 3",
    "depth": 1,
    "comment": "Lamp oil and the oil flask merged (in chat, light and dread)",
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-22",
@@ -8810,7 +8817,8 @@
    "state": "keep",
    "note": "decided, round 2",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-23",
@@ -8820,7 +8828,8 @@
    "state": "keep",
    "note": "",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-24",
@@ -8830,7 +8839,8 @@
    "state": "keep",
    "note": "decided, round 2",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-25",
@@ -8840,7 +8850,8 @@
    "state": "keep",
    "note": "",
    "depth": 2,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "B"
   },
   {
    "id": "thing-26",
@@ -8858,7 +8869,8 @@
    "state": "keep",
    "note": "decided, round 2",
    "depth": 3,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "B"
   },
   {
    "id": "thing-28",
@@ -8878,7 +8890,8 @@
    "state": "in game",
    "note": "in the game",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-30",
@@ -8888,7 +8901,8 @@
    "state": "in game",
    "note": "in the game",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-31",
@@ -8898,7 +8912,8 @@
    "state": "keep",
    "note": "",
    "depth": 2,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-32",
@@ -8908,7 +8923,8 @@
    "state": "keep",
    "note": "",
    "depth": 4,
-   "tier": null
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-33",
@@ -8918,7 +8934,8 @@
    "state": "keep",
    "note": "",
    "depth": 5,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-34",
@@ -8928,7 +8945,8 @@
    "state": "keep",
    "note": "",
    "depth": 3,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-35",
@@ -9004,7 +9022,8 @@
    "state": "keep",
    "note": "decided, round 6: maps",
    "depth": 2,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-43",
@@ -9014,7 +9033,7 @@
    "state": "keep",
    "note": "",
    "depth": 2,
-   "tier": "slice 1"
+   "tier": "slice 2"
   },
   {
    "id": "thing-44",
@@ -9024,7 +9043,7 @@
    "state": "keep",
    "note": "",
    "depth": 5,
-   "tier": "slice 1"
+   "tier": "slice 2"
   },
   {
    "id": "thing-45",
@@ -9034,7 +9053,8 @@
    "state": "keep",
    "note": "decided, round 2: charms",
    "depth": 4,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-46",
@@ -9044,7 +9064,8 @@
    "state": "keep",
    "note": "",
    "depth": 8,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-47",
@@ -9054,7 +9075,8 @@
    "state": "keep",
    "note": "",
    "depth": 7,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "A"
   },
   {
    "id": "thing-48",
@@ -9092,7 +9114,8 @@
    "state": "keep",
    "note": "decided, round 2: wands",
    "depth": 6,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "B"
   },
   {
    "id": "thing-52",
@@ -9102,7 +9125,8 @@
    "state": "keep",
    "note": "",
    "depth": 6,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "B"
   },
   {
    "id": "thing-53",
@@ -9112,7 +9136,8 @@
    "state": "keep",
    "note": "",
    "depth": 8,
-   "tier": "slice 1"
+   "tier": "slice 1",
+   "step": "B"
   },
   {
    "id": "thing-54",
@@ -9179,7 +9204,7 @@
    "state": "keep",
    "note": "decided, round 6: trade",
    "depth": 1,
-   "tier": "slice 1"
+   "tier": "slice 2"
   },
   {
    "id": "thing-61",
@@ -9189,7 +9214,7 @@
    "state": "keep",
    "note": "",
    "depth": 5,
-   "tier": "slice 1"
+   "tier": "slice 2"
   },
   {
    "id": "thing-62",
@@ -9208,7 +9233,8 @@
    "state": "keep",
    "note": "yours, the stealth talk; round 42",
    "tier": "slice 1",
-   "depth": null
+   "depth": null,
+   "step": "A"
   }
  ],
  "overDungeonLooseRooms": {
