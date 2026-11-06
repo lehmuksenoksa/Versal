@@ -121,6 +121,7 @@ Each part's state is one of:
 | — | A breather: the scope cut to slices; slice 1 is the plain Over Dungeon, depths 1 to 6 ([`11-getting-there.md`](11-getting-there.md)) | decided in chat |
 | 39 | Slice 1's mechanics, the rebuild, height ([`round39-slice1-mechanics.md`](round39-slice1-mechanics.md)) | set aside: the rebuild taken, the phone layout and the pages around the game left out, the mechanics to be discussed in chat |
 | — | The choices page set aside for a while: "It might not be the best tool for this discussion and planning." The mechanics are discussed in chat | — |
+| 40 | Perks for slice 1 ([`round40-perks.md`](round40-perks.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
