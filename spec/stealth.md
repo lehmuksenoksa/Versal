@@ -43,6 +43,7 @@ number marked **(test)** is a starting value to tune in play; the shape of the r
 | `DV` | Dark-vision: steps it sees in dim and dark; 0 if it has none |
 | `H` | Hearing: steps at which it hears the player walk |
 | `side` | goblins, the cult, a beast's own, or none (vermin) |
+| `P` | Persistence: turns it keeps tracking the player after losing them (test: 0 dull, 1 most, 2 or 3 hunters) |
 | tags | e.g. `ignores noises`, `relentless` |
 
 **From its state** (asleep, at a campfire, at work, patrolling, lying in wait, …), multipliers:
@@ -65,6 +66,7 @@ Dormant monsters make no checks at all until woken.
 | `target` | none; or a square, either **known** (it senses the player now) or a **guess** |
 | `timer` | turns left in the current mood, where the mood has one |
 | `roused` | whether it became alert from a shout, not by sensing the player |
+| `lost` | turns since it last sensed the player, while alert |
 
 ## 4. Sight
 
@@ -137,13 +139,18 @@ Rolled on the run's dice, once per check. With no such effect, nothing is rolled
 | calm, wary | a glimpse, or hearing the player, or the glow | suspicious, `timer = T_look` | guess: the source |
 | suspicious | another glimpse or sound | suspicious, `timer = T_look` | guess: the new source |
 | any | a clear sighting | alert | known: the player's square |
-| alert | no sighting or sound this turn | searching, `timer = T_search` | guess: last known square |
+| alert | no sighting or sound this turn, and `lost < P` | alert, `lost + 1` | known: still the player's square |
+| alert | no sighting or sound this turn, and `lost = P` | searching, `timer = T_search` | guess: the player's square then |
 | searching | a glimpse or sound | searching, `timer = T_search` | guess: the new source |
 | searching | `timer` ends | wary, `timer = T_wary` | none |
 | suspicious | `timer` ends | its last mood before (calm or wary) | none |
 | wary | `timer` ends | calm | none |
 | asleep, any mood | a sound heard, or its square going from dark to lit | awake, then as above | — |
 
+- **Persistence:** for `P` turns after losing the player, an alert monster still knows where the
+  player is (it caught the movement), so a corner alone doesn't shake a hunter. With `P` = 0 it
+  turns to searching at once. Yours, after: "different monsters should behave a bit different as
+  well". `lost` goes back to 0 whenever it senses the player again.
 - Glimpses never make a monster alert; only a clear sighting does. So a monster can be led about
   with glimpses.
 - **What each mood does:** calm and wary carry on with their state and duty; suspicious walks to
@@ -190,5 +197,7 @@ Without graphics, as rules tests (`10-building-it.md`):
 4. A goblin shouts: a goblin 8 steps away through an open door turns alert; a rat beside it does
    nothing; a cultist in the next room turns suspicious; the roused goblin doesn't shout.
 5. A glimpse, then another, then another: the monster stays suspicious, its guess following.
+8. Persistence: a zombie (`P` 0) that loses the player round a corner goes to the corner; a wolf
+   (`P` 2) follows the player's real path for two turns first.
 6. A walking step on rubble is heard further than on moss, and less through a wall.
 7. With no chance effect, the same situation gives the same result every time.
