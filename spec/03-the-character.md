@@ -76,3 +76,15 @@ One start for everyone. The run's variety comes from choices made at each level 
 - **Growth as round 3:** at each level up, a perk and +1 to an attribute of the player's choice.
 - **First balance check (maths):** cunning pairs stealth with shooting; shooting needs the target in
   sight and the dark makes shots miss more.
+
+## Perks (discussed in chat, after attributes)
+
+Level-up choices are called **perks** (after round 39). Round 3: one of three at each level up,
+drawn from a pool, in families; rare or strong ones deeper.
+- **Slice 1:** a pool of 12 to 15, for 6 to 8 level ups.
+- **What a perk may be:** it bends a rule, opens something new to do, or adds to a number (yours:
+  "I think some numbers might be good too: better dark vision etc"). Proposed: numbers that no
+  attribute drives (dark sight, hearing, oil, speeds) can be perks; numbers attributes drive
+  (accuracy, damage, health) are left to the +1 attribute, so the two don't overlap.
+- **Families follow the ways to play** (proposed): shadow (stealth), blade (melee), eye (shooting),
+  endurance (grit, dread).
