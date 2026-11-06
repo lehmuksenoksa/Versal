@@ -2877,7 +2877,16 @@
    "answer": "Light holds them off; alone they're weak",
    "answerKind": "Light",
    "danger": 1,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 60,
+    "vision": 4,
+    "hearing": 5,
+    "darkVision": 3,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "giant-rat",
@@ -2891,7 +2900,16 @@
    "themes": [],
    "comment": "",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 80,
+    "vision": 4,
+    "hearing": 5,
+    "darkVision": 3,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "bat",
@@ -2915,7 +2933,16 @@
    "answer": "Startled by light, they shriek and wake others: pass in the dark",
    "answerKind": "Darkness",
    "danger": 1,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 60,
+    "vision": 2,
+    "hearing": 8,
+    "darkVision": 0,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "spider",
@@ -2940,7 +2967,16 @@
    "answer": "Waits still by its web; light shows it",
    "answerKind": "Light",
    "danger": 2,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 3,
+    "hearing": 3,
+    "darkVision": 4,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "giant-spider",
@@ -2961,7 +2997,16 @@
    "answer": "Fire drives it off",
    "answerKind": "Fire",
    "danger": 8,
-   "depth": 7
+   "depth": 7,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 5,
+    "hearing": 5,
+    "darkVision": 6,
+    "persistence": 2
+   },
+   "side": "none"
   },
   {
    "id": "wolf",
@@ -2986,7 +3031,16 @@
    "answer": "Follows your scent: water breaks the trail",
    "answerKind": "Water",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 60,
+    "vision": 6,
+    "hearing": 8,
+    "darkVision": 4,
+    "persistence": 3
+   },
+   "side": "goblins"
   },
   {
    "id": "dire-wolf",
@@ -3071,7 +3125,16 @@
    "answer": "Under rubble; light shows it",
    "answerKind": "Light",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 80,
+    "vision": 3,
+    "hearing": 4,
+    "darkVision": 3,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "worm",
@@ -3177,7 +3240,16 @@
    "themes": [],
    "comment": "",
    "danger": 2,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 3,
+    "hearing": 3,
+    "darkVision": 3,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "slime",
@@ -3260,7 +3332,16 @@
    "answer": "A chest that isn't: search before you open, or throw something at it",
    "answerKind": "Searching",
    "danger": 6,
-   "depth": 5
+   "depth": 5,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 0,
+    "hearing": 4,
+    "darkVision": 0,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "golem",
@@ -3371,7 +3452,8 @@
    "answer": "Loose bones until you're near: wake it from afar with a thrown stone",
    "answerKind": "Distraction",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "later"
   },
   {
    "id": "skeleton",
@@ -3395,7 +3477,16 @@
    "answer": "Slow and stiff; on a round (the dead garrison's duty), time your way past",
    "answerKind": "Timing",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 120,
+    "vision": 5,
+    "hearing": 4,
+    "darkVision": 0,
+    "persistence": 0
+   },
+   "side": "the dead"
   },
   {
    "id": "skeleton-warrior",
@@ -3409,7 +3500,16 @@
    "themes": [],
    "comment": "",
    "danger": 7,
-   "depth": 6
+   "depth": 6,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 5,
+    "hearing": 4,
+    "darkVision": 0,
+    "persistence": 1
+   },
+   "side": "the dead"
   },
   {
    "id": "skeleton-archer",
@@ -3423,7 +3523,16 @@
    "themes": [],
    "comment": "",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 120,
+    "vision": 7,
+    "hearing": 4,
+    "darkVision": 0,
+    "persistence": 0
+   },
+   "side": "the dead"
   },
   {
    "id": "zombie",
@@ -3447,7 +3556,16 @@
    "answer": "Slow but never stops: outpace it, shut doors behind you",
    "answerKind": "Distance",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 150,
+    "vision": 3,
+    "hearing": 4,
+    "darkVision": 0,
+    "persistence": 0
+   },
+   "side": "the dead"
   },
   {
    "id": "wight",
@@ -3553,7 +3671,16 @@
    "answer": "Shines a small light that shows you to others: don't follow it",
    "answerKind": "Searching",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 4,
+    "darkVision": 6,
+    "persistence": 0
+   },
+   "side": "none"
   },
   {
    "id": "ghost-bat",
@@ -3591,7 +3718,16 @@
    "answer": "Their campfires blind them to the dark beyond; a thrown stone draws them off",
    "answerKind": "Distraction",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 6,
+    "darkVision": 3,
+    "persistence": 1
+   },
+   "side": "goblins"
   },
   {
    "id": "goblin-warrior",
@@ -3613,7 +3749,16 @@
    "answer": "Fell it and its pack falters",
    "answerKind": "Fell the leader",
    "danger": 7,
-   "depth": 6
+   "depth": 6,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 6,
+    "darkVision": 3,
+    "persistence": 1
+   },
+   "side": "goblins"
   },
   {
    "id": "goblin-archer",
@@ -3635,7 +3780,16 @@
    "answer": "Shoots what it sees: get into cover, then close",
    "answerKind": "Cover",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 8,
+    "hearing": 6,
+    "darkVision": 3,
+    "persistence": 1
+   },
+   "side": "goblins"
   },
   {
    "id": "goblin-chieftain",
@@ -3671,7 +3825,16 @@
    "answer": "Lights and puts out fires: take it unaware first",
    "answerKind": "Strike first",
    "danger": 8,
-   "depth": 7
+   "depth": 7,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 6,
+    "darkVision": 3,
+    "persistence": 1
+   },
+   "side": "goblins"
   },
   {
    "id": "goblin-king",
@@ -3706,7 +3869,16 @@
    "themes": [],
    "comment": "",
    "danger": 5,
-   "depth": 4
+   "depth": 4,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 80,
+    "vision": 5,
+    "hearing": 8,
+    "darkVision": 4,
+    "persistence": 3
+   },
+   "side": "goblins"
   },
   {
    "id": "cultist",
@@ -3729,7 +3901,16 @@
    "answer": "Its lantern shows it coming: keep out of its light",
    "answerKind": "Light",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 6,
+    "darkVision": 0,
+    "persistence": 1
+   },
+   "side": "the cult"
   },
   {
    "id": "cultist-warrior",
@@ -3757,7 +3938,16 @@
    "themes": [],
    "comment": "",
    "danger": 4,
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 8,
+    "hearing": 6,
+    "darkVision": 0,
+    "persistence": 1
+   },
+   "side": "the cult"
   },
   {
    "id": "cult-priest",
@@ -3848,7 +4038,16 @@
    "answer": "Lantern and crossbow: its light shows it, cover beats the bolt",
    "answerKind": "Cover",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 100,
+    "vision": 6,
+    "hearing": 6,
+    "darkVision": 0,
+    "persistence": 1
+   },
+   "side": "outlaws"
   },
   {
    "id": "bandit-archer",
@@ -3906,7 +4105,16 @@
    "answer": "Steals and runs: it avoids a fight, so corner it in the dark",
    "answerKind": "Darkness",
    "danger": 3,
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 80,
+    "vision": 6,
+    "hearing": 7,
+    "darkVision": 2,
+    "persistence": 2
+   },
+   "side": "outlaws"
   },
   {
    "id": "dark-elf",
@@ -4394,7 +4602,16 @@
    "themes": [],
    "comment": "Round 30",
    "depth": 3,
-   "danger": 4
+   "danger": 4,
+   "tier": "slice 1",
+   "senses": {
+    "speed": 80,
+    "vision": 4,
+    "hearing": 4,
+    "darkVision": 5,
+    "persistence": 1
+   },
+   "side": "none"
   },
   {
    "id": "spitting-spider",

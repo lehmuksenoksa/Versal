@@ -1,5 +1,9 @@
 # Round 41: slice 1's monsters
 
+**Answered.** Yes to all but the bone heap: 24 monsters (Rat, Bat, Spider, Cave spider, Giant spider, Giant rat, Giant centipede, Snake, Goblin, Goblin archer, Goblin warrior, Wolf, Goblin beasthound, Goblin shaman, Skeleton, Zombie, Skeleton archer, Skeleton warrior, Cultist, Cultist archer, Bandit, Thief, Mimic, Will-o'-wisp). Numbers as proposed (no
+comments on them). On the goblins: "Goblin Chieftain at the bottom maybe?" (discussed in chat).
+Each monster's tier, numbers and side are in the catalogue (`tier`, `senses`, `side`).
+
 Slice 1 is the plain Over Dungeon, depths 1 to 6 (`11-getting-there.md`). The Over Dungeon has any
 monster by depth (round 21), with now and then one from two levels deeper; slice 1 takes a short
 list. For each, the numbers the rules need (`stealth.md`, `fighting.md`), all starting values to
