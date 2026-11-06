@@ -27,8 +27,8 @@ What stealth needs from a map (my proposal, agreed as the basis):
   - **In slice 1:** caves are lit where goblins or other sentient beings live (their campfires, as
     in the proof of concept); caves nobody tends are dark but for the player's lamp. Glowing fungus
     keeps its Depth 8 and comes with a deeper slice (agreed in chat).
-  - Proposed: the rare lit and dark areas as two more area traits beside the proof of concept's
-    "flooded" and "echoing": **blazing** and **pitch dark**.
+  - Tabled: the rare lit and dark areas as area traits ("blazing", "pitch dark"): "Let's table these
+    for now".
 - **Monsters are placed by encounter templates** (yours: "Templates sounds good"): a group, its
   states, its place and its light, for example a camp at a fire with one at the approach, sleepers
   in a dark side room by a chest, a patrol on a loop between two lit rooms, a guard at a lit way
