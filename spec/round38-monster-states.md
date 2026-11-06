@@ -1,5 +1,21 @@
 # Round 38: monsters' states, shallow
 
+**Answered.**
+- **States.** Here: asleep, patrolling, at a campfire, at work, wandering, lying in wait, dormant,
+  caged or chained, fighting something else, fleeing. Maybe: on guard, eating. Out: dozing.
+  "Monsters do not have a heading, they can't see only one way." So no facing: a guard at a post
+  sees all round it, and "get behind it" isn't a way past.
+- **How aware: a meter, hidden.** "It shouldn't be clearly shown, but here we need different
+  states and different monsters to have different range of vision, dark-vision and hearing. It's
+  something the player learns through play."
+- **What wakes a sleeper: noise, and dark becoming light.** A change from dark to light wakes it;
+  a sleeper in a room that's already lit isn't woken by the light.
+- **How you know a state: in its tip only.** "Animation for some states, looking at it for all."
+  No mark on the map.
+- **Alarms: raised by alarms, but not level-wide.** "Alarms shouldn't be level wide, maybe X steps
+  from the bell/gong/etc and we need to consider their effect on all the monsters on the level:
+  does a goblin gong rouse spiders, for example?"
+
 Your hierarchy (`content-model.md`): a room has "a set of enemies in certain state". Already
 decided: monsters search where they last saw or heard you and follow noises; guards keep posts and
 patrols walk rounds (duties, round 16); sleepers wake to an alarm (round 2); minds are small sets

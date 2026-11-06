@@ -12,7 +12,7 @@ come with the content.
     goblin horn); sleepers woken by the alarm.
   - Minds are small sets of states with clear rules, cheap per turn and testable without a
     browser.
-  - The level-wide alert that rises over time is not decided (it went with 2.4).
+  - The level-wide alert: none; alarms reach so many steps (round 38).
 - **Light: lights you can put out and light.** Braziers, candles and campfires take a turn or two
   and make a noise. Monsters may relight them, or grow suspicious. The lamp stays on or off: not
   hooded, and no light to throw.
@@ -127,3 +127,16 @@ Settled in round 28 (`round28-depth-level.md`):
 - **The end game's three:** the dark elf prince 18, the steel golem 18, the dragon 20.
 - **Words:** the dungeon's levels are **depth 1 to 20**; **Level** means only power (the player's,
   a monster's, a stranger's or a challenge's).
+
+## Monsters' states and senses (round 38)
+
+- **States a monster is found in:** asleep, patrolling, at a campfire, at work, wandering, lying in
+  wait, dormant, caged or chained, fighting something else, fleeing; maybe on guard and eating.
+- **No facing.** Monsters have no heading: they see all round them.
+- **Awareness is a hidden meter**, rising and falling with what a monster senses. Not shown; the
+  player learns it through play.
+- **Senses differ by monster and by state:** range of vision, dark-vision and hearing.
+- **A sleeper wakes to noise, or to dark becoming light** (not to light that was already there).
+- **A monster's state is told in its tip** when you look at it; some states also show by animation.
+- **Alarms (a gong, a bell, a horn) reach so many steps, not the whole level.** Which monsters an
+  alarm rouses is open (does a goblin gong rouse spiders?).

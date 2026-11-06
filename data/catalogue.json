@@ -8973,5 +8973,34 @@
   "price": "Coins and finds only",
   "captives": "Freeing one is how you reach its offer",
   "metAgain": "Some are met again deeper: the peddler, a rival party, a follower you sent off"
+ },
+ "monsterStates": {
+  "here": [
+   "Asleep",
+   "Patrolling",
+   "At a campfire",
+   "At work",
+   "Wandering",
+   "Lying in wait",
+   "Dormant",
+   "Caged or chained",
+   "Fighting something else",
+   "Fleeing"
+  ],
+  "maybe": [
+   "On guard",
+   "Eating"
+  ],
+  "out": [
+   "Dozing"
+  ],
+  "rules": {
+   "facing": "None: monsters see all round",
+   "awareness": "A hidden meter",
+   "senses": "Vision range, dark-vision and hearing differ by monster and by state",
+   "wake": "Noise, or dark becoming light",
+   "shown": "In its tip; some states by animation",
+   "alarms": "Reach so many steps, not the level; who they rouse is open"
+  }
  }
 }
