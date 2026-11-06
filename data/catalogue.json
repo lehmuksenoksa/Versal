@@ -8515,12 +8515,13 @@
   },
   {
    "id": "thing-21",
-   "name": "Lamp oil",
+   "name": "Flask of oil",
    "group": "Light",
-   "line": "Keeps the lamp lit (the run's clock)",
+   "line": "Pour it into the lamp (the run's clock), or throw it for fire where it lands",
    "state": "keep",
    "note": "decided, round 3",
-   "depth": 1
+   "depth": 1,
+   "comment": "Lamp oil and the oil flask merged (in chat, light and dread)"
   },
   {
    "id": "thing-22",
@@ -8580,9 +8581,10 @@
    "name": "Oil flask",
    "group": "Things to throw",
    "line": "Fire where it lands",
-   "state": "keep",
+   "state": "drop",
    "note": "",
-   "depth": 3
+   "depth": 3,
+   "comment": "Merged into the flask of oil (in chat, light and dread)"
   },
   {
    "id": "thing-29",

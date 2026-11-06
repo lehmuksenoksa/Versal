@@ -64,3 +64,18 @@ Mirrors the monsters' (`stealth.md`), so one set of rules covers both.
 - **Dark-vision** (a potion, a perk) works as for monsters: within its range, the dark counts as dim.
 - The lamp's numbers come from the proof of concept (section 1): about 9 steps seen round the
   player with it lit, 3 with it out.
+
+## 3. Oil
+
+Decided in round 3: the lamp burns oil while lit; oil is found on levels; out of oil, the player is
+in the dark until they find more; an oil gauge in the ledger.
+
+- **Flasks are carried** (yours): picked up into the pack, poured into the lamp when the player
+  chooses. The lamp holds so much; a flask adds so much.
+- **One flask, two uses** (yours: "merge them"): round 23's lamp oil and thrown oil flask are one
+  thing, a **flask of oil**: pour it into the lamp, or throw it for fire where it lands. Every flask
+  is light later or fire now. (Depth 1, as lamp oil was.)
+- **Counted in turns of burning** (proposed): the lamp holds so many turns, a flask adds so many.
+- **The budget** (proposed, to test): on an average level, the oil found keeps the lamp lit for
+  about half the turns it takes to cross it. The player chooses where light is worth it.
+- **A warning** (proposed): in the lamp's last tenth, it gutters: its bands shrink and it flickers.
