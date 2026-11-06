@@ -56,3 +56,10 @@ One start for everyone. The run's variety comes from choices made at each level 
   light and what blocks sight, and from choices made at a level up rather than features of the
   map. Your example: the first step in light counts as darkness, to make running between shadows
   easier.
+
+## Attributes in slice 1 (discussed in chat, after fighting)
+
+- **Fewer to start** (yours: "Start with fewer"). Round 3's five checked against what slice 1 has:
+  cunning did too much (quieter and more accurate with everything); fervor and acumen were thin
+  without spells and traps. Slice 1 starts with fewer; the others come when their systems do.
+- Which, and what each drives: proposed in chat, to decide.
