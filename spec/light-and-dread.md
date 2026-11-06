@@ -127,3 +127,10 @@ Checked first with plain maths (`10-building-it.md`), then in play:
 - always-lit play runs out of oil before the end of a run.
 
 Neither should win; the player should keep choosing.
+
+## 7. Resting (noted so far)
+
+- Round 3: resting lit burns oil; resting in the dark builds dread.
+- **Resting always stops when the player sees a monster** (yours, round 40: "Resting should always
+  stop when player sees a monster").
+- The rest of resting (how long, what it heals, where it's safe) is still to discuss.
