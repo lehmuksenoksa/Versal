@@ -148,7 +148,11 @@ right?" No awareness meter as such. Each turn, each monster that isn't dormant c
 
 - **Sight.** Needs a line of sight (walls and columns block it). How far depends on the monster's
   **Vision** (how far it sees in good light), its state, and **how lit the player's square is**:
-  fully lit, the monster's Vision; dim, less; dark, not at all. Monsters with
+  fully lit, the monster's Vision; dim, less; dark, a short range that depends on the monster's
+  state (yours: "I think this depends on their state as well. And Player shouldn't turn
+  undiscoverable by turning of their lamp. In the dark, player should be able to sneak next to a
+  monster without automatically being seen. In the dark, an alert monster should be able to
+  attack a player."). The exact rule: proposed in chat, to decide. Monsters with
   **dark-vision** see in the dark, and are dazzled in full light. The player's lamp lights the
   player's own square.
 - **Hearing.** Of sounds the player makes, not of the player. A monster's **Hearing** is how far it
