@@ -36,6 +36,17 @@ Slices 2 to 4 are a sketch: each is chosen after the last is played.
   prisons (round 21).
 - **Its monsters, items, strangers and features are a small set** for depths 1 to 6, picked from
   the catalogue, not the whole roster.
-- Parked: round 39's senses and alarms; they come back as slice 1 needs them.
+- **The rebuild is in** (yours: "I like the rebuild plan"): content as data, saving, tests (the plan
+  in `10-building-it.md`), drawing by families.
+- **Not in slice 1:** the phone layout; the title, death and victory pages.
+- **The mechanics are discussed before they're chosen** (yours: "We haven't really thought through
+  and fleshed out how the five attributes might work. We haven't thought of how stealth mechanics
+  would work. We haven't really thought of what the level-up choices could be - let's call them
+  Perks for now. We haven't fleshed out Light and Dread either. These are interconnected, and a lot
+  of work each on their own. They need to be prioritized as well.") Round 39's mechanics grid is
+  set aside for that.
+- **Level-up choices are called Perks.**
+- Parked: round 39's senses and alarms; they come back with stealth.
 
-Next: slice 1's mechanics (round 39), then its contents.
+Next: the mechanics, discussed in chat (stealth, light and dread, attributes, perks), then
+slice 1's contents.
