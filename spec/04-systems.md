@@ -143,6 +143,8 @@ Settled in round 28 (`round28-depth-level.md`):
 
 ## Stealth: noticing (discussed in chat, after round 39)
 
+**The formal rules are in `stealth.md`**, which holds where it and these notes differ.
+
 Your model: "What do we actually need to know? Does the monster notice (see or hear) the player,
 right?" No awareness meter as such. Each turn, each monster that isn't dormant checks two things.
 
@@ -161,7 +163,9 @@ right?" No awareness meter as such. Each turn, each monster that isn't dormant c
 - **Items and perks change the outcome** (yours: a potion of invisibility, boots of silence, a cloak
   of shadows, perks). They work on the player's two numbers: how lit the player counts as, and how
   loud.
-- **Certain, with a glimpse.** Noticing is certain, not a chance: inside range, the monster
+- **Certain, with a glimpse.** The world's rules are certain (changed in chat: "Maybe items and
+  abilities could affect chance?"): monsters never roll; only the player's items and perks can add
+  a chance in the player's favour (`stealth.md`, section 6). Otherwise: inside range, the monster
   notices. A **glimpse** (seen at the edge of its range, or in dim light) makes it suspicious and it
   comes to look; seeing the player clearly makes it alert. Yours: "Something like this. The range
   and conditions of a 'glimpse' needs to be tested to decide exactly how it should be."
