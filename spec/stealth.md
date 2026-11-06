@@ -197,7 +197,7 @@ Without graphics, as rules tests (`10-building-it.md`):
 4. A goblin shouts: a goblin 8 steps away through an open door turns alert; a rat beside it does
    nothing; a cultist in the next room turns suspicious; the roused goblin doesn't shout.
 5. A glimpse, then another, then another: the monster stays suspicious, its guess following.
-8. Persistence: a zombie (`P` 0) that loses the player round a corner goes to the corner; a wolf
+6. Persistence: a zombie (`P` 0) that loses the player round a corner goes to the corner; a wolf
    (`P` 2) follows the player's real path for two turns first.
-6. A walking step on rubble is heard further than on moss, and less through a wall.
-7. With no chance effect, the same situation gives the same result every time.
+7. A walking step on rubble is heard further than on moss, and less through a wall.
+8. With no chance effect, the same situation gives the same result every time.
