@@ -8340,7 +8340,8 @@
    "line": "Quick: strikes twice where others strike once; best for a sneak attack",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-2",
@@ -8349,7 +8350,8 @@
    "line": "Balanced: hits often, hits fair",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-3",
@@ -8358,7 +8360,8 @@
    "line": "Sweeps: can hit two beside each other",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-4",
@@ -8367,7 +8370,8 @@
    "line": "Two hands; heavy blows that stun",
    "state": "in game",
    "note": "in the game",
-   "depth": 4
+   "depth": 4,
+   "tier": "slice 1"
   },
   {
    "id": "thing-5",
@@ -8376,7 +8380,8 @@
    "line": "Reaches two squares: strike from behind someone, or across a gap",
    "state": "keep",
    "note": "decided, round 2: weapons that differ",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-6",
@@ -8385,7 +8390,8 @@
    "line": "Crushes: good against armour and bone",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "later"
   },
   {
    "id": "thing-7",
@@ -8394,7 +8400,8 @@
    "line": "Crude and common; goblins carry them",
    "state": "keep",
    "note": "",
-   "depth": 1
+   "depth": 1,
+   "tier": "later"
   },
   {
    "id": "thing-8",
@@ -8403,7 +8410,8 @@
    "line": "Two hands; for those who cast",
    "state": "keep",
    "note": "",
-   "depth": 3
+   "depth": 3,
+   "tier": "later"
   },
   {
    "id": "thing-9",
@@ -8412,7 +8420,8 @@
    "line": "Quiet; any stone will do",
    "state": "keep",
    "note": "decided, round 2: shooting",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-10",
@@ -8421,7 +8430,8 @@
    "line": "Quick shots, fair range",
    "state": "keep",
    "note": "decided, round 2",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-11",
@@ -8430,7 +8440,8 @@
    "line": "Strong, slow to load, loud",
    "state": "keep",
    "note": "decided, round 2",
-   "depth": 4
+   "depth": 4,
+   "tier": "later"
   },
   {
    "id": "thing-12",
@@ -8439,7 +8450,8 @@
    "line": "Ammunition: some can be picked up again",
    "state": "keep",
    "note": "",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-13",

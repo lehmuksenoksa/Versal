@@ -56,3 +56,21 @@ retreating to a better position, running away").
   cultists); slow, 150 (zombies, trolls, golems).
 - **Running doesn't tire** (yours: "No stamina, only loud"): the player can run as long as they like,
   at the price of noise (`stealth.md`, section 5). The player can outrun the slow, not the fast.
+
+## Weapons in slice 1
+
+Agreed in chat (the mace and the crossbow left out for now; the club is a monster's; the staff waits
+for spells):
+
+| Weapon | Its trait |
+|---|---|
+| Dagger | Quick (60 ticks); the best sneak attack (×4, not ×3) |
+| Sword | Balanced: a little more accurate |
+| Axe | Sweeps: also hits a foe next to both the player and the target |
+| Warhammer | Two hands, slow (150 ticks); a hit stuns: the target loses its next action |
+| Spear | Reaches two squares: strike past someone, or across a gap |
+| Sling | Shoots; quiet; any stone will do |
+| Short bow | Shoots; quick shots, fair range; arrows to find, some picked up again |
+
+Each pulls the player toward a different place to stand. Numbers (damage rolls, ranges) with
+balance.
