@@ -133,8 +133,8 @@ Settled in round 28 (`round28-depth-level.md`):
 - **States a monster is found in:** asleep, patrolling, at a campfire, at work, wandering, lying in
   wait, dormant, caged or chained, fighting something else, fleeing; maybe on guard and eating.
 - **No facing.** Monsters have no heading: they see all round them.
-- **Awareness is a hidden meter**, rising and falling with what a monster senses. Not shown; the
-  player learns it through play.
+- **Awareness: a ladder of moods, not a number** (changed in chat, below, from round 38's "a
+  meter"). Not shown on the map; the player learns it through play.
 - **Senses differ by monster and by state:** range of vision, dark-vision and hearing.
 - **A sleeper wakes to noise, or to dark becoming light** (not to light that was already there).
 - **A monster's state is told in its tip** when you look at it; some states also show by animation.
@@ -149,12 +149,10 @@ right?" No awareness meter as such. Each turn, each monster that isn't dormant c
 - **Sight.** Needs a line of sight (walls and columns block it). How far depends on the monster's
   **Vision** (how far it sees in good light), its state, and **how lit the player's square is**:
   fully lit, the monster's Vision; dim, less; dark, a short range that depends on the monster's
-  state (yours: "I think this depends on their state as well. And Player shouldn't turn
-  undiscoverable by turning of their lamp. In the dark, player should be able to sneak next to a
-  monster without automatically being seen. In the dark, an alert monster should be able to
-  attack a player."). The exact rule: proposed in chat, to decide. Monsters with
-  **dark-vision** see in the dark, and are dazzled in full light. The player's lamp lights the
-  player's own square.
+  mood: see the ladder below (yours: "I think this depends on their state as well. And Player
+  shouldn't turn undiscoverable by turning of their lamp. In the dark, player should be able to
+  sneak next to a monster without automatically being seen. In the dark, an alert monster should
+  be able to attack a player.").
 - **Hearing.** Of sounds the player makes, not of the player. A monster's **Hearing** is how far it
   hears a normal walk; each action has a loudness (sneaking quieter, running and fighting louder),
   the floor changes it (rubble, water louder; moss quieter), and walls muffle it.
@@ -192,3 +190,34 @@ The numbers (Vision, Hearing, loudness) come with balance.
   level, and not other kinds: "An alert goblin should alert other goblins nearby, not all goblins
   on the map. An alert goblin maybe shouldn't rouse a nearby rat to attack player as well. I don't
   know how to accomplish this." How: proposed in chat, to decide.
+
+## Stealth: two controls, and the ladder (discussed in chat)
+
+- **Two controls: the lamp, for light; the pace, for sound** (yours: "B, two controls: lamp and
+  pace"). Until now, sneaking was putting out the lamp. Now:
+  - **the lamp:** on or off; sight reads how lit the player is;
+  - **the pace:** sneaking (slow, quiet), walking, running (fast, loud); hearing reads how loud.
+  Perks and items bend one or the other (a cloak of shadows, boots of silence). Sneaking's price
+  is time, which oil and dread make dear; running's is noise.
+- **A monster keeps two things:** its **mood**, and **where it thinks the player is**: known (it
+  senses the player now) or a guess (where it last glimpsed, heard or saw them). "Knowing" and
+  "suspecting" are those two.
+- **The ladder of moods:**
+
+  | Mood | Where it thinks the player is | What it does | In the dark it sees the player |
+  |---|---|---|---|
+  | Calm | Nowhere | Its state: patrolling, asleep, at the fire | A glimpse right next to it, unless the player is sneaking |
+  | Suspicious | A guess | Goes to look, alone; gives up after a few turns | Clearly, right next to it |
+  | Alert | Known | Acts by its role; shouts to its own | Clearly, at a step or two |
+  | Searching | A guess | Goes to the guess and looks round | Clearly, at a step or two |
+  | Wary | Nowhere | Back to its duty, senses sharper, until it calms | A glimpse right next to it, even if the player is sneaking |
+
+  Moves: calm or wary to suspicious on a glimpse, a sound or a glow; any mood to alert on seeing the
+  player clearly; alert to searching when it stops sensing the player; searching to wary when it
+  finds nothing; wary to calm after a while. Glimpses only move the guess, so a monster can be
+  lured with them. Dim light: about half Vision, every mood.
+- **A stealth kill** takes the dark, sneaking, a quiet floor and a monster whose hearing doesn't
+  catch the player.
+- **To test:** the glimpse's range and conditions; the ranges in the dark (one step or two); dim
+  light's numbers. If glimpses should add up after all, a small count can be added to the
+  suspicious mood later.
