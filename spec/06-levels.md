@@ -33,10 +33,19 @@ What stealth needs from a map (my proposal, agreed as the basis):
   states, its place and its light, for example a camp at a fire with one at the approach, sleepers
   in a dark side room by a chest, a patrol on a loop between two lit rooms, a guard at a lit way
   with a way round, vermin in the dark, a wanderer. The depth's mix picks who; the template, how.
-- **How dense:** found by playtesting (yours: "Hard to answer without playtesting"). A starting rule
-  is needed for the first build. Proposed as the starting rule: groups spaced at least as far apart
-  as a normal walk is heard, unless a template says otherwise (a camp's lookout); roughly one
-  template per so many rooms, tuned in play; shallower levels fewer and calmer.
+- **How dense: by escalation** (yours: "Maybe we should consider escalation of fights here?"; the
+  numbers found by playtesting).
+  - **Within a fight, one step at a time.** A fight grows by sound (`stealth.md`): one foe notices;
+    it shouts and its group comes; the fight's noise (blows) reaches a group of another side, which
+    comes to look; a gong brings every group of its side within reach. Groups are placed so a fight
+    usually climbs one step at a time, with a few turns between steps to flee, hide or finish it:
+    neighbouring groups normally beyond the reach of a fight's noise, at most one within it as a
+    deliberate risk. A gong is the big step, placed on purpose (at a camp, a few groups in its
+    reach). Templates may escalate faster by design (a camp and its lookout are one group). The
+    generator checks it: how many groups a fight at each place would reach, by the hearing rule.
+  - **Across a level, pacing.** Gentler near the stairs up (arriving is never an instant fight);
+    the strongest groups and the gongs nearer the stairs down, or by the good things off the route.
+  - Across a run, depth escalates through Depth and Level (round 28).
 
 ### The generator's steps (proposed)
 
@@ -45,7 +54,7 @@ What stealth needs from a map (my proposal, agreed as the basis):
 2. Place lights by what each room is for, and by ground: lighter where sentient beings live, darker
    in caves.
 3. Lay floors: loud, quiet, water.
-4. Place encounters from templates.
+4. Place encounters from templates, spaced by escalation and paced across the level.
 5. **Check the level with the stealth rules** (`stealth.md`): mark every square a calm monster would
    see or hear a sneaking player in; look for a path from the stairs up to the stairs down through
    unmarked squares. Where a level must have one and doesn't, move a light, a guard or a door, and
