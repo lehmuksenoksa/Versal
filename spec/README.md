@@ -122,6 +122,7 @@ Each part's state is one of:
 | 39 | Slice 1's mechanics, the rebuild, height ([`round39-slice1-mechanics.md`](round39-slice1-mechanics.md)) | set aside: the rebuild taken, the phone layout and the pages around the game left out, the mechanics to be discussed in chat |
 | — | The choices page set aside for a while: "It might not be the best tool for this discussion and planning." The mechanics are discussed in chat. Back for lists (round 40), with yes or no and a comment on each row | — |
 | 40 | Perks for slice 1 ([`round40-perks.md`](round40-perks.md)) | answered: 31 kept |
+| 41 | Slice 1's monsters ([`round41-slice1-monsters.md`](round41-slice1-monsters.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
