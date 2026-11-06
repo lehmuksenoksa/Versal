@@ -8469,7 +8469,8 @@
    "line": "Head",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-15",
@@ -8478,7 +8479,8 @@
    "line": "Body: good protection, some noise",
    "state": "in game",
    "note": "in the game",
-   "depth": 3
+   "depth": 3,
+   "tier": "slice 1"
   },
   {
    "id": "thing-16",
@@ -8487,7 +8489,8 @@
    "line": "Body: less protection, quiet",
    "state": "keep",
    "note": "",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-17",
@@ -8496,7 +8499,8 @@
    "line": "Body: the best protection; heavy, loud, slower",
    "state": "keep",
    "note": "",
-   "depth": 8
+   "depth": 8,
+   "tier": "later"
   },
   {
    "id": "thing-18",
@@ -8505,7 +8509,8 @@
    "line": "Off hand: block blows and arrows",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-19",
@@ -8514,7 +8519,8 @@
    "line": "Harder to notice in the dark",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "later"
   },
   {
    "id": "thing-20",
@@ -8523,7 +8529,8 @@
    "line": "Quieter steps",
    "state": "keep",
    "note": "",
-   "depth": 3
+   "depth": 3,
+   "tier": "later"
   },
   {
    "id": "thing-21",

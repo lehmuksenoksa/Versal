@@ -74,3 +74,37 @@ for spells):
 
 Each pulls the player toward a different place to stand. Numbers (damage rolls, ranges) with
 balance.
+
+## Shoving
+
+Decided in round 2; made exact (agreed in chat):
+- **A shove** costs a blow's time (100 ticks) and pushes a foe one step away from the player.
+- **Dice:** the player's brawn against the foe's size; small foes go easily, a troll hardly moves.
+- **It matters where the step leads:** into deep water, fire or a campfire, or back out of a doorway
+  the player wants to hold. In slice 1 (no height), water and fire.
+
+## Monsters fleeing
+
+From the proof of concept's morale (agreed in chat):
+- **Below a share of its health, a monster may break and run**, by its kind (data): goblins and
+  cultists do; the dead, beasts in their lair and bosses don't.
+- **A fleeing monster runs to its side, or to a gong** (the alarm-raiser, round 16; escalation,
+  `06-levels.md`): a reason to finish a fight quickly.
+
+## Armour in slice 1
+
+Agreed in chat:
+
+| Armour | Takes off | Noise |
+|---|---|---|
+| Helmet | a little | none |
+| Leather armour | a little | none |
+| Chainmail | more | some: added to the player's steps |
+| Shield | more | none; it uses a hand (no two-handed weapon with it) |
+
+- **Armour's noise is added to the player's steps' loudness** (`stealth.md`, section 5): in chainmail,
+  sneaking is close to walking.
+- **Later:** plate; the cloak and soft boots, which are stealth items (shade and hush,
+  `stealth.md`, section 2) and may come with perks and items.
+
+Fighting is done in outline; its numbers come with attributes and balance.
