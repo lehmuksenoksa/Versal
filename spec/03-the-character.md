@@ -89,4 +89,4 @@ drawn from a pool, in families; rare or strong ones deeper.
 - **Families follow the ways to play** (proposed): shadow (stealth), blade (melee), eye (shooting),
   endurance (grit, dread).
 - **The pool after round 40:** 31 perks in four families (`round40-perks.md`, the catalogue's
-  `perks`). No weapon-specific perks.
+  `perks`). No weapon-specific perks. **Slice 1 builds 15** (listed in `round40-perks.md`).

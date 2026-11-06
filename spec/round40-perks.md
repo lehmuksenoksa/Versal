@@ -46,7 +46,15 @@ Also, from your comments:
 - **Quick hands is melee only, Quick draw shots only, both 0.8×** (agreed in chat).
 - **Meditation is rare** (agreed in chat): with it, resting in the dark costs nothing but the risk of
   a wanderer.
-- **Slice 1 builds about 15** of the 31; the rest wait (yours: "Propose which 15"). Proposed in chat.
+- **Slice 1 builds 15** of the 31; the rest wait (yours: "Propose which 15"; then "I'd exchange Soft
+  tread with Cat's feet"):
+  - **Shadow:** Shadow step, Cat's feet, Night eyes, Silent kill, Gone to ground.
+  - **Blade:** Backstabber, Back to the wall, Quick hands, Heavy shove.
+  - **Eye:** Quick draw, Silent shot, Hobbling shot.
+  - **Endurance:** Frugal flame, At home in the dark, Hard to kill (rare).
+  Later: Soft tread, Keen ears, Light-footed, Snuffer; Flowing strike, Opportunity strike,
+  Gatekeeper, Charge, Last stand; Scavenger, Long shot, Point blank, Double shot; Meditation, Second
+  wind, Fire-hardened.
 
 The pool is in the catalogue (`perks`).
 
