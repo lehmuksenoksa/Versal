@@ -19,3 +19,18 @@ retreating to a better position, running away").
   2), shooting and ammunition, the ground (shoving into water, pits, fire; loud floors), light (the
   dark is blind), opening with a sneak attack and breaking off (monsters fleeing when hurt;
   persistence), and escalation (a fight's noise, `06-levels.md`).
+- **Armour takes damage off each blow** (yours: "Takes damage off each blow"), not making the wearer
+  harder to hit. Its cost is elsewhere: noise and slowness (round 23: chainmail "some noise", plate
+  "heavy, loud, slower"). So armour makes the player harder to hurt but easier to hear.
+
+## A blow (proposed; numbers with attributes and balance)
+
+- **Chance to hit:** the attacker's **accuracy** (from attributes, cunning by round 3; the weapon;
+  perks) against a base, changed by the situation, kept between 5% and 95%:
+  - the target in the dark: a large minus (the dark is blind); in dim light, a small one;
+  - the attacker afraid (dread, `light-and-dread.md`, section 4): a minus;
+  - each extra foe beside the target's other side: being surrounded makes the one surrounded easier
+    to hit (a plus for each attacker past the first);
+  - a target that doesn't sense the attacker: a sure hit, ×3 damage (the sneak attack, as today).
+- **Damage:** the weapon's roll, plus brawn (round 3), minus the target's armour; at least 0.
+- **Health** from grit (round 3).
