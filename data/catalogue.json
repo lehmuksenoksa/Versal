@@ -2886,7 +2886,8 @@
     "darkVision": 3,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "A"
   },
   {
    "id": "giant-rat",
@@ -2909,7 +2910,8 @@
     "darkVision": 3,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "B"
   },
   {
    "id": "bat",
@@ -2942,7 +2944,8 @@
     "darkVision": 0,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "A"
   },
   {
    "id": "spider",
@@ -2976,7 +2979,8 @@
     "darkVision": 4,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "A"
   },
   {
    "id": "giant-spider",
@@ -3006,7 +3010,8 @@
     "darkVision": 6,
     "persistence": 2
    },
-   "side": "none"
+   "side": "none",
+   "step": "A"
   },
   {
    "id": "wolf",
@@ -3040,7 +3045,8 @@
     "darkVision": 4,
     "persistence": 3
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "A"
   },
   {
    "id": "dire-wolf",
@@ -3134,7 +3140,8 @@
     "darkVision": 3,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "B"
   },
   {
    "id": "worm",
@@ -3249,7 +3256,8 @@
     "darkVision": 3,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "B"
   },
   {
    "id": "slime",
@@ -3341,7 +3349,8 @@
     "darkVision": 0,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "B"
   },
   {
    "id": "golem",
@@ -3486,7 +3495,8 @@
     "darkVision": 0,
     "persistence": 0
    },
-   "side": "the dead"
+   "side": "the dead",
+   "step": "A"
   },
   {
    "id": "skeleton-warrior",
@@ -3509,7 +3519,8 @@
     "darkVision": 0,
     "persistence": 1
    },
-   "side": "the dead"
+   "side": "the dead",
+   "step": "B"
   },
   {
    "id": "skeleton-archer",
@@ -3532,7 +3543,8 @@
     "darkVision": 0,
     "persistence": 0
    },
-   "side": "the dead"
+   "side": "the dead",
+   "step": "B"
   },
   {
    "id": "zombie",
@@ -3551,7 +3563,7 @@
    "themes": [
     "the-dead"
    ],
-   "comment": "",
+   "comment": "Persistence 50 (test) in place of 'never stops searching' (in chat, round 41)",
    "role": "Brute",
    "answer": "Slow but never stops: outpace it, shut doors behind you",
    "answerKind": "Distance",
@@ -3563,9 +3575,10 @@
     "vision": 3,
     "hearing": 4,
     "darkVision": 0,
-    "persistence": 0
+    "persistence": 50
    },
-   "side": "the dead"
+   "side": "the dead",
+   "step": "A"
   },
   {
    "id": "wight",
@@ -3680,7 +3693,8 @@
     "darkVision": 6,
     "persistence": 0
    },
-   "side": "none"
+   "side": "none",
+   "step": "B"
   },
   {
    "id": "ghost-bat",
@@ -3727,7 +3741,8 @@
     "darkVision": 3,
     "persistence": 1
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "A"
   },
   {
    "id": "goblin-warrior",
@@ -3758,7 +3773,8 @@
     "darkVision": 3,
     "persistence": 1
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "A"
   },
   {
    "id": "goblin-archer",
@@ -3789,7 +3805,8 @@
     "darkVision": 3,
     "persistence": 1
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "A"
   },
   {
    "id": "goblin-chieftain",
@@ -3801,9 +3818,12 @@
    "line": "",
    "fits": [],
    "themes": [],
-   "comment": "",
+   "comment": "Slice 1's last test: leads a goblin camp near the stairs down on depth 6 (in chat, round 41)",
    "danger": 15,
-   "depth": 11
+   "depth": 11,
+   "tier": "slice 1",
+   "step": "A",
+   "side": "goblins"
   },
   {
    "id": "goblin-shaman",
@@ -3834,7 +3854,8 @@
     "darkVision": 3,
     "persistence": 1
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "B"
   },
   {
    "id": "goblin-king",
@@ -3878,7 +3899,8 @@
     "darkVision": 4,
     "persistence": 3
    },
-   "side": "goblins"
+   "side": "goblins",
+   "step": "B"
   },
   {
    "id": "cultist",
@@ -3910,7 +3932,8 @@
     "darkVision": 0,
     "persistence": 1
    },
-   "side": "the cult"
+   "side": "the cult",
+   "step": "A"
   },
   {
    "id": "cultist-warrior",
@@ -3947,7 +3970,8 @@
     "darkVision": 0,
     "persistence": 1
    },
-   "side": "the cult"
+   "side": "the cult",
+   "step": "B"
   },
   {
    "id": "cult-priest",
@@ -4047,7 +4071,8 @@
     "darkVision": 0,
     "persistence": 1
    },
-   "side": "outlaws"
+   "side": "outlaws",
+   "step": "B"
   },
   {
    "id": "bandit-archer",
@@ -4114,7 +4139,8 @@
     "darkVision": 2,
     "persistence": 2
    },
-   "side": "outlaws"
+   "side": "outlaws",
+   "step": "B"
   },
   {
    "id": "dark-elf",
@@ -4611,7 +4637,8 @@
     "darkVision": 5,
     "persistence": 1
    },
-   "side": "none"
+   "side": "none",
+   "step": "A"
   },
   {
    "id": "spitting-spider",

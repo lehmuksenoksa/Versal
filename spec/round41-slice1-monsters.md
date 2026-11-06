@@ -1,7 +1,21 @@
 # Round 41: slice 1's monsters
 
 **Answered.** Yes to all but the bone heap: 24 monsters (Rat, Bat, Spider, Cave spider, Giant spider, Giant rat, Giant centipede, Snake, Goblin, Goblin archer, Goblin warrior, Wolf, Goblin beasthound, Goblin shaman, Skeleton, Zombie, Skeleton archer, Skeleton warrior, Cultist, Cultist archer, Bandit, Thief, Mimic, Will-o'-wisp). Numbers as proposed (no
-comments on them). On the goblins: "Goblin Chieftain at the bottom maybe?" (discussed in chat).
+comments on them). On the goblins: "Goblin Chieftain at the bottom maybe?"
+
+Then, in chat:
+- **Built in two steps** (yours: "Two steps"). **Step A:** the nine in the game now (rat, bat, spider,
+  giant spider, goblin, goblin warrior, skeleton, zombie, cultist), the three simplest new ones
+  (goblin archer, wolf, cave spider) and the goblin chieftain. **Step B**, before playtesting: giant
+  rat, giant centipede, snake, goblin beasthound, goblin shaman, skeleton archer, skeleton warrior,
+  cultist archer, bandit, thief, mimic, will-o'-wisp (the thief, mimic, wisp and shaman each bring a
+  behaviour of their own).
+- **A goblin camp led by a goblin chieftain near the stairs down on depth 6**, slice 1's last test
+  (yours: "goblin camp is fine"). A leader, not a boss: the Over Dungeon has none. Depth 11, so a
+  lesser chieftain at depth 6 (round 28).
+- **Zombies: a very high persistence** (yours: "can we just give zombies a really high
+  persistence?"): 50 turns (test), in place of a "never stops searching" tag. A zombie that loses the
+  player keeps on their real trail for a long time, slowly.
 Each monster's tier, numbers and side are in the catalogue (`tier`, `senses`, `side`).
 
 Slice 1 is the plain Over Dungeon, depths 1 to 6 (`11-getting-there.md`). The Over Dungeon has any

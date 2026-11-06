@@ -35,7 +35,9 @@ Slices 2 to 4 are a sketch: each is chosen after the last is played.
 - **Goblins can still appear**, as the Over Dungeon's own: goblin camps, guard posts and crude
   prisons (round 21).
 - **Its monsters, items, strangers and features are a small set** for depths 1 to 6, picked from
-  the catalogue, not the whole roster.
+  the catalogue, not the whole roster. Monsters: 25, built in two steps (`round41-slice1-monsters.md`).
+- **Its ending: a goblin camp led by a goblin chieftain near the stairs down on depth 6** (a leader,
+  not a boss).
 - **The rebuild is in** (yours: "I like the rebuild plan"): content as data, saving, tests (the plan
   in `10-building-it.md`), drawing by families.
 - **Not in slice 1:** the phone layout; the title, death and victory pages.
