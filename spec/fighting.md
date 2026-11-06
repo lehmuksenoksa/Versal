@@ -34,3 +34,25 @@ retreating to a better position, running away").
   - a target that doesn't sense the attacker: a sure hit, ×3 damage (the sneak attack, as today).
 - **Damage:** the weapon's roll, plus brawn (round 3), minus the target's armour; at least 0.
 - **Health** from grit (round 3).
+
+## Time and speed
+
+- **Actions take time** (proposed, agreed as the basis): a walking step or a blow costs 100 ticks;
+  the player and every monster act when their time comes round. (The proof of concept does this in
+  a simple form: a sneaking step costs 1.5 turns.)
+- **Starting costs** (test):
+
+  | Action | Ticks |
+  |---|---|
+  | Sneaking step | 150 |
+  | Walking step | 100 |
+  | Running step | 60 |
+  | A blow | 100 (a dagger 60, a warhammer 150) |
+  | A shot | 100 (a crossbow 200 to load) |
+  | Putting out a candle or wall torch | 100 |
+  | Putting out a brazier or campfire | 200 |
+
+- **Monsters' speeds by kind** (test): fast, 60 (rats, wolves, bats); normal, 100 (goblins,
+  cultists); slow, 150 (zombies, trolls, golems).
+- **Running doesn't tire** (yours: "No stamina, only loud"): the player can run as long as they like,
+  at the price of noise (`stealth.md`, section 5). The player can outrun the slow, not the fast.
