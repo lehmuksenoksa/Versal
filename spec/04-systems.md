@@ -82,7 +82,8 @@ come with the content.
     and secret doors and levers only by searching.
   - **The dark is blind.** Blows in the dark miss more; you can't shoot what you can't see.
     Monsters that see in the dark don't suffer it. Shooting from the dark needs the target lit,
-    which keeps shooting in check.
+    which keeps shooting in check. (Changed in chat: shooting needs the target in sight, not in
+    light; `fighting.md`.)
   - **Some things shun light.** Rats, bats and spiders keep out of your light and won't attack
     into it; some of the dead are slowed in it.
   - **Reading needs light.** Scrolls and notes can't be read in the dark; spells already known can
