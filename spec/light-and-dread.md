@@ -31,3 +31,29 @@ dread, what light is worth) and `stealth.md` (light levels: dark 0, dim 1, lit 2
 | A torch on the wall | 1 (test) | 3 (test) |
 
 A new light is two numbers in the data.
+
+## 2. The player's sight
+
+Mirrors the monsters' (`stealth.md`), so one set of rules covers both.
+
+- **The player sees every lit or dim square in line of sight, however far.** A brazier-lit hall is
+  seen whole from a dark corridor: watching from the dark.
+- **In the dark, the player sees 3 steps** (yours: "In proof on concept it's 3 and it feels right,
+  but I might be wrong. We need to test this."): the ground's shape, and that something is there.
+  (Test.)
+- **What the player can tell, by the light where a thing is:**
+
+  | Where it is | What the player can tell |
+  |---|---|
+  | Lit | Everything: what it is, its state (in its tip), what an item is |
+  | Dim | What kind it is (a goblin, a chest), not more |
+  | Dark, within the player's dark sight | Only that something is there (round 3) |
+  | Dark, further | Nothing but what is heard |
+
+- **Hearing:** sounds show as noise words where they come from, as in the proof of concept (dread's
+  false noises come in there).
+- **What has been seen stays on the map;** monsters vanish when out of sight.
+- **Dark-vision** (a potion, a perk) works as for monsters: within its range, the dark counts as dim.
+- **To check against the lamp's numbers:** the proof of concept's lamp shows 8 steps round the
+  player (`render.js`); section 1's lamp (lit 2, dim 4) would show 4. The lamp's radii likely need to
+  be larger (test).
