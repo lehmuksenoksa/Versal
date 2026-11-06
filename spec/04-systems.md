@@ -21,7 +21,7 @@ come with the content.
   - Some floors are loud (rubble, water), some quiet (moss, carpet); running is loud.
   - Floors are drawn so their sound can be read (part 8).
 - **Fighting: a few choices, and shooting.**
-  - A monster's heavy blow is shown a turn before.
+  - ~~A monster's heavy blow is shown a turn before.~~ Dropped (in chat, before fighting: "no").
   - Shove (into a pit, water, a fire).
   - Weapons that differ (a dagger quick, a spear reaching two, an axe sweeping, a hammer
     stunning).
