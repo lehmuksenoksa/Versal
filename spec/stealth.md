@@ -27,6 +27,7 @@ number marked **(test)** is a starting value to tune in play; the shape of the r
 | `shade` | 0, 1, 2 | items and perks: how many light levels darker the player counts as |
 | `hush` | a factor, 1 by default | items and perks: how loud the player is |
 | `luck` | a list of chance effects | items and perks (section 6) |
+| `unseen` | true while invisible | a potion (round 42: "You can't get seen - not you count as dark"): sight checks never find the player; hearing still does |
 
 - **The lamp lights** the player's square and the squares around it (its radius, as today).
 - **The player's light level** `Lp = max(0, light(player's square) − shade)`.

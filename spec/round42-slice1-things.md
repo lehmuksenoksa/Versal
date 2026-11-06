@@ -1,5 +1,19 @@
 # Round 42: slice 1's things to find
 
+**Answered.**
+- **Yes:** Flask of oil, Stones, Candles, Torch, Darts and throwing knives, Caltrops, Healing, Murky, Antidote, Strong spirits, Strength, Invisibility, Map, Identify, Remove curse, Ring of quiet steps, Ring of strength, Ring of dark-sight, Wand of sleep, Wand of fire, Wand of slowing, Coins, Gems.
+- **No:** Darkness, Silence, Sleep, Blink, Amulet of warding, Lockpicks, Key, Pickaxe.
+- **Not answered:** Dark-sight.
+- **Item tags, yes:** Crude, Fine, Goblin-made, Iron, Steel, Silver, Rusty, Sharp, Cursed, Of spider slaying, Of goblin slaying, Of undead slaying, Of light. **No:** Cultist, Sturdy, Heavy. The cultist maker
+  "can be removed from the game".
+- **Lights** (on candles): "To be carried as well, a smaller light. Lasts longer than torch. Player
+  should be able to set down all lights, even the lamp, which should be an item as well, just one
+  they start with." Discussed in chat.
+- **Invisibility:** "You can't get seen - not you count as dark." So sight never finds the player
+  while it lasts; hearing still does.
+- Yes to coins, identify, remove curse and the cursed tag also says yes to trade, unknown things and
+  curses in slice 1: discussed in chat.
+
 For the plain Over Dungeon, depths 1 to 6. Weapons and armour are set (`fighting.md`); the flask of
 oil is decided (`light-and-dread.md`). The rest of round 23's list, with Depths (round 31), and the
 item tags that could come in. Some depend on something not yet decided for slice 1 (locked doors,

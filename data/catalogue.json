@@ -8485,8 +8485,7 @@
    "Goblin-made": "",
    "Dwarven": "",
    "Dark elven": "",
-   "Ancient": "",
-   "Cultist": ""
+   "Ancient": ""
   },
   "material": {
    "Stone": "Your addition",
@@ -8567,7 +8566,25 @@
    "Of warding": 10,
    "Of returning": 11,
    "Of swiftness": 12
-  }
+  },
+  "slice1": [
+   "Crude",
+   "Fine",
+   "Goblin-made",
+   "Iron",
+   "Steel",
+   "Silver",
+   "Rusty",
+   "Sharp",
+   "Cursed",
+   "Of spider slaying",
+   "Of goblin slaying",
+   "Of undead slaying",
+   "Of light"
+  ],
+  "removed": [
+   "Cultist"
+  ]
  },
  "adjacencyMeaning": {
   "nextTo": "A door between them",
@@ -8782,7 +8799,8 @@
    "state": "keep",
    "note": "decided, round 3",
    "depth": 1,
-   "comment": "Lamp oil and the oil flask merged (in chat, light and dread)"
+   "comment": "Lamp oil and the oil flask merged (in chat, light and dread)",
+   "tier": "slice 1"
   },
   {
    "id": "thing-22",
@@ -8791,7 +8809,8 @@
    "line": "A light to set down and leave behind",
    "state": "keep",
    "note": "decided, round 2",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-23",
@@ -8800,7 +8819,8 @@
    "line": "A brighter light to carry or set down, burning out",
    "state": "keep",
    "note": "",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-24",
@@ -8809,7 +8829,8 @@
    "line": "A noise where they land: monsters go to look",
    "state": "keep",
    "note": "decided, round 2",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-25",
@@ -8818,7 +8839,8 @@
    "line": "A quiet hit at range",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-26",
@@ -8835,7 +8857,8 @@
    "line": "Slow and hurt those who follow you",
    "state": "keep",
    "note": "decided, round 2",
-   "depth": 3
+   "depth": 3,
+   "tier": "slice 1"
   },
   {
    "id": "thing-28",
@@ -8854,7 +8877,8 @@
    "line": "Health back",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-30",
@@ -8863,7 +8887,8 @@
    "line": "Unknown until drunk: all heal, or all poison, a run's luck",
    "state": "in game",
    "note": "in the game",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-31",
@@ -8872,7 +8897,8 @@
    "line": "Cures poison",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-32",
@@ -8881,7 +8907,8 @@
    "line": "See in the dark for a while",
    "state": "keep",
    "note": "",
-   "depth": 4
+   "depth": 4,
+   "tier": null
   },
   {
    "id": "thing-33",
@@ -8890,7 +8917,8 @@
    "line": "More Brawn for a while",
    "state": "keep",
    "note": "",
-   "depth": 5
+   "depth": 5,
+   "tier": "slice 1"
   },
   {
    "id": "thing-34",
@@ -8899,7 +8927,8 @@
    "line": "Dread falls (your name for courage)",
    "state": "keep",
    "note": "",
-   "depth": 3
+   "depth": 3,
+   "tier": "slice 1"
   },
   {
    "id": "thing-35",
@@ -8908,7 +8937,8 @@
    "line": "A patch of the dark where you need it",
    "state": "keep",
    "note": "decided, round 3: spells",
-   "depth": 3
+   "depth": 3,
+   "tier": "later"
   },
   {
    "id": "thing-36",
@@ -8917,7 +8947,8 @@
    "line": "Your steps make no sound for a while",
    "state": "keep",
    "note": "decided, round 3",
-   "depth": 4
+   "depth": 4,
+   "tier": "later"
   },
   {
    "id": "thing-37",
@@ -8926,7 +8957,8 @@
    "line": "Those near fall asleep",
    "state": "keep",
    "note": "decided, round 3",
-   "depth": 5
+   "depth": 5,
+   "tier": "later"
   },
   {
    "id": "thing-38",
@@ -8935,7 +8967,8 @@
    "line": "A step of a few squares",
    "state": "keep",
    "note": "decided, round 3",
-   "depth": 6
+   "depth": 6,
+   "tier": "later"
   },
   {
    "id": "thing-39",
@@ -8970,7 +9003,8 @@
    "line": "Shows the level",
    "state": "keep",
    "note": "decided, round 6: maps",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-43",
@@ -8979,7 +9013,8 @@
    "line": "Identifies an item (your name for knowing)",
    "state": "keep",
    "note": "",
-   "depth": 2
+   "depth": 2,
+   "tier": "slice 1"
   },
   {
    "id": "thing-44",
@@ -8988,7 +9023,8 @@
    "line": "Lifts a curse without an altar",
    "state": "keep",
    "note": "",
-   "depth": 5
+   "depth": 5,
+   "tier": "slice 1"
   },
   {
    "id": "thing-45",
@@ -8997,7 +9033,8 @@
    "line": "You're harder to hear",
    "state": "keep",
    "note": "decided, round 2: charms",
-   "depth": 4
+   "depth": 4,
+   "tier": "slice 1"
   },
   {
    "id": "thing-46",
@@ -9006,7 +9043,8 @@
    "line": "See further in the dark",
    "state": "keep",
    "note": "",
-   "depth": 8
+   "depth": 8,
+   "tier": "slice 1"
   },
   {
    "id": "thing-47",
@@ -9015,7 +9053,8 @@
    "line": "One more to an attribute",
    "state": "keep",
    "note": "",
-   "depth": 7
+   "depth": 7,
+   "tier": "slice 1"
   },
   {
    "id": "thing-48",
@@ -9024,7 +9063,8 @@
    "line": "The dead notice you less",
    "state": "keep",
    "note": "",
-   "depth": 7
+   "depth": 7,
+   "tier": "later"
   },
   {
    "id": "thing-49",
@@ -9051,7 +9091,8 @@
    "line": "Puts one to sleep, a few charges",
    "state": "keep",
    "note": "decided, round 2: wands",
-   "depth": 6
+   "depth": 6,
+   "tier": "slice 1"
   },
   {
    "id": "thing-52",
@@ -9060,7 +9101,8 @@
    "line": "A burst of fire",
    "state": "keep",
    "note": "",
-   "depth": 6
+   "depth": 6,
+   "tier": "slice 1"
   },
   {
    "id": "thing-53",
@@ -9069,7 +9111,8 @@
    "line": "Slows a foe",
    "state": "keep",
    "note": "",
-   "depth": 8
+   "depth": 8,
+   "tier": "slice 1"
   },
   {
    "id": "thing-54",
@@ -9096,7 +9139,8 @@
    "line": "Opens one locked door",
    "state": "keep",
    "note": "decided, round 2: keys",
-   "depth": 1
+   "depth": 1,
+   "tier": "later"
   },
   {
    "id": "thing-57",
@@ -9105,7 +9149,8 @@
    "line": "Pick locks faster and quieter",
    "state": "keep",
    "note": "",
-   "depth": 3
+   "depth": 3,
+   "tier": "later"
   },
   {
    "id": "thing-58",
@@ -9114,7 +9159,8 @@
    "line": "Dig through a collapse, or a new way",
    "state": "keep",
    "note": "decided, round 6: digging",
-   "depth": 4
+   "depth": 4,
+   "tier": "later"
   },
   {
    "id": "thing-59",
@@ -9132,7 +9178,8 @@
    "line": "To trade with the peddler and others",
    "state": "keep",
    "note": "decided, round 6: trade",
-   "depth": 1
+   "depth": 1,
+   "tier": "slice 1"
   },
   {
    "id": "thing-61",
@@ -9141,7 +9188,8 @@
    "line": "Worth more, light to carry",
    "state": "keep",
    "note": "",
-   "depth": 5
+   "depth": 5,
+   "tier": "slice 1"
   },
   {
    "id": "thing-62",
@@ -9151,6 +9199,16 @@
    "state": "keep",
    "note": "",
    "depth": 8
+  },
+  {
+   "id": "thing-invisibility",
+   "name": "Invisibility",
+   "group": "Potions",
+   "line": "For a while you can't be seen (hearing still finds you)",
+   "state": "keep",
+   "note": "yours, the stealth talk; round 42",
+   "tier": "slice 1",
+   "depth": null
   }
  ],
  "overDungeonLooseRooms": {
