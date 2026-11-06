@@ -6,8 +6,8 @@ make the key decisions. When the whole of it is written and you say go, building
 
 ## How we work
 
-1. **The spec first, then the game.** Nothing more goes into the game until the spec is whole
-   and you've given the go. After the go, the game is built milestone by milestone from the
+1. **The spec first, then the game, a slice at a time** (after round 38, `11-getting-there.md`).
+   Nothing more goes into the game until the current slice's spec is whole and you've given the go. After the go, the game is built milestone by milestone from the
    spec. If building turns up something the spec didn't see, it comes back to you as a question
    and doesn't get decided along the way.
 2. **Shallow first: explore wide before going deep.** In your words: "I'd like to go shallow and
@@ -74,7 +74,7 @@ Each part's state is one of:
 | 8 | Visual language | The map's rules in full (hatching, broken lines, light's ragged edges, height and depth, families of things), the interface's rules, every element by family | started (`../VISUAL_LANGUAGE.md`) |
 | 9 | Sound | None (round 1): the noise words are its sound | decided |
 | 10 | Building it | Code structure, data for content, saving, performance budgets (laptops), tests, balance by simulated runs, where it's published | open |
-| 11 | Getting there | Milestones from the go to release; playtests | open |
+| 11 | [Getting there](11-getting-there.md) | The roadmap: the game grows in slices, each specified, built and played before the next | slice 1 being decided |
 
 ## Rounds
 
@@ -118,6 +118,8 @@ Each part's state is one of:
 | 36 | What strangers offer, shallow ([`round36-strangers-offer.md`](round36-strangers-offer.md)) | answered |
 | 37 | Which stranger offers what ([`round37-who-offers-what.md`](round37-who-offers-what.md)) | answered |
 | 38 | Monsters' states, shallow ([`round38-monster-states.md`](round38-monster-states.md)) | answered |
+| — | A breather: the scope cut to slices; slice 1 is the Over Dungeon then Goblin Territory, six maps ([`11-getting-there.md`](11-getting-there.md)) | decided in chat |
+| 39 | Slice 1's mechanics, the rebuild, height ([`round39-slice1-mechanics.md`](round39-slice1-mechanics.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
