@@ -123,6 +123,7 @@ Each part's state is one of:
 | — | The choices page set aside for a while: "It might not be the best tool for this discussion and planning." The mechanics are discussed in chat. Back for lists (round 40), with yes or no and a comment on each row | — |
 | 40 | Perks for slice 1 ([`round40-perks.md`](round40-perks.md)) | answered: 31 kept |
 | 41 | Slice 1's monsters ([`round41-slice1-monsters.md`](round41-slice1-monsters.md)) | answered: 24 |
+| 42 | Slice 1's things to find ([`round42-slice1-things.md`](round42-slice1-things.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
