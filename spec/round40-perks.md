@@ -6,6 +6,10 @@ a number no attribute drives (dark sight, hearing, oil, speeds); accuracy, damag
 left to the +1 attribute. Slice 1 needs 12 to 15; here are 43, in four families, to cut. "Rare"
 ones come only deeper (round 3). Each line says what kind it is.
 
+On the page: **yes or no** for each, and a comment on any one for discussion (yours: "Let's do
+"Yes" "No" and Comment field for discussion"). My "here" picks show as yes; my "maybe"s are left
+open.
+
 ## Shadow: stealth
 
 Bending how you're seen and heard (stealth.md).
