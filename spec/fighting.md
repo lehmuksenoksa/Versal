@@ -25,15 +25,15 @@ retreating to a better position, running away").
 
 ## A blow (proposed; numbers with attributes and balance)
 
-- **Chance to hit:** the attacker's **accuracy** (from attributes, cunning by round 3; the weapon;
-  perks) against a base, changed by the situation, kept between 5% and 95%:
+- **Chance to hit:** the attacker's **accuracy** (melee from brawn, shooting from cunning,
+  `03-the-character.md`; the weapon; perks) against a base, changed by the situation, kept between 5% and 95%:
   - the target in the dark: a large minus (the dark is blind); in dim light, a small one;
   - the attacker afraid (dread, `light-and-dread.md`, section 4): a minus;
   - being surrounded: for each foe next to the target past the first, a plus to hit it (so a
     doorway or a narrow way protects);
   - a target that doesn't sense the attacker: a sure hit, ×3 damage (the sneak attack, as today).
-- **Damage:** the weapon's roll, plus brawn (round 3), minus the target's armour; at least 0.
-- **Health** from grit (round 3).
+- **Damage:** the weapon's roll, plus brawn for melee, minus the target's armour; at least 0.
+- **Health** from grit.
 
 ## Time and speed
 

@@ -92,7 +92,7 @@ builds it.
 - **A number from 0 to 100** (proposed, kept hidden).
 - **It rises each turn the player is in the dark** (the lamp out and the player's square not lit):
   from 0 to 100 in about 300 turns (test). **It falls each turn in light**, about twice as fast
-  (test). **Fervor slows the rise.**
+  (test). **Grit slows the rise in slice 1** (fervor, when it comes).
 - **Thresholds, certain** (proposed):
 
   | Dread | Word | What happens |

@@ -62,4 +62,17 @@ One start for everyone. The run's variety comes from choices made at each level 
 - **Fewer to start** (yours: "Start with fewer"). Round 3's five checked against what slice 1 has:
   cunning did too much (quieter and more accurate with everything); fervor and acumen were thin
   without spells and traps. Slice 1 starts with fewer; the others come when their systems do.
-- Which, and what each drives: proposed in chat, to decide.
+- **Grit, brawn and cunning** (agreed in chat), each owning one way to play:
+
+  | Attribute | Drives in slice 1 | The character it makes |
+  |---|---|---|
+  | **Grit** | Health; resisting poison; steadiness: dread rises slower (fervor's job until fervor comes) | The survivor: lasts longer, in the dark too |
+  | **Brawn** | Melee damage and melee accuracy; shoving; heavy gear's costs lessened (chainmail's noise, the warhammer's slowness); carrying | The fighter: wins in the open, holds a doorway |
+  | **Cunning** | Quieter steps (hush, `stealth.md`); shooting accuracy; later, traps and locks | The sneak and the archer: unseen, and deadly at range |
+
+- **Fervor and acumen come later**, with spells, traps and the rest; then grit hands dread back to
+  fervor. Perception (dark sight, hearing, secrets) has no attribute in slice 1: fixed, changed by
+  perks and items.
+- **Growth as round 3:** at each level up, a perk and +1 to an attribute of the player's choice.
+- **First balance check (maths):** cunning pairs stealth with shooting; shooting needs the target in
+  sight and the dark makes shots miss more.
