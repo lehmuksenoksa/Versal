@@ -35,7 +35,7 @@ From part 0: what has to change before the game can grow. Not mechanics, but wor
 |---|---|---|
 | Content as data | Monsters, items, places loaded from data like the catalogue | Here |
 | Saving | A run saved and resumed: everything as plain data | Here |
-| Tests and simulated runs | Rules tested without a browser; a bot playing many runs to tune balance | Here |
+| Tests | Maths for the curves, rules tests, small simulations of fights and levels, a crude bot to catch breakage; no graphics (`10-building-it.md`) | Here |
 | Drawing by families | Rules for each family of things, so new looks cost less | Here |
 | The phone layout | Designed as fully as the big screen (put off in the proof of concept) | Maybe |
 | Title, settings, death and victory pages | The pages around the game (minimal) | Maybe |
