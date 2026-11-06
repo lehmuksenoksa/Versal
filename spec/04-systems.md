@@ -140,3 +140,30 @@ Settled in round 28 (`round28-depth-level.md`):
 - **A monster's state is told in its tip** when you look at it; some states also show by animation.
 - **Alarms (a gong, a bell, a horn) reach so many steps, not the whole level.** Which monsters an
   alarm rouses is open (does a goblin gong rouse spiders?).
+
+## Stealth: noticing (discussed in chat, after round 39)
+
+Your model: "What do we actually need to know? Does the monster notice (see or hear) the player,
+right?" No awareness meter as such. Each turn, each monster that isn't dormant checks two things.
+
+- **Sight.** Needs a line of sight (walls and columns block it). How far depends on the monster's
+  **Vision** (how far it sees in good light), its state, and **how lit the player's square is**:
+  fully lit, the monster's Vision; dim, less; dark, not at all (unless next to it). Monsters with
+  **dark-vision** see in the dark, and are dazzled in full light. The player's lamp lights the
+  player's own square.
+- **Hearing.** Of sounds the player makes, not of the player. A monster's **Hearing** is how far it
+  hears a normal walk; each action has a loudness (sneaking quieter, running and fighting louder),
+  the floor changes it (rubble, water louder; moss quieter), and walls muffle it.
+- **States change the senses** (yours: "Sleep > Vision 0, Hearing halved"); for example at a
+  campfire, no dark-vision; at work, hearing dulled.
+- **Items and perks change the outcome** (yours: a potion of invisibility, boots of silence, a cloak
+  of shadows, perks). They work on the player's two numbers: how lit the player counts as, and how
+  loud.
+- **Certain, with a glimpse.** Noticing is certain, not a chance: inside range, the monster
+  notices. A **glimpse** (seen at the edge of its range, or in dim light) makes it suspicious and it
+  comes to look; seeing the player clearly makes it alert. Yours: "Something like this. The range
+  and conditions of a 'glimpse' needs to be tested to decide exactly how it should be."
+
+Proposed, not yet decided: a lamp's glow seen from further than the player (suspicious, not
+alert); next to a monster always means noticed, unless it's asleep or dormant. The numbers
+(Vision, Hearing, loudness) come with balance.
