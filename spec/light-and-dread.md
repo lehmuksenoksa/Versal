@@ -13,6 +13,13 @@ dread, what light is worth) and `stealth.md` (light levels: dark 0, dim 1, lit 2
 - **Dim light comes only from the rings** in slice 1 (yours: "Yes, keep dim to rings for slice
   1"): no dim places of their own.
 - **Carried lights move with their carrier**: the player's lamp, a cultist's lantern.
+- **All light comes from sources** (yours: "We should also remove lit rooms and corridors and
+  replace them with light sources in corridors and rooms"). No room or stretch of corridor is lit
+  of itself, as some are in the proof of concept (`levelgen.js`: lit rooms, lit corridor stretches).
+  Every light is a thing on the map, seen, and (most) put out. Corridors are lit by **torches on the
+  wall**, a new light (and a new small look).
+- The proof of concept already gives its lights a full band and a dim band (`LIGHTS` in
+  `levelgen.js`), so this model is close to what's built.
 
 | Light | Lit within | Dim out to |
 |---|---|---|
@@ -21,5 +28,6 @@ dread, what light is worth) and `stealth.md` (light levels: dark 0, dim 1, lit 2
 | A brazier | 3 (test) | 6 (test) |
 | A campfire | 2 (test) | 5 (test) |
 | A candle | 1 (test) | 2 (test) |
+| A torch on the wall | 1 (test) | 3 (test) |
 
 A new light is two numbers in the data.
