@@ -3335,13 +3335,13 @@
    "themes": [
     "deep"
    ],
-   "comment": "",
+   "comment": "Out of slice 1 (in chat, round 41)",
    "role": "Ambusher",
    "answer": "A chest that isn't: search before you open, or throw something at it",
    "answerKind": "Searching",
    "danger": 6,
    "depth": 5,
-   "tier": "slice 1",
+   "tier": "later",
    "senses": {
     "speed": 100,
     "vision": 0,
@@ -3349,8 +3349,7 @@
     "darkVision": 0,
     "persistence": 0
    },
-   "side": "none",
-   "step": "B"
+   "side": "none"
   },
   {
    "id": "golem",
@@ -3679,13 +3678,13 @@
    "themes": [
     "deep"
    ],
-   "comment": "",
+   "comment": "Out of slice 1 (in chat, round 41)",
    "role": "Lure",
    "answer": "Shines a small light that shows you to others: don't follow it",
    "answerKind": "Searching",
    "danger": 3,
    "depth": 1,
-   "tier": "slice 1",
+   "tier": "later",
    "senses": {
     "speed": 100,
     "vision": 6,
@@ -3693,8 +3692,7 @@
     "darkVision": 6,
     "persistence": 0
    },
-   "side": "none",
-   "step": "B"
+   "side": "none"
   },
   {
    "id": "ghost-bat",

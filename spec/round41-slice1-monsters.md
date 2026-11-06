@@ -8,8 +8,9 @@ Then, in chat:
   giant spider, goblin, goblin warrior, skeleton, zombie, cultist), the three simplest new ones
   (goblin archer, wolf, cave spider) and the goblin chieftain. **Step B**, before playtesting: giant
   rat, giant centipede, snake, goblin beasthound, goblin shaman, skeleton archer, skeleton warrior,
-  cultist archer, bandit, thief, mimic, will-o'-wisp (the thief, mimic, wisp and shaman each bring a
-  behaviour of their own).
+  cultist archer, bandit, thief (the thief and the shaman each bring a behaviour of their own).
+- **Not in slice 1: the mimic and the will-o'-wisp** (yours: "we can forget mimic and will o wisp for
+  slice 1").
 - **A goblin camp led by a goblin chieftain near the stairs down on depth 6**, slice 1's last test
   (yours: "goblin camp is fine"). A leader, not a boss: the Over Dungeon has none. Depth 11, so a
   lesser chieftain at depth 6 (round 28).
