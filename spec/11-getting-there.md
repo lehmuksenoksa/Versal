@@ -25,7 +25,7 @@ making sure everything works before we add too many variables to tell what isn't
 
 1. **The rebuild first: no new features.** The proof of concept's engine reworked so new features are
    easier and cheaper to add, and automated testing is possible. Some existing features may be pared
-   down.
+   down. The plan, for review before its go: `rebuild-plan.md`.
 2. **Then feature sets, one at a time,** each built, tested and played on the proof of concept's small
    scale before the next, so when something doesn't work it's clear what.
 3. **Slice 1's spec stays the target:** what's decided for slice 1 is built feature set by feature

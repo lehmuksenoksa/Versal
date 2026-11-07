@@ -73,7 +73,7 @@ Each part's state is one of:
 | 7 | [Interface](07-interface.md) | Layout (big screens), panels, tips, keys and mouse, the level-up page, title, death and victory pages, settings, accessibility | slice 1's needs listed |
 | 8 | Visual language (slice 1's list: [`slice1-looks.md`](slice1-looks.md)) | The map's rules in full (hatching, broken lines, light's ragged edges, height and depth, families of things), the interface's rules, every element by family | started (`../VISUAL_LANGUAGE.md`) |
 | 9 | Sound | None (round 1): the noise words are its sound | decided |
-| 10 | [Building it](10-building-it.md) | Code structure, data for content, saving, performance budgets (laptops), tests, balance (maths and part simulations), where it's published | testing and balance planned; the rest open |
+| 10 | [Building it](10-building-it.md) (the rebuild: [`rebuild-plan.md`](rebuild-plan.md)) | Code structure, data for content, saving, performance budgets (laptops), tests, balance (maths and part simulations), where it's published | testing and balance planned; the rest open |
 | 11 | [Getting there](11-getting-there.md) | The roadmap: the game grows in slices, each specified, built and played before the next | slice 1 being decided |
 
 ## Rounds
