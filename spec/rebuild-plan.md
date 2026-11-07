@@ -361,3 +361,37 @@ come feature set by feature set, after.
     44. A close fight, unless the player comes better armed.
   - None of this is to tune now (no balance changes in the rebuild); it's the starting line the
     feature sets are measured against.
+
+**R8, the level generator rebuilt: done.** The rebuild's last step.
+- **First, what it makes was locked** (`tests/levelprints.test.js`, `tests/support/levelprints.js`):
+  60 seeds of every place, each level hashed whole (its squares, rooms, furniture, lights, doors,
+  secret doors, everything it returns), recorded before any change. Checked that it notices: one
+  chance in the storerooms' stacking from 0.15 to 0.16 changes 20 of the 180.
+- **Split into its parts** (`js/rules/levelgen/`): the generator was one function of 1,270 lines,
+  every part reaching every other's state. Now: `make` (the level in the making, one object every
+  part works on, and the helpers they share), `regions`, `rooms` (placed and carved: caves and
+  their formations, built rooms, rooms fallen in), `halls` (the king's), `corridors` (and loops,
+  shortcuts, rubble), `furnish` (the dungeon rooms), `doors` (and secret doors), `lights`, and
+  `index`, the order of it all, the order the dice are thrown in. `levelgen.js` stays the entry,
+  so nothing else changed. Each part's code moved as it was; a parser checked every part for names
+  it uses without having them, and for names it has but never uses. **All 180 levels the same**,
+  and the run lock, the map drawings and the browser check passed unchanged.
+- **The room kinds and furnishings as data** (`js/content/rooms.json`): every dungeon room kind (how
+  likely, where it fits, how it's lit, whether it takes columns or recesses) and every kind of the
+  king's hall (where it fits and how soon it's chosen, or where it's placed). The long chains of
+  branches became tables: a furnishing function a room kind and a lighting layout a way of lighting
+  (`levelgen/kinds.js`), a plan a kind of hall (`PLANS`, `levelgen/halls.js`). **Ready for
+  templates and the slice's ground:** a new kind of room is an entry in `rooms.json` and a function
+  in its table; a template (a part of a level laid out by design, round 44) is a new part in the
+  order. The kinds' weights moved there from `tuning.json`; the generator's settings still take
+  them (the levels mockup's sliders work as before). The content check covers `rooms.json`. **All
+  180 levels the same** again.
+- **Changed on purpose: no door onto a secret door.** Of two doors in a row through a thick wall,
+  neither is now made secret (R7's finding). Only secret doors changed: on 24 of the 180 levels,
+  some secret doors are plain now and others secret instead; nothing else moved. The level checks
+  now fail a door that opens onto a secret door (they do on the code before). The run lock, the
+  levels' fingerprints and the map drawings re-recorded for it; the suite and the deep run pass.
+- **Still for you:** about 1 depth-1 level in 6 can only be left by finding a secret door (82 of
+  500). Should every level have a way on without one?
+- **The rebuild is done** (R1 to R8). Next, the feature sets, one at a time (`11-getting-there.md`,
+  "The order of building").

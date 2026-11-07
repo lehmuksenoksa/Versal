@@ -33,9 +33,12 @@ export function hideSecretDoors(g, startRoom) {
   const { S, rng, tiles, idx, doors, mustDoor } = g;
   // Secret doors: their squares rock until found (each { x, y, dx, dy }, as
   // a door).
+  // (Not by the start room; and not one of two doors in a row through a
+  // thick wall, which would open onto a secret door, or two in a row.)
   const secrets = [], inStart = (x, y) => x >= startRoom.x && y >= startRoom.y && x < startRoom.x + startRoom.w && y < startRoom.y + startRoom.h;
+  const doorSq = new Set(doors.map((d) => idx(d.x, d.y))), paired = (d) => doorSq.has(idx(d.x + d.dx, d.y + d.dy)) || doorSq.has(idx(d.x - d.dx, d.y - d.dy));
   for (const d of [...doors]) {
-    if (mustDoor.has([d.x, d.y].join()) || inStart(d.x + d.dx, d.y + d.dy) || inStart(d.x - d.dx, d.y - d.dy) || !rng.chance(S.secretDoors)) continue;
+    if (mustDoor.has([d.x, d.y].join()) || inStart(d.x + d.dx, d.y + d.dy) || inStart(d.x - d.dx, d.y - d.dy) || paired(d) || !rng.chance(S.secretDoors)) continue;
     doors.splice(doors.indexOf(d), 1);
     tiles[idx(d.x, d.y)] = T.ROCK;
     secrets.push({ x: d.x, y: d.y, dx: d.dx, dy: d.dy });

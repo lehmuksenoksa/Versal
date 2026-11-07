@@ -42,7 +42,10 @@ export function levelProblems(w) {
     else if (!reach(king.x, king.y)) bad.push("the king can't be reached");
   }
   // (Doors and secret doors stand in a wall, between two ways through:
-  // floor, or another door.)
+  // floor, or another door; never a door onto a secret door.)
+  const secretSq = new Set((L.secrets ?? []).map((d) => d.y * W + d.x));
+  for (const d of [...(L.doors ?? []), ...(L.secrets ?? [])])
+    for (const s of [-1, 1]) if (secretSq.has((d.y + s * d.dy) * W + d.x + s * d.dx)) bad.push(`a door at ${d.x},${d.y} opens onto a secret door`);
   for (const d of [...(L.doors ?? []), ...(L.secrets ?? [])]) {
     const through = (x, y) => isWalkable(L.get(x, y)) || doorish.has(y * W + x);
     if (!through(d.x + d.dx, d.y + d.dy) || !through(d.x - d.dx, d.y - d.dy)) bad.push(`a door at ${d.x},${d.y} leads nowhere`);
