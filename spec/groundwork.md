@@ -223,10 +223,10 @@ should be; levels kept as left; the run lost on death.
 1. **No diagonal moves from the keyboard without a number pad** (vi-keys are the old-school way;
    `l` is look now). For you: the keys.
 2. **The stairs an escape:** nothing follows; with the fighting or stealth feature set (monsters
-   next to the player follow).
+   next to the player follow). Decided (yours: "Sure").
 3. **Replays:** done (below).
 4. **Running** (Shift and a way): done (below).
-5. **Fleeing into dead ends:** a safety map, with the monsters' behaviour.
+5. **Fleeing into dead ends:** a safety map, with the monsters' behaviour. Decided (yours: "Sure").
 6. **The line of a shot the same as the line of sight:** with the archers (contents).
 
 **Under the hood:**
