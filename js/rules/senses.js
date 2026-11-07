@@ -1,8 +1,7 @@
 // What the player sees (field of view), what the monsters notice (sight, sound, the lamp), secret doors found, and noise.
 // Methods of the World (js/rules/world.js), joined to it there.
-import { MONSTERS, GOBLIN, AWARE, NOISE, SENSES, SECRET } from "./content.js";
+import { MONSTERS, GOBLIN, AWARE, NOISE, SENSES, SECRET, PLAYER } from "./content.js";
 import { monTrait } from "./traits.js";
-import { an } from "./names.js";
 import { T, isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
 import { crossesOutline } from "./sightline.js";
@@ -56,10 +55,11 @@ export const senseMethods = {
     }
   },
 
-  // Lamp out (sneaking, seeing only `sight`) or lit again.
-  setSneaking(on, sight) {
+  // Lamp out (sneaking, seeing only so far round) or lit again (the player's
+  // sight either way: tuning.json, `player.sight`).
+  setSneaking(on) {
     this.sneaking = on;
-    this.sight = sight;
+    this.sight = on ? PLAYER.sight.dark : PLAYER.sight.lit;
     this.updateFov();
     this.events.push({ type: "sneak", on });
     this.log(on ? "You put out your lamp." : "You light your lamp.");

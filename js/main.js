@@ -1,9 +1,9 @@
 // Bootstrap: fonts, input and the animation loop.
 
-import { World, ITEMS, MONSTERS, monName } from "./rules/world.js";
+import { World, ITEMS } from "./rules/world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
-import { wayTo, wayToExplore, WALK } from "./rules/travel.js";
+import { wayTo, WALK } from "./rules/travel.js";
 import { tipFor, tipHtml } from "./tips.js";
 
 const KEYS = {
@@ -23,14 +23,13 @@ function step(dx, dy, repeat) {
   const now = performance.now();
   if (repeat && now - lastMove < 110) return;
   lastMove = now;
-  world.playerMove(dx, dy);
+  world.act({ do: "move", dx, dy });
 }
 
 // A new run: a new level, the lamp lit, and the player's name asked over it
 // (the last one offered).
 function newRun() {
-  stopRest(null);
-  stopWalk();
+  stopGoing();
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
@@ -40,11 +39,11 @@ function newRun() {
   // (The level is there at once; the name asked over it, in the corner,
   // and the player named when it's given. `?name=…` skips the question, for
   // trying things out.)
-  if (world?.sneaking) renderer.toggleLamp();
   const q = new URLSearchParams(location.search), given = q.get("name");
   // (`?seed=…` makes the same run every time, for tests.)
   world = new World(q.has("seed") ? Number(q.get("seed")) : undefined, { name: given || ui.lastName() || "Adventurer" });
   renderer.setWorld(world);
+  renderer.showLamp();
   if (!given) ui.askName((name) => { world.player.name = name; window.focus(); });
   window.focus();
 }
@@ -86,12 +85,12 @@ function startOrResume() {
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
-  const dark = w.sneaking;
-  w.sneaking = false;
   world = w;
+  // (Whatever was under way when the page was left, not carried on.)
+  world.stop();
   renderer.setWorld(world);
   // (The lamp as it was left, drawn so.)
-  if (dark) renderer.toggleLamp();
+  renderer.showLamp();
   saved = { turn: world.turn, depth: world.place.depth };
   world.log("You take up your run where you left it. (N: a new run instead.)");
   offerNew = world.turn;
@@ -100,43 +99,44 @@ function startOrResume() {
 window.addEventListener("pagehide", saveRun);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveRun(); });
 
-// Resting: a turn every `REST_MS` until healed and well, or until something
-// comes into sight or chases near by, or a key or tap.
+// Activities (js/rules/actions.js: resting, walking, exploring) carried on a
+// turn at a time, the rules deciding when each stops: a turn every `REST_MS`
+// resting, every `WALK.every` walking. Any key or click stops one.
 const REST_MS = 60;
-let resting = null;
-function startRest() {
-  if (!world || world.ended || resting) return;
-  const why = world.cantRest();
-  if (why) return world.log(why);
-  world.log("You rest.");
-  resting = setInterval(() => {
-    const p = world.player;
-    if (world.ended) return stopRest(null);
-    if (world.disturbed()) return stopRest("Something stirs. You stop resting.");
-    // (Resting, the player looks about for secret doors as searching does.)
-    world.tick(true, true);
-    if (!world.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) stopRest("You feel rested.", "good");
-  }, REST_MS);
+let goingOn = null;
+const doing = (kind) => !!world?.doing && (!kind || (kind === "rest") === (world.doing.do === "rest"));
+function begin(cmd) {
+  stopGoing();
+  if (!world.act(cmd) || !world.doing) return;
+  renderer.preview = null;
+  if (world.doing.do === "rest") goingOn = setTimeout(goOn, REST_MS);
+  else goOn();
 }
-function stopRest(why, kind) {
-  if (!resting) return;
-  clearInterval(resting);
-  resting = null;
-  if (why) world.log(why, kind);
+function goOn() {
+  goingOn = null;
+  if (!world?.doing) return;
+  if (ui.blocking) return stopGoing();
+  world.goOn();
+  if (world.doing) goingOn = setTimeout(goOn, world.doing.do === "rest" ? REST_MS : WALK.every);
+}
+function stopGoing(why = null) {
+  clearTimeout(goingOn);
+  goingOn = null;
+  world?.stop(why);
 }
 
 window.addEventListener("keydown", (e) => {
   if (!world || e.ctrlKey || e.metaKey || e.altKey || ui.asking) return;
   if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(e.key)) return;
   // (Any key stops a walk.)
-  if (walking) { e.preventDefault(); return stopWalk(); }
+  if (doing("walk")) { e.preventDefault(); return stopGoing(); }
   // Tab: the whole level, as far as it's been seen; Tab again, or any other
   // key, back.
   if (e.key === "Tab") { e.preventDefault(); return toggleWhole(); }
   if (renderer.whole) renderer.showWhole(null);
   // (Any key ends a run that's over, stops resting.)
   if (world.ended) { e.preventDefault(); return newRun(); }
-  if (resting) { e.preventDefault(); return stopRest("You stop resting."); }
+  if (doing("rest")) { e.preventDefault(); return stopGoing("You stop resting."); }
   if (ui.helpOpen) {
     if (e.key === "?" || e.key === "Escape") { e.preventDefault(); ui.toggleHelp(false); }
     return;
@@ -168,38 +168,38 @@ window.addEventListener("keydown", (e) => {
   } else if (e.key === "." || e.key === " ") {
     // Wait a turn and watch the goblins.
     e.preventDefault();
-    world.tick();
+    world.act({ do: "wait" });
   } else if (e.key === "c" || e.key === "C") {
     // Close a door next to the player.
     e.preventDefault();
-    world.closeDoor();
+    world.act({ do: "close" });
   } else if (e.key === "x" || e.key === "X") {
     // Explore: walk to the nearest place not yet seen, and on.
     e.preventDefault();
-    startWalk({ explore: true });
+    begin({ do: "explore" });
   } else if (e.key === "z" || e.key === "Z") {
     // Search for secret doors close by (a turn).
     e.preventDefault();
-    world.search();
+    world.act({ do: "search" });
   } else if (e.key === "r" || e.key === "R") {
     e.preventDefault();
-    startRest();
+    begin({ do: "rest" });
   } else if (e.key === "f" || e.key === "F") {
     // Put the lamp out (sneak), or light it again.
     e.preventDefault();
-    if (!world.dead) renderer.toggleLamp();
+    toggleLamp();
   } else if (e.key === ">" || e.key === "<") {
     e.preventDefault();
-    world.takeStairs(e.key === ">" ? "down" : "up");
+    world.act({ do: "stairs", dir: e.key === ">" ? "down" : "up" });
   } else if (e.key === "," || e.key === "g") {
     e.preventDefault();
-    world.pickUp();
+    world.act({ do: "pickUp" });
   } else if (e.key === "q") {
     // Drink: a potion at once when there's one kind, else ask which.
     e.preventDefault();
     const kinds = world.player.pack.filter((i) => ITEMS[i.type].cat === "potion");
     if (!kinds.length) world.log("You have nothing to drink.");
-    else if (kinds.length === 1) world.drink(kinds[0].key);
+    else if (kinds.length === 1) world.act({ do: "drink", key: kinds[0].key });
     else ui.ask("q");
   } else if (e.key === "t") {
     e.preventDefault();
@@ -223,11 +223,17 @@ window.addEventListener("keydown", (e) => {
 // its letter), taking off (by where), picking up.
 function act(verb, key) {
   if (!world || world.ended) return;
-  if (verb === "q") world.drink(key);
-  else if (verb === "W") world.wield(key);
-  else if (verb === "D") world.drop(key);
-  else if (verb === "t") world.takeOff(key);
-  else if (verb === "pick") world.pickUp();
+  if (verb === "q") world.act({ do: "drink", key });
+  else if (verb === "W") world.act({ do: "wield", key });
+  else if (verb === "D") world.act({ do: "drop", key });
+  else if (verb === "t") world.act({ do: "takeOff", where: key });
+  else if (verb === "pick") world.act({ do: "pickUp" });
+}
+// The lamp out or lit again (the rules), and drawn so.
+function toggleLamp() {
+  if (!world || world.dead) return;
+  world.act({ do: "lamp" });
+  renderer.showLamp();
 }
 ui.onAct = (verb, key) => { ui.endAsk(); act(verb, key); };
 // A tap ends a run that's over; the help closes when tapped.
@@ -260,7 +266,10 @@ const stepAt = (t) => [Math.round(Math.cos(t)), Math.round(Math.sin(t))];
 function stepToward(d, walking) {
   const tries = [d.along];
   if (walking) tries.push(...[d.along + Math.PI / 4, d.along - Math.PI / 4].sort((p, q) => Math.abs(Math.atan2(Math.sin(p - d.a), Math.cos(p - d.a))) - Math.abs(Math.atan2(Math.sin(q - d.a), Math.cos(q - d.a)))));
-  for (const t of tries) if (world.playerMove(...stepAt(t))) return true;
+  for (const t of tries) {
+    const [dx, dy] = stepAt(t);
+    if (world.act({ do: "move", dx, dy })) return true;
+  }
   return false;
 }
 
@@ -283,60 +292,9 @@ function endHold() {
   hold = null;
 }
 
-// Walking by itself (travel.js): to a square clicked, or exploring (x). A
-// step every `WALK.every` ms, the way found afresh each step; stopped by a
-// monster not in sight before coming into it, a hit point lost, something
-// underfoot (not what it was walking to), a key or a click. `to`: the square;
-// `near`: stop next to it (a monster); `then`: what to do on getting there.
-let walking = null;
+// (Not walking far, badly hurt: the touch walk's own check.)
 const tooHurt = () => world.player.hp < world.player.maxHp * WALK.tooHurt;
 
-function startWalk(opts) {
-  stopWalk();
-  // (No exploring with a monster in sight that's after you.)
-  const after = opts.explore && world.actors.find((a) => a !== world.player && world.isVisible(a.x, a.y) && (a.state === "aggressive" || a.state === "suspicious"));
-  if (after) return world.log(`Not with ${an(monName(after))} about.`);
-  const way = opts.explore ? wayToExplore(world) : wayTo(world, opts.to.x, opts.to.y);
-  if (!way) return world.log(opts.explore ? "There's nothing left to explore that you can reach." : "You can't see a way there.");
-  if (way.length > 1 && tooHurt()) return world.log("You're too hurt to go far. Rest first (r).");
-  walking = { ...opts, seen: goblinsInSight(), hp: world.player.hp, from: { x: world.player.x, y: world.player.y } };
-  renderer.preview = null;
-  walkStep();
-}
-
-function stopWalk() {
-  if (!walking) return;
-  clearTimeout(walking.timer);
-  walking = null;
-}
-
-function walkStep() {
-  const W = walking;
-  if (!W || !world || world.ended || ui.blocking) return stopWalk();
-  const p = world.player;
-  const way = W.explore ? wayToExplore(world) : wayTo(world, W.to.x, W.to.y);
-  const there = way && (W.near ? way.length <= 1 : way.length === 0);
-  if (!way || there) {
-    stopWalk();
-    if (!way && W.explore) world.log("There's nothing left to explore that you can reach.");
-    if (there) W.then?.();
-    return;
-  }
-  const s = way[0];
-  if (!world.playerMove(s.x - p.x, s.y - p.y)) return stopWalk();
-  // (Stopped by what's come into sight, a hurt, or something underfoot.)
-  const now = goblinsInSight(), fresh = world.actors.find((a) => now.has(a.id) && !W.seen.has(a.id));
-  if (fresh) {
-    world.log(`You stop: ${an(monName(fresh))} comes into sight.`);
-    return stopWalk();
-  }
-  W.seen = now;
-  if (p.hp < W.hp || world.ended) return stopWalk();
-  const atEnd = !W.explore && p.x === W.to.x && p.y === W.to.y;
-  if (!atEnd && world.itemsAt(p.x, p.y).length) return stopWalk();
-  W.timer = setTimeout(walkStep, WALK.every);
-}
-const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 
 // A click on the map (a mouse): on a monster next to you, strike it; further
 // off, walk up to it. On an open door next to you, close it (a shut one, a
@@ -344,13 +302,13 @@ const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 // pick it up). Anywhere else seen, walk there.
 function clickAt(tx, ty) {
   const p = world.player, dx = tx - p.x, dy = ty - p.y, d = Math.max(Math.abs(dx), Math.abs(dy));
-  if (d === 0) return world.itemsAt(p.x, p.y).length ? world.pickUp() : undefined;
+  if (d === 0) return world.itemsAt(p.x, p.y).length ? world.act({ do: "pickUp" }) : undefined;
   const g = world.actorAt(tx, ty);
-  if (g && g !== p && world.isVisible(tx, ty)) return d === 1 ? world.playerMove(dx, dy) : startWalk({ to: { x: tx, y: ty }, near: true });
+  if (g && g !== p && world.isVisible(tx, ty)) return d === 1 ? world.act({ do: "move", dx, dy }) : begin({ do: "walk", to: { x: tx, y: ty }, near: true });
   const door = world.doorAt(tx, ty);
-  if (door && d === 1) return door.open ? world.closeDoorAt(tx, ty) : world.playerMove(dx, dy);
+  if (door && d === 1) return door.open ? world.act({ do: "close", x: tx, y: ty }) : world.act({ do: "move", dx, dy });
   const things = world.seen[ty * world.level.w + tx] && world.itemsAt(tx, ty).length;
-  startWalk({ to: { x: tx, y: ty }, then: things ? () => world.pickUp() : null });
+  begin({ do: "walk", to: { x: tx, y: ty }, then: things ? { do: "pickUp" } : null });
 }
 
 // Where a click would take you, shown while the mouse rests on the map: the
@@ -364,7 +322,7 @@ window.addEventListener("keydown", (e) => e.key === "Shift" && setShift(true), t
 window.addEventListener("keyup", (e) => e.key === "Shift" && setShift(false), true);
 window.addEventListener("blur", () => setShift(false));
 function updatePreview() {
-  if (!hover || !shift || !world || walking || ui.blocking || world.ended) { renderer.preview = null; return; }
+  if (!hover || !shift || !world || doing("walk") || ui.blocking || world.ended) { renderer.preview = null; return; }
   const key = `${hover.x},${hover.y},${world.turn},${world.player.x},${world.player.y}`;
   if (key === hover.key) return;
   hover.key = key;
@@ -380,7 +338,7 @@ const TIP_DELAY = 250;
 const tipEl = document.getElementById("tip");
 function updateTip(now) {
   let t = null;
-  if (hover && shift && world && !walking && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
+  if (hover && shift && world && !doing("walk") && !ui.blocking && !world.ended && now - hover.since >= TIP_DELAY)
     t = tipFor(world, hover.x, hover.y, (a) => renderer.inSight((a.x + 0.5) * renderer.TS, (a.y + 0.5) * renderer.TS));
   if (!t) {
     if (!tipEl.hidden) tipEl.hidden = true;
@@ -428,18 +386,18 @@ canvas.addEventListener("pointerdown", (e) => {
   if (!world || e.button > 0 || ui.asking) return;
   e.preventDefault();
   // (A click or tap stops a walk, and does nothing else.)
-  if (walking) return stopWalk();
+  if (doing("walk")) return stopGoing();
   // (With Shift held, a mouse click walks, strikes, picks up or closes;
   // without, it steps and holds to walk, as a finger, below.)
   setShift(e.shiftKey);
   if (e.pointerType === "mouse" && e.shiftKey) {
-    if (resting) return stopRest("You stop resting.");
+    if (doing("rest")) return stopGoing("You stop resting.");
     const t = tileUnder(e.clientX, e.clientY);
     if (t && !world.ended) clickAt(t.x, t.y);
     if (renderer.whole) renderer.showWhole(null);
     return;
   }
-  if (resting) stopRest("You stop resting.");
+  if (doing("rest")) stopGoing("You stop resting.");
   canvas.setPointerCapture?.(e.pointerId);
   fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   endHold();
@@ -496,13 +454,13 @@ canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 // The action strip (touch screens): search (or wait), the lamp, closing a
 // door; kept up to date each frame.
 const button = (id, fn) => document.getElementById(id)?.addEventListener("click", () => world && !ui.asking && fn());
-button("act-search", () => world.search());
+button("act-search", () => world.act({ do: "search" }));
 button("act-pack", () => ui.togglePanel("i"));
 // (The stairs: whichever way the ones underfoot go.)
-button("act-stairs", () => world.takeStairs(world.level.stairsDown && world.level.stairsDown.x === world.player.x && world.level.stairsDown.y === world.player.y ? "down" : "up"));
-button("act-rest", () => (resting ? stopRest("You stop resting.") : startRest()));
-button("act-lamp", () => renderer.toggleLamp());
-button("act-close", () => world.closeDoor());
+button("act-stairs", () => world.act({ do: "stairs", dir: world.level.stairsDown && world.level.stairsDown.x === world.player.x && world.level.stairsDown.y === world.player.y ? "down" : "up" }));
+button("act-rest", () => (doing("rest") ? stopGoing("You stop resting.") : begin({ do: "rest" })));
+button("act-lamp", () => toggleLamp());
+button("act-close", () => world.act({ do: "close" }));
 function updateActions() {
   const lamp = document.getElementById("act-lamp"), close = document.getElementById("act-close");
   if (!world || !lamp) return;
@@ -544,7 +502,7 @@ function loop(now) {
 }
 
 // A handle for poking at things from the browser console.
-window.versal = { get world() { return world; }, get walking() { return walking; }, renderer, ui, newRun };
+window.versal = { get world() { return world; }, get walking() { return doing("walk"); }, renderer, ui, newRun };
 
 (async () => {
   try {

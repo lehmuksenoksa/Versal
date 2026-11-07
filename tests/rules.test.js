@@ -93,3 +93,73 @@ test("searching next to a secret door finds it", () => {
   assert.ok(turns !== null, "never found");
   assert.ok(w.doorAt(2, 1), "found, but no door there");
 });
+
+// ---- The player's actions as commands (js/rules/actions.js) ----
+
+test("resting goes on till healed and well, a turn at a time", () => {
+  const w = scenario(ROOM);
+  w.player.hp = w.player.maxHp - 3;
+  assert.ok(w.act({ do: "rest" }));
+  let turns = 0;
+  while (w.doing && turns < 500) { w.goOn(); turns++; }
+  assert.equal(w.doing, null);
+  assert.equal(w.player.hp, w.player.maxHp);
+  assert.match(w.messages.at(-1).text, /You feel rested/);
+});
+
+test("resting stops when something stirs", () => {
+  const w = scenario(`
+    ##############
+    #@...........#
+    ##############
+  `);
+  w.player.hp = 5;
+  w.act({ do: "rest" });
+  w.goOn();
+  w.placeMonster("zombie", 8, 1, { state: "aggressive" });
+  let turns = 0;
+  while (w.doing && turns < 50) { w.goOn(); turns++; }
+  assert.equal(w.doing, null);
+  assert.ok(w.messages.some((m) => /stop resting/.test(m.text)), w.messages.map((m) => m.text).join(" | "));
+});
+
+test("walking to a square goes there and, if told, picks up what's there", () => {
+  const w = scenario(ROOM);
+  w.items.push({ x: 6, y: 3, item: { type: "dagger", glyph: "/", n: 1 } });
+  w.act({ do: "walk", to: { x: 6, y: 3 }, then: { do: "pickUp" } });
+  let turns = 0;
+  while (w.doing && turns < 50) { w.goOn(); turns++; }
+  assert.deepEqual([w.player.x, w.player.y], [6, 3]);
+  assert.ok(w.player.pack.some((it) => it.type === "dagger"), "didn't pick it up");
+});
+
+test("exploring stops when a monster comes into sight", () => {
+  const w = scenario(`
+    ####################
+    #@.................#
+    #####.##############
+        #.#
+        #.#
+        #g#
+        ###
+  `);
+  w.act({ do: "explore" });
+  let turns = 0;
+  while (w.doing && turns < 100) { w.goOn(); turns++; }
+  assert.ok(w.messages.some((m) => /comes into sight/.test(m.text)), `${picture(w)}\n${w.messages.map((m) => m.text).join(" | ")}`);
+});
+
+test("no exploring with a monster about that's after you", () => {
+  const w = scenario(ROOM.replace("#........#\n  ##", "#.......g#\n  ##"), { states: { g: "aggressive" } });
+  assert.equal(w.act({ do: "explore" }), false);
+  assert.match(w.messages.at(-1).text, /Not with a goblin about/);
+});
+
+test("the lamp out: sight close round; lit again: far", () => {
+  const w = scenario(ROOM);
+  const far = w.sight;
+  w.act({ do: "lamp" });
+  assert.ok(w.sneaking && w.sight < far, `sight ${w.sight} with the lamp out, ${far} lit`);
+  w.act({ do: "lamp" });
+  assert.ok(!w.sneaking && w.sight === far);
+});

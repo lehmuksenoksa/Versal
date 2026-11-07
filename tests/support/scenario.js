@@ -78,7 +78,7 @@ export function scenario(text, { seed = 1, legend, rooms, states = {}, sneaking 
     leaders[m.letter] ??= g;
   }
   for (const L of Object.values(leaders)) for (const a of w.pack(L)) a.packSize = w.pack(L).length;
-  if (sneaking) w.setSneaking(true, 3);
+  if (sneaking) w.act({ do: "lamp" });
   w.updateFov();
   w.events.length = 0;
   return w;

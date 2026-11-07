@@ -198,7 +198,7 @@ const FIGHT_MS = 2000;
 // The lamp out: sight close round the player, only the dark band of light.
 // (No full band at all: its ragged edge would light a speck round the
 // player.)
-const SNEAK = { sight: 3, sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: 3.5, flicker: 0, flickerSize: 0, warmth: 0 };
+const SNEAK = { sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: 3.5, flicker: 0, flickerSize: 0, warmth: 0 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
 // [range in tiles, min and max seconds between darts]
@@ -259,22 +259,19 @@ export class Renderer {
     Object.assign(this.settings, changes);
     if (!this.exp) return;
     if (this.exp.set(changes)) this.redraw(150);
-    if ("sight" in changes) {
-      this.world.sight = this.settings.sight;
-      this.world.updateFov();
-    }
   }
 
-  // Put the lamp out (sneaking) or light it again.
-  toggleLamp() {
+  // The lamp drawn as the rules have it, out (sneaking) or lit: the view's
+  // light and how far it shows (the player's sight, the rules': world.sight).
+  showLamp() {
     const w = this.world;
     if (!w) return;
-    const on = !w.sneaking;
-    if (on) {
+    if (w.sneaking && !this.dark) {
       this.lit = Object.fromEntries(Object.keys(SNEAK).map((k) => [k, this.settings[k]]));
       this.setVis(SNEAK);
-    } else this.setVis(this.lit ?? Object.fromEntries(Object.keys(SNEAK).map((k) => [k, EXPRESSION_DEFAULTS[k]])));
-    w.setSneaking(on, this.settings.sight);
+    } else if (!w.sneaking && this.dark) this.setVis(this.lit ?? Object.fromEntries(Object.keys(SNEAK).map((k) => [k, EXPRESSION_DEFAULTS[k]])));
+    this.dark = w.sneaking;
+    this.setVis({ sight: w.sight });
   }
 
   // The player has gone to another level (from `prev`): its map drawing,
@@ -289,7 +286,6 @@ export class Renderer {
     this.sounds = [];
     this.ghosts = [];
     this.packHeard.clear();
-    this.world.sight = this.settings.sight;
     this.world.updateFov();
     if (kept && kept.exp.TS === this.TS && !!kept.gpuMap === !!this.gl) {
       this.exp = kept.exp;
@@ -305,7 +301,6 @@ export class Renderer {
     this.levelMaps = new Map();
     this.world = world;
     this.fires = new Map();
-    this.world.sight = this.settings.sight;
     this.world.updateFov();
     this.views.clear();
     this.sounds = [];

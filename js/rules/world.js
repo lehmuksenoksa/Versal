@@ -24,6 +24,7 @@ import { moveMethods } from "./moves.js";
 import { monsterMethods } from "./monsters.js";
 import { fightMethods } from "./fight.js";
 import { itemMethods } from "./items.js";
+import { actionMethods } from "./actions.js";
 import { saveWorld, restoreWorld } from "./save.js";
 
 // The content and names, for the rest of the game to take from here.
@@ -33,8 +34,9 @@ export * from "./names.js";
 export class World {
   // (`levels`: levels given by depth, taken instead of made: small maps for
   // tests, tests/support/scenario.js.)
-  constructor(seed, { sight = 9, name = "Adventurer", levels = null } = {}) {
-    this.sight = sight;
+  constructor(seed, { name = "Adventurer", levels = null } = {}) {
+    // (How far the player sees round them: the lamp lit, at first.)
+    this.sight = PLAYER.sight.lit;
     if (levels) this.given = levels;
     this.sneaking = false;
     this.rng = new RNG(seed);
@@ -153,4 +155,4 @@ World.prototype.save = function () { return saveWorld(this); };
 World.restore = (data) => restoreWorld(data, World.prototype);
 
 // The rest of the World's ways, by part (each in its own file).
-Object.assign(World.prototype, levelMethods, senseMethods, moveMethods, monsterMethods, fightMethods, itemMethods);
+Object.assign(World.prototype, levelMethods, senseMethods, moveMethods, monsterMethods, fightMethods, itemMethods, actionMethods);

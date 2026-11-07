@@ -1,7 +1,7 @@
 {
   "about": "The rules' own dials: numbers that belong to no one monster, item or light. Read by js/world.js, js/traits.js, js/levelgen.js. Drawing numbers stay with drawing; the player's own settings stay in the browser.",
   "notes": {
-    "player": "hit points to start; the bare blow (as a dagger's till there are weapons); healing, a hit point every so many turns, resting and not",
+    "player": "hit points to start; the bare blow (as a dagger's till there are weapons); healing, a hit point every so many turns, resting and not; sight, how far the player sees round them, the lamp lit and out (squares)",
     "levels": "experience each level needs, all told; hit points each new level gives",
     "ailments": "bleeding from a hard blow (at damage or more, by a monster that bleeds, chance of the time), a hit point a turn for some turns, stopped by resting; poison, a hit point every so many turns for a while",
     "pack": "how many things carried; the pack's letters; bare hands' blow; things lying about (one for every so many rooms); the chance a monster drops something",
@@ -28,7 +28,11 @@
     ],
     "heal": 20,
     "restHeal": 5,
-    "cls": "Adventurer"
+    "cls": "Adventurer",
+    "sight": {
+      "lit": 9,
+      "dark": 3
+    }
   },
   "levels": {
     "xp": [

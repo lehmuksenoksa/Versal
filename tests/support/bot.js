@@ -48,45 +48,43 @@ function better(w) {
 // One step of the bot's play. Returns what it did, for the trace.
 export function botStep(w, r, mem) {
   const p = w.player, depth = w.place.depth;
-  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, swept: [], trail: [], hunt: null, resting: false });
+  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, swept: [], trail: [], hunt: null });
   mem.onLevel++;
-  // (Resting goes on, a turn each step, as the game's rest (R) does.)
-  if (mem.resting) {
-    const did = rest(w, mem);
-    if (did) return did;
-  }
+  // (Resting goes on, a turn each step, as the game's rest (R) does: the
+  // rules' activity, js/rules/actions.js.)
+  if (w.doing?.do === "rest" && w.goOn()) return "rest";
   // (A monster next to it, in sight: strike it.)
   for (const [dx, dy] of DIRS8) {
     const g = w.actorAt(p.x + dx, p.y + dy);
-    if (g && g !== p && w.isVisible(g.x, g.y) && w.canStep(p.x, p.y, dx, dy)) { w.playerMove(dx, dy); return "strike"; }
+    if (g && g !== p && w.isVisible(g.x, g.y) && w.canStep(p.x, p.y, dx, dy)) { w.act({ do: "move", dx, dy }); return "strike"; }
   }
   // (Badly hurt: a potion if it has one; hurt and nothing about: rest.)
   if (p.hp < p.maxHp / 4) {
     const pot = p.pack.find((it) => it.type === "potion");
-    if (pot) { w.drink(pot.key); return "drink"; }
+    if (pot) { w.act({ do: "drink", key: pot.key }); return "drink"; }
   }
   // (Hurt, or bleeding, and nothing about: rest, as the game's rest does.)
   if ((p.hp < p.maxHp / 2 || p.ailments.bleeding) && !w.cantRest() && !w.disturbed()) {
-    w.log("You rest.");
-    mem.resting = true;
-    return rest(w, mem);
+    w.act({ do: "rest" });
+    w.goOn();
+    return "rest";
   }
   // (Back up a level for a look, then down again at once.)
-  if (mem.back && L0(w).stairsDown && at(w, L0(w).stairsDown)) { mem.back = false; w.takeStairs("down"); return "down"; }
+  if (mem.back && L0(w).stairsDown && at(w, L0(w).stairsDown)) { mem.back = false; w.act({ do: "stairs", dir: "down" }); return "down"; }
   // (Just come down: now and then, straight back up.)
-  if (mem.onLevel === 1 && depth > 1 && !mem.back && r.chance(0.15) && L0(w).stairsUp && at(w, L0(w).stairsUp)) { mem.back = true; w.takeStairs("up"); return "up"; }
+  if (mem.onLevel === 1 && depth > 1 && !mem.back && r.chance(0.15) && L0(w).stairsUp && at(w, L0(w).stairsUp)) { mem.back = true; w.act({ do: "stairs", dir: "up" }); return "up"; }
   // (Now and then, the lamp out or lit again.)
-  if (r.chance(0.01)) { w.setSneaking(!w.sneaking, w.sneaking ? 9 : 3); return "lamp"; }
+  if (r.chance(0.01)) { w.act({ do: "lamp" }); return "lamp"; }
   // (Things: what lies here picked up, if there's room; the better weapon
   // or armour put to use; now and then armour taken off or a thing dropped.)
-  if (w.itemsAt(p.x, p.y).length && p.pack.length < PACK_SIZE && r.chance(0.8) && w.pickUp()) return "pick up";
+  if (w.itemsAt(p.x, p.y).length && p.pack.length < PACK_SIZE && r.chance(0.8) && w.act({ do: "pickUp" })) return "pick up";
   const up = better(w);
-  if (up && w.wield(up.key)) return ITEMS[up.type].cat === "weapon" ? "wield" : "wear";
+  if (up && w.act({ do: "wield", key: up.key })) return ITEMS[up.type].cat === "weapon" ? "wield" : "wear";
   const worn = ["head", "body"].filter((k) => p.equip[k]);
-  if (worn.length && r.chance(0.004) && w.takeOff(r.pick(worn))) return "take off";
-  if (p.pack.length && r.chance(0.003)) { const it = r.pick(p.pack); if (it.type !== "potion" && w.drop(it.key)) return "drop"; }
+  if (worn.length && r.chance(0.004) && w.act({ do: "takeOff", where: r.pick(worn) })) return "take off";
+  if (p.pack.length && r.chance(0.003)) { const it = r.pick(p.pack); if (it.type !== "potion" && w.act({ do: "drop", key: it.key })) return "drop"; }
   // (A door just come through: now and then, shut behind.)
-  if (mem.door && w.canCloseDoor() && r.chance(0.3) && w.closeDoor()) { mem.door = false; return "close"; }
+  if (mem.door && w.canCloseDoor() && r.chance(0.3) && w.act({ do: "close" })) { mem.door = false; return "close"; }
   mem.door = !!w.doorAt(p.x, p.y);
   // (Going round in a small loop, back and forth or round four squares (a
   // monster in sight closing the way one step and out of sight the next, so
@@ -101,33 +99,33 @@ export function botStep(w, r, mem) {
   // (Hunting: after it for up to 20 steps, till it falls.)
   if (mem.hunt) {
     const { g } = mem.hunt, go = w.actors.includes(g) && ++mem.hunt.steps <= 20 && wayTo(w, g.x, g.y);
-    if (go && go.length && w.playerMove(go[0].x - p.x, go[0].y - p.y)) return "hunt";
+    if (go && go.length && w.act({ do: "move", dx: go[0].x - p.x, dy: go[0].y - p.y })) return "hunt";
     mem.hunt = null;
   }
   // (Done here once the level is seen, or after long enough, if the stairs
   // down are known: go down. Until they're known, keep exploring.)
   const L = w.level, down = L.stairsDown, known = down && w.seen[down.y * L.w + down.x];
   const done = known && (mem.onLevel > LEVEL_STEPS || !mem.more);
-  if (done && down.x === p.x && down.y === p.y) { w.takeStairs("down"); return "down"; }
+  if (done && down.x === p.x && down.y === p.y) { w.act({ do: "stairs", dir: "down" }); return "down"; }
   let way = done ? wayTo(w, down.x, down.y) : wayToExplore(w);
   if (!done) mem.more = !!way;
   if (!way && known) way = wayTo(w, down.x, down.y);
   if (way && way.length) {
     const s = way[0];
-    if (w.playerMove(s.x - p.x, s.y - p.y)) return "walk";
+    if (w.act({ do: "move", dx: s.x - p.x, dy: s.y - p.y })) return "walk";
   }
   // (The last level seen, no stairs down: after the king.)
   const king = !down && w.actors.find((a) => a.kind === "king" && w.seen[a.y * L.w + a.x]);
   if (!way && king) {
     const go = wayTo(w, king.x, king.y);
-    if (go && go.length && w.playerMove(go[0].x - p.x, go[0].y - p.y)) return "to the king";
+    if (go && go.length && w.act({ do: "move", dx: go[0].x - p.x, dy: go[0].y - p.y })) return "to the king";
   }
   // (All seen and no stairs found: search for secret doors where they'd be,
   // as a person would: at a dead end or along a wall, a while at each, then
   // on to another.)
   if (!way) {
     if (mem.spot && at(w, mem.spot)) {
-      if (++mem.searched < SEARCH_TURNS) { w.search(); return "search"; }
+      if (++mem.searched < SEARCH_TURNS) { w.act({ do: "search" }); return "search"; }
       mem.spot = null;
     }
     if (!mem.spot) {
@@ -137,33 +135,14 @@ export function botStep(w, r, mem) {
       mem.searched = 0;
     }
     const go = mem.spot && wayTo(w, mem.spot.x, mem.spot.y);
-    if (go && go.length && w.playerMove(go[0].x - p.x, go[0].y - p.y)) return "walk";
-    if (go && !go.length) { w.search(); return "search"; }
+    if (go && go.length && w.act({ do: "move", dx: go[0].x - p.x, dy: go[0].y - p.y })) return "walk";
+    if (go && !go.length) { w.act({ do: "search" }); return "search"; }
     mem.spot = null;
   }
   // (Nowhere to go, or the way blocked: a random step, else search.)
-  for (const [dx, dy] of r.shuffle([...DIRS8])) if (w.playerMove(dx, dy)) return "wander";
-  w.search();
+  for (const [dx, dy] of r.shuffle([...DIRS8])) if (w.act({ do: "move", dx, dy })) return "wander";
+  w.act({ do: "search" });
   return "search";
-}
-
-// A turn of rest, as the game's rest (R, js/main.js) takes one: stopped by
-// something stirring (then null: the bot does something else), else a turn
-// of rest, and stopped once healed and well.
-function rest(w, mem) {
-  const p = w.player;
-  if (w.ended) { mem.resting = false; return null; }
-  if (w.disturbed()) {
-    mem.resting = false;
-    w.log("Something stirs. You stop resting.");
-    return null;
-  }
-  w.tick(true, true);
-  if (!w.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) {
-    mem.resting = false;
-    w.log("You feel rested.", "good");
-  }
-  return "rest";
 }
 
 // Where to search: a square seen and walkable with rock round most of it (a
