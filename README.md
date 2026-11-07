@@ -211,13 +211,29 @@ in the browser console.
 
 No build step and nothing to install: Node's own test runner.
 
-- `npm test`: the rules tests, the crude bot playing whole runs, the level checks, and the behaviour
-  lock (`tests/`). About 15 seconds.
+- `npm test` (`tests/`), about 35 seconds:
+  - **the level checks**, 100 levels a depth (`levels-1/2/3.test.js`, `support/levelcheck.js`):
+    the stairs, every room, every thing and the king can be reached; the player arrives, and things,
+    monsters, furniture and lights stand, on open floor; doors stand in walls between two ways
+    through; the map's edge is rock. (Counted, not failed: levels whose way on needs a secret door.)
+  - **the crude bot**, 100 whole runs (`bot-a/b.test.js`, `support/bot.js`, `support/botruns.js`):
+    it explores, fights, rests, drinks, picks up, wields, wears, takes off, drops, closes doors,
+    searches at dead ends and walls, goes down and back up. After every step the world must be sound
+    (no one in a wall or on another, hit points, the pack, what's held and worn, level and experience
+    in order); every run must end, dead or won, within 5,000 steps; and the runs must touch every
+    part of play listed in `support/botruns.js`.
+  - **the balance maths against the rules** (`balance.test.js`, `support/duel.js`): fights played by
+    the game's rules agree with the maths (`tools/balance/maths.js`);
+  - the behaviour lock, same seed same run, save and restore, the content check, the structure rule,
+    the features' outlines, the pare-down.
+- `npm run test:deep`: the same with 500 levels a depth and 500 bot runs. A few minutes.
 - `npm run test:browser`: the page in a headless browser (Playwright), a few turns played, no errors;
   a run reloaded and resumed.
 - `npm run test:maps`: 72 map drawings (6 seeds, 3 depths, 4 ways of drawing: whole, the grid's
   layer, the walls' layer, the plan) compared pixel for pixel with `tests/browser/maps-baseline.json`.
   `npm run maps:record` records them again: only when the drawing is meant to change.
+- `npm run balance`: the balance report, `spec/balance-now.md`: the fight curves by the maths, and
+  what each depth holds, counted on 100 levels a depth (`tools/balance.mjs`). About 30 seconds.
 - `npm run lock:record`: records the behaviour lock again (and the features' outlines). Only when
   the game's behaviour is meant to change; never to make a refactoring pass.
 

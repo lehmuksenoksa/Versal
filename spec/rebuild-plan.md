@@ -288,3 +288,64 @@ come feature set by feature set, after.
   a thousand things found on every depth, none cursed; on 20 seeds, every depth, every lit square
   has one of the level's lights within reach. Checked that it notices: run on the code before R6,
   both fail.
+
+**R7, checks grown: done.**
+- **The level checks** (`tests/levels-1/2/3.test.js`, `tests/support/levelcheck.js`), 100 levels a
+  depth in `npm test`, 500 in `npm run test:deep`; a file a depth, checked side by side. Besides the
+  stairs and every room being reached: every thing lying about and the king can be reached; the
+  player arrives, and things, monsters, furniture and lights stand, on open floor; doors and secret
+  doors stand in a wall, between two ways through; the map's edge is rock all round.
+- **The crude bot made fuller** (`tests/support/bot.js`): it also picks things up, wields and wears
+  the best it has, now and then takes armour off or drops something, closes doors behind it, goes
+  back up a level and down again, and searches as a person would, at dead ends and along walls (it
+  used to search where it stood, and could spend a whole run in a region sealed by secret doors). If
+  it finds itself stepping back and forth, it goes for the monster in sight.
+- **The bot's runs checked harder** (`tests/bot-a/b.test.js`, `tests/support/botruns.js`): 100 runs
+  in `npm test` (500 deep). After every step, more must hold: no monster over its hit points, no
+  pack led by one gone, things lying about on floor, the pack not over full and each letter once,
+  what's held and worn in its place (a two-handed weapon with the off hand free), level and
+  experience in agreement, hit points as the levels give them. **Every run must end**, dead or won,
+  within 5,000 steps (no dead end, no endless loop); and the runs together must touch every part of
+  play: 14 of the bot's actions, 9 kinds of happening (blows both ways, fleeing, doors, secret doors
+  found, the stairs, death, sneaking, a monster growing suspicious). Checked that it notices:
+  levelling up made to forget its hit points fails at once.
+- **The balance maths begun** (`tools/balance/maths.js`): a fight worked out exactly from the
+  content and the rules, no play: the blows to bring a monster down (a troll's healing too), the hit
+  points its blows take meanwhile through armour, the chance of bleeding or poison, a sneak blow
+  first, a pack fought one at a time or all at once. **Checked against the rules**
+  (`tests/balance.test.js`, `tests/support/duel.js`): 12 kinds of fight, 2,000 each, played by the
+  game's own rules, agree with the maths within chance. Checked that it notices: armour made to take
+  off a point more fails it.
+- **The balance report** (`npm run balance`, `tools/balance.mjs`, written to `spec/balance-now.md`):
+  the player's blow by weapon and level; every monster fought with each depth's likely gear; what
+  each depth holds (counted on 100 levels a depth); clearing a level: the experience, the level it
+  brings, the hit points it costs, what the potions heal. Not yet in it: oil and dread, monsters'
+  Depth and Level (the two-fifths rule), stealth.
+- **Found, and fixed:** on about 1 level in 30 (10 of 300 seeds), the player arrived standing on a
+  brazier: arriving without stairs, they stood at the start room's middle, where a lit room puts its
+  brazier. Now they arrive on the open square nearest the middle (`levelgen.js`); no other start
+  moves. (The behaviour lock re-recorded for that and for the fuller bot; nothing else in the game
+  changed.)
+- **Found, not fixed (for R8, or for you):**
+  - **Doors onto secret doors:** where a wall is two squares thick, a door may open onto a secret
+    door, or two secret doors stand in a row (6 such doors in 120 levels). Playable (searching finds the
+    second), but odd: for R8.
+  - **A way on only through a secret door:** on 10 of 100 depth-1 levels, the stairs down can only be
+    reached by finding a secret door (none on depths 2 and 3). Counted by the level checks. For you:
+    should every level have a way on without one?
+  - **Exploring turning back and forth:** a sleeping monster in a corridor, out of sight from one
+    square and in sight from the next, closes the explore way one step and opens it the next. The
+    game's explore stops when it comes into sight, so a player sees it as explore stopping and
+    turning back. Minor; for the interface work.
+- **The balance, a first read** (`spec/balance-now.md`; the gear at each depth is a guess):
+  - **Depth 1 is the hardest.** With the dagger and no armour, clearing it costs about 54 hit points
+    fought one at a time (136 in the open) against 20 hit points (more as the player levels up)
+    and about 39 from its potions;
+    about 10 rats a level, in packs. The bot dies there most (about half its runs).
+  - **Depth 2 is the easiest** once a sword and chainmail are found: about 20 hit points for the
+    whole level. Armour matters most against goblins' small blows.
+  - **The king:** with an axe at level 5, chainmail and helmet, he costs about 37 hit points of a
+    36-point player; with a warhammer at level 7 and chainmail, about 28 (and 4 more bleeding) of
+    44. A close fight, unless the player comes better armed.
+  - None of this is to tune now (no balance changes in the rebuild); it's the starting line the
+    feature sets are measured against.

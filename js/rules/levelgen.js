@@ -1379,7 +1379,9 @@ function tryAreas(S, rng) {
     }
   return {
     w: W, h: H, tiles, cave, rooms, roomOf, wallOf, area, rubble, doors, secrets, features, posts, recesses, lights, blocks, regions,
-    start: stairsUp ?? { x: startRoom.cx, y: startRoom.cy },
+    // (Arriving without stairs: on the open square nearest the start room's
+    // middle, not on a brazier standing there.)
+    start: stairsUp ?? stairsAt(startRoom) ?? { x: startRoom.cx, y: startRoom.cy },
     startRoom, stairsUp, stairsDown, throneRoom,
     idx, get,
   };

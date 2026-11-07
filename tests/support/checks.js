@@ -1,5 +1,6 @@
 // Checks on a world's state that must always hold, and on a level's shape.
 import { isWalkable, DIRS8 } from "../../js/rules/dungeon.js";
+import { ITEMS, PACK, LEVELS, PLAYER } from "../../js/rules/content.js";
 
 // Things that must be true after every step of play. Returns a list of what
 // isn't (empty when all is well).
@@ -13,7 +14,29 @@ export function invariants(w) {
     if (seen.has(k)) bad.push(`two actors on ${k}`);
     seen.add(k);
     if (a !== p && !(a.hp > 0)) bad.push(`${a.kind} ${a.id} still about with hp ${a.hp}`);
+    if (a !== p && a.hp > a.maxHp) bad.push(`${a.kind} ${a.id} hp ${a.hp} over max ${a.maxHp}`);
+    if (a !== p && !Number.isFinite(a.energy)) bad.push(`${a.kind} ${a.id} energy ${a.energy}`);
+    if (a !== p && a.leader && !w.actors.includes(a.leader) && w.pack(a).length && !w.pack(a).includes(a.leader)) bad.push(`${a.kind} ${a.id} led by one gone`);
   }
+  // (Things lying about: on open floor, on the map.)
+  for (const f of w.items) if (!isWalkable(w.tileAt(f.x, f.y))) bad.push(`a ${f.item.type} in a wall at ${f.x},${f.y}`);
+  // (The pack: not over full, each letter once, none empty; what's held and
+  // worn where it belongs, a two-handed weapon with the off hand free.)
+  if (p.pack.length > PACK.size) bad.push(`pack of ${p.pack.length}`);
+  if (new Set(p.pack.map((i) => i.key)).size !== p.pack.length) bad.push("two things under one letter");
+  for (const it of p.pack) if (!(it.n >= 1) || !PACK.letters.includes(it.key)) bad.push(`pack ${it.type} n ${it.n} key ${it.key}`);
+  for (const [slot, it] of Object.entries(p.equip)) {
+    if (!it) continue;
+    const d = ITEMS[it.type], want = d.cat === "weapon" ? "hand" : d.slot;
+    if (want !== slot) bad.push(`a ${it.type} in the ${slot} slot`);
+  }
+  if (p.equip.hand && ITEMS[p.equip.hand.type].hands === 2 && p.equip.off) bad.push("a two-handed weapon and something in the off hand");
+  // (Experience and level agree; hit points as levels give them.)
+  let level = 1;
+  while (LEVELS.xp[level] !== undefined && p.xp >= LEVELS.xp[level]) level++;
+  if (level !== p.level) bad.push(`level ${p.level} with ${p.xp} xp (should be ${level})`);
+  if (p.maxHp !== PLAYER.hp + (p.level - 1) * LEVELS.hp) bad.push(`max hp ${p.maxHp} at level ${p.level}`);
+  if (!w.ended && p.hp <= 0) bad.push(`alive with hp ${p.hp}`);
   return bad;
 }
 
