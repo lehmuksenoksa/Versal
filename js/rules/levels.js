@@ -4,11 +4,9 @@ import { MONSTERS, PACK, PLACES, feature } from "./content.js";
 import { MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
 import { roomAt } from "./names.js";
 import { T, isOpen, DIRS8 } from "./dungeon.js";
-import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
-import { computeFov } from "./fov.js";
-import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
+import { generateAreas, AREAS } from "./levelgen.js";
+import { postOutline } from "./sightline.js";
 import { RNG, seedFor } from "./rng.js";
-import { hypot } from "./dmath.js";
 
 export const levelMethods = {
   // A level: its map, its monsters and things, what's been seen of it.
@@ -26,9 +24,8 @@ export const levelMethods = {
       posts: new Set((level.posts ?? []).map(([x, y]) => y * (W + 1) + x)),
       pillars: (level.features ?? []).filter((f) => feature(f).pillar).map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) })),
       doors: new Map((level.doors ?? []).map((d) => [d.y * W + d.x, d])),
-      // Squares in the way though floor (campfires), and squares lit by the
-      // level's lights (no sneaking there).
-      blocks: level.blocks ?? new Set(), lit: new Uint8Array(W * H),
+      // Squares in the way though floor (campfires).
+      blocks: level.blocks ?? new Set(),
       actors: [], items: [],
       visible: new Uint8Array(W * H), seen: new Uint8Array(W * H),
       // What has a line of sight to the player (for monsters noticing them,
@@ -61,31 +58,10 @@ export const levelMethods = {
     this.updateFov();
   },
 
-  // A new level's lights, monsters and things (a level given: its lights
-  // only).
+  // A new level's monsters and things (a level given: nothing; its lights
+  // are the light model's, light.js).
   furnish(st) {
-    this.lightUp(st);
     if (!st.given) this.populate(st);
-  },
-
-  // What the level's lights light (`lit`, a square each): each lights what
-  // it can see as far as its full and dim bands reach.
-  lightUp(st) {
-    const level = this.level, W = level.w;
-    const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
-    // (Each light lights what it can see as far as its full and dim bands
-    // reach; posts and big things throw shadows, as on the map.)
-    const shades = [...st.pillars.map((p) => p.pts), ...(level.features ?? []).map((f) => shadeOutline(f)).filter(Boolean)];
-    for (const l of level.lights ?? []) {
-      const B = LIGHTS[l.kind] ?? LIGHTS.fire, far = B.full + B.dim;
-      const near = shades.filter((pts) => pts.some(([x, y]) => Math.abs(x - l.x) <= far + 1 && Math.abs(y - l.y) <= far + 1));
-      computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), far, opaque, (x, y) => {
-        const cx = x + 0.5, cy = y + 0.5;
-        if (hypot(cx - l.x, cy - l.y) > far) return;
-        if (near.some((pts) => !insideOutline(cx, cy, pts) && crossesOutline(l.x, l.y, cx, cy, pts))) return;
-        this.lit[y * W + x] = 1;
-      });
-    }
   },
 
   // A new level's monsters and things.

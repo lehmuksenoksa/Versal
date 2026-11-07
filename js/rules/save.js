@@ -116,7 +116,8 @@ export function relink(level) {
 // What's only kept for the turn being played (the events not yet drawn, the
 // noises of the turn, the way-finding cache) starts again empty.
 export function saveWorld(w) {
-  const { events, noises, chaseMap, ...rest } = w;
+  // (Nor the light model: worked out again from the levels' lights.)
+  const { events, noises, chaseMap, light, ...rest } = w;
   return { version: VERSION, world: encode(rest) };
 }
 export function restoreWorld(data, proto) {

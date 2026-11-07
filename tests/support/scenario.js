@@ -87,14 +87,14 @@ export function scenario(text, { seed = 1, legend, rooms, states = {}, sneaking 
 }
 
 // The world as text, for a test's message: the map, the monsters by their
-// letter (the player @), lit squares as `:` (dark floor `.`), doors.
+// letter (the player @), lit floor `:`, dim `,`, dark `.`, doors.
 export function picture(w) {
   const L = w.level, out = [], letter = Object.fromEntries(Object.entries(MONSTER_LETTERS).map(([k, v]) => [v, k]));
   for (let y = 0; y < L.h; y++) {
     let row = "";
     for (let x = 0; x < L.w; x++) {
       const a = w.actorAt(x, y), d = w.doorAt(x, y);
-      row += a ? (a === w.player ? "@" : letter[a.kind] ?? "m") : d ? (d.open ? "'" : "+") : !isOpen(L.get(x, y)) ? "#" : L.blocks.has(y * L.w + x) ? "*" : w.lit[y * L.w + x] ? ":" : ".";
+      row += a ? (a === w.player ? "@" : letter[a.kind] ?? "m") : d ? (d.open ? "'" : "+") : !isOpen(L.get(x, y)) ? "#" : L.blocks.has(y * L.w + x) ? "*" : [".", ",", ":"][w.light.at(x, y)];
     }
     out.push(row);
   }

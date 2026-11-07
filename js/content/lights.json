@@ -1,9 +1,9 @@
 {
-  "about": "The kinds of light. Read by js/levelgen.js, js/render.js, js/expression.js.",
+  "about": "The kinds of light (light-and-dread.md, section 1): the level's lights and the carried ones. Read by js/rules/light.js (what's lit), js/rules/levelgen (where they stand), js/render.js and js/expression.js (how they're drawn).",
   "fields": {
     "full": "how far it lights fully, squares from the flame",
     "dim": "then a dim band this wide",
-    "dark": "then a faint band this wide (counted as dark, shown faintly)",
+    "dark": "then a faint band this wide (drawn fainter; played as dim)",
     "flame": "the flame's size, times a campfire's",
     "foot": "where it stands, squares below the light's middle"
   },
@@ -35,6 +35,13 @@
       "dark": 1.5,
       "flame": 0.2,
       "foot": -0.05
+    },
+    "lamp": {
+      "full": 5,
+      "dim": 1,
+      "dark": 3,
+      "flame": 0,
+      "foot": 0
     }
   }
 }

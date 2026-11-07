@@ -26,6 +26,7 @@ import { fightMethods } from "./fight.js";
 import { itemMethods } from "./items.js";
 import { actionMethods } from "./actions.js";
 import { replayMethods, replayRun } from "./replay.js";
+import { Light } from "./light.js";
 import { saveWorld, restoreWorld } from "./save.js";
 
 // The content and names, for the rest of the game to take from here.
@@ -47,6 +48,8 @@ export class World {
     // each level made and peopled by dice of its own (`runSeed` and its
     // depth: levels.js), the same level whatever's played before it.
     this.runSeed = new RNG(seed).seed;
+    // (What's lit: the light model, a part of its own: light.js.)
+    this.light = new Light(this);
     // (The calls made into the rules, for replays: replay.js.)
     this.history = [];
     this.noting = false;
@@ -166,7 +169,7 @@ export class World {
 // seen and in view, who's there (the player among them while on it). One
 // place for each, so what a level keeps (lights put out, traps sprung) is
 // kept with it as the World goes up and down.
-for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "lit", "items", "visible", "seen", "inView", "actors"])
+for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "items", "visible", "seen", "inView", "actors"])
   Object.defineProperty(World.prototype, key, {
     get() { return this.here[key]; },
     set(v) { this.here[key] = v; },
@@ -175,7 +178,7 @@ for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "lit"
 
 // Saving: the run as plain data (JSON can hold it), and a run from it.
 World.prototype.save = function () { return saveWorld(this); };
-World.restore = (data) => restoreWorld(data, World.prototype);
+World.restore = (data) => { const w = restoreWorld(data, World.prototype); w.light = new Light(w); return w; };
 // A replay played again (replay.js).
 World.replay = (data, opts) => replayRun(data, World, opts);
 

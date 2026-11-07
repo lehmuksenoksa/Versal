@@ -12,6 +12,8 @@ export const senseMethods = {
   // (and the pillars: a square is hidden behind one when the line between
   // the middles of the two squares crosses it, as the map draws it).
   updateFov() {
+    // (What's lit first: the light model, light.js.)
+    this.light.update();
     const { w, h } = this.level, { x: px, y: py } = this.player, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     const reach = Math.max(this.sight, GOBLIN.lose) + 1;
     const pillars = this.pillars.filter((p) => Math.abs(p.x - px - 0.5) <= reach && Math.abs(p.y - py - 0.5) <= reach);
@@ -66,11 +68,11 @@ export const senseMethods = {
     this.log(on ? "You put out your lamp." : "You light your lamp.");
   },
 
-  // Is the player lit (their lamp, a lit place, or a cultist's lantern near)?
+  // Is the player lit: their square dim or lit (their lamp, a light's,
+  // a cultist's lantern's: light.js)?
   playerLit() {
     const p = this.player;
-    return !this.sneaking || !!this.lit[p.y * this.level.w + p.x] ||
-      this.actors.some((a) => MONSTERS[a.kind]?.lantern && Math.max(Math.abs(a.x - p.x), Math.abs(a.y - p.y)) <= 3 && this.inView[a.y * this.level.w + a.x]);
+    return this.light.at(p.x, p.y) >= 1;
   },
 
   // What the monsters notice: each that sees or hears the player grows more

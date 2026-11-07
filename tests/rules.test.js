@@ -20,8 +20,9 @@ test("a brazier lights what it can see; a shut door stops its light", () => {
     #....+..B.#
     #....#....#
     ###########
-  `);
-  const lit = (x, y) => !!w.lit[y * w.level.w + x];
+  `, { sneaking: true });
+  // (The lamp out: the brazier's light alone.)
+  const lit = (x, y) => w.light.at(x, y) > 0;
   assert.ok(lit(6, 2) && lit(9, 1), picture(w));
   assert.ok(!lit(4, 2) && !lit(1, 1), `the light passed the shut door\n${picture(w)}`);
 });

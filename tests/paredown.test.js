@@ -26,11 +26,15 @@ test("all light comes from a source (20 seeds, every depth)", () => {
       if (depth > 1) w.enter(depth, "down");
       const L = w.level, where = `seed ${seed}, depth ${depth}`;
       assert.equal(L.lit, undefined, `${where}: the level has lit places of its own`);
-      // Every lit square is within its band's reach of one of the level's lights.
+      // (The lamp out: every square with light has a light within its
+      // bands' reach: one of the level's, or a cultist's lantern.)
+      if (!w.sneaking) w.act({ do: "lamp" });
+      const sources = [...(L.lights ?? []).map((l) => ({ x: l.x, y: l.y, B: LIGHTS[l.kind] ?? LIGHTS.fire })),
+        ...w.actors.filter((a) => a.kind === "cultist").map((a) => ({ x: a.x + 0.5, y: a.y + 0.5, B: LIGHTS.lantern }))];
       for (let y = 0; y < L.h; y++)
         for (let x = 0; x < L.w; x++) {
-          if (!w.lit[y * L.w + x]) continue;
-          const by = (L.lights ?? []).some((l) => { const B = LIGHTS[l.kind] ?? LIGHTS.fire; return Math.hypot(x + 0.5 - l.x, y + 0.5 - l.y) <= B.full + B.dim; });
+          if (!w.light.at(x, y)) continue;
+          const by = sources.some(({ x: lx, y: ly, B }) => Math.hypot(x + 0.5 - lx, y + 0.5 - ly) <= B.full + B.dim + B.dark);
           assert.ok(by, `${where}: the square ${x},${y} is lit with no light near`);
         }
     }
