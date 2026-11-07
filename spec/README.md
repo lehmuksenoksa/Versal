@@ -70,7 +70,7 @@ Each part's state is one of:
 | 4 | [Systems](04-systems.md) (in full: [`stealth.md`](stealth.md), [`light-and-dread.md`](light-and-dread.md), [`fighting.md`](fighting.md), [`features.md`](features.md)) | Light and stealth, noise, awareness and the monsters' minds, combat, ailments, items and traits, resting, doors and secrets, food (or none) | decided in outline (rounds 2 and 3); details with the content |
 | 5 | Content | Every monster, item, trait, room kind and ground kind, as tables | open |
 | 6 | [Levels](06-levels.md) | How each ground kind is made, set pieces, how a level is laid out to be played | generating for stealth started |
-| 7 | Interface | Layout (big screens), panels, tips, keys and mouse, the level-up page, title, death and victory pages, settings, accessibility | open |
+| 7 | [Interface](07-interface.md) | Layout (big screens), panels, tips, keys and mouse, the level-up page, title, death and victory pages, settings, accessibility | slice 1's needs listed |
 | 8 | Visual language | The map's rules in full (hatching, broken lines, light's ragged edges, height and depth, families of things), the interface's rules, every element by family | started (`../VISUAL_LANGUAGE.md`) |
 | 9 | Sound | None (round 1): the noise words are its sound | decided |
 | 10 | [Building it](10-building-it.md) | Code structure, data for content, saving, performance budgets (laptops), tests, balance (maths and part simulations), where it's published | testing and balance planned; the rest open |
