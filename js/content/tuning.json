@@ -18,7 +18,7 @@
     "monsterBleed": "a monster bleeding from a sharp blade: from a blow of at least at, a hit point a turn for so many turns",
     "monsterTrait": "how often a pack has a trait; how often its leader has its own",
     "roomTrait": "how many rooms a level has with a trait",
-    "levelgen": "the level generator's settings (see the notes in js/levelgen.js)"
+    "levelgen": "the level generator's settings (see the notes in js/rules/levelgen.js; the room kinds' weights are in rooms.json)"
   },
   "player": {
     "hp": 20,
@@ -197,15 +197,6 @@
     "formations": 1.5,
     "formationSize": 10,
     "passage": 2,
-    "plain": 3,
-    "store": 1,
-    "gallery": 1,
-    "hall": 0.7,
-    "crypt": 0.7,
-    "jail": 0.7,
-    "barracks": 0.7,
-    "dining": 0.7,
-    "shrine": 0.5,
     "decor": 0.6,
     "recesses": 0.4,
     "supports": 0.7,

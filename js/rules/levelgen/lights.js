@@ -18,39 +18,39 @@ import { LIGHTS } from "./make.js";
 // stands.)
 export function hallBraziers(g, r, flank = false) {
   const { floorAt, blocks, idx, rubble, lights, features } = g;
-    // (A hall of another kind than A: its braziers where its plan puts them,
-    // on the free floor square nearest each.)
-    if (r.lamps) {
-      if (r.lit) return;
-      for (const [lx, ly] of r.lamps) {
-        let spot = null;
-        for (let dy = -1; dy <= 1; dy++)
-          for (let dx = -1; dx <= 1; dx++) {
-            const x = lx + dx, y = ly + dy, d = Math.abs(dx) + Math.abs(dy);
-            if (floorAt(x, y) && !blocks.has(idx(x, y)) && !(r.seat && r.seat.x === x && r.seat.y === y) && (!spot || d < spot.d)) spot = { x, y, d };
-          }
-        if (!spot) continue;
-        blocks.add(idx(spot.x, spot.y));
-        rubble[idx(spot.x, spot.y)] = 0;
-        lights.push({ x: spot.x + 0.5, y: spot.y + 0.5, kind: "brazier" });
-        features.push({ type: "brazier", x: spot.x + 0.5, y: spot.y + 0.5 });
-        r.lit = true;
-      }
-      return;
-    }
-    const N = r.nave;
-    if (!N || r.lit) return;
-    const K = N.us.length, m = (K - 1) / 2;
-    const pick = K % 2 ? N.us.filter((_, i) => Math.abs(i - m) % 2 === (flank ? 1 : 0)) : K === 2 ? (flank ? N.us : [(N.us[0] + N.us[1]) / 2]) : [N.us[K / 2 - 1], N.us[K / 2]];
-    for (const u of pick) {
-      const a = Math.round(u), b = Math.round(N.mid), [x, y] = N.along ? [r.x + a, r.y + b] : [r.x + b, r.y + a];
-      if (!floorAt(x, y) || blocks.has(idx(x, y))) continue;
-      blocks.add(idx(x, y));
-      rubble[idx(x, y)] = 0;
-      lights.push({ x: x + 0.5, y: y + 0.5, kind: "brazier" });
-      features.push({ type: "brazier", x: x + 0.5, y: y + 0.5 });
+  // (A hall of another kind than A: its braziers where its plan puts them,
+  // on the free floor square nearest each.)
+  if (r.lamps) {
+    if (r.lit) return;
+    for (const [lx, ly] of r.lamps) {
+      let spot = null;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = lx + dx, y = ly + dy, d = Math.abs(dx) + Math.abs(dy);
+          if (floorAt(x, y) && !blocks.has(idx(x, y)) && !(r.seat && r.seat.x === x && r.seat.y === y) && (!spot || d < spot.d)) spot = { x, y, d };
+        }
+      if (!spot) continue;
+      blocks.add(idx(spot.x, spot.y));
+      rubble[idx(spot.x, spot.y)] = 0;
+      lights.push({ x: spot.x + 0.5, y: spot.y + 0.5, kind: "brazier" });
+      features.push({ type: "brazier", x: spot.x + 0.5, y: spot.y + 0.5 });
       r.lit = true;
     }
+    return;
+  }
+  const N = r.nave;
+  if (!N || r.lit) return;
+  const K = N.us.length, m = (K - 1) / 2;
+  const pick = K % 2 ? N.us.filter((_, i) => Math.abs(i - m) % 2 === (flank ? 1 : 0)) : K === 2 ? (flank ? N.us : [(N.us[0] + N.us[1]) / 2]) : [N.us[K / 2 - 1], N.us[K / 2]];
+  for (const u of pick) {
+    const a = Math.round(u), b = Math.round(N.mid), [x, y] = N.along ? [r.x + a, r.y + b] : [r.x + b, r.y + a];
+    if (!floorAt(x, y) || blocks.has(idx(x, y))) continue;
+    blocks.add(idx(x, y));
+    rubble[idx(x, y)] = 0;
+    lights.push({ x: x + 0.5, y: y + 0.5, kind: "brazier" });
+    features.push({ type: "brazier", x: x + 0.5, y: y + 0.5 });
+    r.lit = true;
+  }
 
 }
 

@@ -1,0 +1,34 @@
+{
+  "about": "The kinds of room the level generator makes (js/rules/levelgen/): the dungeon rooms' kinds, and the kinds of the goblin king's halls. Each kind's furnishing is a function in a table (js/rules/levelgen/kinds.js, halls.js); here, what they need to be chosen and lit. Read by js/rules/levelgen/make.js.",
+  "fields": {
+    "weight": "how likely, against the others that fit (a level's settings can change it: the levels mockup's sliders)",
+    "fits": "where it fits, in squares: short, the room's shorter way at least; long, its longer way at least; longEven, its longer way even; even, both ways even; squarish, its two ways no more than this apart. None: anywhere",
+    "light": "how it's lit, if it's one of the rooms lit: candles on the altar; a brazier at an end; at an end, or in the middle of a small one; braziers down the middle; in the middle (two, in a long room). The layouts: js/rules/levelgen/kinds.js",
+    "columns": "false: never held up by columns (it has posts of its own)",
+    "recesses": "false: never recesses in its walls",
+    "rank": "a hall's: the lower, the sooner it's chosen when it fits (the rarer kinds first)",
+    "placed": "a hall's that isn't chosen by fit: where it goes instead"
+  },
+  "kinds": {
+    "plain": { "weight": 3, "fits": {}, "light": "middle", "about": "a few things in the corners, now and then" },
+    "store": { "weight": 1, "fits": {}, "light": "middle", "about": "shelves along a wall or two, crates and barrels in the corners" },
+    "gallery": { "weight": 1, "fits": { "short": 4, "long": 6, "longEven": true }, "light": "downTheMiddle", "columns": false, "about": "posts along both long walls" },
+    "hall": { "weight": 0.7, "fits": { "short": 4, "even": true }, "light": "middle", "columns": false, "about": "filled with posts, half posts on the walls" },
+    "crypt": { "weight": 0.7, "fits": {}, "light": "endOrMiddle", "recesses": false, "about": "niches round the walls with coffins, a sarcophagus in a bigger one" },
+    "jail": { "weight": 0.7, "fits": { "long": 5 }, "light": "middle", "about": "cells behind a wall, each with a door and a bench" },
+    "barracks": { "weight": 0.7, "fits": { "short": 4, "long": 5 }, "light": "end", "about": "beds in rows along the long walls" },
+    "dining": { "weight": 0.7, "fits": { "short": 3, "long": 4 }, "light": "end", "about": "tables with chairs either side, in rows" },
+    "shrine": { "weight": 0.5, "fits": { "short": 4 }, "light": "altarCandles", "about": "an altar against a wall with no way in, posts either side" }
+  },
+  "halls": {
+    "A": { "fits": {}, "rank": 5, "about": "two rows of columns along the long way" },
+    "B": { "fits": {}, "rank": 4, "about": "a forest of columns" },
+    "F": { "fits": { "long": 13 }, "rank": 3, "about": "split by a wall of rock with gaps in it" },
+    "C": { "fits": { "short": 11, "squarish": 4 }, "rank": 2, "about": "round, a ring of columns, cut clean" },
+    "D": { "fits": { "short": 13 }, "rank": 0, "about": "a crossing" },
+    "J": { "fits": { "short": 11, "long": 13 }, "rank": 1, "about": "dug round an uncut core" },
+    "I": { "placed": "the smallest hall, when there are four or more", "about": "a storeroom: stacks of crates and barrels" },
+    "K": { "placed": "the hall most by the caverns", "about": "begun in a cave, squared off at the other end" },
+    "L": { "placed": "the throne room: the biggest hall in the far third, on a level with a throne", "about": "a nave of columns leading to an apse where the king sits" }
+  }
+}

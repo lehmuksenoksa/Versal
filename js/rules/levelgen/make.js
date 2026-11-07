@@ -9,6 +9,7 @@
 import { T } from "../dungeon.js";
 import LIGHTS_DATA from "../../content/lights.json" with { type: "json" };
 import TUNING from "../../content/tuning.json" with { type: "json" };
+import ROOMS from "../../content/rooms.json" with { type: "json" };
 
 export const AREAS = ["dungeon", "cavern", "collapsed", "halls"];
 export const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
@@ -23,7 +24,16 @@ export const LIGHTS = LIGHTS_DATA.lights;
 // margin; regions; rooms, loops and doors; long loops and shortcuts; caves;
 // dungeon room kinds, furnishing, recesses and columns; collapse and rubble;
 // lights; secret doors; and a level's ground, stairs and throne.
-export const LEVELGEN_DEFAULTS = TUNING.levelgen;
+// (With them, how likely each kind of dungeon room is: rooms.json's weights,
+// a level's settings able to change them as the rest.)
+export const ROOM_KINDS = ROOMS.kinds, HALL_KINDS = ROOMS.halls;
+export const LEVELGEN_DEFAULTS = { ...TUNING.levelgen, ...Object.fromEntries(Object.entries(ROOM_KINDS).map(([k, d]) => [k, d.weight])) };
+
+// Does a room fit `f` (a kind's `fits`, rooms.json)?
+export function fits(r, f = {}) {
+  const lo = Math.min(r.w, r.h), hi = Math.max(r.w, r.h);
+  return lo >= (f.short ?? 0) && hi >= (f.long ?? 0) && (!f.longEven || hi % 2 === 0) && (!f.even || (r.w % 2 === 0 && r.h % 2 === 0)) && (f.squarish === undefined || Math.abs(r.w - r.h) <= f.squarish);
+}
 
 export const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 

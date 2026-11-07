@@ -58,3 +58,24 @@ test("every kind of feature is listed, and drawn by its family", async () => {
     }
   }
 });
+
+test("every kind of room and hall is furnished, lit and planned", async () => {
+  const { kinds, halls } = load("rooms.json");
+  const { FURNISH, LIGHTINGS } = await import("../js/rules/levelgen/kinds.js");
+  const { PLANS } = await import("../js/rules/levelgen/halls.js");
+  const FITS = ["short", "long", "longEven", "even", "squarish"];
+  for (const [k, d] of Object.entries(kinds)) {
+    need(`room kind ${k}`, d, ["weight", "fits", "light", "about"]);
+    assert.equal(typeof FURNISH[k], "function", `room kind ${k}: no furnishing in kinds.js`);
+    assert.equal(typeof LIGHTINGS[d.light], "function", `room kind ${k}: no lighting ${d.light}`);
+    for (const f of Object.keys(d.fits)) assert.ok(FITS.includes(f), `room kind ${k}: fits by ${f}?`);
+  }
+  for (const k of Object.keys(FURNISH)) assert.ok(kinds[k], `kinds.js furnishes ${k}, not in rooms.json`);
+  for (const [k, d] of Object.entries(halls)) {
+    need(`hall ${k}`, d, ["about"]);
+    assert.ok((d.rank !== undefined && d.fits) || d.placed, `hall ${k}: neither chosen by fit (rank, fits) nor placed`);
+    // (A's plan is hewHall's.)
+    if (k !== "A") assert.equal(typeof PLANS[k], "function", `hall ${k}: no plan in halls.js`);
+  }
+  for (const k of Object.keys(PLANS)) assert.ok(halls[k], `halls.js plans ${k}, not in rooms.json`);
+});
