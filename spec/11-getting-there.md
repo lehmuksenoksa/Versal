@@ -28,7 +28,11 @@ making sure everything works before we add too many variables to tell what isn't
    down. The plan, for review before its go: `rebuild-plan.md`.
 2. **Then feature sets, one at a time,** each built, tested and played on the proof of concept's small
    scale before the next, so when something doesn't work it's clear what.
-3. **Slice 1's spec stays the target:** what's decided for slice 1 is built feature set by feature
+3. **Groundwork first, then the feature sets in order** (after the rebuild, asked to reassess:
+   `groundwork.md`): small maps for tests, the player's actions in the rules, a lock on the view;
+   then light, stealth, lights as items with oil and dread, fighting and character, contents,
+   features and traps, six depths.
+4. **Slice 1's spec stays the target:** what's decided for slice 1 is built feature set by feature
    set, not all at once. Its looks are decided as each feature set comes (round 45 waits).
 
 ## The slices

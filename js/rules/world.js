@@ -31,8 +31,11 @@ export * from "./content.js";
 export * from "./names.js";
 
 export class World {
-  constructor(seed, { sight = 9, name = "Adventurer" } = {}) {
+  // (`levels`: levels given by depth, taken instead of made: small maps for
+  // tests, tests/support/scenario.js.)
+  constructor(seed, { sight = 9, name = "Adventurer", levels = null } = {}) {
     this.sight = sight;
+    if (levels) this.given = levels;
     this.sneaking = false;
     this.rng = new RNG(seed);
     this.seed = this.rng.seed;

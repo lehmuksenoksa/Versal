@@ -10,12 +10,14 @@ import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sigh
 
 export const levelMethods = {
   // A level: its map, its monsters and things, what's been seen of it.
+  // (A level given (`this.given`, by depth: a small map for a test) is
+  // taken as it is: lit by its own lights, nothing else put in it.)
   makePlace(depth) {
-    const P = PLACES[depth - 1], rng = this.rng.fork(), seed = rng.seed;
-    const level = generateAreas(rng, { from: P.from, to: P.to, up: !!P.up, down: !!P.down, throne: !!P.throne });
+    const P = PLACES[depth - 1], rng = this.rng.fork(), seed = rng.seed, given = this.given?.[depth];
+    const level = given ?? generateAreas(rng, { from: P.from, to: P.to, up: !!P.up, down: !!P.down, throne: !!P.throne });
     const W = level.w, H = level.h;
     const st = {
-      P, level, seed,
+      P, level, seed, ...(given ? { given: true } : {}),
       // Pillars on grid crossings, which no step goes diagonally past; and the
       // doors, by their square.
       posts: new Set((level.posts ?? []).map(([x, y]) => y * (W + 1) + x)),
@@ -60,9 +62,17 @@ export const levelMethods = {
     st.items = this.items;
   },
 
-  // A new level's lights, monsters and things.
+  // A new level's lights, monsters and things (a level given: its lights
+  // only).
   furnish(st) {
-    const level = this.level, P = st.P, W = level.w;
+    this.lightUp(st);
+    if (!st.given) this.populate(st);
+  },
+
+  // What the level's lights light (`lit`, a square each): each lights what
+  // it can see as far as its full and dim bands reach.
+  lightUp(st) {
+    const level = this.level, W = level.w;
     const opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     // (Each light lights what it can see as far as its full and dim bands
     // reach; posts and big things throw shadows, as on the map.)
@@ -77,6 +87,11 @@ export const levelMethods = {
         this.lit[y * W + x] = 1;
       });
     }
+  },
+
+  // A new level's monsters and things.
+  populate(st) {
+    const level = this.level, P = st.P;
     // A pack round every campfire, awake; and in about a third of the rooms,
     // each of a kind found in that room's ground (round a campfire, goblins
     // if there are any there). Not where the player arrives, nor near the stairs.
@@ -164,14 +179,21 @@ export const levelMethods = {
       const spot = kk === "king" ? (room.seat ?? { x: room.cx, y: room.cy }) : this.freeSpotIn(room);
       if (!spot || !this.isFree(spot.x, spot.y)) continue;
       const trait = k === 0 && leaderKind ? leaderTrait : packTrait;
-      const hp = Math.max(1, Math.round(this.rng.int(...MONSTERS[kk].hp) * ((trait && MONSTER_TRAITS[trait].hp) || 1)));
-      const g = { id: this.nextId++, kind: kk, glyph: MONSTERS[kk].glyph, x: spot.x, y: spot.y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next(), ...(trait ? { trait } : {}) };
-      g.leader = leader || g;
-      leader = g.leader;
-      this.actors.push(g);
+      leader = this.placeMonster(kk, spot.x, spot.y, { state, trait, leader }).leader;
     }
     // (How big the pack was, for its morale.)
     if (leader) for (const a of this.pack(leader)) a.packSize = this.pack(leader).length;
+  },
+
+  // A monster of `kind` at (x, y), in `state` (asleep, or milling about if
+  // not given), with a `trait` if any, following `leader` (else leading
+  // itself); its hit points thrown, its energy part-way to its first move.
+  placeMonster(kind, x, y, { state = "neutral", trait = null, leader = null } = {}) {
+    const hp = Math.max(1, Math.round(this.rng.int(...MONSTERS[kind].hp) * ((trait && MONSTER_TRAITS[trait].hp) || 1)));
+    const g = { id: this.nextId++, kind, glyph: MONSTERS[kind].glyph, x, y, state, calm: 0, hp, maxHp: hp, energy: this.rng.next(), ...(trait ? { trait } : {}) };
+    g.leader = leader || g;
+    this.actors.push(g);
+    return g;
   },
 
   freeSpotIn(room) {
