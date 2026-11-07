@@ -230,6 +230,7 @@ every push and pull request (`.github/workflows/test.yml`); the pixel locks run 
     part of play listed in `support/botruns.js`.
   - **the balance maths against the rules** (`balance.test.js`, `support/duel.js`): fights played by
     the game's rules agree with the maths (`tools/balance/maths.js`);
+  - **replays** (`replay.test.js`): a run played again from its seed and moves is the same run;
   - **single rules on small maps** (`rules.test.js`, `support/scenario.js`): a World on a level typed
     as text, monsters by letter; each rule tried in a set-up situation;
   - **the levels' fingerprints** (`levelprints.test.js`): 60 seeds of every place, hashed whole, as
@@ -247,6 +248,9 @@ every push and pull request (`.github/workflows/test.yml`); the pixel locks run 
   whole level (Tab); the page's clock stopped and stepped by hand, its dice seeded, compared pixel
   for pixel with `tests/browser/view-baseline.json`. About a minute. `npm run view:record` records
   them again: only when the view is meant to change.
+- `node tools/replay.mjs <replay.json>`: a run saved from the game (? then "Save a replay of this
+  run") played again here, move by move: where it went off course, if it did; an error thrown, with
+  the move it came at (`--to N`: stop at move N and draw the world there).
 - `npm run balance`: the balance report, `spec/balance-now.md`: the fight curves by the maths, and
   what each depth holds, counted on 100 levels a depth (`tools/balance.mjs`). About 30 seconds.
 - `npm run lock:record`: records the behaviour lock again (and the features' outlines and the levels'

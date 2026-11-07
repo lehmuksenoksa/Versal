@@ -25,6 +25,7 @@ import { monsterMethods } from "./monsters.js";
 import { fightMethods } from "./fight.js";
 import { itemMethods } from "./items.js";
 import { actionMethods } from "./actions.js";
+import { replayMethods, replayRun } from "./replay.js";
 import { saveWorld, restoreWorld } from "./save.js";
 
 // The content and names, for the rest of the game to take from here.
@@ -46,6 +47,9 @@ export class World {
     // each level made and peopled by dice of its own (`runSeed` and its
     // depth: levels.js), the same level whatever's played before it.
     this.runSeed = new RNG(seed).seed;
+    // (The calls made into the rules, for replays: replay.js.)
+    this.history = [];
+    this.noting = false;
     this.dice = Object.fromEntries(["fight", "minds", "things", "world"].map((k) => [k, new RNG(seedFor(this.runSeed, k))]));
     this.events = [];
     this.nextId = 1;
@@ -172,6 +176,8 @@ for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "lit"
 // Saving: the run as plain data (JSON can hold it), and a run from it.
 World.prototype.save = function () { return saveWorld(this); };
 World.restore = (data) => restoreWorld(data, World.prototype);
+// A replay played again (replay.js).
+World.replay = (data, opts) => replayRun(data, World, opts);
 
 // The rest of the World's ways, by part (each in its own file).
-Object.assign(World.prototype, levelMethods, senseMethods, moveMethods, monsterMethods, fightMethods, itemMethods, actionMethods);
+Object.assign(World.prototype, levelMethods, senseMethods, moveMethods, monsterMethods, fightMethods, itemMethods, actionMethods, replayMethods);

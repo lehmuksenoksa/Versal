@@ -19,10 +19,13 @@
 import { PLAYER } from "./content.js";
 import { an, monName } from "./names.js";
 import { wayTo, wayToExplore, WALK } from "./travel.js";
+import { encodeCall } from "./replay.js";
 
 export const actionMethods = {
   // Carry out a command; true if a turn passed (or an activity began).
-  act(cmd) {
+  // (Each call from outside the rules noted, for replays: replay.js.)
+  act(cmd) { return this.noted(encodeCall(cmd), () => this.doAct(cmd)); },
+  doAct(cmd) {
     if (this.ended) return false;
     switch (cmd.do) {
       case "move": return this.playerMove(cmd.dx, cmd.dy);
@@ -52,7 +55,8 @@ export const actionMethods = {
   // ---- Activities: resting, walking, exploring ----
   // One turn of the activity under way (`doing`); true if a turn passed. It
   // goes on while `doing` stays.
-  goOn() {
+  goOn() { return this.noted(".", () => this.doGoOn()); },
+  doGoOn() {
     const D = this.doing;
     if (!D) return false;
     if (this.ended) return this.stop(null);
@@ -60,7 +64,8 @@ export const actionMethods = {
   },
 
   // The activity stopped (and why, if it's worth saying); false.
-  stop(why = null, kind = "") {
+  stop(why = null, kind = "") { return this.noted(`!${JSON.stringify([why, kind])}`, () => this.doStop(why, kind)); },
+  doStop(why, kind) {
     if (!this.doing) return false;
     this.doing = null;
     if (why) this.log(why, kind);

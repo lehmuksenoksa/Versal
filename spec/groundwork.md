@@ -206,3 +206,54 @@ the view re-recorded on purpose; the suite and the deep run pass.
 **G6, a check on every push: done.** A GitHub workflow (`.github/workflows/test.yml`) runs `npm test`
 on every push and pull request; the pixel locks stay on this machine.
 
+
+## 8. Against old-school roguelike practice (after G6)
+
+Asked: "Can you double check everything against best practices for old school roguelikes?", then
+"Let's do replays and running. What about best practices under the hood? Anything to fix there?"
+
+**In line with practice:** the rules apart from the drawing, deterministic from a seed, tested
+headless by a bot over hundreds of runs; levels checked winnable (and the way on never through a
+secret door); loops in the levels, not trees; time by energy and the cost of actions; sight both
+ways (a monster sees the player only where the player could see it, light apart); chasing by a
+distance map; packs, morale, sleep and noise; auto-explore, travel and resting, interrupted as they
+should be; levels kept as left; the run lost on death.
+
+**Gaps:**
+1. **No diagonal moves from the keyboard without a number pad** (vi-keys are the old-school way;
+   `l` is look now). For you: the keys.
+2. **The stairs an escape:** nothing follows; with the fighting or stealth feature set (monsters
+   next to the player follow).
+3. **Replays:** done (below).
+4. **Running** (Shift and a way): done (below).
+5. **Fleeing into dead ends:** a safety map, with the monsters' behaviour.
+6. **The line of a shot the same as the line of sight:** with the archers (contents).
+
+**Under the hood:**
+- **A crash mid-turn could be saved:** an error in the rules from a key could leave the world
+  half-done, and the autosave keep it. **Fixed with the replays:** if the rules throw, the run is no
+  longer saved (the last good save stays), the error is shown, and the replay offered.
+- **The same seed could make a different level in another browser:** the rules use `Math.sin`,
+  `cos`, `atan2` and `hypot` (about 23 places, in making levels and in sightlines), which each
+  browser may work out a little differently; now and then a rounding goes the other way, and a
+  replay made in one browser goes off course in another. **To fix (for you):** the rules' own sine,
+  cosine, angle and distance, the same everywhere; the levels change a little (re-recorded).
+- **No check for names a file uses but never has, or has and never uses** (the scans done by hand
+  found real slips): a lint step, a development tool installed by npm (the game itself still needs
+  nothing). **For you.**
+- **Content can be changed by mistake:** the content is shared objects; a rule changing one (a
+  monster's hit points) would change it for every later one, silently. A test that freezes the
+  content and plays the bot would catch it. Cheap.
+- **Fine as they are:** no method defined twice across the World's parts; no randomness outside the
+  dice; the log and the save grow modestly (about 380 messages, 450 KB, over 2,600 turns).
+
+**Replays: done.** `js/rules/replay.js`: the World notes every call made into it from outside (each
+action, each turn of an activity, each stop; not the calls the rules make to themselves), a step in
+two characters, with a checkpoint (the game's fingerprint, the dice included) every 100; kept and
+saved with the run. `World.replay(data)` plays it again from the seed. In the game: the help (?)
+has "Save a replay of this run" (a small file: 2,000 calls, about 10 KB). Here: `node
+tools/replay.mjs <file>` plays it again, says where it went off course if it did, and shows an
+error thrown with the call it came at; `--to N` stops there and draws the world. Tests: a bot run's
+replay is the same run at every checkpoint; through a save and a resume too; a changed call is
+caught within a checkpoint. The browser check plays by keys, explore, the lamp, resting and a
+reload, and the page's replay of it is the same run.

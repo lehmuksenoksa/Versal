@@ -41,11 +41,46 @@ function newRun() {
   // trying things out.)
   const q = new URLSearchParams(location.search), given = q.get("name");
   // (`?seed=…` makes the same run every time, for tests.)
-  world = new World(q.has("seed") ? Number(q.get("seed")) : undefined, { name: given || ui.lastName() || "Adventurer" });
+  broken = false;
+  world = guard(new World(q.has("seed") ? Number(q.get("seed")) : undefined, { name: given || ui.lastName() || "Adventurer" }));
   renderer.setWorld(world);
   renderer.showLamp();
   if (!given) ui.askName((name) => { world.player.name = name; window.focus(); });
   window.focus();
+}
+
+// A replay of the run (js/rules/replay.js), saved as a file: its seed and
+// every move, to be played again exactly (tools/replay.mjs).
+function saveReplay() {
+  if (!world) return;
+  const data = world.replay(), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: "application/json" }));
+  a.download = `versal-replay-${data.seed}-turn${data.turn}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+ui.onSaveReplay = saveReplay;
+
+// Something gone wrong in the rules (a bug): the run is no longer saved, so
+// the last good save stays (the page taken up again from a few turns
+// before), and the replay is offered, to see it happen again.
+let broken = false;
+function guard(w) {
+  for (const k of ["act", "goOn", "stop"]) {
+    const call = w[k];
+    w[k] = (...args) => {
+      try { return call.apply(w, args); }
+      catch (err) {
+        console.error(err);
+        if (!broken) {
+          broken = true;
+          window.versalError?.(`Something went wrong in the game: ${err?.stack || err}\nThe run is no longer saved (taking it up again starts from a few turns before). Press ? and "Save a replay of this run" to keep what happened.`);
+        }
+        return false;
+      }
+    };
+  }
+  return w;
 }
 
 // Saving the run (spec/rebuild-plan.md, R4): kept in the browser as it's
@@ -55,7 +90,7 @@ function newRun() {
 const SAVE_KEY = "versal.run", SAVE_EVERY = 5;
 let saved = { turn: -1, depth: 0 }, offerNew = null;
 function saveRun() {
-  if (!world) return;
+  if (!world || broken) return;
   try {
     if (world.ended) localStorage.removeItem(SAVE_KEY);
     else localStorage.setItem(SAVE_KEY, JSON.stringify(world.save()));
@@ -85,7 +120,7 @@ function startOrResume() {
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
-  world = w;
+  world = guard(w);
   // (Whatever was under way when the page was left, not carried on.)
   world.stop();
   renderer.setWorld(world);
@@ -502,7 +537,7 @@ function loop(now) {
 }
 
 // A handle for poking at things from the browser console.
-window.versal = { get world() { return world; }, get walking() { return doing("walk"); }, renderer, ui, newRun };
+window.versal = { get world() { return world; }, get walking() { return doing("walk"); }, renderer, ui, newRun, saveReplay };
 
 (async () => {
   try {

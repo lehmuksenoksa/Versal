@@ -97,7 +97,9 @@ export class UI {
     this.el.help.hidden = !open;
     if (open) this.el.help.innerHTML = `<div class="card"><h2>Keys</h2><dl>${KEYS_HELP.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
       <h2>Touch</h2><p>Tap beside you to step that way; hold to keep walking. Pinch to zoom. The buttons along the bottom search, rest, light or put out the lamp, and close doors.</p>
+      <h2>Something odd?</h2><p><button id="save-replay" type="button">Save a replay of this run</button> It plays the very same run again, move by move, so whatever happened can be seen again.</p>
       <p class="hint">? or Esc to close</p></div>`;
+    if (open) this.el.help.querySelector("#save-replay")?.addEventListener("click", () => this.onSaveReplay?.());
   }
   // Open a panel in the sidebar ("e", "i", "l"), or the sheet again; the same
   // key twice closes it.

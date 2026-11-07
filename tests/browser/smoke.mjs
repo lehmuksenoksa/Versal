@@ -67,6 +67,41 @@ for (const seed of [123, 4567]) {
   console.log(`Resume: turn ${before.turn} kept; saving took ${before.ms.toFixed(1)} ms.`);
   await context.close();
 }
+// A replay (js/rules/replay.js): the run as played in the page, by keys,
+// explore, the lamp, resting, and a reload, played again from its seed and
+// calls, is the very same run.
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await context.newPage();
+  page.on("pageerror", (e) => problems.push(`replay: ${e.message}`));
+  await page.goto(`http://localhost:${port}/index.html?name=Tester`);
+  await page.waitForTimeout(2500);
+  const keys = async (list, ms = 150) => { for (const key of list) { await page.keyboard.press(key); await page.waitForTimeout(ms); } };
+  await keys(["ArrowRight", "ArrowDown", "f", "ArrowLeft", "ArrowUp", "f", "z", "r", "."]);
+  await keys(["x"], 2500);
+  await keys(["Escape", "ArrowRight", "ArrowDown"]);
+  await page.reload();
+  await page.waitForTimeout(2500);
+  await keys(["ArrowLeft", "x"], 1500);
+  await keys(["Escape", "ArrowUp", "ArrowUp"]);
+  const r = await page.evaluate(async () => {
+    const { World } = await import("/js/rules/world.js"), { fingerprint } = await import("/js/rules/replay.js");
+    const w = window.versal.world, back = World.replay(JSON.parse(JSON.stringify(w.replay())));
+    return { same: fingerprint(back.w) === fingerprint(w), turn: w.turn, calls: back.calls, offCourse: back.offCourse ?? null, error: back.error ? String(back.error) : null };
+  });
+  if (!r.same || r.offCourse !== null || r.error) problems.push(`replay: not the same run (${JSON.stringify(r)})`);
+  // Something gone wrong in the rules: shown, and the run no longer saved.
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("versal.run") ?? "null")?.world?.turn ?? null);
+  await page.evaluate(() => { const w = window.versal.world; w.tick = () => { throw new Error("a bug, on purpose"); }; });
+  await keys(["ArrowRight", "ArrowLeft", "z", "z", "z", "z", "z", "z"]);
+  await page.evaluate(() => { delete window.versal.world.tick; });
+  await keys(["z", "z", "z", "z", "z", "z", "z"]);
+  const after = await page.evaluate(() => ({ turn: window.versal.world.turn, saved: localStorage.getItem("versal.run"), shown: document.getElementById("errors")?.textContent ?? "" }));
+  if (!after.shown.includes("Something went wrong")) problems.push("guard: the error wasn't shown");
+  if (after.saved && JSON.parse(after.saved).world.turn !== saved) problems.push("guard: the run was saved after something went wrong");
+  console.log(`Replay: ${r.calls} calls, to turn ${r.turn}, the same run; an error shown and the run no longer saved.`);
+  await context.close();
+}
 await browser.close();
 server.close();
 if (problems.length) { console.error("Browser check failed:\n" + problems.join("\n")); process.exit(1); }
