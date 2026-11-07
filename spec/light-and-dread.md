@@ -128,12 +128,23 @@ Checked first with plain maths (`10-building-it.md`), then in play:
 
 Neither should win; the player should keep choosing.
 
-## 7. Resting (noted so far)
+## 7. Resting (agreed in chat)
 
-- Round 3: resting lit burns oil; resting in the dark builds dread.
-- **Resting always stops when the player sees a monster** (yours, round 40: "Resting should always
-  stop when player sees a monster").
-- The rest of resting (how long, what it heals, where it's safe) is still to discuss.
+- **Resting is waiting by choice:** the player rests until healed or until something stops it. Each
+  rested turn is time like any other (`fighting.md`, time and speed).
+- **It heals** a little each turn, faster than walking about; grit makes it faster (test).
+- **It stops** when the player sees a monster (round 40), hears a sound close by, is hurt, or their
+  dread reaches "afraid".
+- **Its cost is the clocks:** with the player's light lit, oil burns (or the torch or candle's fuel)
+  and the player is lit for anyone passing; in the dark, dread rises and only hearing warns. So where
+  to rest matters: a candle set down in a dead end is a cheap, safe place (it stops dread and lights
+  little).
+- **Searching carries on while resting:** secret doors and traps nearby are found as time passes, as
+  in the proof of concept.
+- **The level isn't frozen:** loose monsters wander while the player rests; that's the real risk. No
+  new monsters arrive (arrivals over time: later).
+- To watch: the candle trick (if too cheap, a candle burns faster while resting); the healing speed,
+  checked by the maths against oil and dread.
 
 ## 8. Lights as items (round 42, then chat)
 
