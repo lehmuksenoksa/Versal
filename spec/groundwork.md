@@ -106,3 +106,22 @@ the groundwork."
   monster in sight; searching next to a secret door finds it. Checked that they notice: the sneak
   blow made twice as hard fails its test at once.
 
+**G2, the player's actions in the rules: done.**
+- **One command list** (`js/rules/actions.js`, `act({ do, ... })`): move, wait, search, close, the
+  stairs, pick up, drink, wield, drop, take off, the lamp; and **activities** that go on a turn at a
+  time (`goOn`) till done or stopped (`stop`): resting till healed and well, walking to a square
+  (then doing something there: picking up), exploring. What stops them is the rules' to say:
+  something stirring, coming into sight, a hurt, something underfoot.
+- **Everything uses it:** the keys, taps, clicks and buttons (`main.js`, which only paces the
+  activities, a turn every so many milliseconds, and stops one for a key); the bot (its own copy of
+  resting gone); the tests. `main.js`'s own resting and walking loops are gone.
+- **The player's sight is the rules'** (`tuning.json`, `player.sight`: 8 with the lamp lit, 3 out),
+  not the view's: the lamp sets it and the view follows. Before, the game took it from the view's
+  settings (8) while the bot and the tests played with the World's own (9). First moved at 9, the
+  lock passing unchanged; then set to the game's 8, the lock re-recorded for it, the deep run (500
+  runs, all ending) passing.
+- **Small-map tests of the activities** (`tests/rules.test.js`): resting till healed, stopped when
+  something stirs; walking to a square and picking up what's there; exploring stopped by a monster
+  coming into sight; no exploring with one after you; the lamp's sight. And in the browser: explore,
+  the lamp, resting, each stopped by a key, as before.
+

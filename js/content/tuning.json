@@ -30,7 +30,7 @@
     "restHeal": 5,
     "cls": "Adventurer",
     "sight": {
-      "lit": 9,
+      "lit": 8,
       "dark": 3
     }
   },
