@@ -295,7 +295,10 @@ come feature set by feature set, after.
   stairs and every room being reached: every thing lying about and the king can be reached; the
   player arrives, and things, monsters, furniture and lights stand, on open floor; doors and secret
   doors stand in a wall, between two ways through; the map's edge is rock all round.
-- **The crude bot made fuller** (`tests/support/bot.js`): it also picks things up, wields and wears
+- **The crude bot made fuller** (`tests/support/bot.js`): it rests as the game's rest (R) does,
+  begun when below half its hit points or bleeding and kept up till healed and well or till something
+  stirs (it used to rest a turn at a time and walk on at half health); it also picks things up,
+  wields and wears
   the best it has, now and then takes armour off or drops something, closes doors behind it, goes
   back up a level and down again, and searches as a person would: a sweep of the dead ends and
   walls it has seen, nearest first, a square apart (it used to search where it stood, and could
@@ -349,7 +352,8 @@ come feature set by feature set, after.
   - **Depth 1 is the hardest.** With the dagger and no armour, clearing it costs about 54 hit points
     fought one at a time (136 in the open) against 20 hit points (more as the player levels up)
     and about 39 from its potions;
-    about 10 rats a level, in packs. The bot dies there most (about half its runs).
+    about 10 rats a level, in packs. The bot dies there most: about 2 runs in 5 (206 of 500),
+    resting to full between fights as the game's rest does.
   - **Depth 2 is the easiest** once a sword and chainmail are found: about 20 hit points for the
     whole level. Armour matters most against goblins' small blows.
   - **The king:** with an axe at level 5, chainmail and helmet, he costs about 37 hit points of a

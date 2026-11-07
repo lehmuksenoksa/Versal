@@ -217,7 +217,8 @@ No build step and nothing to install: Node's own test runner.
     monsters, furniture and lights stand, on open floor; doors stand in walls between two ways
     through; the map's edge is rock. (Counted, not failed: levels whose way on needs a secret door.)
   - **the crude bot**, 100 whole runs (`bot-a/b.test.js`, `support/bot.js`, `support/botruns.js`):
-    it explores, fights, rests, drinks, picks up, wields, wears, takes off, drops, closes doors,
+    it explores, fights, rests (as R does: till healed and well), drinks, picks up, wields, wears,
+    takes off, drops, closes doors,
     searches at dead ends and walls, goes down and back up. After every step the world must be sound
     (no one in a wall or on another, hit points, the pack, what's held and worn, level and experience
     in order); every run must end, dead or won, within 10,000 steps; and the runs must touch every
