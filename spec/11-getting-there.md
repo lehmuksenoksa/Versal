@@ -55,5 +55,4 @@ Slices 2 to 4 are a sketch: each is chosen after the last is played.
 - **Level-up choices are called Perks.**
 - Parked: round 39's senses and alarms; they come back with stealth.
 
-Next: the mechanics, discussed in chat (stealth, light and dread, attributes, perks), then
-slice 1's contents.
+**Its looks to decide:** `slice1-looks.md`.
