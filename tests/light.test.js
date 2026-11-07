@@ -212,3 +212,39 @@ test("the tips say only what can be told", async () => {
   assert.equal(tipFor(w, 23, 1, shown).lines.length, 0, "the dim one: no state, no wounds");
   assert.match(tipFor(w, 28, 1, shown).title, /Savage goblin/i, "the lit one: all of it");
 });
+
+// ---- Torches on the walls (L3) ----
+
+test("a torch on a corridor's wall lights its bands along the corridor", () => {
+  // (Its light just off the wall, in the square: full 1½, dim 1, faint 1½.)
+  const w = scenario(`
+    ###############
+    #@...........##
+    ######T#######
+  `, { sneaking: true });
+  assert.equal(at(w, 6, 1), 2, picture(w));
+  assert.equal(at(w, 7, 1), 2, picture(w));
+  assert.equal(at(w, 8, 1), 1, picture(w));
+  assert.equal(at(w, 9, 1), 1, picture(w));
+  assert.equal(at(w, 11, 1), 0, picture(w));
+});
+
+test("torches stand on corridors' walls in built ground, apart (100 levels)", async () => {
+  const { levelFor } = await import("./support/levelcheck.js");
+  const { TUNING_LEVELGEN } = await import("./support/levelcheck.js");
+  let torches = 0;
+  for (let seed = 1; seed <= 100; seed++) {
+    const w = levelFor(seed, 1), L = w.level, W = L.w;
+    const mine = (L.lights ?? []).filter((l) => l.kind === "torch");
+    torches += mine.length;
+    for (const t of mine) {
+      const x = Math.floor(t.x), y = Math.floor(t.y), f = L.features.find((f) => f.type === "torch" && f.x === t.x && f.y === t.y);
+      assert.ok(f, `seed ${seed}: a torch's light with no torch`);
+      assert.ok(w.walkable(x, y) && L.roomOf[y * W + x] < 0, `seed ${seed}: a torch not in a corridor at ${x},${y}`);
+      assert.ok(!w.walkable(x + f.dx, y + f.dy), `seed ${seed}: a torch not against a wall at ${x},${y}`);
+      assert.equal(L.area[y * W + x], 0, `seed ${seed}: a torch outside built ground at ${x},${y}`);
+      for (const o of mine) if (o !== t) assert.ok(Math.max(Math.abs(Math.floor(o.x) - x), Math.abs(Math.floor(o.y) - y)) >= TUNING_LEVELGEN.torchApart, `seed ${seed}: two torches close at ${x},${y}`);
+    }
+  }
+  assert.ok(torches > 100, `only ${torches} torches in 100 levels`);
+});

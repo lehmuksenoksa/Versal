@@ -3,6 +3,9 @@
 import { World } from "../../js/rules/world.js";
 import { isWalkable, DIRS8 } from "../../js/rules/dungeon.js";
 import { reachable } from "./checks.js";
+import { LEVELGEN_DEFAULTS } from "../../js/rules/levelgen.js";
+
+export const TUNING_LEVELGEN = LEVELGEN_DEFAULTS;
 
 // A level of depth `depth` for `seed`, made and filled as the game does
 // (deeper ones straight away: each depth is a level the game could make).

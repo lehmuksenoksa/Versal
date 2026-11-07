@@ -212,6 +212,8 @@
     "to": null,
     "up": false,
     "down": false,
-    "throne": false
+    "throne": false,
+    "torchEvery": 18,
+    "torchApart": 10
   }
 }

@@ -55,3 +55,13 @@ in sight (monsters there seen, and stopping explore and running as they come int
 lock and the view re-recorded. **Speed:** sight across the whole level made a bot's step 2½ times
 slower (0.29 to 0.75 ms), most of it testing pillars nowhere near the line of sight; a box test
 first brought it to 0.45 ms, play unchanged.
+
+**L3, torches on the walls: done.** A new light, `torch` (`lights.json`: lit within 1½, dim 1 and faint
+1½ beyond, a small flame), and a new thing (`features.json`, the light family, drawn by
+`js/draw/lights.js`): on the walls of the corridors in built ground, the corridors' only light,
+about one for every 18 squares of corridor and none nearer another than 10 (`tuning.json`:
+`torchEvery`, `torchApart`; starting values). Placed last in a level's making. Small maps: `T`, a
+torch on that wall square. Tests first: a torch's bands along a corridor; on 100 levels, every torch
+in a corridor, against a wall, in built ground, apart. **Its look: an iron bracket and a small
+flame, a stand-in**: its look to choose, with the "?" (L2). The levels' fingerprints, the run lock,
+the outlines, the map drawings and the view re-recorded; the deep run passes.

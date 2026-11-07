@@ -15,6 +15,7 @@
 //   S  a secret door (rock till found)
 //   @  the player                  <  >  stairs up, down
 //   B  a brazier                   F  a campfire (both lights, in the way)
+//   T  a torch on that wall square (its light in the floor beside it)
 //   a monster's letter (MONSTER_LETTERS, or `legend` to add or change some):
 //   those of one letter are a pack, the first its leader.
 //
@@ -34,16 +35,17 @@ export function levelFromText(text, { legend = {}, rooms = [] } = {}) {
   const lines = rows.map((r) => r.slice(pad).replace(/\s+$/, ""));
   const H = lines.length, W = Math.max(...lines.map((l) => l.length)), n = W * H, letters = { ...MONSTER_LETTERS, ...legend };
   const tiles = new Uint8Array(n), idx = (x, y) => y * W + x;
-  const doors = [], secrets = [], lights = [], features = [], blocks = new Set(), monsters = [];
+  const doors = [], secrets = [], lights = [], features = [], blocks = new Set(), monsters = [], torches = [];
   let start = null, stairsUp = null, stairsDown = null;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const c = lines[y][x] ?? " ";
       if (c === "#" || c === " ") continue;
-      tiles[idx(x, y)] = c === "S" ? T.ROCK : T.FLOOR;
+      tiles[idx(x, y)] = c === "S" || c === "T" ? T.ROCK : T.FLOOR;
       if (c === "@") start = { x, y };
       else if (c === "<") stairsUp = { x, y };
       else if (c === ">") stairsDown = { x, y };
+      else if (c === "T") torches.push({ x, y });
       else if (c === "+" || c === "'" || c === "S") (c === "S" ? secrets : doors).push({ x, y, dx: 0, dy: 0, ...(c === "S" ? {} : { open: c === "'" }) });
       else if (LIGHT_LETTERS[c]) {
         const kind = LIGHT_LETTERS[c];
@@ -53,6 +55,14 @@ export function levelFromText(text, { legend = {}, rooms = [] } = {}) {
       } else if (letters[c]) monsters.push({ letter: c, kind: letters[c], x, y });
       else if (c !== ".") throw new Error(`a small map's letter ${JSON.stringify(c)}?`);
     }
+  // (A torch on a wall square: its light just off the wall, in the floor
+  // square beside it.)
+  for (const t of torches) {
+    const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]].find(([dx, dy]) => isOpen(tiles[idx(t.x + dx, t.y + dy)] ?? 0)) ?? [0, -1];
+    const lx = t.x + dx + 0.5 - dx * 0.35, ly = t.y + dy + 0.5 - dy * 0.35;
+    lights.push({ x: lx, y: ly, kind: "torch" });
+    features.push({ type: "torch", x: lx, y: ly, dx: -dx, dy: -dy });
+  }
   // (A level below, come to by its stairs, needs no @.)
   start ??= stairsUp ?? stairsDown;
   if (!start) throw new Error("a small map needs the player (@) or stairs");

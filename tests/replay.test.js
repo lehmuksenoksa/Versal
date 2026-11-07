@@ -7,8 +7,11 @@ import { playRun, botStep, snapshot } from "./support/bot.js";
 import { RNG } from "../js/rules/rng.js";
 
 test("a run's replay is the same run, checkpoint by checkpoint", () => {
-  for (const seed of [1000, 1002, 5005]) {
+  // (Three runs long enough to pass several checkpoints.)
+  for (let seed = 1000, long = 0; long < 3; seed++) {
     const { w } = playRun(seed, { maxSteps: 3000 });
+    if (w.history.length < 400) continue;
+    long++;
     const data = JSON.parse(JSON.stringify(w.replay()));
     const r = World.replay(data);
     assert.equal(r.offCourse, undefined, `seed ${seed}: off course at call ${r.offCourse}`);

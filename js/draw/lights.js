@@ -34,6 +34,15 @@ export const lights = {
     }
   },
 
+  torch(f, { P, x, y, TS, INK }) {
+    // A torch in an iron bracket on the wall: the bracket from the wall's
+    // face to the torch's head, a round of ink. (Its flame drawn over it as
+    // it burns: render.js.) A stand-in: its look to choose.
+    const wx = x + f.dx * TS * 0.15, wy = y + f.dy * TS * 0.15;
+    P.line(wx, wy, x, y, 2.4);
+    P.round(x, y, TS * 0.08, 1.2, INK);
+  },
+
   campfire(f, { P, x, y, TS, INK }) {
     // A teepee of three logs seen from the side: plain bars of ink leaning
     // together, crossing a little past their point.

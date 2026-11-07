@@ -4,7 +4,7 @@
 
 import { T } from "../dungeon.js";
 import { computeFov } from "../fov.js";
-import { LIGHTS } from "./make.js";
+import { LIGHTS, DUNGEON } from "./make.js";
 import { sin, cos, hypot } from "../dmath.js";
 
 // Lights: campfires in big caves, in the middle of open floor (each
@@ -56,6 +56,37 @@ export function hallBraziers(g, r, flank = false) {
 }
 
 export function placeLights(g) {
+  placeLightsBefore(g);
+  placeTorches(g);
+}
+
+// Torches on the walls of the corridors in built ground (spec/light-set.md,
+// L3): the corridors' only light. About one for every `torchEvery` squares
+// of corridor, none nearer another than `torchApart`; each against a wall of
+// its square, its light just off the wall.
+function placeTorches(g) {
+  const { S, rng, W, H, tiles, cave, area, roomOf, idx, lights, features, doors, blocks } = g;
+  const doorSq = new Set(doors.map((d) => idx(d.x, d.y)));
+  const corridor = (x, y) => tiles[idx(x, y)] === T.FLOOR && roomOf[idx(x, y)] < 0 && area[idx(x, y)] === DUNGEON && !cave[idx(x, y)] && !doorSq.has(idx(x, y)) && !blocks.has(idx(x, y));
+  const spots = [];
+  for (let y = 1; y < H - 1; y++)
+    for (let x = 1; x < W - 1; x++) {
+      if (!corridor(x, y)) continue;
+      const walls = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => tiles[idx(x + dx, y + dy)] === T.ROCK);
+      if (walls.length) spots.push({ x, y, walls });
+    }
+  const want = Math.round(spots.length / Math.max(1, S.torchEvery)), placed = [];
+  for (const s of rng.shuffle(spots)) {
+    if (placed.length >= want) break;
+    if (placed.some((p) => Math.max(Math.abs(p.x - s.x), Math.abs(p.y - s.y)) < S.torchApart)) continue;
+    const [dx, dy] = rng.pick(s.walls), lx = s.x + 0.5 + dx * 0.35, ly = s.y + 0.5 + dy * 0.35;
+    lights.push({ x: lx, y: ly, kind: "torch" });
+    features.push({ type: "torch", x: lx, y: ly, dx, dy });
+    placed.push(s);
+  }
+}
+
+function placeLightsBefore(g) {
   const { S, rng, W, H, tiles, rubble, idx, floorAt, rooms, roomLights, lights, blocks, features, reach, floorIn } = g;
   // Rock formations set round a cave's campfire (at (fx, fy)) to throw
   // shadows the player can creep along: a few small clumps two to four

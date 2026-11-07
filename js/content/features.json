@@ -9,20 +9,104 @@
     "kept": "remembered with the walls once seen (not inked with the grid)"
   },
   "features": {
-    "post": { "family": "structure", "lift": 0.2, "shadow": true, "outline": null, "pillar": true, "kept": true },
-    "stairs": { "family": "structure", "lift": 0.11, "shadow": false, "outline": null, "kept": true },
-    "crate": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "square" },
-    "barrel": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "hex" },
-    "shelf": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
-    "table": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
-    "bench": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
-    "chair": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
-    "bed": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
-    "coffin": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
-    "sarcophagus": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
-    "altar": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
-    "brazier": { "family": "light", "lift": 0.11, "shadow": true, "outline": null },
-    "candles": { "family": "light", "lift": 0.11, "shadow": false, "outline": null },
-    "campfire": { "family": "light", "lift": 0.11, "shadow": false, "outline": null }
+    "post": {
+      "family": "structure",
+      "lift": 0.2,
+      "shadow": true,
+      "outline": null,
+      "pillar": true,
+      "kept": true
+    },
+    "stairs": {
+      "family": "structure",
+      "lift": 0.11,
+      "shadow": false,
+      "outline": null,
+      "kept": true
+    },
+    "crate": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "square"
+    },
+    "barrel": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "hex"
+    },
+    "shelf": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "box"
+    },
+    "table": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "box"
+    },
+    "bench": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": null
+    },
+    "chair": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": null
+    },
+    "bed": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": null
+    },
+    "coffin": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": null
+    },
+    "sarcophagus": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "box"
+    },
+    "altar": {
+      "family": "furniture",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": "box"
+    },
+    "brazier": {
+      "family": "light",
+      "lift": 0.11,
+      "shadow": true,
+      "outline": null
+    },
+    "candles": {
+      "family": "light",
+      "lift": 0.11,
+      "shadow": false,
+      "outline": null
+    },
+    "campfire": {
+      "family": "light",
+      "lift": 0.11,
+      "shadow": false,
+      "outline": null
+    },
+    "torch": {
+      "family": "light",
+      "lift": 0.11,
+      "shadow": false,
+      "outline": null
+    }
   }
 }

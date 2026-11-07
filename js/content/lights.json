@@ -42,6 +42,13 @@
       "dark": 3,
       "flame": 0,
       "foot": 0
+    },
+    "torch": {
+      "full": 1.5,
+      "dim": 1,
+      "dark": 1.5,
+      "flame": 0.42,
+      "foot": 0.02
     }
   }
 }
