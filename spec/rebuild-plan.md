@@ -106,8 +106,7 @@ dice's place**. Things like `Set`s and class instances are rebuilt from it, not 
 - the save-and-restore test proves nothing is missed;
 - the bot and tests can start from any saved moment.
 
-Whether the game offers saving to the player (resume where you left) is a small interface step;
-section 9 asks.
+The game offers it to the player: resume where you left (decided), as part of R4.
 
 ## 6. Drawing by families (the groundwork only)
 
@@ -140,20 +139,20 @@ game changes.
 | **R1. Tests first** | A package file (no dependencies), `node --test`; the same-seed test, the crude bot and the browser check against today's code; **the behaviour lock recorded** | They pass on today's code |
 | **R2. Content out** | `MONSTERS`, `ITEMS`, traits, `LIGHTS`, `PLACES` and the numbers moved into `content/` | The behaviour lock: same events |
 | **R3. Rules apart** | `world.js` split into the parts in section 3; names moved out of `tips.js`; the generator split from its content | The behaviour lock |
-| **R4. State as data** | The state as one plain object; save and restore | The save-and-restore test; the lock |
+| **R4. State as data** | The state as one plain object; save and restore; **resume where you left** (saved as you play, offered when the page opens) | The save-and-restore test; the lock; you try a resume |
 | **R5. Drawing by families** | The family tables; drawing by lookup | Screenshots of fixed seeds: same pixels |
 | **R6. Pare down** | Curses and the altar's lifting; light without a source | Tests updated; **you play it** |
 | **R7. Checks grown** | The level checks and the bot made fuller; the balance maths begun (`tools/`) | They run clean |
 
-Steps R2 to R5 change nothing you can see; the lock and the screenshots prove it. R6 is the one step
-you'd notice.
+Steps R2, R3 and R5 change nothing you can see; the lock and the screenshots prove it. R4 adds
+resuming; R6 is the paring down you'd notice.
 
 ## 9. Decisions for you before the go
 
 1. ~~Content as JS data modules or JSON?~~ **JSON** (decided).
-2. **The pare-down list:** curses and sourceless light only, or more?
-3. **Saving for the player:** offer resume in the rebuild (a small step after R4), or wait for a
-   feature set?
+2. ~~The pare-down list?~~ **Curses and light without a source, only** (decided: "sure").
+3. ~~Saving for the player?~~ **Offered in the rebuild:** resume where you left, a small step after R4
+   (decided: "sure").
 4. **The order of the steps** as in section 8?
 
 ## 10. Not in the rebuild
