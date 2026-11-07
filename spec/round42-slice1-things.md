@@ -117,3 +117,12 @@ On top of a thing (round 24): an item's Depth is the deepest of its parts.
 | Of goblin slaying | Slaying · Depth 4 | — | open |
 | Of undead slaying | Slaying · Depth 6 | — | open |
 | Of light | Enchantment · Depth 5 | — | open |
+
+## Later in chat
+
+- **The murky potion stays in slice 1 as the proof of concept has it** (yours: "Keep murky potion"):
+  every murky potion in a run is the same brew, drawn once per run, all healing well or all
+  poisoning; drinking one tells about all of them. Slice 1's one unknown thing.
+- **Curses come out of the game until slice 2** (yours: "take curses out until slice 2"). The proof
+  of concept has cursed items ("a sword?", unknown until worn, `traits.js` `CURSE`); they're removed
+  for slice 1 and come back in slice 2 with identify and remove curse.

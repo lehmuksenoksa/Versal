@@ -37,7 +37,8 @@ Slices 2 to 4 are a sketch: each is chosen after the last is played.
 - **Its monsters, items, strangers and features are a small set** for depths 1 to 6, picked from
   the catalogue, not the whole roster. Monsters: 23, built in two steps (`round41-slice1-monsters.md`).
 - **Its things to find:** in two steps, as its monsters (`round42-slice1-things.md`). No strangers in
-  slice 1; trade, unknown things and curses come with slice 2.
+  slice 1; trade, unknown things and curses come with slice 2 (the proof of concept's cursed items
+  are taken out for slice 1; the murky potion stays).
 - **Its features:** `round43-slice1-features.md`; traps come in (tripwire, pressure plate, net).
   A look rule: things to interact with look different from decoration.
 - **Its ending: a goblin camp led by a goblin chieftain near the stairs down on depth 6** (a leader,
