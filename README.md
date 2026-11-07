@@ -172,8 +172,8 @@ in the browser console.
 
 | File | What it does |
 | --- | --- |
-| `js/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern, collapsed ground and the goblin king's halls (or one kind changing into another across the level, with stairs and a throne room), their rooms, corridors, rubble, doors, room kinds and furnishings. |
-| `js/dungeon.js` | Tile types, cave carving, and the older single-kind generator (still used by the expression mockup). |
+| `js/rules/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern, collapsed ground and the goblin king's halls (or one kind changing into another across the level, with stairs and a throne room), their rooms, corridors, rubble, doors, room kinds and furnishings. |
+| `js/rules/dungeon.js` | Tile types, cave carving, and the older single-kind generator (still used by the expression mockup). |
 | `js/maprender.js` | The hand-inked map: wall outlines and strokes, recesses, doors, shadow, floor grid (looser on cave floors), rubble, furniture and pillars, room numbers. |
 | `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
@@ -184,19 +184,29 @@ in the browser console.
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
 | `js/content/*.json` | The game's content as data: monsters, items, traits, lights, places, and `tuning.json`, the rules' own numbers. Each file notes what its fields mean. |
-| `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); blows, health, ailments, healing and death; the message log; field of view and memory. |
+| `js/rules/` | The rules, headless (they run in Node as in the browser; they import only each other and `js/content/`): |
+| `js/rules/world.js` | The World: the run, the turn and the log; joined from its parts below. Takes the content and names from `content.js` and `names.js` for the rest of the game. |
+| `js/rules/levels.js` | Levels: making one when first come to, entering it and keeping it as left, filling it; the stairs. |
+| `js/rules/senses.js` | What the player sees, what the monsters notice, secret doors, noise. |
+| `js/rules/moves.js` | The map's squares, doors, who stands where; the player's step. |
+| `js/rules/monsters.js` | How monsters move by their state: milling, patrolling, investigating, chasing, fleeing. |
+| `js/rules/fight.js` | Blows, defence, ailments, falling and dying; experience and levels. |
+| `js/rules/items.js` | Things: what lies about, the pack, drinking, wielding and wearing, dropping. |
+| `js/rules/names.js` | Names and words: things, monsters, rooms. |
+| `js/rules/content.js` | The content and the rules' numbers, from `js/content/*.json`. |
+| `js/rules/rng.js` | The seeded dice. |
 | `js/ui.js` | The words around the map: the place and newest messages, the sidebar (sheet, equipment, inventory, look), the messages drawer, the help, the name and end-of-run pages. |
 | `js/plates.js` | The torn plates under the corner, the sidebar and the drawer: the chosen polylines, their edges drawn as cave walls and torn. |
-| `js/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
-| `js/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
+| `js/rules/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
+| `js/rules/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
 | `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |
 | `js/gpu.js` | The map drawn on the GPU (WebGL2): one pass a frame putting together what `js/expression.js` prepares, the hatching inked there from every stroke's shape (sent once), the flicker a few numbers. |
 | `js/render.js` | Per-frame drawing: camera and zoom, the map (on the GPU via `js/gpu.js`, or with canvases via `js/expression.js`), glyph poses and tweens. |
 | `mockups/speed.html` | The same level drawn on the GPU and with canvases side by side, with timings; also stroke stamps, a worker, the flicker. |
 | `js/main.js` | Input and the main loop. |
-| `js/travel.js` | Walking by itself: the way to a square clicked through what's been seen, and to the nearest place not yet seen (exploring). |
+| `js/rules/travel.js` | Walking by itself: the way to a square clicked through what's been seen, and to the nearest place not yet seen (exploring). |
 | `js/tips.js` | What things are in words: the tips, a monster's state and wounds, the rooms' names. |
-| `js/traits.js` | The traits of things, monsters and rooms, and what each does. |
+| `js/rules/traits.js` | The traits of things, monsters and rooms, and what each does. |
 
 ## Tests
 

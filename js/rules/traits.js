@@ -18,5 +18,9 @@ export const MONSTER_TRAIT = TUNING.monsterTrait;
 export const ROOM_TRAITS = TRAITS.rooms;
 export const ROOM_TRAIT = TUNING.roomTrait;
 
+// What a thing's trait does (an empty one for none); what a monster's does.
+export const itemTrait = (it) => (it?.trait && ITEM_TRAITS[it.trait]) || {};
+export const monTrait = (g) => (g.trait && MONSTER_TRAITS[g.trait]) || {};
+
 // A room's kind for the table above (a hall of the king's by its plan).
 export const roomKind = (r) => (r.halls ? (r.hallKind === "I" ? "I" : "halls") : r.collapsed ? "collapsed" : r.kind);

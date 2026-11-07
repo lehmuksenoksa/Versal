@@ -196,3 +196,18 @@ come feature set by feature set, after.
   lights and places have the fields they need; places and traits point only at things that exist.
 - Noted, not caused by R2 and not fixed: `mockups/expression.html` has an error on load (a control it
   looks for is missing).
+
+**R3, rules apart: done.**
+- **The rules moved into `js/rules/`** (a pure move first, checked by the lock): `world`, `traits`,
+  `levelgen`, `dungeon`, `fov`, `travel`, `rng`, `sightline`; every import in the game, the mockups
+  and the tests updated.
+- **`world.js` (1,080 lines) split into parts,** each a file of the World's methods joined to it:
+  `levels.js`, `senses.js`, `moves.js`, `monsters.js`, `fight.js`, `items.js`; the World itself (the
+  run, the turn, the log) is about 150 lines. `content.js` holds the content and numbers from the
+  JSON; `names.js` the names and words, with the rooms' names moved out of `tips.js` (the interface).
+- **Nothing changed:** the behaviour lock passes; the browser check passes; the mockups load as
+  before. A scan checked every part imports all it uses (the bot doesn't reach every line).
+- **New test, the structure rule** (`tests/structure.test.js`): the rules import only each other and
+  the content.
+- The level generator (`levelgen.js`, 1,400 lines) is one file still: its content is out (R2), and
+  splitting its insides can wait for the feature sets that change it.

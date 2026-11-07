@@ -3,7 +3,7 @@
 // chosen (mockups/choices.html, round 3: A, a torn black plate beside it;
 // no ring round the thing, asked later); and the words for a monster's state
 // and wounds, and the rooms' names, used by the look and the log too.
-import { MONSTERS, ITEMS, itemName, monName, an, unsure, shownTrait } from "./rules/world.js";
+import { MONSTERS, ITEMS, itemName, monName, an, unsure, shownTrait, roomName, roomAt } from "./rules/world.js";
 import { ITEM_TRAITS, MONSTER_TRAITS, ROOM_TRAITS } from "./rules/traits.js";
 
 // How a monster's state reads.
@@ -34,26 +34,6 @@ const ABOUT = {
 // What each trait does, in a few words (after the line about the kind).
 const ITEM_SAYS = { cursed: "Won't come off; an altar may lift it.", heavy: "Hits a tenth less often.", sharp: "A hard blow makes the living bleed.", "goblin-bane": "Bites 3 harder on goblins.", padded: "Hard blows make you bleed half as often.", spiked: "Cuts what hits you." };
 const MONSTER_SAYS = { savage: "Savage: hits harder, never flees.", timid: "Timid: flees when hurt.", sleepy: "Sleepy: hears little.", watchful: "Watchful: sees far in the dark.", swift: "Swift.", starving: "Starving: weak, but never gives up a chase.", crumbling: "Crumbling: breaks easily.", venomous: "Venomous: poisons often and long.", veteran: "A veteran: hits hard and often." };
-
-// A room's name, for the rooms worth naming (null for the rest).
-// (Its trait first: "a cursed crypt".)
-const KINDS = { store: "storeroom", gallery: "gallery", hall: "pillared hall", crypt: "crypt", jail: "jail", barracks: "barracks", dining: "dining hall", shrine: "shrine" };
-export function roomName(r, level) {
-  if (!r) return null;
-  if (r === level.throneRoom) return "the throne room";
-  // (A room of no kind worth naming is named for its trait, if it has one.)
-  const kind = (r.halls ? (r.hallKind === "I" ? "storeroom" : "great hall") : r.cave || r.collapsed ? null : KINDS[r.kind]) ?? (r.trait ? "room" : null);
-  return kind ? an(r.trait ? `${r.trait} ${kind}` : kind) : null;
-}
-// The room the square (x, y) is in, if any (the smallest whose box it's in).
-export function roomAt(level, x, y) {
-  let best = null;
-  for (const r of level.rooms ?? []) {
-    if (x < r.x || y < r.y || x >= r.x + r.w || y >= r.y + r.h) continue;
-    if (!best || r.w * r.h < best.w * best.h) best = r;
-  }
-  return best;
-}
 
 // A thing's numbers with its trait: its blow, what it takes off, what it
 // heals.
