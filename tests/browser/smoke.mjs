@@ -83,7 +83,8 @@ for (const seed of [123, 4567]) {
   await page.reload();
   await page.waitForTimeout(2500);
   await keys(["ArrowLeft", "x"], 1500);
-  await keys(["Escape", "ArrowUp", "ArrowUp"]);
+  await keys(["Escape", "ArrowUp", "ArrowUp", "Shift+ArrowRight"], 1500);
+  await keys(["Shift+ArrowDown"], 1500);
   const r = await page.evaluate(async () => {
     const { World } = await import("/js/rules/world.js"), { fingerprint } = await import("/js/rules/replay.js");
     const w = window.versal.world, back = World.replay(JSON.parse(JSON.stringify(w.replay())));

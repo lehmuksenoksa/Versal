@@ -199,3 +199,96 @@ test("a level keeps what changed on it while the player is away", async () => {
   assert.equal(w.actors[0], w.player, "the player isn't first among the actors");
   assert.equal(w.actors.filter((a) => a === w.player).length, 1);
 });
+
+// ---- Running (Shift and a way) ----
+
+const runOut = (w) => { let turns = 0; while (w.doing && turns < 200) { w.goOn(); turns++; } return turns; };
+
+test("running follows a corridor round its bends and stops where it opens out", () => {
+  const w = scenario(`
+    ##########
+    #@.....###
+    ######.###
+    ######.###
+    ####.....#
+    ####.....#
+    ##########
+  `);
+  w.act({ do: "run", dx: 1, dy: 0 });
+  runOut(w);
+  assert.deepEqual([w.player.x, w.player.y], [6, 3], picture(w));
+});
+
+test("running across a room stops at the far wall", () => {
+  const w = scenario(ROOM);
+  w.act({ do: "run", dx: 1, dy: 0 });
+  runOut(w);
+  assert.deepEqual([w.player.x, w.player.y], [8, 1], picture(w));
+});
+
+test("running along a wall stops at an opening in it", () => {
+  const w = scenario(`
+    ##########
+    #@.......#
+    #........#
+    #####.####
+    #####.####
+  `);
+  w.act({ do: "run", dx: 1, dy: 0 });
+  runOut(w);
+  // (Along the top wall: on the second row it'd see the gap below; on the
+  // first, no change beside, so to the far wall.)
+  assert.deepEqual([w.player.x, w.player.y], [8, 1], picture(w));
+  const v = scenario(`
+    ##########
+    #........#
+    #@.......#
+    #####.####
+    #####.####
+  `);
+  v.act({ do: "run", dx: 1, dy: 0 });
+  runOut(v);
+  assert.deepEqual([v.player.x, v.player.y], [5, 2], picture(v));
+});
+
+test("running stops by a door, and when a monster comes into sight", () => {
+  const w = scenario(`
+    ############
+    #@.....+...#
+    ############
+  `);
+  w.act({ do: "run", dx: 1, dy: 0 });
+  runOut(w);
+  assert.deepEqual([w.player.x, w.player.y], [6, 1], picture(w));
+  const v = scenario(`
+    ##############
+    #@..........##
+    ###########.##
+    ###########.##
+    ###########g##
+    ##############
+  `);
+  v.act({ do: "run", dx: 1, dy: 0 });
+  runOut(v);
+  assert.ok(v.messages.some((m) => /comes into sight/.test(m.text)), picture(v));
+});
+
+test("no running with a monster in sight", () => {
+  const w = scenario(ROOM.replace("#........#\n  ##", "#.......g#\n  ##"));
+  assert.equal(w.act({ do: "run", dx: 1, dy: 0 }), false);
+  assert.match(w.messages.at(-1).text, /Not with a monster in sight/);
+});
+
+test("a run round a ring of corridor stops where it began", () => {
+  const w = scenario(`
+    #######
+    #@....#
+    #.###.#
+    #.....#
+    #######
+  `);
+  w.act({ do: "run", dx: 1, dy: 0 });
+  const turns = runOut(w);
+  assert.ok(turns < 50, `ran ${turns} turns`);
+  assert.equal(w.doing, null);
+});

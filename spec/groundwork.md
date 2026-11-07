@@ -257,3 +257,13 @@ error thrown with the call it came at; `--to N` stops there and draws the world.
 replay is the same run at every checkpoint; through a save and a resume too; a changed call is
 caught within a checkpoint. The browser check plays by keys, explore, the lamp, resting and a
 reload, and the page's replay of it is the same run.
+
+**Running: done.** Shift with an arrow or a number-pad key runs that way (`act({ do: "run" })`, an
+activity of the rules): along a corridor round its bends (a corridor: one way on, no wider than
+two ways side by side, and no floor two squares wide round the player); straight on in the open.
+It stops where something changes: an opening beside the way or a wall's end, leaving a corridor (a
+junction, a room), a door by the way, stairs or a thing underfoot, a monster coming into sight, a
+hit point lost, back where it began round a loop, or after 300 steps; it won't start with a
+monster in sight. Small-map tests of each; the bot runs now and then, on every kind of ground,
+under the step-by-step checks (500 runs in the deep check). Found on the way: the sheet's "Turns"
+showed the turn only when something else changed (a message, a hit point); now every turn.

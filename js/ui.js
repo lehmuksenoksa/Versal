@@ -19,6 +19,7 @@ const DRAWER_GREY = "#1e1c1a";
 // The keys, for the help.
 const KEYS_HELP = [
   ["WASD, arrows, numpad", "move; into a monster, attack; into a door, open it"],
+  ["Shift+arrows, numpad", "run: along a corridor round its bends, or on till something changes"],
   ["click", "step toward it; hold to keep walking"],
   ["Shift", "held: what's under the mouse, and the way there"],
   ["Shift+click", "walk there; a monster, attack it; a thing, pick it up; a door by you, close it"],
@@ -142,7 +143,8 @@ export class UI {
   update(world) {
     const p = world.player;
     const seen = world.actors.filter((a) => a !== p && world.isVisible(a.x, a.y));
-    const stamp = [world.place.depth, !!this.asking, p.name, !!world.won, world.messages.length, world.messages[world.messages.length - 1]?.n, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
+    // (The turn too: the sheet shows it.)
+    const stamp = [world.turn, world.place.depth, !!this.asking, p.name, !!world.won, world.messages.length, world.messages[world.messages.length - 1]?.n, p.hp, p.maxHp, p.xp, p.level, JSON.stringify(p.equip), JSON.stringify(p.pack), this.prompt?.verb, Object.keys(p.ailments).join(), !!world.dead, this.wide, this.drawerOpen, this.panel,
       window.innerWidth, window.innerHeight, world.sneaking, this.panel === "l" ? seen.map((a) => `${a.id}${a.state}${a.hp}`).join() + world.turn : ""].join("|");
     if (stamp === this.stamp) return;
     this.stamp = stamp;

@@ -15,15 +15,19 @@ const print = (w) => JSON.stringify({
 });
 
 test("a level is the same whatever was played before it", () => {
-  for (const seed of [2, 3, 7]) {
-    // (Played on depth 1 by the bot until it went down, against straight down.)
+  // (Played on depth 1 by the bot until it went down, against straight down:
+  // the first three seeds where the bot gets there.)
+  let tried = 0;
+  for (let seed = 1; tried < 3 && seed < 60; seed++) {
     let played = null;
     playRun(seed, { maxSteps: 4000, each: (w) => { if (!played && w.place.depth === 2) played = print(w); } });
+    if (!played) continue;
+    tried++;
     const fresh = new World(seed);
     fresh.enter(2, "down");
-    assert.ok(played, `seed ${seed}: the bot never got to depth 2`);
     assert.equal(played, print(fresh), `seed ${seed}: depth 2 differs with depth 1 played first`);
   }
+  assert.equal(tried, 3, "the bot got to depth 2 in fewer than three seeds");
 });
 
 test("a die thrown in one part shifts no other's", () => {

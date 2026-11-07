@@ -83,6 +83,14 @@ export function botStep(w, r, mem) {
   const worn = ["head", "body"].filter((k) => p.equip[k]);
   if (worn.length && r.chance(0.004) && w.act({ do: "takeOff", where: r.pick(worn) })) return "take off";
   if (p.pack.length && r.chance(0.003)) { const it = r.pick(p.pack); if (it.type !== "potion" && w.act({ do: "drop", key: it.key })) return "drop"; }
+  // (Now and then, a turn of searching, wherever it is: no way on needs a
+  // secret door found, so it seldom has to.)
+  if (r.chance(0.004)) { w.act({ do: "search" }); return "search"; }
+  // (Now and then, a run, any way: to its end.)
+  if (r.chance(0.02) && w.act({ do: "run", ...r.pick(DIRS8.map(([dx, dy]) => ({ dx, dy }))) })) {
+    while (w.doing?.do === "run") w.goOn();
+    return "run";
+  }
   // (A door just come through: now and then, shut behind.)
   if (mem.door && w.canCloseDoor() && r.chance(0.3) && w.act({ do: "close" })) { mem.door = false; return "close"; }
   mem.door = !!w.doorAt(p.x, p.y);

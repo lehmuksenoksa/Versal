@@ -197,6 +197,12 @@ window.addEventListener("keydown", (e) => {
     return ui.ask(e.key);
   }
   const dir = KEYS[e.code] || KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+  // (Shift and an arrow or a number-pad key: run that way. Not Shift and
+  // WASD: W and D are wield and drop.)
+  if (dir && e.shiftKey && /^(Arrow|Numpad)/.test(e.code)) {
+    e.preventDefault();
+    return begin({ do: "run", dx: dir[0], dy: dir[1] });
+  }
   if (dir) {
     e.preventDefault();
     step(dir[0], dir[1], e.repeat);

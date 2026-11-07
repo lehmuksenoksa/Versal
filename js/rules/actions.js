@@ -12,6 +12,9 @@
 //   walk { to, near?, then? }  walk to a square seen, or up to it (`near`),
 //                          then do `then` (a command); explore: walk to the
 //                          nearest place not yet seen, and on (activities)
+//   run { dx, dy }         run that way: along a corridor round its bends,
+//                          straight on in the open, till something changes
+//                          (an activity)
 // An activity goes on a turn at a time (`goOn`) until done or stopped: by
 // something stirring, something coming into sight, a hurt, something
 // underfoot; the interface stops it for a key (`stop`).
@@ -20,6 +23,7 @@ import { PLAYER } from "./content.js";
 import { an, monName } from "./names.js";
 import { wayTo, wayToExplore, WALK } from "./travel.js";
 import { encodeCall } from "./replay.js";
+import { DIRS8 } from "./dungeon.js";
 
 export const actionMethods = {
   // Carry out a command; true if a turn passed (or an activity began).
@@ -42,6 +46,7 @@ export const actionMethods = {
       case "rest": return this.startRest();
       case "walk": return this.startWalk({ to: cmd.to, near: !!cmd.near, then: cmd.then ?? null });
       case "explore": return this.startWalk({ explore: true });
+      case "run": return this.startRun(cmd.dx, cmd.dy);
     }
     throw new Error(`no action "${cmd.do}"`);
   },
@@ -60,7 +65,7 @@ export const actionMethods = {
     const D = this.doing;
     if (!D) return false;
     if (this.ended) return this.stop(null);
-    return D.do === "rest" ? this.restTurn() : this.walkTurn();
+    return D.do === "rest" ? this.restTurn() : D.do === "run" ? this.runTurn() : this.walkTurn();
   },
 
   // The activity stopped (and why, if it's worth saying); false.
@@ -128,7 +133,82 @@ export const actionMethods = {
     if (!atEnd && this.itemsAt(p.x, p.y).length) this.stop(null);
     return true;
   },
+
+  // ---- Running ----
+  // Run that way (not with a monster in sight).
+  startRun(dx, dy) {
+    this.doing = null;
+    const seen = this.inSightIds();
+    if (seen.length) { this.log("Not with a monster in sight."); return false; }
+    this.doing = { do: "run", dx, dy, seen, hp: this.player.hp, sides: null, corridor: null, from: { x: this.player.x, y: this.player.y }, steps: 0 };
+    return true;
+  },
+
+  // A step of the run. Ahead if it can; in a corridor (one way on, not
+  // back), round its bend. Then stopped where something changes: an opening
+  // beside or a wall ending (what's open to either side is not as it was),
+  // a door by the way, stairs or a thing underfoot, a monster coming into
+  // sight, a hit point lost.
+  runTurn() {
+    const D = this.doing, p = this.player;
+    const open = (x, y) => this.walkable(x, y);
+    const can = ([dx, dy]) => open(p.x + dx, p.y + dy) && this.canStep(p.x, p.y, dx, dy) && !this.actorAt(p.x + dx, p.y + dy);
+    // (The ways on from here, going `way`: open, not back nor 45° from back,
+    // as openings: ways side by side round the compass make one. A
+    // corridor: one opening, no wider than two ways (straight on, or a
+    // bend's corner).)
+    const openings = (way) => {
+      const on = RING.map((d) => can(d) && Math.abs(d[0] + way[0]) + Math.abs(d[1] + way[1]) > 1);
+      const start = on.indexOf(false), groups = [];
+      if (start < 0) return [RING.slice()];
+      for (let k = 1, cur = null; k <= 8; k++) {
+        const i = (start + k) % 8;
+        if (on[i]) (cur ??= groups[groups.push([]) - 1]).push(RING[i]);
+        else cur = null;
+      }
+      return groups;
+    };
+    // (In the open: floor two squares wide anywhere round the player.)
+    const wide = () => [[-1, -1], [0, -1], [-1, 0], [0, 0]].some(([ox, oy]) => [[0, 0], [1, 0], [0, 1], [1, 1]].every(([ax, ay]) => open(p.x + ox + ax, p.y + oy + ay)));
+    const corridor = (g) => g.length === 1 && g[0].length <= 2 && !wide();
+    let way = [D.dx, D.dy];
+    const here = openings(way);
+    D.corridor ??= corridor(here);
+    if (!can(way)) {
+      // (Round a corridor's bend, straight steps before diagonal; else stop.)
+      if (!D.corridor || !corridor(here)) return this.stop(null);
+      way = [...here[0]].sort((a, b) => Math.abs(a[0]) + Math.abs(a[1]) - (Math.abs(b[0]) + Math.abs(b[1])))[0];
+      D.sides = null;
+    }
+    if (!this.playerMove(way[0], way[1])) return this.stop(null);
+    [D.dx, D.dy] = way;
+    // (Round a loop to where it began, or far enough: stop.)
+    if ((p.x === D.from.x && p.y === D.from.y) || ++D.steps >= RUN_MAX) { this.stop(null); return true; }
+    const now = this.inSightIds(), fresh = this.actors.find((a) => now.includes(a.id) && !D.seen.includes(a.id));
+    if (fresh) { this.stop(`You stop: ${an(monName(fresh))} comes into sight.`); return true; }
+    D.seen = now;
+    if (p.hp < D.hp || this.ended) { this.stop(null); return true; }
+    const L = this.level, at = (s) => s && s.x === p.x && s.y === p.y;
+    if (this.itemsAt(p.x, p.y).length || at(L.stairsDown) || at(L.stairsUp) || this.doorAt(p.x, p.y)) { this.stop(null); return true; }
+    // (A door beside or ahead: stop by it.)
+    if (DIRS8.some(([dx, dy]) => (!dx || !dy) && !(dx === -way[0] && dy === -way[1]) && this.doorAt(p.x + dx, p.y + dy))) { this.stop(null); return true; }
+    // (In a corridor: on, bends and all. Leaving one, at a junction or the
+    // open: stop. In the open: stop where what's open to the left and right
+    // of the way changes, an opening or a wall's end.)
+    if (corridor(openings(way))) { D.corridor = true; D.sides = null; return true; }
+    if (D.corridor) { this.stop(null); return true; }
+    const [lx, ly] = [way[1], -way[0]], sides = [open(p.x + lx, p.y + ly), open(p.x - lx, p.y - ly)].join();
+    if (D.sides !== null && sides !== D.sides) { this.stop(null); return true; }
+    D.sides = sides;
+    return true;
+  },
 };
+
+// A run's longest, in steps.
+const RUN_MAX = 300;
+
+// The eight ways round the compass, in order (for running's openings).
+const RING = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
 
 // (The player's sight, the lamp lit and out: tuning.json's.)
 export const SIGHT = PLAYER.sight;
