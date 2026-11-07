@@ -126,6 +126,7 @@ Each part's state is one of:
 | 42 | Slice 1's things to find ([`round42-slice1-things.md`](round42-slice1-things.md)) | answered |
 | 43 | Slice 1's features ([`round43-slice1-features.md`](round43-slice1-features.md)) | answered |
 | 44 | Slice 1's encounter templates ([`round44-slice1-templates.md`](round44-slice1-templates.md)) | answered |
+| 45 | Slice 1's looks: floors and traps ([`round45-floors-traps.md`](round45-floors-traps.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

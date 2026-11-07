@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versal Floors and Traps</title>
+<style>
+  /* Floors that tell their sound, and traps, for slice 1 (spec/slice1-looks.md),
+     drawn with the game's own pen (js/maprender.js) at a close zoom, as the
+     visual language asks. Each panel is one option; screenshots go to the
+     choices page (mockups/choices/fl_*.jpg, tr_*.jpg). */
+  :root { --paper: #f7f2e6; color-scheme: light; }
+  body { margin: 0; background: #2b221c; color: var(--paper); font: 16px/1.4 Georgia, serif; }
+  main { display: grid; gap: 28px; padding: 24px; }
+  section { display: grid; gap: 8px; }
+  h2 { margin: 0; font-size: 20px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  figure { margin: 0; display: grid; gap: 4px; }
+  figcaption { font-size: 14px; color: #cfc5b0; }
+  canvas { display: block; background: var(--paper); }
+</style>
+</head>
+<body>
+<main id="main"></main>
+<script type="module">
+import { pen, wallLine, drawPaper, INK, PAPER } from "../js/maprender.js";
+import { RNG } from "../js/rng.js";
+
+const TS = 48, k = TS / 32, OUT = 2.9, IN = 1.9, STONE = 2.7, WALLW = 8;
+const WASH = "rgba(112, 136, 150, 0.3)", DEEP = "rgba(70, 96, 112, 0.42)", MOSS = "rgba(110, 128, 72, 0.22)", RED = "#a3261b";
+const SHADOW = "rgba(70, 62, 55, 0.3)";
+const main = document.getElementById("main");
+const sq = (v) => v * TS;
+
+function panel(sec, id, caption, w, h, draw) {
+  const dpr = devicePixelRatio, c = document.createElement("canvas");
+  c.width = w * TS * dpr; c.height = h * TS * dpr; c.style.width = `${w * TS}px`; c.style.height = `${h * TS}px`; c.id = id;
+  const g = c.getContext("2d");
+  g.scale(dpr, dpr);
+  drawPaper(g, w * TS, h * TS, new RNG(7));
+  drawGridHere(g, w, h, new RNG(3));
+  const rng = new RNG(id.split("").reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0);
+  g.lineCap = "round"; g.lineJoin = "round"; g.strokeStyle = INK; g.fillStyle = INK;
+  draw(g, pen(g, rng, k), rng);
+  const f = document.createElement("figure");
+  f.append(c, Object.assign(document.createElement("figcaption"), { textContent: caption }));
+  sec.querySelector(".row").append(f);
+}
+function drawGridHere(g, w, h, rng) {
+  g.save(); g.strokeStyle = "rgba(27, 24, 21, 0.75)"; g.lineCap = "round";
+  const edge = (x0, y0, x1, y1) => {
+    const ux = (x1 - x0) / TS, uy = (y1 - y0) / TS, nx = -uy, ny = ux, wob = 0.8 * k;
+    const a = rng.chance(0.35) ? rng.range(1, 3.5) * k : -0.4, b = TS - (rng.chance(0.35) ? rng.range(1, 3.5) * k : -0.4);
+    const s0 = rng.range(-0.5, 0.5) * wob, s1 = rng.range(-0.5, 0.5) * wob, bow = rng.range(-1, 1) * wob, m = (a + b) / 2, sm = (s0 + s1) / 2 + bow;
+    g.lineWidth = rng.range(0.6, 1.05) * k;
+    g.beginPath(); g.moveTo(x0 + ux * a + nx * s0, y0 + uy * a + ny * s0); g.quadraticCurveTo(x0 + ux * m + nx * sm, y0 + uy * m + ny * sm, x0 + ux * b + nx * s1, y0 + uy * b + ny * s1); g.stroke();
+  };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { if (x + 1 < w) edge((x + 1) * TS, y * TS, (x + 1) * TS, (y + 1) * TS); if (y + 1 < h) edge(x * TS, (y + 1) * TS, (x + 1) * TS, (y + 1) * TS); }
+  g.restore();
+}
+const section = (title) => {
+  const s = document.createElement("section");
+  s.innerHTML = `<h2>${title}</h2><div class="row"></div>`;
+  main.append(s);
+  return s;
+};
+// Walls round a panel's patches, so each floor sits in a room of its own.
+function walls(g, rng, x0, y0, w, h) {
+  const pts = [[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]].map(([x, y]) => [sq(x), sq(y)]);
+  for (let i = 0; i < 4; i++) wallLine(g, pts[i], pts[(i + 1) % 4], TS, rng);
+}
+// Places inside a patch (x0, y0, w, h, in squares), spread out a little.
+function spots(rng, x0, y0, w, h, n, pad = 0.15) {
+  const out = [];
+  for (let t = 0; out.length < n && t < n * 20; t++) {
+    const x = sq(x0 + pad + rng.next() * (w - 2 * pad)), y = sq(y0 + pad + rng.next() * (h - 2 * pad));
+    if (out.every(([a, b]) => Math.hypot(a - x, b - y) > TS * 0.3)) out.push([x, y]);
+  }
+  return out;
+}
+
+// ---- The floors. `loud`: heavier, denser marks (option B); `tint`: a wash for the quiet ones (C).
+const pebble = (g, rng, cx, cy, r) => {
+  const m = rng.int(5, 7), a0 = rng.range(0, Math.PI * 2);
+  g.beginPath();
+  for (let i = 0; i < m; i++) { const a = a0 + (i / m) * Math.PI * 2 + rng.range(-0.3, 0.3), rr = r * rng.range(0.7, 1.2); g[i ? "lineTo" : "moveTo"](cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+  g.closePath();
+};
+function rubble(g, P, rng, x0, y0, w, h, o) {
+  const n = Math.round(w * h * (o.loud ? 3.2 : 2.2));
+  g.lineWidth = STONE * k * (o.loud ? 1.15 : 1);
+  for (const [x, y] of spots(rng, x0, y0, w, h, n)) {
+    const big = rng.chance(0.4);
+    pebble(g, rng, x, y, TS * (big ? rng.range(0.09, 0.15) : rng.range(0.04, 0.08)));
+    big ? g.stroke() : g.fill();
+  }
+  for (let d = w * h * (o.loud ? 14 : 8); d > 0; d--) { const r = rng.range(0.8, 1.8) * k; g.fillRect(sq(x0 + rng.next() * w), sq(y0 + rng.next() * h), r, r); }
+}
+function bones(g, P, rng, x0, y0, w, h, o) {
+  const n = Math.round(w * h * (o.loud ? 2.4 : 1.6));
+  for (const [x, y] of spots(rng, x0, y0, w, h, n, 0.25)) {
+    const a = rng.range(0, Math.PI), L = TS * rng.range(0.18, 0.32), dx = Math.cos(a) * L / 2, dy = Math.sin(a) * L / 2, wd = (o.loud ? 2.4 : 1.9);
+    P.line(x - dx, y - dy, x + dx, y + dy, wd);
+    for (const s of [-1, 1]) { const ex = x + s * dx, ey = y + s * dy, nx = -Math.sin(a) * TS * 0.035, ny = Math.cos(a) * TS * 0.035; P.round(ex + nx, ey + ny, TS * 0.03, wd * 0.8, PAPER); P.round(ex - nx, ey - ny, TS * 0.03, wd * 0.8, PAPER); }
+  }
+  // (a skull, now and then)
+  const [sx, sy] = spots(rng, x0, y0, w, h, 1, 0.35)[0];
+  P.round(sx, sy, TS * 0.1, o.loud ? 2.6 : 2.2, PAPER);
+  g.beginPath(); g.arc(sx - TS * 0.035, sy, TS * 0.022, 0, 7); g.arc(sx + TS * 0.035, sy, TS * 0.022, 0, 7); g.fill();
+}
+function boards(g, P, rng, x0, y0, w, h, o) {
+  // planks across, their joints staggered; nail heads at the ends
+  const rows = Math.round(h * 3);
+  for (let i = 0; i <= rows; i++) {
+    const y = sq(y0 + (h * i) / rows);
+    if (i > 0 && i < rows) P.line(sq(x0) + 2, y, sq(x0 + w) - 2, y, o.loud ? 2.2 : 1.6);
+    if (i < rows) {
+      const jx = sq(x0 + rng.range(0.6, w - 0.6)), y1 = sq(y0 + (h * (i + 1)) / rows);
+      P.line(jx, y + 2, jx, y1 - 2, o.loud ? 2.2 : 1.6);
+      for (const nx of [jx - TS * 0.07, jx + TS * 0.07]) { g.beginPath(); g.arc(nx, (y + y1) / 2, k * (o.loud ? 1.3 : 1), 0, 7); g.fill(); }
+    }
+  }
+  if (o.loud) for (let c = w * h * 2; c > 0; c--) { const x = sq(x0 + rng.next() * w), y = sq(y0 + rng.next() * h); P.line(x, y, x + TS * rng.range(0.08, 0.18), y + rng.range(-1, 1) * k, 0.9); }
+}
+function moss(g, P, rng, x0, y0, w, h, o) {
+  if (o.tint) { g.save(); g.fillStyle = MOSS; P.shape([[sq(x0) + 4, sq(y0) + 4], [sq(x0 + w) - 4, sq(y0) + 4], [sq(x0 + w) - 4, sq(y0 + h) - 4], [sq(x0) + 4, sq(y0 + h) - 4]], 0, MOSS); g.restore(); }
+  const n = Math.round(w * h * (o.loud ? 3 : 5));
+  g.save(); g.globalAlpha = o.loud ? 0.55 : 0.8;
+  for (const [x, y] of spots(rng, x0, y0, w, h, n, 0.1)) {
+    // a tuft: a few short soft strokes fanning up
+    for (let s = rng.int(3, 5); s > 0; s--) { const a = -Math.PI / 2 + rng.range(-0.8, 0.8), L = TS * rng.range(0.05, 0.1); P.line(x, y, x + Math.cos(a) * L, y + Math.sin(a) * L, o.loud ? 0.7 : 0.9); }
+  }
+  for (let d = w * h * 10; d > 0; d--) { g.beginPath(); g.arc(sq(x0 + rng.next() * w), sq(y0 + rng.next() * h), k * rng.range(0.4, 0.8), 0, 7); g.fill(); }
+  g.restore();
+}
+function water(g, P, rng, x0, y0, w, h, o, deep = false, flow = null) {
+  const inset = 0.18;
+  const pts = [[x0 + inset, y0 + inset], [x0 + w - inset, y0 + inset], [x0 + w - inset, y0 + h - inset], [x0 + inset, y0 + h - inset]].map(([x, y]) => [sq(x), sq(y)]);
+  P.shape(pts, 0, deep ? DEEP : WASH);
+  if (deep && o.deepEdge) P.shape(pts, IN, null);
+  // ripples, or the current's streaks
+  for (const [x, y] of spots(rng, x0 + inset, y0 + inset, w - 2 * inset, h - 2 * inset, Math.round(w * h * (o.loud ? 1.8 : 1.3)), 0.2)) {
+    if (flow) {
+      const [fx, fy] = flow, L = TS * rng.range(0.25, 0.45);
+      P.line(x - fx * L / 2, y - fy * L / 2, x + fx * L / 2, y + fy * L / 2, 1.3);
+      if (o.arrows) { const hx = x + fx * L / 2, hy = y + fy * L / 2, s = TS * 0.06; P.line(hx, hy, hx - fx * s - fy * s, hy - fy * s + fx * s, 1.2); P.line(hx, hy, hx - fx * s + fy * s, hy - fy * s - fx * s, 1.2); }
+    } else {
+      const L = TS * rng.range(0.12, 0.22);
+      g.lineWidth = (o.loud ? 1.6 : 1.2) * k;
+      g.beginPath(); g.moveTo(x - L, y); g.quadraticCurveTo(x - L / 2, y - TS * 0.04, x, y); g.quadraticCurveTo(x + L / 2, y + TS * 0.04, x + L, y); g.stroke();
+    }
+    if (deep && o.deepDots) for (let d = 0; d < 2; d++) { g.beginPath(); g.arc(x + rng.range(-1, 1) * TS * 0.2, y + rng.range(0.1, 0.3) * TS, k * 0.9, 0, 7); g.fill(); }
+  }
+}
+
+const FLOORS = [["rubble", rubble], ["bones", bones], ["boards", boards], ["moss", moss], ["shallow water", (g, P, r, x, y, w, h, o) => water(g, P, r, x, y, w, h, o)]];
+function floorStrip(o) {
+  return (g, P, rng) => {
+    FLOORS.forEach(([, fn], i) => { const x0 = i * 3 + 0.5, y0 = 0.5; walls(g, rng, x0, y0, 2.5, 2.5); fn(g, P, rng, x0, y0, 2.5, 2.5, o); });
+  };
+}
+let s = section("Floors: how a floor tells its sound (rubble, bones, boards, moss, shallow water)");
+panel(s, "fl_A", "A: each floor its own marks, all alike in weight", 15.5, 3.5, floorStrip({}));
+panel(s, "fl_B", "B: loud floors heavier and denser; the quiet one (moss) light", 15.5, 3.5, floorStrip({ loud: true }));
+panel(s, "fl_C", "C: as A, and the quiet floor a faint green wash", 15.5, 3.5, floorStrip({ tint: true }));
+
+s = section("Water: deep water, and a current (shallow, deep, a current)");
+const waterStrip = (o) => (g, P, rng) => {
+  walls(g, rng, 0.5, 0.5, 3, 2.5); water(g, P, rng, 0.5, 0.5, 3, 2.5, o);
+  walls(g, rng, 4, 0.5, 3, 2.5); water(g, P, rng, 4, 0.5, 3, 2.5, o, true);
+  walls(g, rng, 7.5, 0.5, 3, 2.5); water(g, P, rng, 7.5, 0.5, 3, 2.5, o, true, [1, 0]);
+};
+panel(s, "wa_A", "A: deep a darker wash; the current in long streaks", 11, 3.5, waterStrip({}));
+panel(s, "wa_B", "B: deep a darker wash with an inked edge and drops; the current in streaks", 11, 3.5, waterStrip({ deepEdge: true, deepDots: true }));
+panel(s, "wa_C", "C: as A; the current's streaks with arrowheads", 11, 3.5, waterStrip({ arrows: true }));
+
+// ---- Traps: tripwire, pressure plate, net; seen, then sprung.
+function tripwire(g, P, rng, x0, y0, o, sprung) {
+  const ax = sq(x0 + 0.1), bx = sq(x0 + 1.9), y = sq(y0 + 0.5), col = o.red ? RED : INK;
+  for (const x of [ax, bx]) P.round(x, y, TS * 0.05, OUT, PAPER);
+  g.save(); g.strokeStyle = col;
+  if (sprung) { P.line(ax, y, ax + TS * 0.55, y + TS * 0.18, 1.2); P.line(bx, y, bx - TS * 0.5, y - TS * 0.15, 1.2); }
+  else { g.setLineDash(o.dash ? [3 * k, 3 * k] : []); P.line(ax, y, bx, y, 1.2); }
+  g.restore();
+  if (o.mark && !sprung) markRing(g, P, (ax + bx) / 2, y, o);
+  // the bell it rings, at the wall
+  P.round(sq(x0 + 1.9), sq(y0 + 0.15), TS * 0.07, OUT, sprung ? PAPER : PAPER);
+}
+function plate(g, P, rng, x0, y0, o, sprung) {
+  const cx = sq(x0 + 0.5), cy = sq(y0 + 0.5), col = o.red ? RED : INK;
+  g.save(); g.strokeStyle = col;
+  P.box(cx, cy, TS * 0.62, TS * 0.62, rng.range(-0.05, 0.05), sprung ? 1.6 : 2.2, sprung ? "rgba(70, 62, 55, 0.18)" : null);
+  if (!sprung) P.box(cx, cy, TS * 0.42, TS * 0.42, 0, 1.2, null);
+  g.restore();
+  if (sprung) for (let d = 0; d < 4; d++) { const x = cx + rng.range(-0.4, 0.4) * TS, y = cy + rng.range(-0.4, 0.4) * TS; P.line(x, y, x + TS * 0.12, y - TS * 0.04, 1.6); }
+  if (o.mark && !sprung) markRing(g, P, cx, cy, o);
+}
+function net(g, P, rng, x0, y0, o, sprung) {
+  const cx = sq(x0 + 0.5), cy = sq(y0 + 0.5), r = TS * (sprung ? 0.48 : 0.3), col = o.red ? RED : INK;
+  g.save(); g.strokeStyle = col;
+  if (sprung) {
+    for (let i = -3; i <= 3; i++) { P.line(cx - r, cy + i * r / 3.5, cx + r, cy + i * r / 3.5 + rng.range(-2, 2), 0.9); P.line(cx + i * r / 3.5, cy - r, cx + i * r / 3.5 + rng.range(-2, 2), cy + r, 0.9); }
+    P.round(cx, cy, r * 1.05, 1.4, null);
+  } else {
+    // folded, hung above: a bundle of cord and a weight
+    P.round(cx, cy, r, 1.6, PAPER);
+    for (let i = 0; i < 5; i++) { const a = rng.range(0, Math.PI); P.line(cx - Math.cos(a) * r * 0.8, cy - Math.sin(a) * r * 0.8, cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.8, 0.9); }
+  }
+  g.restore();
+  if (o.mark && !sprung) markRing(g, P, cx, cy, o);
+}
+// The "something to act on" mark (option C): a small ring of short ticks round it.
+function markRing(g, P, cx, cy, o) {
+  const r = TS * 0.42;
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + 0.2; P.line(cx + Math.cos(a) * r, cy + Math.sin(a) * r, cx + Math.cos(a) * r * 1.15, cy + Math.sin(a) * r * 1.15, 1.4); }
+}
+const trapStrip = (o, sprung) => (g, P, rng) => {
+  walls(g, rng, 0.5, 0.5, 9, 2);
+  tripwire(g, P, rng, 1, 1, o, sprung);
+  plate(g, P, rng, 4.25, 1, o, sprung);
+  net(g, P, rng, 7, 1, o, sprung);
+};
+s = section("Traps: how a trap shows it's there to act on (tripwire, pressure plate, net), seen");
+panel(s, "tr_A", "A: ink, like any feature", 10, 3, trapStrip({}, false));
+panel(s, "tr_B", "B: in red, the danger colour", 10, 3, trapStrip({ red: true }, false));
+panel(s, "tr_C", "C: ink, with a ring of ticks: a thing to act on", 10, 3, trapStrip({ mark: true }, false));
+s = section("Traps, sprung (the same three, spent)");
+panel(s, "trs_A", "Sprung: the wire snapped, the plate sunk with darts about, the net cast", 10, 3, trapStrip({}, true));
+panel(s, "trs_B", "Sprung, in red (with option B)", 10, 3, trapStrip({ red: true }, true));
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>
