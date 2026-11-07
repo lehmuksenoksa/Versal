@@ -203,7 +203,12 @@ in the browser console.
 | `js/plates.js` | The torn plates under the corner, the sidebar and the drawer: the chosen polylines, their edges drawn as cave walls and torn. |
 | `js/rules/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/rules/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
-| `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight, the candle and darkness. |
+| `js/rules/light.js` | The light: each square dark, dim or lit, from every source (the level's lights, the player's lamp, cultists' lanterns), along lines of sight; a part of its own, owned by the World (`world.light`). |
+| `js/rules/actions.js` | The player's actions as commands (`act`): moves, things, the lamp, and the activities that go on a turn at a time (resting, walking, exploring, running). |
+| `js/rules/replay.js` | Replays: every call made into the rules noted, with checkpoints, and a run played again from its seed and calls. |
+| `js/rules/dmath.js` | The rules' own sine, cosine, angle and distance, the same in every browser. |
+| `js/expression.js` | How the map is shown as it is explored (`EXPRESSION_DEFAULTS`): the solid-rock hatching and its depth map, the in-sight and remembered looks, the cover over unseen ground, sight and darkness. |
+| `js/expression-light.js` | The view's light: the lamp in ragged bands, the level's lights and the lanterns inked onto the map, and how lit a point is drawn; from the rules' numbers, checked against the rules' light (`npm run test:light`). |
 | `js/gpu.js` | The map drawn on the GPU (WebGL2): one pass a frame putting together what `js/expression.js` prepares, the hatching inked there from every stroke's shape (sent once), the flicker a few numbers. |
 | `js/render.js` | Per-frame drawing: camera and zoom, the map (on the GPU via `js/gpu.js`, or with canvases via `js/expression.js`), glyph poses and tweens. |
 | `mockups/speed.html` | The same level drawn on the GPU and with canvases side by side, with timings; also stroke stamps, a worker, the flicker. |
@@ -249,6 +254,8 @@ pixel locks run here only.
 - `npm run test:maps`: 72 map drawings (6 seeds, 3 depths, 4 ways of drawing: whole, the grid's
   layer, the walls' layer, the plan) compared pixel for pixel with `tests/browser/maps-baseline.json`.
   `npm run maps:record` records them again: only when the drawing is meant to change.
+- `npm run test:light`: the view and the rules agree on the light: at moments in play, every square
+  both have in sight is the same light, dark, dim or lit, in the rules and as drawn.
 - `npm run test:view`: the game's view itself, as the player sees it (light, sight, fading, flames,
   the ledger), at 3 seeds: at the start, after 60 of the bot's moves, with the lamp out, and the
   whole level (Tab); the page's clock stopped and stepped by hand, its dice seeded, compared pixel

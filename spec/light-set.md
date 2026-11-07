@@ -86,3 +86,13 @@ the outlines, the map drawings and the view re-recorded; the deep run passes.
   sixty steps.
 - The levels' fingerprints, the run lock, the map drawings and the view re-recorded; the deep run
   passes (slower: about 6 minutes, light now checking a line for each square it reaches).
+
+**L4, part two: done.** The view's light split out of `expression.js` (2,387 lines, now 2,035) into
+`js/expression-light.js` (372): the lamp cast in ragged bands, the level's lights and lanterns inked
+onto the map, how lit a point is drawn. Each method moved as it was; a parser checked for names
+left behind (the view's shared constants and helpers, now exported). The view lock matches pixel
+for pixel; the light check, the browser check and the mockups as before.
+
+**The light feature set is built: L1 to L4. Next: you play it.** Two looks are stand-ins, to choose:
+a torch on the wall (a bracket and a small flame) and a thing known only to be there in the dark
+("?").
