@@ -12,3 +12,7 @@ console.log(`Recorded ${runs.length} runs of up to ${LOCK_STEPS} steps.`);
 import { outlines } from "../tests/support/outlines.js";
 writeFileSync(new URL("../tests/lock/outlines.json", import.meta.url), JSON.stringify(outlines()));
 console.log("Recorded the features' outlines.");
+// The level generator's fingerprints too (tests/lock/levels.json).
+import { levelPrints } from "../tests/support/levelprints.js";
+writeFileSync(new URL("../tests/lock/levels.json", import.meta.url), JSON.stringify(levelPrints(), null, 0));
+console.log("Recorded the levels' fingerprints.");
