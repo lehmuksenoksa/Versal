@@ -1,6 +1,7 @@
 // A crude bot that plays whole runs of the game headless, for tests: it
-// explores, fights what comes next to it, rests when hurt, drinks a potion
-// when badly hurt, sometimes puts out its lamp, picks things up, wields and
+// explores, fights what comes next to it, rests when hurt or bleeding (till
+// healed and well, or till something stirs, as the game's rest does), drinks
+// a potion when badly hurt, sometimes puts out its lamp, picks things up, wields and
 // wears the best it has (now and then taking armour off, or dropping
 // something), closes doors behind it, and takes the stairs down once a level
 // is seen (or it has spent long enough on it), now and then climbing back up
@@ -47,8 +48,13 @@ function better(w) {
 // One step of the bot's play. Returns what it did, for the trace.
 export function botStep(w, r, mem) {
   const p = w.player, depth = w.place.depth;
-  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, swept: [], trail: [], hunt: null });
+  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, swept: [], trail: [], hunt: null, resting: false });
   mem.onLevel++;
+  // (Resting goes on, a turn each step, as the game's rest (R) does.)
+  if (mem.resting) {
+    const did = rest(w, mem);
+    if (did) return did;
+  }
   // (A monster next to it, in sight: strike it.)
   for (const [dx, dy] of DIRS8) {
     const g = w.actorAt(p.x + dx, p.y + dy);
@@ -59,7 +65,12 @@ export function botStep(w, r, mem) {
     const pot = p.pack.find((it) => it.type === "potion");
     if (pot) { w.drink(pot.key); return "drink"; }
   }
-  if (p.hp < p.maxHp / 2 && !w.cantRest() && !w.disturbed()) { w.tick(true, true); return "rest"; }
+  // (Hurt, or bleeding, and nothing about: rest, as the game's rest does.)
+  if ((p.hp < p.maxHp / 2 || p.ailments.bleeding) && !w.cantRest() && !w.disturbed()) {
+    w.log("You rest.");
+    mem.resting = true;
+    return rest(w, mem);
+  }
   // (Back up a level for a look, then down again at once.)
   if (mem.back && L0(w).stairsDown && at(w, L0(w).stairsDown)) { mem.back = false; w.takeStairs("down"); return "down"; }
   // (Just come down: now and then, straight back up.)
@@ -134,6 +145,25 @@ export function botStep(w, r, mem) {
   for (const [dx, dy] of r.shuffle([...DIRS8])) if (w.playerMove(dx, dy)) return "wander";
   w.search();
   return "search";
+}
+
+// A turn of rest, as the game's rest (R, js/main.js) takes one: stopped by
+// something stirring (then null: the bot does something else), else a turn
+// of rest, and stopped once healed and well.
+function rest(w, mem) {
+  const p = w.player;
+  if (w.ended) { mem.resting = false; return null; }
+  if (w.disturbed()) {
+    mem.resting = false;
+    w.log("Something stirs. You stop resting.");
+    return null;
+  }
+  w.tick(true, true);
+  if (!w.dead && p.hp >= p.maxHp && !Object.keys(p.ailments).length) {
+    mem.resting = false;
+    w.log("You feel rested.", "good");
+  }
+  return "rest";
 }
 
 // Where to search: a square seen and walkable with rock round most of it (a
