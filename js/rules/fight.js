@@ -30,10 +30,10 @@ export const fightMethods = {
   // when first hurt.)
   whack(g) {
     const unaware = g.state === "sleeping" || g.state === "neutral", T = itemTrait(this.player.equip.hand);
-    const hit = unaware || this.rng.chance(WHACK + (T.hit ?? 0));
+    const hit = unaware || this.dice.fight.chance(WHACK + (T.hit ?? 0));
     let dmg = 0;
     if (hit) {
-      dmg = (this.rng.int(...this.attack()) + (T.bane && GOBLINS.has(g.kind) ? T.bane : 0)) * (unaware ? SNEAK_HIT : 1);
+      dmg = (this.dice.fight.int(...this.attack()) + (T.bane && GOBLINS.has(g.kind) ? T.bane : 0)) * (unaware ? SNEAK_HIT : 1);
       g.hp -= dmg;
     }
     const killed = g.hp <= 0, name = monName(g);
@@ -52,7 +52,7 @@ export const fightMethods = {
     if (killed) return this.fall(g);
     if (hit && monTrait(g).timid) {
       g.state = "fleeing";
-      g.fear = this.rng.int(...MORALE.flee);
+      g.fear = this.dice.fight.int(...MORALE.flee);
       this.log(`The ${name} flees!`, "good");
       this.events.push({ type: "flee", actor: g });
     }
@@ -72,14 +72,14 @@ export const fightMethods = {
       this.events.push({ type: "won" });
     }
     // (Goblins sometimes drop what they carried.)
-    if (M.drops && this.rng.chance(PACK.drop)) {
+    if (M.drops && this.dice.things.chance(PACK.drop)) {
       const item = this.randomItem();
       this.items.push({ x: g.x, y: g.y, item });
       this.log(`The ${name} drops ${itemName(item)}.`);
     }
     // (The undead falling in a cursed room rise again, once.)
     const R = this.roomTraitAt(g.x, g.y);
-    if (R === "cursed" && M.undead && !g.risen) (this.rising ??= []).push({ g, depth: this.place.depth, x: g.x, y: g.y, at: this.turn + this.rng.int(...ROOM_TRAITS.cursed.rise) });
+    if (R === "cursed" && M.undead && !g.risen) (this.rising ??= []).push({ g, depth: this.place.depth, x: g.x, y: g.y, at: this.turn + this.dice.world.int(...ROOM_TRAITS.cursed.rise) });
     this.actors.splice(this.actors.indexOf(g), 1);
     // (A pack whose leader falls follows another.)
     const rest = this.pack(g);
@@ -88,7 +88,7 @@ export const fightMethods = {
     const L = rest[0]?.leader, scared = rest.filter((a) => !monTrait(a).brave);
     if (L && !M.undead && !L.broken && scared.length && rest.length <= (g.packSize ?? 1) / 2) {
       L.broken = true;
-      for (const a of scared) { a.state = "fleeing"; a.fear = this.rng.int(...MORALE.flee); }
+      for (const a of scared) { a.state = "fleeing"; a.fear = this.dice.fight.int(...MORALE.flee); }
       const kind = MONSTERS[scared[0].kind].name;
       this.log(scared.length > 1 ? `The ${kind}s flee!` : `The ${monName(scared[0])} flees!`, "good");
       this.events.push({ type: "flee", actor: scared[0] });
@@ -98,20 +98,20 @@ export const fightMethods = {
   // A monster's blow at the player: it may miss; a hard one may make them
   // bleed; out of hit points, they die.
   strike(g) {
-    const M = MONSTERS[g.kind], T = monTrait(g), p = this.player, name = monName(g), hit = this.rng.chance(M.hit + (T.hit ?? 0));
-    let dmg = hit ? this.rng.int(...M.dmg) + (T.dmg ?? 0) : 0;
+    const M = MONSTERS[g.kind], T = monTrait(g), p = this.player, name = monName(g), hit = this.dice.fight.chance(M.hit + (T.hit ?? 0));
+    let dmg = hit ? this.dice.fight.int(...M.dmg) + (T.dmg ?? 0) : 0;
     this.events.push({ type: "attack", actor: g, hit, dmg });
     if (!hit) return this.log(`The ${name} misses you.`);
     // (Armour takes some of the blow off, up to its defence.)
-    const saved = Math.min(dmg, this.rng.int(0, this.defence()));
+    const saved = Math.min(dmg, this.dice.fight.int(0, this.defence()));
     if (saved >= dmg) return this.log(`The ${name} ${M.verb} you, but your armour holds.`);
     dmg -= saved;
     p.hp -= dmg;
     // (Padded armour: hard blows make you bleed half as often.)
-    const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.rng.chance(B.chance * (this.worn("padded").length ? 0.5 : 1));
-    if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.rng.int(...B.turns));
-    const poison = M.poison && this.rng.chance(M.poison + (T.poison ?? 0));
-    if (poison) p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, Math.round(this.rng.int(...AILMENTS.poisoned.turns) * (T.poisonFor ?? 1)));
+    const B = AILMENTS.bleeding, bleed = M.bleeds && dmg >= B.at && this.dice.fight.chance(B.chance * (this.worn("padded").length ? 0.5 : 1));
+    if (bleed) p.ailments.bleeding = Math.max(p.ailments.bleeding ?? 0, this.dice.fight.int(...B.turns));
+    const poison = M.poison && this.dice.fight.chance(M.poison + (T.poison ?? 0));
+    if (poison) p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, Math.round(this.dice.fight.int(...AILMENTS.poisoned.turns) * (T.poisonFor ?? 1)));
     this.log(`The ${name} ${M.verb} you. (${dmg})${bleed ? " You bleed." : ""}${poison ? " You are poisoned." : ""}`, "hurt");
     if (p.hp <= 0) return this.die(`killed by ${an(name)}`);
     // (Spikes on the helmet cut what hits you.)

@@ -183,3 +183,20 @@ send the view, and a test that the view knows each.
 | **G5. The dice in streams** | Levels by their seed and depth; in play, streams for fights, minds, things, the rest | A test that a level is the same whatever's played before it; the lock, levels' drawings and the view re-recorded on purpose |
 | **G6. A check on every push** | A GitHub workflow running `npm test` | It runs and passes on the push |
 
+**G4, a level's state in one place: done.** The World's copies of a level's state are gone: the
+World reaches the level's map, seed, doors, lit squares, things, what's seen, who's there, through
+the level it's on (`here`), and the player is among the level's actors while on it. What a level
+keeps that changes in play needs adding in one place. The lock, save and restore, the browser check
+and the view lock passed unchanged; a small-map test: a level keeps what changed on it (a door, a
+thing, a monster) while the player is away.
+
+**G5, the dice in streams: done.** In play, four streams (`world.dice`): fights (blows, armour,
+bleeding, morale), minds (how monsters move and choose), things (what's found, potions, the murky
+potions' luck), and the rest (secret doors spotted, nests refilled, the dead rising). Each level is
+made and peopled by dice of its own, from the run's seed and its depth. **What changes:** a level no
+longer depends on how the levels before it were played: depth 2 is the same for a seed whether
+depth 1 was cleared or run through (it wasn't before: `tests/dice.test.js` fails on the old code).
+So the level checks, which make deeper levels directly, now check the very levels the game makes.
+A die added to one part shifts no other part's. The run lock, the outlines, the map drawings and
+the view re-recorded on purpose; the suite and the deep run pass.
+

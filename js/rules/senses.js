@@ -44,7 +44,7 @@ export const senseMethods = {
       const d = Math.max(Math.abs(s.x - p.x), Math.abs(s.y - p.y));
       if (s.found || d > SECRET.reach || !this.isVisible(s.x, s.y)) continue;
       const chance = d <= 1 ? (searching ? SECRET.searchNear : SECRET.near) : searching ? SECRET.searchFar : SECRET.far;
-      if (!this.rng.chance(chance)) continue;
+      if (!this.dice.world.chance(chance)) continue;
       s.found = true;
       L.tiles[s.y * L.w + s.x] = T.FLOOR;
       const door = { x: s.x, y: s.y, dx: s.dx, dy: s.dy, open: false, secret: true };

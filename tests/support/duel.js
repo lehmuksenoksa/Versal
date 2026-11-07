@@ -36,8 +36,8 @@ export function duels(kind, n, { weapon = "dagger", level = 1, def = 0, sneak = 
     Object.assign(p, { x: at.x, y: at.y, hp: 1e6, maxHp: 1e6, ailments: {}, level, xp: 0 });
     // (The king fallen, the run is won; the next fight goes on all the same.)
     w.won = null;
-    const hp = w.rng.int(...M.hp);
-    const g = { id: w.nextId++, kind, glyph: M.glyph, x: at.x + 1, y: at.y, state: sneak ? "sleeping" : "aggressive", calm: 0, aware: sneak ? 0 : 1, hp, maxHp: hp, energy: w.rng.next(), packSize: 1 };
+    const hp = w.dice.fight.int(...M.hp);
+    const g = { id: w.nextId++, kind, glyph: M.glyph, x: at.x + 1, y: at.y, state: sneak ? "sleeping" : "aggressive", calm: 0, aware: sneak ? 0 : 1, hp, maxHp: hp, energy: w.dice.fight.next(), packSize: 1 };
     g.leader = g;
     w.actors = [p, g];
     w.updateFov();

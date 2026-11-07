@@ -9,7 +9,7 @@ export const monsterMethods = {
     const t = g.lastSpot;
     if (!t || (g.x === t.x && g.y === t.y)) return this.randomStep(g);
     // (Slowly: not every turn.)
-    if (this.rng.chance(0.7)) this.stepToward(g, t.x, t.y);
+    if (this.dice.minds.chance(0.7)) this.stepToward(g, t.x, t.y);
   },
 
   // A fleeing monster gets away from the player; cornered, it fights. When
@@ -23,7 +23,7 @@ export const monsterMethods = {
       return;
     }
     let best = null;
-    for (const [sx, sy] of this.rng.shuffle([...DIRS8])) {
+    for (const [sx, sy] of this.dice.minds.shuffle([...DIRS8])) {
       const x = g.x + sx, y = g.y + sy;
       if (!this.isFree(x, y) || !this.canStep(g.x, g.y, sx, sy)) continue;
       const d = dist[y * W + x];
@@ -58,7 +58,7 @@ export const monsterMethods = {
   chase(g) {
     const p = this.player, dx = p.x - g.x, dy = p.y - g.y;
     // (A bat flits about even chasing.)
-    if (MONSTERS[g.kind].erratic && this.rng.chance(0.4)) return this.randomStep(g);
+    if (MONSTERS[g.kind].erratic && this.dice.minds.chance(0.4)) return this.randomStep(g);
     if (Math.max(Math.abs(dx), Math.abs(dy)) === 1 && this.canStep(g.x, g.y, dx, dy) && !this.shut(p.x, p.y)) {
       if (!this.dead) this.strike(g);
       return;
@@ -66,7 +66,7 @@ export const monsterMethods = {
     const dist = this.chaseSteps(), W = this.level.w, here = dist[g.y * W + g.x];
     if (here < 0) return this.mill(g);
     let best = null;
-    for (const [sx, sy] of this.rng.shuffle([...DIRS8])) {
+    for (const [sx, sy] of this.dice.minds.shuffle([...DIRS8])) {
       const x = g.x + sx, y = g.y + sy, d = dist[y * W + x];
       if (d < 0 || d >= here || !this.canStep(g.x, g.y, sx, sy)) continue;
       if (this.actorAt(x, y)) continue;
@@ -74,7 +74,7 @@ export const monsterMethods = {
     }
     if (!best) return;
     if (this.shut(best.x, best.y)) {
-      if (this.rng.chance(GOBLIN.door)) this.setDoor(this.doorAt(best.x, best.y), true, g);
+      if (this.dice.minds.chance(GOBLIN.door)) this.setDoor(this.doorAt(best.x, best.y), true, g);
       else this.events.push({ type: "rattle", actor: g });
       return;
     }
@@ -89,23 +89,23 @@ export const monsterMethods = {
     if (L === g) {
       // (Cultists walk from room to room.)
       if (M.patrol) return this.patrol(g);
-      if (this.rng.chance(0.4 * k)) this.randomStep(g);
+      if (this.dice.minds.chance(0.4 * k)) this.randomStep(g);
       return;
     }
     const near = (x, y) => Math.max(Math.abs(x - L.x), Math.abs(y - L.y)) <= 2;
     if (!near(g.x, g.y)) return this.stepToward(g, L.x, L.y);
-    if (this.rng.chance(0.6 * k)) this.randomStep(g, near);
+    if (this.dice.minds.chance(0.6 * k)) this.randomStep(g, near);
   },
 
   // A patrol's leader walks to a room (picked anew on getting there), by the
   // shortest way.
   patrol(g) {
     const rooms = this.level.rooms;
-    if (!g.goal || (Math.abs(g.x - g.goal.x) <= 1 && Math.abs(g.y - g.goal.y) <= 1) || this.rng.chance(0.01)) {
-      const r = this.rng.pick(rooms);
+    if (!g.goal || (Math.abs(g.x - g.goal.x) <= 1 && Math.abs(g.y - g.goal.y) <= 1) || this.dice.minds.chance(0.01)) {
+      const r = this.dice.minds.pick(rooms);
       g.goal = { x: r.cx, y: r.cy };
     }
-    if (!this.rng.chance(0.7)) return;
+    if (!this.dice.minds.chance(0.7)) return;
     const step = this.stepOnWay(g, g.goal);
     // (The way's last step may be onto someone standing at the goal: wait.)
     if (step) { if (this.isFree(step.x, step.y)) this.moveActor(g, step.x, step.y); }
@@ -135,7 +135,7 @@ export const monsterMethods = {
   },
 
   randomStep(a, ok = () => true) {
-    for (const [dx, dy] of this.rng.shuffle([...DIRS8])) {
+    for (const [dx, dy] of this.dice.minds.shuffle([...DIRS8])) {
       const x = a.x + dx, y = a.y + dy;
       if (this.isFree(x, y) && this.canStep(a.x, a.y, dx, dy) && ok(x, y)) return this.moveActor(a, x, y);
     }

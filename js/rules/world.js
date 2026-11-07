@@ -17,7 +17,7 @@ import { ROOM_TRAITS, monTrait } from "./traits.js";
 import { monName } from "./names.js";
 import { makeItem } from "./items.js";
 import { DIRS8 } from "./dungeon.js";
-import { RNG } from "./rng.js";
+import { RNG, seedFor } from "./rng.js";
 import { levelMethods } from "./levels.js";
 import { senseMethods } from "./senses.js";
 import { moveMethods } from "./moves.js";
@@ -39,14 +39,21 @@ export class World {
     this.sight = PLAYER.sight.lit;
     if (levels) this.given = levels;
     this.sneaking = false;
-    this.rng = new RNG(seed);
+    // The dice (groundwork G5), in streams, so a die added to one part
+    // shifts no other's: in play, fights (blows, armour, bleeding, morale),
+    // minds (how monsters move and choose), things (what's found, potions),
+    // and the rest (secret doors spotted, nests refilled, the dead rising);
+    // each level made and peopled by dice of its own (`runSeed` and its
+    // depth: levels.js), the same level whatever's played before it.
+    this.runSeed = new RNG(seed).seed;
+    this.dice = Object.fromEntries(["fight", "minds", "things", "world"].map((k) => [k, new RNG(seedFor(this.runSeed, k))]));
     this.events = [];
     this.nextId = 1;
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: 0, y: 0, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
       // What's held and worn, by where; what's carried, each with its letter.
       equip: { hand: makeItem("dagger", 1, null, true), off: null, head: null, body: null }, pack: [] };
     // (This run's murky potions: all heal, or all poison; not known till one's drunk.)
-    this.murky = { good: this.rng.chance(0.5), known: false };
+    this.murky = { good: this.dice.things.chance(0.5), known: false };
     this.stow(makeItem("potion"));
     // The turns gone by, the messages so far (each { text, turn, kind }), and
     // how the run ended (null while it goes on: died, or won).
@@ -85,10 +92,10 @@ export class World {
     // (A nest whose rats are all dead fills again a while later, out of sight.)
     for (const room of this.level.rooms) {
       if (room.trait !== "infested" || !room.nest || this.actors.some((a) => a.home === room)) continue;
-      room.back ??= this.turn + this.rng.int(...ROOM_TRAITS.infested.back);
+      room.back ??= this.turn + this.dice.world.int(...ROOM_TRAITS.infested.back);
       if (this.turn < room.back || this.isVisible(room.nest.x, room.nest.y)) continue;
       room.back = null;
-      this.spawnPack({ x: room.nest.x - 1, y: room.nest.y - 1, w: 3, h: 3 }, this.rng.int(...ROOM_TRAITS.infested.rats), "neutral", "rat");
+      this.spawnPack({ x: room.nest.x - 1, y: room.nest.y - 1, w: 3, h: 3 }, this.dice.world.int(...ROOM_TRAITS.infested.rats), "neutral", "rat");
       for (const a of this.actors) if (a.kind === "rat" && !a.home && Math.abs(a.x - room.nest.x) <= 1 && Math.abs(a.y - room.nest.y) <= 1) a.home = room;
     }
     for (const g of this.actors.filter((a) => a !== this.player && a.bleed > 0)) {

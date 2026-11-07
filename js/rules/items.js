@@ -11,23 +11,25 @@ export const makeItem = (type, n = 1, trait = null, known = false) => ({ type, g
 export const itemMethods = {
   // ---- Things ----
   // A thing for this place: of those found this deep, by how common.
-  randomItem() {
+  // (`rng`: the dice to throw: in play, the things'; making a level, the
+  // level's own.)
+  randomItem(rng = this.dice.things) {
     const kinds = Object.entries(ITEMS).filter(([, d]) => d.depth <= this.place.depth);
-    let r = this.rng.next() * kinds.reduce((s, [, d]) => s + d.weight, 0);
+    let r = rng.next() * kinds.reduce((s, [, d]) => s + d.weight, 0);
     let type = "potion";
     for (const [t, d] of kinds) if ((r -= d.weight) < 0) { type = t; break; }
-    const item = makeItem(type, 1, this.rng.chance(ITEM_TRAIT.chance) ? this.itemTraitFor(type) : null);
+    const item = makeItem(type, 1, rng.chance(ITEM_TRAIT.chance) ? this.itemTraitFor(type, rng) : null);
     if (item.trait === "murky") Object.assign(item, { brew: this.murky.good, known: this.murky.known });
     return item;
   },
 
   // A trait for a thing of `type` found here (null if none fits): the bad
   // ones commoner near the top, the good deeper.
-  itemTraitFor(type) {
+  itemTraitFor(type, rng = this.dice.things) {
     const depth = this.place.depth, fit = Object.entries(ITEM_TRAITS).filter(([, T]) => T.on.includes(type) && (T.depth ?? 1) <= depth);
     if (!fit.length) return null;
     const weight = ([, T]) => (T.good ? ITEM_TRAIT.good : ITEM_TRAIT.bad)[Math.min(depth, 3) - 1] * (T.weight ?? 1);
-    let r = this.rng.next() * fit.reduce((a, t) => a + weight(t), 0);
+    let r = rng.next() * fit.reduce((a, t) => a + weight(t), 0);
     for (const t of fit) if ((r -= weight(t)) < 0) return t[0];
     return fit[0][0];
   },
@@ -83,14 +85,14 @@ export const itemMethods = {
       const knew = this.murky.known;
       this.learnMurky();
       if (!this.murky.good) {
-        p.hp -= this.rng.int(...MURKY.harm);
-        p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, this.rng.int(...MURKY.poison));
+        p.hp -= this.dice.things.int(...MURKY.harm);
+        p.ailments.poisoned = Math.max(p.ailments.poisoned ?? 0, this.dice.things.int(...MURKY.poison));
         this.log(`You drink ${name}. ${knew ? "Poison, as you knew." : "It's poison!"} You are poisoned. (${p.hp - before})`, "hurt");
         if (p.hp <= 0) this.die("poisoned by a murky potion");
         return this.tick();
       }
     }
-    const heal = this.rng.int(...(it.trait === "murky" ? MURKY.heal : itemTrait(it).heal ?? d.heal));
+    const heal = this.dice.things.int(...(it.trait === "murky" ? MURKY.heal : itemTrait(it).heal ?? d.heal));
     p.hp = Math.min(p.maxHp, p.hp + heal);
     if (p.ailments.bleeding) delete p.ailments.bleeding;
     this.log(`You drink ${name}. You feel ${it.trait === "murky" ? "much " : ""}better. (+${p.hp - before})`, "good");
