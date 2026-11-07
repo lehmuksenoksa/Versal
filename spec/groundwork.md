@@ -125,3 +125,20 @@ the groundwork."
   coming into sight; no exploring with one after you; the lamp's sight. And in the browser: explore,
   the lamp, resting, each stopped by a key, as before.
 
+**G3, the view lock: done.**
+- **The game's view itself, locked** (`tests/browser/view.mjs`, `npm run test:view`): at 3 seeds,
+  the view as the player sees it at the start, after 60 of the bot's moves (played in the page, on
+  the game's own World), with the lamp out, and the whole level (Tab); 12 pictures, hashed and
+  compared with `tests/browser/view-baseline.json`. About a minute.
+- **The same every time:** the page's clock stopped from the start (no frame drawn while it loads,
+  however long that takes) and stepped by hand; `Math.random` seeded (the view's small touches); the
+  run by its seed. Found on the way: the view's light eases toward its picture a frame at a time, so
+  how many frames were drawn while loading left a trace of a few levels of brightness; with the
+  clock stopped while loading, none. Three runs in a row, all 12 the same.
+- **Checked that it notices:** the warmth of the lights' glow from 0.7 to 0.72 changes 6 of the 12.
+- **What it's for:** splitting `expression.js` (2,387 lines) as the generator was, when the light
+  feature set reworks it, with proof the view is unchanged; and a check on every change to the view
+  meant to leave it alone.
+
+**The groundwork is done** (G1 to G3). Next, the first feature set: light (section 4).
+

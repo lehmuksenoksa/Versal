@@ -229,6 +229,8 @@ No build step and nothing to install: Node's own test runner.
     part of play listed in `support/botruns.js`.
   - **the balance maths against the rules** (`balance.test.js`, `support/duel.js`): fights played by
     the game's rules agree with the maths (`tools/balance/maths.js`);
+  - **single rules on small maps** (`rules.test.js`, `support/scenario.js`): a World on a level typed
+    as text, monsters by letter; each rule tried in a set-up situation;
   - **the levels' fingerprints** (`levelprints.test.js`): 60 seeds of every place, hashed whole, as
     recorded; a change to the generator meant re-records them (`npm run lock:record`);
   - the behaviour lock, same seed same run, save and restore, the content check, the structure rule,
@@ -239,6 +241,11 @@ No build step and nothing to install: Node's own test runner.
 - `npm run test:maps`: 72 map drawings (6 seeds, 3 depths, 4 ways of drawing: whole, the grid's
   layer, the walls' layer, the plan) compared pixel for pixel with `tests/browser/maps-baseline.json`.
   `npm run maps:record` records them again: only when the drawing is meant to change.
+- `npm run test:view`: the game's view itself, as the player sees it (light, sight, fading, flames,
+  the ledger), at 3 seeds: at the start, after 60 of the bot's moves, with the lamp out, and the
+  whole level (Tab); the page's clock stopped and stepped by hand, its dice seeded, compared pixel
+  for pixel with `tests/browser/view-baseline.json`. About a minute. `npm run view:record` records
+  them again: only when the view is meant to change.
 - `npm run balance`: the balance report, `spec/balance-now.md`: the fight curves by the maths, and
   what each depth holds, counted on 100 levels a depth (`tools/balance.mjs`). About 30 seconds.
 - `npm run lock:record`: records the behaviour lock again (and the features' outlines and the levels'
