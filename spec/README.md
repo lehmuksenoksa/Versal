@@ -124,7 +124,7 @@ Each part's state is one of:
 | 40 | Perks for slice 1 ([`round40-perks.md`](round40-perks.md)) | answered: 31 kept |
 | 41 | Slice 1's monsters ([`round41-slice1-monsters.md`](round41-slice1-monsters.md)) | answered: 24 |
 | 42 | Slice 1's things to find ([`round42-slice1-things.md`](round42-slice1-things.md)) | answered |
-| 43 | Slice 1's features ([`round43-slice1-features.md`](round43-slice1-features.md)) | on the choices page |
+| 43 | Slice 1's features ([`round43-slice1-features.md`](round43-slice1-features.md)) | answered |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 

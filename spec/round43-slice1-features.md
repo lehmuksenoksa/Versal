@@ -1,5 +1,30 @@
 # Round 43: slice 1's features
 
+**Answered.** In slice 1:
+- **Light:** braziers, candles, campfires; a torch on the wall. (No lantern on a hook.)
+- **Floors:** rubble, bones, shallow water, moss and soft earth, wooden boards. (No rushing water.)
+- **Water:** "Let's just do these: shallow water, deep water, and a current in either of them. A
+  current moves player or monster." (No still water as its own feature.)
+- **Doors and ways:**
+  - doors; secret doors;
+  - **a barricade:** "can be attacked to be opened. Takes X damage to break. Makes noise. Cannot be
+    closed again";
+  - **a gate:** "Seen through. Lever somewhere on the same map closes or opens"; and its lever.
+  - Not a feature: the narrow way ("Isn't this basically just a corridor/tunnel that's one grid
+    wide"): one-wide corridors and tunnels do it, by layout.
+  - Later: the locked door ("with keys"), the collapsed passage ("with pickaxe").
+- **Traps:** the tripwire, the pressure plate, and **the net:** "Holds you while monsters come. Can
+  be attacked. Takes X damage to break." Later: falling rocks ("can become collapsed passage, when
+  both are being implemented").
+- **Hazards:** fire, webs.
+- **Containers:** chests ("Not locked yet. No keys. Later."); **crates and barrels** ("Can be broken.
+  Some contain things."); sacks and baskets; bodies; **nests and hoards** ("Goblin stashes, rat nests,
+  spider webs."); hidden caches; coffins and sarcophagi; weapon and armour racks. No urns.
+  **A look rule:** "Containers to interact with need to be graphically different from decorations."
+- **Things to use:** the gong. (No cages and pens, oil, bookshelves, places to rest, altar.)
+
+Tiers are in the catalogue (`environment`, `tier`).
+
 For the plain Over Dungeon, depths 1 to 6: round 22's environmental features and containers (as
 kept), with their Depths (round 31). Not in slice 1 already: height (ledges, chasms, rope bridges,
 high ground, pits; round 39 in chat), glowing fungus, forge glow and lava. Rows that depend on
