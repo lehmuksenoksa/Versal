@@ -108,3 +108,14 @@ Agreed in chat:
   `stealth.md`, section 2) and may come with perks and items.
 
 Fighting is done in outline; its numbers come with attributes and balance.
+
+## Equipment slots (agreed in chat)
+
+| Slot | What goes there |
+|---|---|
+| Main hand | A weapon, or a torch used as a weapon |
+| Off hand | A shield, or a torch held for light; a two-handed weapon takes both hands |
+| Light | The lamp, or a candle (`light-and-dread.md`, section 9) |
+| Body | Leather or chainmail |
+| Head | A helmet |
+| Rings | Two |

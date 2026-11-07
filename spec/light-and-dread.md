@@ -172,3 +172,19 @@ than torch."
 - **Dread:** any light counts (section 4): a candle's light stops dread rising, but the player is
   lit and sees little.
 - **Losing the lamp:** set down and left, it stays there.
+
+## 9. Lights as equipment (agreed in chat)
+
+Yours: "Equipment slot for this. Lamp has its own slot. Torch needs a hand. Can be used to hit in main
+hand. Chance of going out. Chance of lighting enemy on fire."
+
+- **The light slot** holds the lamp, or a candle in its place: the cheap stand-in when oil runs low,
+  leaving both hands free.
+- **A torch takes a hand.** In the off hand, light beside a one-handed weapon; in the main hand, a
+  weapon too: weak damage, each hit a chance to set the target on fire and a chance to put the torch
+  out (test). A two-handed weapon leaves no hand for it.
+- **A monster on fire** takes damage for a few turns; most kinds flee while burning; burning, it is
+  lit and seen from afar.
+- **One lit at a time** (section 8): lighting a torch puts out the light slot's light; the light key
+  works on the light in use, the torch if one is held, else the light slot. Setting a light down takes
+  it from its slot or hand.
