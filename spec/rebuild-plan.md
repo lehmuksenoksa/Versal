@@ -147,6 +147,7 @@ game changes.
 | **R5. Drawing by families** | The family tables; drawing by lookup | Screenshots of fixed seeds: same pixels |
 | **R6. Pare down** | Curses and the altar's lifting; light without a source | Tests updated; **you play it** |
 | **R7. Checks grown** | The level checks and the bot made fuller; the balance maths begun (`tools/`) | They run clean |
+| **R8. The level generator rebuilt** | `levelgen.js` (1,400 lines) split into parts (layout, rooms and their kinds, caves, collapse, lights, doors and secrets, furnishing), its room kinds and furnishings as data, ready for templates and the slice's ground; levels the same for the same seed where the parts allow, else re-recorded on purpose | The level checks; the lock (re-recorded only if the levels change on purpose); you play it |
 
 Steps R2, R3 and R5 change nothing you can see; the lock and the screenshots prove it. R4 adds
 resuming; R6 is the paring down you'd notice.
@@ -209,5 +210,29 @@ come feature set by feature set, after.
   before. A scan checked every part imports all it uses (the bot doesn't reach every line).
 - **New test, the structure rule** (`tests/structure.test.js`): the rules import only each other and
   the content.
-- The level generator (`levelgen.js`, 1,400 lines) is one file still: its content is out (R2), and
-  splitting its insides can wait for the feature sets that change it.
+- The level generator (`levelgen.js`, 1,400 lines) is one file still: its content is out (R2); its
+  rebuild is added as **R8** (yours: "We should include rebuilding the level generator as R8").
+
+**R4, the state as data, and resume: done.**
+- **Saving and restoring** (`js/rules/save.js`): `world.save()` gives the whole run as plain data
+  JSON can hold; `World.restore(data)` gives the run back. The state is a graph (a monster's pack
+  leader, the room a rat calls home, the level in hand and the same level among those kept), so each
+  object is written once with an id and reached again as a reference; Maps, Sets, typed arrays and
+  the dice are written as tagged objects; a level's two small functions are made again on restoring.
+  The turn's passing things (events not yet drawn, the turn's noises, the way-finding cache) start
+  again empty.
+- **How it differs from the plan's words:** the plan said the state would become "one object of plain
+  data". The live state stays as it was (Maps, Sets and references in memory); saving turns it into
+  plain data and back, exactly. That meets the aim (save, restore, play on identically) without
+  touching every rule; if a feature set wants the live state plainer, it can change then.
+- **New test, save and restore** (`tests/save.test.js`): four runs saved part-way (at steps 40 to
+  1,200, some on deeper levels), written to JSON text, restored, played on: step for step the same
+  as straight through, and the restored run saves to the same text. A save of all three levels is
+  about 430 KB.
+- **Resume in the game** (`js/main.js`): the run is kept in the browser every 5 turns, on each new
+  level, and when the page is left; when the page opens, the run left is taken up, with a line in the
+  log: "You take up your run where you left it. (N: a new run instead.)" N starts a new run until the
+  resumed one goes on. The save is cleared when a run ends. `?seed=` (tests) always starts afresh.
+- **The browser check** now also plays, reloads, checks the same run is back, and that N starts a new
+  one.
+- The game is republished with the rebuild so far: https://claude.ai/artifact/MrmBHHSF379Aq66PsysqXz

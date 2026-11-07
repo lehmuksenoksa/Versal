@@ -24,6 +24,7 @@ import { moveMethods } from "./moves.js";
 import { monsterMethods } from "./monsters.js";
 import { fightMethods } from "./fight.js";
 import { itemMethods } from "./items.js";
+import { saveWorld, restoreWorld } from "./save.js";
 
 // The content and names, for the rest of the game to take from here.
 export * from "./content.js";
@@ -144,6 +145,10 @@ export class World {
     return true;
   }
 }
+
+// Saving: the run as plain data (JSON can hold it), and a run from it.
+World.prototype.save = function () { return saveWorld(this); };
+World.restore = (data) => restoreWorld(data, World.prototype);
 
 // The rest of the World's ways, by part (each in its own file).
 Object.assign(World.prototype, levelMethods, senseMethods, moveMethods, monsterMethods, fightMethods, itemMethods);

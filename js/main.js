@@ -34,6 +34,9 @@ function newRun() {
   ui.toggleDrawer(false);
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
+  offerNew = null;
+  try { localStorage.removeItem(SAVE_KEY); } catch {}
+  saved = { turn: -1, depth: 0 };
   // (The level is there at once; the name asked over it, in the corner,
   // and the player named when it's given. `?name=…` skips the question, for
   // trying things out.)
@@ -45,6 +48,57 @@ function newRun() {
   if (!given) ui.askName((name) => { world.player.name = name; window.focus(); });
   window.focus();
 }
+
+// Saving the run (spec/rebuild-plan.md, R4): kept in the browser as it's
+// played (every few turns, on a new level, and when the page is left), and
+// taken up again when the page opens; gone when the run ends. `?seed=…`
+// (tests) always starts afresh.
+const SAVE_KEY = "versal.run", SAVE_EVERY = 5;
+let saved = { turn: -1, depth: 0 }, offerNew = null;
+function saveRun() {
+  if (!world) return;
+  try {
+    if (world.ended) localStorage.removeItem(SAVE_KEY);
+    else localStorage.setItem(SAVE_KEY, JSON.stringify(world.save()));
+  } catch {}
+  saved = { turn: world.turn, depth: world.place.depth };
+}
+function keepSaved() {
+  if (!world) return;
+  if (world.ended ? saved.turn !== -2 : world.turn - saved.turn >= SAVE_EVERY || world.place.depth !== saved.depth) {
+    saveRun();
+    if (world.ended) saved.turn = -2;
+  }
+  // (The offer of a new run lapses once the resumed one goes on.)
+  if (offerNew !== null && world.turn !== offerNew) offerNew = null;
+}
+function savedRun() {
+  if (new URLSearchParams(location.search).has("seed")) return null;
+  try {
+    const text = localStorage.getItem(SAVE_KEY);
+    return text ? World.restore(JSON.parse(text)) : null;
+  } catch { return null; }
+}
+// The page opening: the run left last time, if there is one, else a new one.
+function startOrResume() {
+  const w = savedRun();
+  if (!w) return newRun();
+  ui.toggleDrawer(false);
+  ui.togglePanel("sheet");
+  document.body.dataset.started = "1";
+  const dark = w.sneaking;
+  w.sneaking = false;
+  world = w;
+  renderer.setWorld(world);
+  // (The lamp as it was left, drawn so.)
+  if (dark) renderer.toggleLamp();
+  saved = { turn: world.turn, depth: world.place.depth };
+  world.log("You take up your run where you left it. (N: a new run instead.)");
+  offerNew = world.turn;
+  window.focus();
+}
+window.addEventListener("pagehide", saveRun);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveRun(); });
 
 // Resting: a turn every `REST_MS` until healed and well, or until something
 // comes into sight or chases near by, or a key or tap.
@@ -98,6 +152,8 @@ window.addEventListener("keydown", (e) => {
     } else if (/^[a-j]$/.test(e.key)) { ui.endAsk(); act(verb, e.key); }
     return;
   }
+  // (Just after resuming: N for a new run instead.)
+  if (offerNew !== null && (e.key === "n" || e.key === "N")) { e.preventDefault(); return newRun(); }
   // (Capitals first: W and D aren't the moves w and d.)
   if (e.key === "W" || e.key === "D") {
     e.preventDefault();
@@ -476,6 +532,7 @@ function loop(now) {
     updateTip(now);
     renderer.frame(now);
     if (world) ui.update(world);
+    keepSaved();
     updateActions();
   } catch (err) {
     console.error(err);
@@ -497,6 +554,6 @@ window.versal = { get world() { return world; }, get walking() { return walking;
   } catch {
     // Fall back to whatever serif is available.
   }
-  newRun();
+  startOrResume();
   requestAnimationFrame(loop);
 })();

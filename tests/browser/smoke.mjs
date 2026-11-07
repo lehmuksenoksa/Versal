@@ -44,6 +44,29 @@ for (const seed of [123, 4567]) {
   if (before.equals(after)) problems.push(`seed ${seed}: nothing changed after the keys were pressed`);
   await page.close();
 }
+// Resuming: play a few turns, leave, come back: the same run, offered as such;
+// N then starts a new one.
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await context.newPage();
+  page.on("pageerror", (e) => problems.push(`resume: ${e.message}`));
+  page.on("console", (m) => { if (m.type() === "error") problems.push(`resume: console: ${m.text()}`); });
+  await page.goto(`http://localhost:${port}/index.html?name=Tester`);
+  await page.waitForTimeout(2500);
+  for (const key of ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "z", "z"]) { await page.keyboard.press(key); await page.waitForTimeout(150); }
+  const before = await page.evaluate(() => { const w = window.versal.world, t0 = performance.now(); w.save(); return { turn: w.turn, x: w.player.x, y: w.player.y, seed: w.places[0].seed, ms: performance.now() - t0 }; });
+  await page.reload();
+  await page.waitForTimeout(2500);
+  const after = await page.evaluate(() => { const w = window.versal.world; return { turn: w.turn, x: w.player.x, y: w.player.y, seed: w.places[0].seed, said: w.messages.at(-1)?.text ?? "" }; });
+  if (after.seed !== before.seed || after.x !== before.x || after.y !== before.y) problems.push(`resume: not the same run (before ${JSON.stringify(before)}, after ${JSON.stringify(after)})`);
+  if (!after.said.startsWith("You take up your run")) problems.push(`resume: not offered as resumed (last message: ${after.said})`);
+  await page.keyboard.press("N");
+  await page.waitForTimeout(1500);
+  const fresh = await page.evaluate(() => { const w = window.versal.world; return { turn: w.turn, seed: w.places[0].seed }; });
+  if (fresh.seed === before.seed || fresh.turn !== 0) problems.push("resume: N didn't start a new run");
+  console.log(`Resume: turn ${before.turn} kept; saving took ${before.ms.toFixed(1)} ms.`);
+  await context.close();
+}
 await browser.close();
 server.close();
 if (problems.length) { console.error("Browser check failed:\n" + problems.join("\n")); process.exit(1); }
