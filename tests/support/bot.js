@@ -47,7 +47,7 @@ function better(w) {
 // One step of the bot's play. Returns what it did, for the trace.
 export function botStep(w, r, mem) {
   const p = w.player, depth = w.place.depth;
-  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, trail: [], hunt: null });
+  if (mem.depth !== depth) Object.assign(mem, { depth, onLevel: 0, way: null, more: mem.back ? false : true, spot: null, swept: [], trail: [], hunt: null });
   mem.onLevel++;
   // (A monster next to it, in sight: strike it.)
   for (const [dx, dy] of DIRS8) {
@@ -77,13 +77,13 @@ export function botStep(w, r, mem) {
   // (A door just come through: now and then, shut behind.)
   if (mem.door && w.canCloseDoor() && r.chance(0.3) && w.closeDoor()) { mem.door = false; return "close"; }
   mem.door = !!w.doorAt(p.x, p.y);
-  // (Stepping back and forth (a monster in sight closing the way one step and
-  // out of sight the next, so the way turns back): go for the nearest monster
-  // in sight instead.)
+  // (Going round in a small loop, back and forth or round four squares (a
+  // monster in sight closing the way one step and out of sight the next, so
+  // the way turns back): go for the nearest monster in sight instead.)
   const trail = (mem.trail ??= []);
   trail.push(p.y * w.level.w + p.x);
-  if (trail.length > 8) trail.shift();
-  if (trail.length === 8 && new Set(trail).size <= 2 && !mem.hunt) {
+  if (trail.length > 12) trail.shift();
+  if (trail.length === 12 && new Set(trail).size <= 4 && !mem.hunt) {
     const seen = w.actors.filter((a) => a !== p && w.isVisible(a.x, a.y)).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
     if (seen.length) mem.hunt = { g: seen[0], steps: 0 };
   }
@@ -105,6 +105,12 @@ export function botStep(w, r, mem) {
     const s = way[0];
     if (w.playerMove(s.x - p.x, s.y - p.y)) return "walk";
   }
+  // (The last level seen, no stairs down: after the king.)
+  const king = !down && w.actors.find((a) => a.kind === "king" && w.seen[a.y * L.w + a.x]);
+  if (!way && king) {
+    const go = wayTo(w, king.x, king.y);
+    if (go && go.length && w.playerMove(go[0].x - p.x, go[0].y - p.y)) return "to the king";
+  }
   // (All seen and no stairs found: search for secret doors where they'd be,
   // as a person would: at a dead end or along a wall, a while at each, then
   // on to another.)
@@ -113,7 +119,12 @@ export function botStep(w, r, mem) {
       if (++mem.searched < SEARCH_TURNS) { w.search(); return "search"; }
       mem.spot = null;
     }
-    if (!mem.spot) { mem.spot = searchSpot(w, r); mem.searched = 0; }
+    if (!mem.spot) {
+      // (Every wall searched: start the sweep again.)
+      mem.spot = searchSpot(w, mem.swept) ?? searchSpot(w, (mem.swept = []));
+      if (mem.spot) mem.swept.push(mem.spot);
+      mem.searched = 0;
+    }
     const go = mem.spot && wayTo(w, mem.spot.x, mem.spot.y);
     if (go && go.length && w.playerMove(go[0].x - p.x, go[0].y - p.y)) return "walk";
     if (go && !go.length) { w.search(); return "search"; }
@@ -126,20 +137,24 @@ export function botStep(w, r, mem) {
 }
 
 // Where to search: a square seen and walkable with rock round most of it (a
-// dead end, five or more of its eight neighbours rock) or else along a wall
-// (three or more), picked at random.
+// dead end, five or more of its eight neighbours rock) or along a wall
+// (three or more), not next to a square searched already on this level
+// (`done`), the nearest first (dead ends before walls): a sweep, as a person
+// would search, not the same walls over and over. (Searching finds secret
+// doors two squares off, so spots a square apart leave no wall unsearched.)
 const SEARCH_TURNS = 8;
-function searchSpot(w, r) {
-  const L = w.level, ends = [], sides = [];
+function searchSpot(w, done) {
+  const L = w.level, p = w.player, ends = [], sides = [];
   for (let y = 1; y < L.h - 1; y++)
     for (let x = 1; x < L.w - 1; x++) {
       if (!w.seen[y * L.w + x] || !w.walkable(x, y)) continue;
+      if (done.some((d) => Math.max(Math.abs(d.x - x), Math.abs(d.y - y)) <= 1)) continue;
       const rock = DIRS8.filter(([dx, dy]) => !w.walkable(x + dx, y + dy) && !w.doorAt(x + dx, y + dy)).length;
       if (rock >= 5) ends.push({ x, y });
       else if (rock >= 3) sides.push({ x, y });
     }
-  const from = ends.length && r.chance(0.7) ? ends : sides.length ? sides : ends;
-  return from.length ? r.pick(from) : null;
+  const near = (a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y);
+  return ends.sort(near)[0] ?? sides.sort(near)[0] ?? null;
 }
 
 // A whole run with seed `seed`, at most `maxSteps` of the bot's steps.

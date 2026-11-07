@@ -297,15 +297,16 @@ come feature set by feature set, after.
   doors stand in a wall, between two ways through; the map's edge is rock all round.
 - **The crude bot made fuller** (`tests/support/bot.js`): it also picks things up, wields and wears
   the best it has, now and then takes armour off or drops something, closes doors behind it, goes
-  back up a level and down again, and searches as a person would, at dead ends and along walls (it
-  used to search where it stood, and could spend a whole run in a region sealed by secret doors). If
-  it finds itself stepping back and forth, it goes for the monster in sight.
+  back up a level and down again, and searches as a person would: a sweep of the dead ends and
+  walls it has seen, nearest first, a square apart (it used to search where it stood, and could
+  spend a whole run in a region sealed by secret doors). If it finds itself going round a small
+  loop, it goes for the monster in sight; on the last level, seen through, it goes for the king.
 - **The bot's runs checked harder** (`tests/bot-a/b.test.js`, `tests/support/botruns.js`): 100 runs
   in `npm test` (500 deep). After every step, more must hold: no monster over its hit points, no
   pack led by one gone, things lying about on floor, the pack not over full and each letter once,
   what's held and worn in its place (a two-handed weapon with the off hand free), level and
   experience in agreement, hit points as the levels give them. **Every run must end**, dead or won,
-  within 5,000 steps (no dead end, no endless loop); and the runs together must touch every part of
+  within 10,000 steps (no dead end, no endless loop); and the runs together must touch every part of
   play: 14 of the bot's actions, 9 kinds of happening (blows both ways, fleeing, doors, secret doors
   found, the stairs, death, sneaking, a monster growing suspicious). Checked that it notices:
   levelling up made to forget its hit points fails at once.
@@ -326,12 +327,19 @@ come feature set by feature set, after.
   brazier. Now they arrive on the open square nearest the middle (`levelgen.js`); no other start
   moves. (The behaviour lock re-recorded for that and for the fuller bot; nothing else in the game
   changed.)
+- **Found by the deep run** (`npm run test:deep`, 500 runs: what's too rare for 100 to show), **and
+  fixed:** the game's **explore could turn back and forth for ever** between the two squares beside
+  a post, aiming at a square hidden diagonally behind it, which standing there never shows (with
+  the lamp lit or out). Explore now counts an unseen square only if a step could reach it from
+  where it aims (`travel.js`). The rest the deep run found were the bot's own (the king never gone
+  for, searching too sparse, loops round a monster): all 500 runs now end.
 - **Found, not fixed (for R8, or for you):**
   - **Doors onto secret doors:** where a wall is two squares thick, a door may open onto a secret
     door, or two secret doors stand in a row (6 such doors in 120 levels). Playable (searching finds the
     second), but odd: for R8.
-  - **A way on only through a secret door:** on 10 of 100 depth-1 levels, the stairs down can only be
-    reached by finding a secret door (none on depths 2 and 3). Counted by the level checks. For you:
+  - **A way on only through a secret door:** on 82 of 500 depth-1 levels (about 1 in 6), the stairs
+    down can only be reached by finding a secret door (none on depths 2 and 3). It costs the bot
+    thousands of steps of searching on some of them. Counted by the level checks. For you:
     should every level have a way on without one?
   - **Exploring turning back and forth:** a sleeping monster in a corridor, out of sight from one
     square and in sight from the next, closes the explore way one step and opens it the next. The

@@ -5,7 +5,7 @@
 import { playRun } from "./bot.js";
 import { invariants } from "./checks.js";
 
-export const MAX_STEPS = 5000;
+export const MAX_STEPS = 10000;
 // What the bot must have done, and what must have happened, in a set of runs.
 export const COVERS = {
   done: ["walk", "strike", "rest", "drink", "lamp", "search", "pick up", "wield", "wear", "take off", "drop", "close", "down", "up"],

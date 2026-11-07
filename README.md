@@ -220,7 +220,7 @@ No build step and nothing to install: Node's own test runner.
     it explores, fights, rests, drinks, picks up, wields, wears, takes off, drops, closes doors,
     searches at dead ends and walls, goes down and back up. After every step the world must be sound
     (no one in a wall or on another, hit points, the pack, what's held and worn, level and experience
-    in order); every run must end, dead or won, within 5,000 steps; and the runs must touch every
+    in order); every run must end, dead or won, within 10,000 steps; and the runs must touch every
     part of play listed in `support/botruns.js`.
   - **the balance maths against the rules** (`balance.test.js`, `support/duel.js`): fights played by
     the game's rules agree with the maths (`tools/balance/maths.js`);

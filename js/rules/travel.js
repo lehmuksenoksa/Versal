@@ -56,11 +56,14 @@ export function wayTo(w, tx, ty) {
 
 // The way to the nearest square seen and walkable next to one not seen yet;
 // null when the level's all seen (that can be reached).
+// (Next to it by a step: a square diagonally past a post is hidden behind
+// it, and standing there would never show it; explore would turn back and
+// forth between the squares beside the post.)
 export function wayToExplore(w) {
   const W = w.level.w, H = w.level.h;
   const unseenNear = (x, y) => DIRS8.some(([dx, dy]) => {
     const nx = x + dx, ny = y + dy;
-    return nx >= 0 && ny >= 0 && nx < W && ny < H && !w.seen[ny * W + nx];
+    return nx >= 0 && ny >= 0 && nx < W && ny < H && !w.seen[ny * W + nx] && w.canStep(x, y, dx, dy);
   });
   return search(w, (x, y) => unseenNear(x, y), null, W * H);
 }
