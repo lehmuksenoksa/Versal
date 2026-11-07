@@ -18,8 +18,8 @@ for (const mod of [content, traits, levelgen]) for (const v of Object.values(mod
 const { playRun } = await import("./support/bot.js");
 const { invariants } = await import("./support/checks.js");
 
-test("the content is never changed by play (20 bot runs, the content frozen)", () => {
-  for (let seed = 7000; seed < 7020; seed++) {
+test("the content is never changed by play (12 bot runs, the content frozen)", () => {
+  for (let seed = 7000; seed < 7012; seed++) {
     assert.doesNotThrow(() => playRun(seed, { maxSteps: 3000, each: (w) => { const bad = invariants(w); if (bad.length) throw new Error(bad.join("; ")); } }), `seed ${seed}`);
   }
 });

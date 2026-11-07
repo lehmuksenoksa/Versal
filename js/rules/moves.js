@@ -106,8 +106,9 @@ export const moveMethods = {
 
   setDoor(door, open, by) {
     door.open = open;
-    // (Light through it, or not, now: light.js.)
+    // (Light through it, or not, now: light.js; and sight: senses.js.)
     this.light.changed();
+    this.los = null;
     if (by === this.player) this.makeNoise("door");
     this.events.push({ type: "door", door, by });
   },

@@ -32,10 +32,11 @@ export class Light {
     this.of = null;
     this.fixed = null;
     this.now = null;
+    this.carried = null;
   }
 
   // A light or a door changed: the fixed lights worked out again.
-  changed() { this.fixed = null; }
+  changed() { this.fixed = null; this.carried = null; }
 
   // How light the square (x, y) is.
   at(x, y) {
@@ -51,28 +52,56 @@ export class Light {
     if (this.of !== L || !this.fixed) {
       this.of = L;
       this.fixed = new Uint8Array(L.w * L.h);
+      // (What stops light, a square each: rock, and shut doors.)
+      this.block = new Uint8Array(L.w * L.h);
+      for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) this.block[y * L.w + x] = !isOpen(w.tileAt(x, y)) || w.shut(x, y) ? 1 : 0;
       this.shades = [...w.pillars.map((p) => p.pts), ...(L.features ?? []).map((f) => shadeOutline(f)).filter(Boolean)];
       this.pillarShades = w.pillars.map((p) => p.pts);
       for (const l of L.lights ?? []) if (!l.out) this.shine(this.fixed, l.x, l.y, l.kind, this.shades);
+      this.carried = null;
     }
-    this.now = this.fixed.slice();
     // (The carried lights: cast past pillars only, not the furniture, which
-    // the one carrying may stand among.)
-    if (!w.sneaking) this.shine(this.now, w.player.x + 0.5, w.player.y + 0.5, "lamp", this.pillarShades);
-    for (const a of w.actors) if (a !== w.player && MONSTERS[a.kind]?.lantern) this.shine(this.now, a.x + 0.5, a.y + 0.5, "lantern", this.pillarShades);
+    // the one carrying may stand among. Worked out again only when one of
+    // them has moved, or the fixed lights have.)
+    const carriers = [...(w.sneaking ? [] : [["lamp", w.player.x, w.player.y]]), ...w.actors.filter((a) => a !== w.player && MONSTERS[a.kind]?.lantern).map((a) => ["lantern", a.x, a.y])];
+    const key = carriers.join(";");
+    if (this.carried === key && this.now) return;
+    this.carried = key;
+    this.now = this.fixed.slice();
+    for (const [kind, x, y] of carriers) this.shine(this.now, x + 0.5, y + 0.5, kind, this.pillarShades);
   }
 
   // A light of `kind` at (lx, ly) (squares, its middle) onto `map`.
   shine(map, lx, ly, kind, shades) {
-    const w = this.w, L = w.level, W = L.w, B = LIGHTS[kind] ?? LIGHTS.fire, far = B.full + B.dim + B.dark;
-    const opaque = (x, y) => !isOpen(w.tileAt(x, y)) || w.shut(x, y);
+    const L = this.w.level, W = L.w, H = L.h, B = LIGHTS[kind] ?? LIGHTS.fire, far = B.full + B.dim + B.dark, block = this.block;
+    const opaque = (x, y) => x < 0 || y < 0 || x >= W || y >= H || block[y * W + x] === 1;
     const near = shades.filter((pts) => pts.some(([x, y]) => Math.abs(x - lx) <= far + 1 && Math.abs(y - ly) <= far + 1));
     // (A clear line from the light to the square's middle too: the casting
     // is generous at walls' corners, where the light's line would cut
     // across one; the view draws by the line. A line grazing a wall's corner,
     // no more than a tenth of a square into it, gets past, as in the view,
     // whose walls are drawn along the squares' edges.)
+    // (First the squares the line crosses: none of them a wall but its own,
+    // and it's clear; else the fine walk, a twentieth of a square at a
+    // time, which decides.)
+    const crossesWall = (cx, cy, x, y) => {
+      let gx = Math.floor(lx), gy = Math.floor(ly);
+      const dx = cx - lx, dy = cy - ly, sx = Math.sign(dx), sy = Math.sign(dy);
+      const tdx = dx ? Math.abs(1 / dx) : Infinity, tdy = dy ? Math.abs(1 / dy) : Infinity;
+      let tx = dx ? (sx > 0 ? gx + 1 - lx : lx - gx) * tdx : Infinity, ty = dy ? (sy > 0 ? gy + 1 - ly : ly - gy) * tdy : Infinity;
+      const wall = (a, b) => (a !== x || b !== y) && opaque(a, b);
+      for (let i = 0; i < 64 && (gx !== x || gy !== y); i++) {
+        // (Through a corner exactly: both squares beside it counted.)
+        if (Math.abs(tx - ty) < 1e-9) { if (wall(gx + sx, gy) || wall(gx, gy + sy)) return true; gx += sx; gy += sy; tx += tdx; ty += tdy; }
+        else if (tx < ty) { gx += sx; tx += tdx; }
+        else { gy += sy; ty += tdy; }
+        if (tx > 1 + 1e-9 && ty > 1 + 1e-9 && (gx !== x || gy !== y)) return true;
+        if (wall(gx, gy)) return true;
+      }
+      return false;
+    };
     const clear = (cx, cy, x, y) => {
+      if (!crossesWall(cx, cy, x, y)) return true;
       const d = hypot(cx - lx, cy - ly), n = Math.ceil(d / 0.05);
       for (let i = 1; i < n; i++) {
         const px = lx + ((cx - lx) * i) / n, py = ly + ((cy - ly) * i) / n, sx = Math.floor(px), sy = Math.floor(py);

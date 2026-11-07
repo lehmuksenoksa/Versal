@@ -52,13 +52,22 @@ export const senseMethods = {
       }
       return false;
     };
+    // (The squares in line of sight, kept until the player moves or a door
+    // or a secret door changes (`losKey`, forgotten in moves.js and here);
+    // only the light on them worked out again.)
+    const key = `${this.place.depth}:${px},${py}`;
+    if (this.los?.key !== key || this.los.level !== this.level) {
+      const cells = [];
+      computeFov(w, h, px, py, far, opaque, (x, y) => { if (!behind(x, y)) cells.push(y * w + x); });
+      this.los = { key, level: this.level, cells };
+    }
     this.visible.fill(0);
-    computeFov(w, h, px, py, far, opaque, (x, y) => {
-      if (this.light.at(x, y) === 0 && Math.max(Math.abs(x - px), Math.abs(y - py)) > dark) return;
-      if (behind(x, y)) return;
-      this.visible[y * w + x] = 1;
-      this.seen[y * w + x] = 1;
-    });
+    for (const k of this.los.cells) {
+      const x = k % w, y = (k - x) / w;
+      if (this.light.at(x, y) === 0 && Math.max(Math.abs(x - px), Math.abs(y - py)) > dark) continue;
+      this.visible[k] = 1;
+      this.seen[k] = 1;
+    }
     this.inView.fill(0);
     computeFov(w, h, px, py, GOBLIN.lose, opaque, (x, y) => {
       if (!behind(x, y)) this.inView[y * w + x] = 1;
@@ -95,6 +104,8 @@ export const senseMethods = {
       if (!this.dice.world.chance(chance)) continue;
       s.found = true;
       L.tiles[s.y * L.w + s.x] = T.FLOOR;
+      this.los = null;
+      this.light.changed();
       const door = { x: s.x, y: s.y, dx: s.dx, dy: s.dy, open: false, secret: true };
       L.doors.push(door);
       this.doors.set(s.y * L.w + s.x, door);

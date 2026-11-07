@@ -226,12 +226,12 @@ pixel locks run here only.
 - `npm run lint` (after `npm install`, which brings ESLint, a development tool only): names used and
   never declared, declared and never used, in the game, the tests and the tools (`eslint.config.js`).
 
-- `npm test` (`tests/`), about 35 seconds:
+- `npm test` (`tests/`), about a minute:
   - **the level checks**, 100 levels a depth (`levels-1/2/3.test.js`, `support/levelcheck.js`):
     the stairs, every room, every thing and the king can be reached; the player arrives, and things,
     monsters, furniture and lights stand, on open floor; doors stand in walls between two ways
     through; the map's edge is rock. (Counted, not failed: levels whose way on needs a secret door.)
-  - **the crude bot**, 100 whole runs (`bot-a/b.test.js`, `support/bot.js`, `support/botruns.js`):
+  - **the crude bot**, 80 whole runs (`bot-a/b.test.js`, `support/bot.js`, `support/botruns.js`):
     it explores, fights, rests (as R does: till healed and well), drinks, picks up, wields, wears,
     takes off, drops, closes doors, searches at dead ends and walls, goes down and back up. After every step the world must be sound
     (no one in a wall or on another, hit points, the pack, what's held and worn, level and experience
@@ -239,6 +239,8 @@ pixel locks run here only.
     part of play listed in `support/botruns.js`.
   - **the balance maths against the rules** (`balance.test.js`, `support/duel.js`): fights played by
     the game's rules agree with the maths (`tools/balance/maths.js`);
+  - **the light** (`light.test.js`): the spec's rules for light and sight on small maps;
+  - **speed** (`speed.test.js`): loose limits on a turn, a level's light and making a level;
   - **replays** (`replay.test.js`): a run played again from its seed and moves is the same run;
   - **single rules on small maps** (`rules.test.js`, `support/scenario.js`): a World on a level typed
     as text, monsters by letter; each rule tried in a set-up situation;

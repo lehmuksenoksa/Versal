@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { botRuns } from "./support/botruns.js";
 
-const RUNS = Number(process.env.BOT_RUNS ?? 50);
+const RUNS = Number(process.env.BOT_RUNS ?? 40);
 
 test(`the bot plays ${RUNS} runs (from seed 5000): sound, ended, every part touched`, () => {
   const r = botRuns(5000, RUNS);

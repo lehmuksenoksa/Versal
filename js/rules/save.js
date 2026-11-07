@@ -117,7 +117,7 @@ export function relink(level) {
 // noises of the turn, the way-finding cache) starts again empty.
 export function saveWorld(w) {
   // (Nor the light model: worked out again from the levels' lights.)
-  const { events, noises, chaseMap, light, ...rest } = w;
+  const { events, noises, chaseMap, light, los, ...rest } = w;
   return { version: VERSION, world: encode(rest) };
 }
 export function restoreWorld(data, proto) {

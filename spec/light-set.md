@@ -96,3 +96,11 @@ for pixel; the light check, the browser check and the mockups as before.
 **The light feature set is built: L1 to L4. Next: you play it.** Two looks are stand-ins, to choose:
 a torch on the wall (a bracket and a small flame) and a thing known only to be there in the dark
 ("?").
+
+**The speed check** (`tests/speed.test.js`), as planned with this set: loose limits, several times
+this machine's (a bot's step under 3 ms on average, a level's light under 25 ms, making a level
+under 500 ms). Light's clear-line check had made a step 0.76 ms; now 0.40 ms, play unchanged (the
+lock passes): the carried lights kept until one moves, the squares a line crosses tried before the
+fine walk along it, what stops light kept in a grid. The everyday suite back under its minute (59
+seconds): the bot 80 runs (40 a half), the duels 1,000 a case, frozen content 12 runs; the deep run
+keeps its 500.

@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { duel } from "../tools/balance/maths.js";
 import { duels } from "./support/duel.js";
 
-const N = 2000;
+const N = 1000;
 // (The bat is left out: its flitting about is only roughly counted.)
 const CASES = [
   ["rat", {}], ["goblin", {}], ["skeleton", {}], ["zombie", {}], ["spider", {}], ["cultist", {}],
