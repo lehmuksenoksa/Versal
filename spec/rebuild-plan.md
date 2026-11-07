@@ -52,8 +52,8 @@ js/
     items.js      the pack, using, wearing
     levels.js     making and entering levels (the generator, split from today's levelgen.js)
     names.js      names and words (from tips.js and world.js)
-  content/      data only: what exists and its numbers
-    monsters.js, items.js, traits.js, lights.js, places.js, numbers.js
+  content/      data only, JSON: what exists and its numbers
+    monsters.json, items.json, traits.json, lights.json, places.json, numbers.json
   draw/         the browser only: everything drawn
     families/     one table per family of things (section 6)
     ... today's maprender, expression, render, gpu, hatching, fire
@@ -67,11 +67,18 @@ tools/          the balance maths (10-building-it.md)
 Drawing and the interface read the state and the events; they never change the state themselves.
 The tests check this by trying to load `rules/` in Node.
 
-**Content as data:** I'd write the content files as **JS modules that only hold data**
-(`export default { rat: { ... } }`), not JSON. They load the same way in Node and the browser with no
-fetching, can carry comments, and are as easy to edit. (JSON is the other way: stricter, but needs a
-loader and fetches in the browser.) The catalogue (`data/catalogue.json`) stays the design source;
-the game's content files are what's built from it, slice by slice.
+**Content as data, in JSON** (yours: "Yes, change it to JSON"): the content files are JSON
+(`content/monsters.json`, `items.json`, `traits.json`, `lights.json`, `places.json`, `numbers.json`).
+- Loaded the same way in Node and the browser, by importing JSON directly (`import ... with { type:
+  "json" }`), which current browsers and Node support; a small loader only if an older browser needs
+  one.
+- Only data: no code can sneak in, so a new monster is an entry and nothing else.
+- Read and written safely by any tool: scripts, the balance maths, the bot, the catalogue page, a
+  future editor.
+- No comments in JSON: notes go in a `note` field.
+- The catalogue (`data/catalogue.json`) stays the design source; the game's content files are built
+  from it, slice by slice, by a script.
+- A check (with the tests) that every content file parses and has the fields its kind needs.
 
 ## 4. Tests
 
@@ -83,6 +90,7 @@ With Node's own test runner (`node --test`): no packages to install.
 | **Same seed, same run** | A fixed seed and a fixed list of the player's actions give exactly the same events every time | Every change |
 | **The behaviour lock** | Before the rebuild starts: record the events of a set of fixed runs from today's code. Every refactoring step must give the same events (section 8) | Every rebuild step |
 | **Save and restore** | Play some turns, save, restore, play on: the same as playing straight through | Every change |
+| **Content check** | Every content file parses and has the fields its kind needs | Every change |
 | **Level checks** | Hundreds of levels per depth: the stairs reachable, nothing stuck in a wall, every room reachable; later, a dark way past each group (part 6) | Every change to levels |
 | **The crude bot** | Hundreds of whole runs played by a simple bot (it wanders, fights, takes stairs): no crash, no dead end, no endless loop | Every change |
 | **The browser check** | The page loads in Playwright, plays a few turns by keys, no errors; screenshots of fixed seeds compared before and after drawing steps | Drawing and interface changes |
@@ -142,7 +150,7 @@ you'd notice.
 
 ## 9. Decisions for you before the go
 
-1. **Content as JS data modules** (my pick), or JSON?
+1. ~~Content as JS data modules or JSON?~~ **JSON** (decided).
 2. **The pare-down list:** curses and sourceless light only, or more?
 3. **Saving for the player:** offer resume in the rebuild (a small step after R4), or wait for a
    feature set?
