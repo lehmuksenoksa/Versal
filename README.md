@@ -214,8 +214,12 @@ in the browser console.
 
 ## Tests
 
-No build step and nothing to install: Node's own test runner. `npm test` also runs on GitHub on
-every push and pull request (`.github/workflows/test.yml`); the pixel locks run here only.
+No build step, and nothing to install to play or test: Node's own test runner. `npm test` and the
+lint step also run on GitHub on every push and pull request (`.github/workflows/test.yml`); the
+pixel locks run here only.
+
+- `npm run lint` (after `npm install`, which brings ESLint, a development tool only): names used and
+  never declared, declared and never used, in the game, the tests and the tools (`eslint.config.js`).
 
 - `npm test` (`tests/`), about 35 seconds:
   - **the level checks**, 100 levels a depth (`levels-1/2/3.test.js`, `support/levelcheck.js`):
@@ -235,6 +239,8 @@ every push and pull request (`.github/workflows/test.yml`); the pixel locks run 
     as text, monsters by letter; each rule tried in a set-up situation;
   - **the levels' fingerprints** (`levelprints.test.js`): 60 seeds of every place, hashed whole, as
     recorded; a change to the generator meant re-records them (`npm run lock:record`);
+  - **the content never changed by play** (`frozen.test.js`): the bot plays with every content
+    object frozen;
   - the behaviour lock, same seed same run, save and restore, the content check, the structure rule,
     the features' outlines, the pare-down.
 - `npm run test:deep`: the same with 500 levels a depth and 500 bot runs. A few minutes.

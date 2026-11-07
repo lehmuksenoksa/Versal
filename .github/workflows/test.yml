@@ -1,8 +1,10 @@
-# The suite on every push and pull request (spec/groundwork.md, G6): the
-# rules, the bot's runs, the level checks, the balance maths and the locks
-# that run headless (`npm test`, about 35 seconds; nothing to install). The
-# pixel locks (npm run test:maps, test:view) stay on the machine they were
-# recorded on: another draws a little differently.
+# The suite and the lint step on every push and pull request (spec/
+# groundwork.md, G6 and section 8): the rules, the bot's runs, the level
+# checks, the balance maths and the locks that run headless (`npm test`,
+# about 35 seconds), and the lint (`npm run lint`: a name used but never
+# declared, or declared and never used). The pixel locks (npm run test:maps,
+# test:view) stay on the machine they were recorded on: another draws a
+# little differently.
 name: Tests
 
 on:
@@ -18,4 +20,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: npm ci
+      - run: npm run lint
       - run: npm test

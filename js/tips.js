@@ -3,8 +3,8 @@
 // chosen (mockups/choices.html, round 3: A, a torn black plate beside it;
 // no ring round the thing, asked later); and the words for a monster's state
 // and wounds, and the rooms' names, used by the look and the log too.
-import { MONSTERS, ITEMS, itemName, monName, an, shownTrait, roomName, roomAt } from "./rules/world.js";
-import { ITEM_TRAITS, MONSTER_TRAITS, ROOM_TRAITS } from "./rules/traits.js";
+import { ITEMS, itemName, monName, shownTrait, roomName, roomAt } from "./rules/world.js";
+import { ITEM_TRAITS, ROOM_TRAITS } from "./rules/traits.js";
 
 // How a monster's state reads.
 export const STATE = { sleeping: "asleep", neutral: "unaware", suspicious: "suspicious", aggressive: "alarmed", fleeing: "fleeing" };

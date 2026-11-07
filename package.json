@@ -12,6 +12,11 @@
     "view:record": "node tests/browser/view.mjs --record",
     "test:deep": "LEVEL_SEEDS=500 BOT_RUNS=250 node --test \"tests/*.test.js\"",
     "lock:record": "node tools/record-lock.mjs",
-    "balance": "node tools/balance.mjs --write"
+    "balance": "node tools/balance.mjs --write",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "9.33.0",
+    "globals": "15.14.0"
   }
 }

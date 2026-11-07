@@ -2,8 +2,7 @@
 // Methods of the World (js/rules/world.js), joined to it there.
 import { ITEMS, PACK } from "./content.js";
 import { MURKY, ITEM_TRAITS, ITEM_TRAIT, itemTrait } from "./traits.js";
-import { an, itemName } from "./names.js";
-import { T } from "./dungeon.js";
+import { itemName } from "./names.js";
 
 // A thing found or made: its type, how many, its trait, whether known.
 export const makeItem = (type, n = 1, trait = null, known = false) => ({ type, glyph: ITEMS[type].glyph, n, ...(trait ? { trait } : {}), ...(known ? { known } : {}) });

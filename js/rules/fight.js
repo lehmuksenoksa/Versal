@@ -3,7 +3,6 @@
 import { MONSTERS, PLAYER, LEVELS, AILMENTS, ITEMS, PACK, WHACK, SNEAK_HIT, MORALE } from "./content.js";
 import { GOBLINS, MONSTER_BLEED, ROOM_TRAITS, itemTrait, monTrait } from "./traits.js";
 import { an, itemName, monName, ordinal } from "./names.js";
-import { T } from "./dungeon.js";
 
 export const fightMethods = {
   // The player's blow, as damage from to: their weapon's (bare hands') and

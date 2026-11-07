@@ -8,7 +8,7 @@
 // on torn black plates (js/plates.js). Plain page elements over the map's
 // canvas, redone only when something they show has changed.
 
-import { ordinal, ITEMS, PACK, itemName, MONSTERS, monName } from "./rules/world.js";
+import { ordinal, ITEMS, itemName, monName } from "./rules/world.js";
 import { STATE, THINGS, wounds, itemStats } from "./tips.js";
 import { drawPlates, drawDrawer } from "./plates.js";
 

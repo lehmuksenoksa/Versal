@@ -2,7 +2,7 @@
 // Methods of the World (js/rules/world.js), joined to it there.
 import { MONSTERS, ITEMS, SNEAK_STEP } from "./content.js";
 import { ROOM_TRAITS } from "./traits.js";
-import { an, itemName, roomName, roomAt } from "./names.js";
+import { itemName, roomName, roomAt } from "./names.js";
 import { isWalkable, isOpen, DIRS8 } from "./dungeon.js";
 
 export const moveMethods = {

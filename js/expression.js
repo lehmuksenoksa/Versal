@@ -85,7 +85,6 @@ const LAMP_WARMTH = 0.7;
 const WALL_BAND = 0.5;
 // Walls show beside floor seen this near (in tiles, over the floor).
 const WALL_SPREAD = 0.75;
-const PAPER_RGB = [247, 242, 230];
 // The most pixels in one of the full-map drawings, and in the sight and
 // light over them (lower, as they change every frame).
 const DRAWING_PIXELS = 8e6, SIGHT_PIXELS = 3e6;

@@ -267,3 +267,12 @@ hit point lost, back where it began round a loop, or after 300 steps; it won't s
 monster in sight. Small-map tests of each; the bot runs now and then, on every kind of ground,
 under the step-by-step checks (500 runs in the deep check). Found on the way: the sheet's "Turns"
 showed the turn only when something else changed (a message, a hit point); now every turn.
+
+**The under-the-hood fixes** (yours: "Same maths everywhere, Lint step (ESLint), Frozen-content test";
+the keys left as they are):
+- **Frozen content: done.** `tests/frozen.test.js`: every content object frozen deep down, the bot
+  plays 20 runs over it: a rule changing a monster's or an item's numbers would throw. None does.
+- **The lint step: done.** ESLint (a development tool, pinned; `npm run lint`, and on every push):
+  names used and never declared, declared and never used, declared twice, in the game, the tests
+  and the tools. It found 10 leftovers (imports and a constant never used), now gone; a typo made on
+  purpose (`levle`) is caught.
