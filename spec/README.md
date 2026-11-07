@@ -125,6 +125,7 @@ Each part's state is one of:
 | 41 | Slice 1's monsters ([`round41-slice1-monsters.md`](round41-slice1-monsters.md)) | answered: 24 |
 | 42 | Slice 1's things to find ([`round42-slice1-things.md`](round42-slice1-things.md)) | answered |
 | 43 | Slice 1's features ([`round43-slice1-features.md`](round43-slice1-features.md)) | answered |
+| 44 | Slice 1's encounter templates ([`round44-slice1-templates.md`](round44-slice1-templates.md)) | on the choices page |
 | … | Each next round chosen after the last, shallow before deep | — |
 | — | The go | — |
 
