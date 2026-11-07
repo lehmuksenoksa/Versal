@@ -214,7 +214,8 @@ in the browser console.
 
 ## Tests
 
-No build step and nothing to install: Node's own test runner.
+No build step and nothing to install: Node's own test runner. `npm test` also runs on GitHub on
+every push and pull request (`.github/workflows/test.yml`); the pixel locks run here only.
 
 - `npm test` (`tests/`), about 35 seconds:
   - **the level checks**, 100 levels a depth (`levels-1/2/3.test.js`, `support/levelcheck.js`):

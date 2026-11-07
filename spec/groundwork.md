@@ -200,3 +200,6 @@ So the level checks, which make deeper levels directly, now check the very level
 A die added to one part shifts no other part's. The run lock, the outlines, the map drawings and
 the view re-recorded on purpose; the suite and the deep run pass.
 
+**G6, a check on every push: done.** A GitHub workflow (`.github/workflows/test.yml`) runs `npm test`
+on every push and pull request; the pixel locks stay on this machine.
+
