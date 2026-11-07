@@ -70,14 +70,17 @@ the groundwork."
 - **Saves break with each set** (the save's version raised, the page starting afresh): fine while
   you're the only player.
 
-## 5. Decisions for you
+## 5. Decisions
 
-- **Where content lives.** In two places now: the catalogue (the design) and `js/content` (the
-  game); they'll drift apart. Proposed: `js/content` the one source, the catalogue's fields (tier,
-  Depth, Level) moving in as each thing is built, the catalogue reading from it.
-- **Secret doors on the way on.** About 1 depth-1 level in 6 can only be left through a secret door.
-  Should every level have a way on without one?
-- **The order of the feature sets** above.
+- **Where content lives: `js/content` is the master source** (yours: "Js/content can be the master
+  source"). The catalogue's fields (tier, Depth, Level) move into it as each thing is built; the
+  catalogue reads from it, not the other way round.
+- **The way on never needs a secret door** (yours: "Way out shouldn't require a secret door"). A door
+  is made secret only if the way from where the player arrives to the stairs down (on the last
+  level, to the king's seat) is still there without it (`levelgen/doors.js`). Before, about 1
+  depth-1 level in 6 could only be left through one; the level checks now fail any such level (none
+  in 1,500). Only those levels changed: 4 of the 180 fingerprinted, one drawing and one view.
+- **The order of the feature sets** above: still to say.
 
 ## 6. The groundwork
 

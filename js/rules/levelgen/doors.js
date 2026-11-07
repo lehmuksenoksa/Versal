@@ -29,8 +29,28 @@ export function placeDoors(g) {
 }
 
 // Secret doors (none by the start room); returns them.
-export function hideSecretDoors(g, startRoom) {
-  const { S, rng, tiles, idx, doors, mustDoor } = g;
+// (`from`: where the player arrives; `goals`: the way on, the stairs down or
+// the king's seat. None is made secret that would leave the way on only
+// through it: yours, "Way out shouldn't require a secret door.")
+export function hideSecretDoors(g, startRoom, from = null, goals = []) {
+  const { S, rng, tiles, idx, doors, mustDoor, W, H, blocks } = g;
+  // (Can the player walk from `from` to every goal, as the level is now?)
+  const wayOn = () => {
+    if (!from) return true;
+    const got = new Uint8Array(W * H), q = [idx(from.x, from.y)];
+    got[q[0]] = 1;
+    for (let i = 0; i < q.length; i++) {
+      const x = q[i] % W, y = (q[i] - x) / W;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx, ny = y + dy, n = idx(nx, ny);
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H || got[n] || tiles[n] !== T.FLOOR || blocks.has(n)) continue;
+          got[n] = 1;
+          q.push(n);
+        }
+    }
+    return goals.every((s) => got[idx(s.x, s.y)]);
+  };
   // Secret doors: their squares rock until found (each { x, y, dx, dy }, as
   // a door).
   // (Not by the start room; and not one of two doors in a row through a
@@ -39,8 +59,12 @@ export function hideSecretDoors(g, startRoom) {
   const doorSq = new Set(doors.map((d) => idx(d.x, d.y))), paired = (d) => doorSq.has(idx(d.x + d.dx, d.y + d.dy)) || doorSq.has(idx(d.x - d.dx, d.y - d.dy));
   for (const d of [...doors]) {
     if (mustDoor.has([d.x, d.y].join()) || inStart(d.x + d.dx, d.y + d.dy) || inStart(d.x - d.dx, d.y - d.dy) || paired(d) || !rng.chance(S.secretDoors)) continue;
-    doors.splice(doors.indexOf(d), 1);
     tiles[idx(d.x, d.y)] = T.ROCK;
+    if (!wayOn()) {
+      tiles[idx(d.x, d.y)] = T.FLOOR;
+      continue;
+    }
+    doors.splice(doors.indexOf(d), 1);
     secrets.push({ x: d.x, y: d.y, dx: d.dx, dy: d.dy });
   }
   return secrets;

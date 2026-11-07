@@ -66,7 +66,7 @@ export function levelProblems(w) {
 }
 
 // Does the way on (the stairs down, or the king) need a secret door found?
-// Not wrong, but counted: a level the player can only leave by searching.
+// Never allowed (yours: "Way out shouldn't require a secret door").
 export function needsSecret(w) {
   const L = w.level, W = L.w, goal = L.stairsDown ?? w.actors.find((a) => a.kind === "king");
   if (!goal) return false;
@@ -87,11 +87,11 @@ export function needsSecret(w) {
 // The checks for one depth, `seeds` levels of it.
 export function checkDepth(depth, seeds) {
   const problems = [];
-  let secret = 0;
   for (let seed = 1; seed <= seeds; seed++) {
     const w = levelFor(seed, depth);
     for (const b of levelProblems(w)) problems.push(`seed ${seed}, depth ${depth}: ${b}`);
-    if (needsSecret(w)) secret++;
+    // (The way on never only through a secret door: yours.)
+    if (needsSecret(w)) problems.push(`seed ${seed}, depth ${depth}: the way on only through a secret door`);
   }
-  return { problems, secret };
+  return { problems };
 }

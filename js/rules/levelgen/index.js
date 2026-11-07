@@ -116,7 +116,10 @@ function tryAreas(S, rng) {
     rubble[idx(st.x, st.y)] = 0;
     features.push({ type: "stairs", dir, x: st.x + 0.5, y: st.y + 0.5 });
   }
-  const secrets = hideSecretDoors(g, startRoom);
+  // (Where the player arrives, and the way on: the stairs down, or the
+  // king's seat.)
+  const arrive = stairsUp ?? stairsAt(startRoom), goals = [stairsDown, throneRoom && (throneRoom.seat ?? { x: throneRoom.cx, y: throneRoom.cy })].filter(Boolean);
+  const secrets = hideSecretDoors(g, startRoom, arrive, goals);
   // Which room each square is part of: its floor (`roomOf`; corridors and
   // passages, none: -1), and the rock bordering it, its walls, columns and
   // formations among them (`wallOf`: the room of the floor next to it).

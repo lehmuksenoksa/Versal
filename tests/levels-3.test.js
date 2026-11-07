@@ -8,8 +8,6 @@ import { checkDepth } from "./support/levelcheck.js";
 const SEEDS = Number(process.env.LEVEL_SEEDS ?? 100);
 
 test(`depth 3: ${SEEDS} levels sound`, () => {
-  const { problems, secret } = checkDepth(3, SEEDS);
+  const { problems } = checkDepth(3, SEEDS);
   assert.deepEqual(problems.slice(0, 10), [], `${problems.length} problems`);
-  // (For the record: levels whose way on needs a secret door found.)
-  console.log(`depth 3: ${secret} of ${SEEDS} levels need a secret door found on the way on`);
 });
