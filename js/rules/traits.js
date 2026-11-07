@@ -1,8 +1,8 @@
 // Things with character (round 3): a word before a thing's, a monster's or a
 // room's name that changes how it plays, shown wherever the name is. Chosen
 // in mockups/choices.html (round 3); the full table in PROPOSALS.md.
-import TRAITS from "./content/traits.json" with { type: "json" };
-import TUNING from "./content/tuning.json" with { type: "json" };
+import TRAITS from "../content/traits.json" with { type: "json" };
+import TUNING from "../content/tuning.json" with { type: "json" };
 
 // The traits and their numbers are data: js/content/traits.json (with notes
 // on what each field does) and js/content/tuning.json.

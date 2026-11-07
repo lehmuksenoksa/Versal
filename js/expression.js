@@ -14,10 +14,10 @@
 
 import { renderMap, drawPaper, drawDoors, wallLine } from "./maprender.js";
 import { hatchSolid, inkRecorded, nearestSeeds, STROKES_SEED } from "./hatching.js";
-import { RNG } from "./rng.js";
-import { Walls, postOutline, shadeOutline } from "./sightline.js";
-import { LIGHTS } from "./levelgen.js";
-import { T } from "./dungeon.js";
+import { RNG } from "./rules/rng.js";
+import { Walls, postOutline, shadeOutline } from "./rules/sightline.js";
+import { LIGHTS } from "./rules/levelgen.js";
+import { T } from "./rules/dungeon.js";
 
 export const EXPRESSION_DEFAULTS = {
   // Sight: clear out to `sight` tiles, then fading out with distance over

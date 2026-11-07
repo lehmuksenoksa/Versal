@@ -3,7 +3,7 @@
 // room can be reached.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { World } from "../js/world.js";
+import { World } from "../js/rules/world.js";
 import { reachable } from "./support/checks.js";
 
 const SEEDS = Number(process.env.LEVEL_SEEDS ?? 25);

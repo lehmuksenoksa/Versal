@@ -3,8 +3,8 @@
 // (shortcuts dug where two places close through the rock are far apart on
 // foot). Works on a level from levelgen.js, in place; no DOM, so it runs in
 // node too (the measuring script in the scratchpad).
-import { T } from "../js/dungeon.js";
-import { AREAS } from "../js/levelgen.js";
+import { T } from "../js/rules/dungeon.js";
+import { AREAS } from "../js/rules/levelgen.js";
 
 const DUNGEON = AREAS.indexOf("dungeon"), CAVERN = AREAS.indexOf("cavern"), HALLS = AREAS.indexOf("halls");
 const N4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];

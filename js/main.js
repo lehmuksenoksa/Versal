@@ -1,9 +1,9 @@
 // Bootstrap: fonts, input and the animation loop.
 
-import { World, ITEMS, MONSTERS, monName } from "./world.js";
+import { World, ITEMS, MONSTERS, monName } from "./rules/world.js";
 import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
-import { wayTo, wayToExplore, WALK } from "./travel.js";
+import { wayTo, wayToExplore, WALK } from "./rules/travel.js";
 import { tipFor, tipHtml } from "./tips.js";
 
 const KEYS = {

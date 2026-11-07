@@ -17,12 +17,12 @@ import { T, isWalkable, isOpen, DIRS8 } from "./dungeon.js";
 import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
-import { roomAt, roomName } from "./tips.js";
+import { roomAt, roomName } from "../tips.js";
 import { MURKY, CURSE, ITEM_TRAITS, ITEM_TRAIT, GOBLINS, MONSTER_BLEED, MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
-import MONSTERS_DATA from "./content/monsters.json" with { type: "json" };
-import ITEMS_DATA from "./content/items.json" with { type: "json" };
-import PLACES_DATA from "./content/places.json" with { type: "json" };
-import TUNING from "./content/tuning.json" with { type: "json" };
+import MONSTERS_DATA from "../content/monsters.json" with { type: "json" };
+import ITEMS_DATA from "../content/items.json" with { type: "json" };
+import PLACES_DATA from "../content/places.json" with { type: "json" };
+import TUNING from "../content/tuning.json" with { type: "json" };
 
 // The game's content and its dials, as data (js/content/*.json, each with
 // notes on its fields): the kinds of monster, the things to be found, the

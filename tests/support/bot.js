@@ -5,10 +5,10 @@
 // to play well, only to touch every part of the rules, the same way every
 // time for the same seed: its own choices use its own dice, never the
 // world's, so it doesn't change what the world does.
-import { World } from "../../js/world.js";
-import { RNG } from "../../js/rng.js";
-import { wayTo, wayToExplore } from "../../js/travel.js";
-import { DIRS8 } from "../../js/dungeon.js";
+import { World } from "../../js/rules/world.js";
+import { RNG } from "../../js/rules/rng.js";
+import { wayTo, wayToExplore } from "../../js/rules/travel.js";
+import { DIRS8 } from "../../js/rules/dungeon.js";
 
 const LEVEL_STEPS = 700;
 

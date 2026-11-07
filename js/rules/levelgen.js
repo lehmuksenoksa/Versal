@@ -32,8 +32,8 @@
 
 import { T, carveCave } from "./dungeon.js";
 import { computeFov } from "./fov.js";
-import LIGHTS_DATA from "./content/lights.json" with { type: "json" };
-import TUNING from "./content/tuning.json" with { type: "json" };
+import LIGHTS_DATA from "../content/lights.json" with { type: "json" };
+import TUNING from "../content/tuning.json" with { type: "json" };
 
 export const AREAS = ["dungeon", "cavern", "collapsed", "halls"];
 const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;

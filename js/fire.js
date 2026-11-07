@@ -3,7 +3,7 @@
 // Redrawn eight times a second, each drawing a little different, as a hand-
 // animated fire on twos.
 
-import { RNG } from "./rng.js";
+import { RNG } from "./rules/rng.js";
 
 const COLOURS = { outer: "#f2541b", mid: "#fba52b", heart: "#fde48e" };
 const SIZE = 1.45, RATE = 8;

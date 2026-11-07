@@ -1,5 +1,5 @@
 // Checks on a world's state that must always hold, and on a level's shape.
-import { isWalkable, DIRS8 } from "../../js/dungeon.js";
+import { isWalkable, DIRS8 } from "../../js/rules/dungeon.js";
 
 // Things that must be true after every step of play. Returns a list of what
 // isn't (empty when all is well).

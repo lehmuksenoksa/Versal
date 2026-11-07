@@ -3,8 +3,8 @@
 // or two out of it) in the shape the map drawing takes (see maprender.js),
 // drawn with the furniture the game already draws. A prototype only: the
 // game's halls are made in levelgen.js (hewHall).
-import { T, carveCave } from "../js/dungeon.js";
-import { RNG } from "../js/rng.js";
+import { T, carveCave } from "../js/rules/dungeon.js";
+import { RNG } from "../js/rules/rng.js";
 
 // A little value noise (cells `cell` squares across), for hewing walls in
 // runs rather than square by square.

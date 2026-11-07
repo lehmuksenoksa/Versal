@@ -3,8 +3,8 @@
 // in caves), a grey shadow cast down and to the right, bold stone hatching in
 // the rock (see hatching.js), a hand-drawn floor grid and pencilled room numbers.
 
-import { T, isOpen } from "./dungeon.js";
-import { RNG } from "./rng.js";
+import { T, isOpen } from "./rules/dungeon.js";
+import { RNG } from "./rules/rng.js";
 import { hatchRock, hatchSettings, distanceTransform } from "./hatching.js";
 
 // A brazier's bowl, its radius in squares (render.js draws its near rim

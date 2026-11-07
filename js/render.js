@@ -5,8 +5,8 @@
 import { INK, PAPER, BRAZIER_BOWL } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire, drawCandle } from "./fire.js";
-import { LIGHTS } from "./levelgen.js";
-import { isOpen } from "./dungeon.js";
+import { LIGHTS } from "./rules/levelgen.js";
+import { isOpen } from "./rules/dungeon.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };

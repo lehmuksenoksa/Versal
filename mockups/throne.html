@@ -15,11 +15,11 @@
 <body>
 <script type="module">
 import { renderMap, pen, INK, PAPER } from "../js/maprender.js";
-import { generateAreas } from "../js/levelgen.js";
-import { PLACES } from "../js/world.js";
-import { RNG } from "../js/rng.js";
+import { generateAreas } from "../js/rules/levelgen.js";
+import { PLACES } from "../js/rules/world.js";
+import { RNG } from "../js/rules/rng.js";
 import { drawFire } from "../js/fire.js";
-import { LIGHTS } from "../js/levelgen.js";
+import { LIGHTS } from "../js/rules/levelgen.js";
 
 const q = new URLSearchParams(location.search), TS = 32;
 // A level 3 whose throne room lies wide (so the apse is at its end).

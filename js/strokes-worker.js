@@ -4,7 +4,7 @@
 // sent back without copying.
 
 import { hatchSolid, STROKES_SEED } from "./hatching.js";
-import { RNG } from "./rng.js";
+import { RNG } from "./rules/rng.js";
 import { strokeBuffers } from "./gpu.js";
 
 self.onmessage = ({ data: { id, W, H, TS, seed } }) => {
