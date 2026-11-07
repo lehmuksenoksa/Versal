@@ -134,3 +134,30 @@ Neither should win; the player should keep choosing.
 - **Resting always stops when the player sees a monster** (yours, round 40: "Resting should always
   stop when player sees a monster").
 - The rest of resting (how long, what it heals, where it's safe) is still to discuss.
+
+## 8. Lights as items (round 42, then chat)
+
+Yours: "Player should be able to set down all lights, even the lamp, which should be an item as
+well, just one they start with." Candles are "to be carried as well, a smaller light. Lasts longer
+than torch."
+
+| Carried light | Lit within | Dim, a band of | Fuel |
+|---|---|---|---|
+| The lamp | 5 | 4 | Oil, refilled from flasks (section 3) |
+| A torch | 4 (test) | 3 (test) | Burns out, about 200 turns (test); can't be refilled |
+| A candle | 1¼ | 2¾ | Burns a long time, about 600 turns (test); can't be refilled |
+
+- **The player starts with the lamp and some oil;** torches and candles are found.
+- **One light at a time** (yours): the lamp control (`stealth.md`, section 2) becomes **the player's
+  light, on or off**, for whichever light they hold. Changing which light is held takes a turn.
+- **Setting a light down:** any light, lit or not, takes a turn, silently. A lit one keeps burning
+  its own fuel where it stands, as a light source (section 1). Picking it up takes a turn.
+- **A light set down is a lure:** a light appearing where there was none is, to monsters who see
+  it, a glimpse, as a light going out is (section 5): suspicious, their guess at the light.
+- **Monsters do nothing to a light set down** (yours: "for now, let's do nothing"): they come to look
+  and leave it be. Taking it or putting it out: later.
+- **Relighting:** a torch or candle put out keeps the fuel it has left, and can be relit from the
+  light the player holds.
+- **Dread:** any light counts (section 4): a candle's light stops dread rising, but the player is
+  lit and sees little.
+- **Losing the lamp:** set down and left, it stays there.
