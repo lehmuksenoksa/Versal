@@ -1,0 +1,98 @@
+{
+  "about": "The things to be found. Read by js/world.js.",
+  "fields": {
+    "glyph": "the letter drawn",
+    "name": "its name",
+    "plural": "its name for more than one",
+    "cat": "weapon, armour or potion",
+    "dmg": "a weapon's blow [least, most]",
+    "hands": "a weapon's hands",
+    "slot": "where armour is worn",
+    "def": "how much of a blow armour takes off, at most",
+    "heal": "how much a potion heals [least, most]",
+    "ink": "its colour",
+    "depth": "how deep it's first found",
+    "weight": "how common"
+  },
+  "items": {
+    "dagger": {
+      "glyph": ")",
+      "name": "dagger",
+      "cat": "weapon",
+      "dmg": [
+        1,
+        4
+      ],
+      "hands": 1,
+      "depth": 1,
+      "weight": 3
+    },
+    "sword": {
+      "glyph": ")",
+      "name": "sword",
+      "cat": "weapon",
+      "dmg": [
+        2,
+        6
+      ],
+      "hands": 1,
+      "depth": 1,
+      "weight": 2
+    },
+    "axe": {
+      "glyph": ")",
+      "name": "axe",
+      "cat": "weapon",
+      "dmg": [
+        3,
+        7
+      ],
+      "hands": 1,
+      "depth": 2,
+      "weight": 2
+    },
+    "warhammer": {
+      "glyph": ")",
+      "name": "warhammer",
+      "cat": "weapon",
+      "dmg": [
+        4,
+        10
+      ],
+      "hands": 2,
+      "depth": 2,
+      "weight": 1
+    },
+    "helmet": {
+      "glyph": "[",
+      "name": "helmet",
+      "cat": "armour",
+      "slot": "head",
+      "def": 1,
+      "depth": 1,
+      "weight": 2
+    },
+    "chainmail": {
+      "glyph": "[",
+      "name": "chainmail",
+      "cat": "armour",
+      "slot": "body",
+      "def": 2,
+      "depth": 1,
+      "weight": 1
+    },
+    "potion": {
+      "glyph": "!",
+      "name": "potion of healing",
+      "plural": "potions of healing",
+      "cat": "potion",
+      "heal": [
+        7,
+        12
+      ],
+      "ink": "#c4402e",
+      "depth": 1,
+      "weight": 5
+    }
+  }
+}

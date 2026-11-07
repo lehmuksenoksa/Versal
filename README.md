@@ -183,6 +183,7 @@ in the browser console.
 | `mockups/letters.html` | Every letter, the player's and the monsters' to come, under each band of light, with each one's outline (paper or ink) and switches for how letters take the light. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
+| `js/content/*.json` | The game's content as data: monsters, items, traits, lights, places, and `tuning.json`, the rules' own numbers. Each file notes what its fields mean. |
 | `js/world.js` | The player, goblin packs and their milling about (no step diagonally past a post); blows, health, ailments, healing and death; the message log; field of view and memory. |
 | `js/ui.js` | The words around the map: the place and newest messages, the sidebar (sheet, equipment, inventory, look), the messages drawer, the help, the name and end-of-run pages. |
 | `js/plates.js` | The torn plates under the corner, the sidebar and the drawer: the chosen polylines, their edges drawn as cave walls and torn. |

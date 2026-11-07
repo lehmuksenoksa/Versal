@@ -183,3 +183,16 @@ come feature set by feature set, after.
   repository).
 - **A bug found and fixed before the lock was recorded:** a patrolling cultist could step onto the
   square of a monster standing at its goal (two on one square). It now waits (`world.js`, `patrol`).
+
+**R2, content out: done.**
+- `js/content/`: `monsters.json`, `items.json`, `traits.json`, `lights.json`, `places.json`,
+  `tuning.json`, each with an `about` and notes on its fields (the code's comments carried over).
+  Written from today's values by a one-off script, so every number came across exactly.
+- `world.js`, `traits.js` and `levelgen.js` read them (`import ... with { type: "json" }`); their
+  exported names are unchanged, so nothing else had to change.
+- **The behaviour lock passes:** the game plays exactly as before. The browser check passes; the
+  mockups that read the moved numbers still load.
+- **New test, the content check** (`tests/content.test.js`): every file parses; monsters, items,
+  lights and places have the fields they need; places and traits point only at things that exist.
+- Noted, not caused by R2 and not fixed: `mockups/expression.html` has an error on load (a control it
+  looks for is missing).

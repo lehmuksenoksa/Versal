@@ -1,0 +1,40 @@
+{
+  "about": "The kinds of light. Read by js/levelgen.js, js/render.js, js/expression.js.",
+  "fields": {
+    "full": "how far it lights fully, squares from the flame",
+    "dim": "then a dim band this wide",
+    "dark": "then a faint band this wide (counted as dark, shown faintly)",
+    "flame": "the flame's size, times a campfire's",
+    "foot": "where it stands, squares below the light's middle"
+  },
+  "lights": {
+    "fire": {
+      "full": 3.5,
+      "dim": 2,
+      "dark": 2,
+      "flame": 1.15,
+      "foot": 0.1
+    },
+    "brazier": {
+      "full": 2.5,
+      "dim": 1.5,
+      "dark": 1.5,
+      "flame": 1,
+      "foot": 0.17
+    },
+    "lantern": {
+      "full": 2,
+      "dim": 1,
+      "dark": 1.5,
+      "flame": 0,
+      "foot": 0
+    },
+    "candles": {
+      "full": 1.25,
+      "dim": 1.25,
+      "dark": 1.5,
+      "flame": 0.2,
+      "foot": -0.05
+    }
+  }
+}

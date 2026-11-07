@@ -32,70 +32,23 @@
 
 import { T, carveCave } from "./dungeon.js";
 import { computeFov } from "./fov.js";
+import LIGHTS_DATA from "./content/lights.json" with { type: "json" };
+import TUNING from "./content/tuning.json" with { type: "json" };
 
 export const AREAS = ["dungeon", "cavern", "collapsed", "halls"];
 const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
 
-// The kinds of light, by `kind` in `lights`: how far each lights, in squares
-// from the flame, in bands (full, then dim, then dark: as the player's lamp);
-// the game counts the full and dim bands as lit (no sneaking there), and the
-// dark one as dark, though the map shows it faintly. And the flame's size
-// (times a campfire's) and where it stands (squares below the light's
-// middle). Campfires in caves; braziers (a bowl of coals on legs, in the way)
-// in rooms and the king's halls; candles on an
-// altar (three candles, each a small flame).
-export const LIGHTS = {
-  fire: { full: 3.5, dim: 2, dark: 2, flame: 1.15, foot: 0.1 },
-  // (A brazier's flame burning down inside its bowl, as chosen in
-  // mockups/choices.html; the bowl's near rim drawn over its foot.)
-  brazier: { full: 2.5, dim: 1.5, dark: 1.5, flame: 1.0, foot: 0.17 },
-  // (A cultist's lantern, carried: light, no flame; as far as it shows them
-  // the player, as chosen in mockups/choices.html.)
-  lantern: { full: 2, dim: 1, dark: 1.5, flame: 0, foot: 0 },
-  candles: { full: 1.25, dim: 1.25, dark: 1.5, flame: 0.2, foot: -0.05 },
-};
+// The kinds of light, by `kind` in `lights` (js/content/lights.json): how far
+// each lights, in bands (full, then dim, then a faint band counted as dark),
+// the flame's size and where it stands. Campfires in caves; braziers in rooms
+// and the king's halls; candles on an altar.
+export const LIGHTS = LIGHTS_DATA.lights;
 
-export const LEVELGEN_DEFAULTS = {
-  // The level's size in squares (what is generated); and a margin of solid
-  // rock added all round it, so no floor comes within that many squares of
-  // the map's edge (where the drawing of the rock round it would be cut).
-  w: 96, h: 64, margin: 4,
-  // How many regions, and how likely each type is.
-  regions: 3, dungeon: 2, cavern: 2, collapsed: 1,
-  // Rooms per 100 squares of level; extra corridors (making loops) per room;
-  // the share of doorways into clean dungeon rooms that have a door, and of
-  // those doors left open.
-  density: 0.4, loops: 0.2, doors: 0.8, openDoors: 0.25,
-  // More ways round, after those: long loops (corridors between rooms near
-  // as the crow flies but far apart on foot, rooms with one way in first),
-  // then shortcuts (short tunnels through the rock where two places a few
-  // squares apart are a long walk apart); how many of each, at most.
-  longLoops: 3, shortcuts: 4,
-  // Caves' size; rock formations per 30 squares of a big cave, and their
-  // largest size in squares; cavern passages' width in squares.
-  caveSize: 1, formations: 1.5, formationSize: 10, passage: 2,
-  // Dungeon rooms: how likely each kind is (where it fits); how furnished
-  // they are; how often a room has recesses in its walls; how often a big
-  // room has columns holding it up.
-  plain: 3, store: 1, gallery: 1, hall: 0.7, crypt: 0.7, jail: 0.7, barracks: 0.7, dining: 0.7, shrine: 0.5,
-  decor: 0.6, recesses: 0.4, supports: 0.7,
-  // In collapsed regions: the share of built rooms fallen in; and how much
-  // rubble lies about. On cave floors, the rubble and grit (more along the
-  // walls).
-  collapse: 0.6, rubble: 0.5, caveRubble: 0.5,
-  // Lights: how often a big cave has a campfire, a dungeon room is lit, and
-  // a square of dungeon corridor starts a lit stretch.
-  campfires: 0.4, litRooms: 0.3, litCorridors: 0.02,
-  // How often one of the king's halls has braziers down its middle (the
-  // throne room always).
-  litHalls: 0.6,
-  // How often a door is a secret one (none into the start room, nor jail
-  // cells): rock to look at until the player finds it.
-  secretDoors: 0.15,
-  // A level changing from one kind of ground to another (names from AREAS),
-  // null for regions; its stairs; a throne room.
-  from: null, to: null, up: false, down: false, throne: false,
-};
+// The generator's settings (tuning.json, `levelgen`): the level's size and
+// margin; regions; rooms, loops and doors; long loops and shortcuts; caves;
+// dungeon room kinds, furnishing, recesses and columns; collapse and rubble;
+// lights; secret doors; and a level's ground, stairs and throne.
+export const LEVELGEN_DEFAULTS = TUNING.levelgen;
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 

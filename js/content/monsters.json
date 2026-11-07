@@ -1,0 +1,283 @@
+{
+  "about": "The kinds of monster. Read by js/world.js. Their letter and name; how they fight and move; their ways.",
+  "fields": {
+    "glyph": "the letter drawn",
+    "name": "its name",
+    "speed": "moves for each of the player's",
+    "wander": "how much it wanders when milling about (the goblins' 1)",
+    "pack": "how many to a pack [least, most]",
+    "crypt": "how many to a pack in a crypt",
+    "hp": "hit points [least, most]",
+    "hit": "the chance its blow hits",
+    "dmg": "its blow's damage [least, most]",
+    "verb": "what its blow is called",
+    "bleeds": "a hard blow of its makes the player bleed",
+    "poison": "the chance its blow poisons",
+    "xp": "experience for a kill",
+    "undead": "never flees",
+    "drops": "sometimes drops what it carried",
+    "erratic": "flits about, even chasing",
+    "lurker": "waits still till roused",
+    "relentless": "never gives up a chase",
+    "patrol": "its pack walks from room to room",
+    "lantern": "carries a lantern: lights the player near it",
+    "regen": "heals, hit points a turn",
+    "boss": "killing it wins"
+  },
+  "monsters": {
+    "goblin": {
+      "glyph": "g",
+      "name": "goblin",
+      "speed": 0.75,
+      "wander": 1,
+      "pack": [
+        4,
+        7
+      ],
+      "hp": [
+        3,
+        6
+      ],
+      "hit": 0.7,
+      "dmg": [
+        1,
+        3
+      ],
+      "verb": "hits",
+      "xp": 5,
+      "drops": true
+    },
+    "warrior": {
+      "glyph": "g",
+      "name": "goblin warrior",
+      "speed": 0.75,
+      "wander": 0.8,
+      "pack": [
+        1,
+        1
+      ],
+      "hp": [
+        10,
+        14
+      ],
+      "hit": 0.75,
+      "dmg": [
+        2,
+        5
+      ],
+      "verb": "hacks",
+      "bleeds": true,
+      "xp": 15,
+      "drops": true
+    },
+    "king": {
+      "glyph": "G",
+      "name": "goblin king",
+      "speed": 0.7,
+      "wander": 0,
+      "pack": [
+        1,
+        1
+      ],
+      "hp": [
+        60,
+        70
+      ],
+      "hit": 0.8,
+      "dmg": [
+        4,
+        10
+      ],
+      "verb": "smites",
+      "bleeds": true,
+      "xp": 100,
+      "lurker": true,
+      "boss": true
+    },
+    "skeleton": {
+      "glyph": "z",
+      "name": "skeleton",
+      "speed": 0.4,
+      "wander": 0.3,
+      "pack": [
+        1,
+        2
+      ],
+      "crypt": [
+        4,
+        7
+      ],
+      "hp": [
+        8,
+        12
+      ],
+      "hit": 0.65,
+      "dmg": [
+        1,
+        4
+      ],
+      "verb": "claws",
+      "bleeds": true,
+      "xp": 8,
+      "undead": true
+    },
+    "zombie": {
+      "glyph": "z",
+      "name": "zombie",
+      "speed": 0.35,
+      "wander": 0.2,
+      "pack": [
+        1,
+        3
+      ],
+      "hp": [
+        10,
+        14
+      ],
+      "hit": 0.6,
+      "dmg": [
+        2,
+        5
+      ],
+      "verb": "batters",
+      "xp": 10,
+      "undead": true,
+      "relentless": true
+    },
+    "rat": {
+      "glyph": "r",
+      "name": "rat",
+      "speed": 1.2,
+      "wander": 1.2,
+      "pack": [
+        3,
+        6
+      ],
+      "hp": [
+        1,
+        3
+      ],
+      "hit": 0.6,
+      "dmg": [
+        1,
+        2
+      ],
+      "verb": "bites",
+      "xp": 2
+    },
+    "bat": {
+      "glyph": "b",
+      "name": "bat",
+      "speed": 1.5,
+      "wander": 2,
+      "pack": [
+        2,
+        4
+      ],
+      "hp": [
+        2,
+        3
+      ],
+      "hit": 0.55,
+      "dmg": [
+        1,
+        2
+      ],
+      "verb": "bites",
+      "xp": 3,
+      "erratic": true
+    },
+    "spider": {
+      "glyph": "s",
+      "name": "spider",
+      "speed": 0.9,
+      "wander": 0,
+      "pack": [
+        1,
+        2
+      ],
+      "hp": [
+        3,
+        5
+      ],
+      "hit": 0.7,
+      "dmg": [
+        1,
+        3
+      ],
+      "verb": "bites",
+      "poison": 0.4,
+      "xp": 6,
+      "lurker": true
+    },
+    "giant": {
+      "glyph": "S",
+      "name": "giant spider",
+      "speed": 0.8,
+      "wander": 0,
+      "pack": [
+        1,
+        1
+      ],
+      "hp": [
+        12,
+        16
+      ],
+      "hit": 0.7,
+      "dmg": [
+        2,
+        6
+      ],
+      "verb": "bites",
+      "poison": 0.6,
+      "xp": 25,
+      "lurker": true
+    },
+    "cultist": {
+      "glyph": "h",
+      "name": "cultist",
+      "speed": 0.9,
+      "wander": 0.5,
+      "pack": [
+        2,
+        4
+      ],
+      "hp": [
+        6,
+        9
+      ],
+      "hit": 0.7,
+      "dmg": [
+        1,
+        5
+      ],
+      "verb": "stabs",
+      "xp": 12,
+      "drops": true,
+      "patrol": true,
+      "lantern": true
+    },
+    "troll": {
+      "glyph": "T",
+      "name": "troll",
+      "speed": 0.6,
+      "wander": 0.4,
+      "pack": [
+        1,
+        1
+      ],
+      "hp": [
+        30,
+        40
+      ],
+      "hit": 0.65,
+      "dmg": [
+        4,
+        9
+      ],
+      "verb": "smashes",
+      "xp": 40,
+      "regen": 0.5
+    }
+  }
+}

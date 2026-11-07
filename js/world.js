@@ -19,59 +19,20 @@ import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
 import { roomAt, roomName } from "./tips.js";
 import { MURKY, CURSE, ITEM_TRAITS, ITEM_TRAIT, GOBLINS, MONSTER_BLEED, MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
+import MONSTERS_DATA from "./content/monsters.json" with { type: "json" };
+import ITEMS_DATA from "./content/items.json" with { type: "json" };
+import PLACES_DATA from "./content/places.json" with { type: "json" };
+import TUNING from "./content/tuning.json" with { type: "json" };
 
-// The kinds of monster: their letters and names; their speed (moves for each
-// of the player's); how much they wander when milling about (the goblins' 1);
-// how many to a pack (in a crypt, `crypt`); their hit points; their blows
-// (the chance to hit, the damage, what it's called, whether a hard one makes
-// the player bleed, the chance it poisons); experience for a kill. And their
-// ways: `undead` (never flee), `drops` (sometimes what they carried),
-// `erratic` (flits about, even chasing), `lurker` (waits still till roused),
-// `relentless` (never gives up a chase), `patrol` (its pack walks from room
-// to room), `lantern` (carries one: lights the player near it), `regen` (heals,
-// hit points a turn), `boss` (killing it wins).
-export const MONSTERS = {
-  goblin: { glyph: "g", name: "goblin", speed: 0.75, wander: 1, pack: [4, 7], hp: [3, 6], hit: 0.7, dmg: [1, 3], verb: "hits", xp: 5, drops: true },
-  warrior: { glyph: "g", name: "goblin warrior", speed: 0.75, wander: 0.8, pack: [1, 1], hp: [10, 14], hit: 0.75, dmg: [2, 5], verb: "hacks", bleeds: true, xp: 15, drops: true },
-  king: { glyph: "G", name: "goblin king", speed: 0.7, wander: 0, pack: [1, 1], hp: [60, 70], hit: 0.8, dmg: [4, 10], verb: "smites", bleeds: true, xp: 100, lurker: true, boss: true },
-  // (Skeletons slow and still, alone or in pairs but in crypts, and tough.)
-  skeleton: { glyph: "z", name: "skeleton", speed: 0.4, wander: 0.3, pack: [1, 2], crypt: [4, 7], hp: [8, 12], hit: 0.65, dmg: [1, 4], verb: "claws", bleeds: true, xp: 8, undead: true },
-  zombie: { glyph: "z", name: "zombie", speed: 0.35, wander: 0.2, pack: [1, 3], hp: [10, 14], hit: 0.6, dmg: [2, 5], verb: "batters", xp: 10, undead: true, relentless: true },
-  rat: { glyph: "r", name: "rat", speed: 1.2, wander: 1.2, pack: [3, 6], hp: [1, 3], hit: 0.6, dmg: [1, 2], verb: "bites", xp: 2 },
-  bat: { glyph: "b", name: "bat", speed: 1.5, wander: 2, pack: [2, 4], hp: [2, 3], hit: 0.55, dmg: [1, 2], verb: "bites", xp: 3, erratic: true },
-  spider: { glyph: "s", name: "spider", speed: 0.9, wander: 0, pack: [1, 2], hp: [3, 5], hit: 0.7, dmg: [1, 3], verb: "bites", poison: 0.4, xp: 6, lurker: true },
-  giant: { glyph: "S", name: "giant spider", speed: 0.8, wander: 0, pack: [1, 1], hp: [12, 16], hit: 0.7, dmg: [2, 6], verb: "bites", poison: 0.6, xp: 25, lurker: true },
-  cultist: { glyph: "h", name: "cultist", speed: 0.9, wander: 0.5, pack: [2, 4], hp: [6, 9], hit: 0.7, dmg: [1, 5], verb: "stabs", xp: 12, drops: true, patrol: true, lantern: true },
-  troll: { glyph: "T", name: "troll", speed: 0.6, wander: 0.4, pack: [1, 1], hp: [30, 40], hit: 0.65, dmg: [4, 9], verb: "smashes", xp: 40, regen: 0.5 },
-};
-
-// The player: hit points to start with; the blow (until there are weapons, as
-// a dagger's); healing, a hit point every so many turns, resting and not.
-export const PLAYER = { hp: 20, attack: [1, 4], heal: 20, restHeal: 5, cls: "Adventurer" };
-// Experience: what each level needs, all told; each new level gives `hp` more
-// hit points, and every other one +1 to the blow.
-export const LEVELS = { xp: [0, 20, 50, 100, 170, 260, 380, 530, 720, 950], hp: 4 };
-// Ailments: bleeding, from a hard blow (`at` damage or more, by a monster
-// that `bleeds`, half the time), a hit point a turn for a few turns, stopped by
-// resting; poison, a hit point every `every` turns for a while.
-export const AILMENTS = { bleeding: { at: 3, chance: 0.5, turns: [3, 5], every: 1 }, poisoned: { turns: [12, 20], every: 3 } };
-// The things to be found: weapons (their blow, and how many hands), armour
-// (where it's worn, how much of a blow it takes off: up to its `def`), and
-// potions (how much they heal); each with its letter and ink, how deep it's
-// first found (`depth`) and how common (`weight`).
-export const ITEMS = {
-  dagger: { glyph: ")", name: "dagger", cat: "weapon", dmg: [1, 4], hands: 1, depth: 1, weight: 3 },
-  sword: { glyph: ")", name: "sword", cat: "weapon", dmg: [2, 6], hands: 1, depth: 1, weight: 2 },
-  axe: { glyph: ")", name: "axe", cat: "weapon", dmg: [3, 7], hands: 1, depth: 2, weight: 2 },
-  warhammer: { glyph: ")", name: "warhammer", cat: "weapon", dmg: [4, 10], hands: 2, depth: 2, weight: 1 },
-  helmet: { glyph: "[", name: "helmet", cat: "armour", slot: "head", def: 1, depth: 1, weight: 2 },
-  chainmail: { glyph: "[", name: "chainmail", cat: "armour", slot: "body", def: 2, depth: 1, weight: 1 },
-  potion: { glyph: "!", name: "potion of healing", plural: "potions of healing", cat: "potion", heal: [7, 12], ink: "#c4402e", depth: 1, weight: 5 },
-};
-// How many things the player can carry (worn and held aside); bare hands' blow;
-// how many things lie about a level (for every so many rooms); the chance a
-// goblin drops something when it falls.
-export const PACK = { size: 10, letters: "abcdefghij", bare: [1, 2], perRooms: 2.5, drop: 0.15 };
+// The game's content and its dials, as data (js/content/*.json, each with
+// notes on its fields): the kinds of monster, the things to be found, the
+// places, and the rules' numbers (tuning.json).
+export const MONSTERS = MONSTERS_DATA.monsters;
+export const PLAYER = TUNING.player;
+export const LEVELS = TUNING.levels;
+export const AILMENTS = TUNING.ailments;
+export const ITEMS = ITEMS_DATA.items;
+export const PACK = TUNING.pack;
 export const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 // A thing's name, its trait first ("a rusty sword", "3 strong potions of
 // healing").
@@ -94,51 +55,20 @@ const itemTrait = (it) => (it?.trait && ITEM_TRAITS[it.trait]) || {};
 // What a monster's trait does.
 const monTrait = (g) => (g.trait && MONSTER_TRAITS[g.trait]) || {};
 
-// The places, one a level: each changes from one kind of ground to the next
-// across it (levelgen.js), with its monsters by the ground of their room
-// (kinds and how common), and how often a goblin pack is led by a warrior.
-export const PLACES = [
-  { name: "The old crypts", depth: 1, from: "dungeon", to: "collapsed", down: true, warriors: 0,
-    spawns: { dungeon: { skeleton: 3, cultist: 2, rat: 1, zombie: 1, spider: 1 }, collapsed: { rat: 3, zombie: 2, spider: 2, skeleton: 1 } } },
-  { name: "The broken deep", depth: 2, from: "collapsed", to: "cavern", up: true, down: true, warriors: 0.25,
-    spawns: { collapsed: { rat: 3, zombie: 2, spider: 2 }, cavern: { goblin: 4, bat: 2, spider: 1, giant: 1 } } },
-  { name: "The goblin warrens", depth: 3, from: "cavern", to: "halls", up: true, throne: true, warriors: 0.8,
-    spawns: { cavern: { goblin: 3, spider: 1, giant: 1, troll: 1, bat: 1 }, halls: { goblin: 4, troll: 1 } } },
-];
+// The places, one a level (js/content/places.json).
+export const PLACES = PLACES_DATA.places;
 export const PLACE = PLACES[0];
 
-// How the monsters (goblins and skeletons alike) behave.
-const GOBLIN = {
-  // An aggressive pack gives up after this many turns not seeing the player,
-  // or at once when they are further off than `lose`.
-  calm: 8, lose: 14,
-  // The chance a chasing goblin gets a shut door open.
-  door: 0.5,
-};
-// The player's chance to hit with a whack; a blow at a monster that hasn't
-// noticed them (asleep or unaware) always lands, `sneak` times as hard.
-const WHACK = 0.75, SNEAK_HIT = 3;
-// Time: a step with the lamp out takes this many turns.
-export const SNEAK_STEP = 1.5;
-// Noticing the player. A monster's awareness (0 to 1) grows each turn it sees
-// or hears them, and ebbs (`ebb` a turn) while it doesn't; at a third it's
-// suspicious and comes to look (?), full, alarmed, and its pack chases (!);
-// a suspicious one calms below `calm`. Seen: within `seeLit` squares where
-// the player is lit (the lamp, or a lit place), `seeDark` where not; `sight`
-// (`sightDark` in the dark) a turn up close, less further off, `near`
-// (`nearDark`) more next to them. Heard: each
-// noise (`NOISE`, how far it carries and how loud) a turn, `hear` at most.
-// How much a monster sees and hears by its state (`SENSES`); one that has fled
-// is `wary` (more).
-export const AWARE = { seeLit: 8, seeDark: 2.5, sight: 0.45, near: 0.4, sightDark: 0.22, nearDark: 0.1, hear: 0.35, ebb: 0.05, calm: 0.2, wary: 1.5 };
-const NOISE = { step: [3, 0.5], sneak: [1, 0.3], blow: [8, 1], door: [4, 0.6] };
-const SENSES = { sleeping: { see: 0, hear: 0.5 }, neutral: { see: 0.6, hear: 0.6 }, suspicious: { see: 1.2, hear: 1.2 } };
-// Morale: when no more than half a pack is left the rest flee (the undead
-// never) for a while, then regroup, wary.
-const MORALE = { flee: [10, 18] };
-// The chance, each turn, of the player seeing a secret door in sight: next
-// to it, and two squares off; searching (a turn spent looking), and not.
-const SECRET = { near: 0.15, far: 0.06, searchNear: 0.6, searchFar: 0.3, reach: 2 };
+// How the monsters chase, the player's blow, sneaking, noticing, noise,
+// morale, secret doors: tuning.json.
+const GOBLIN = TUNING.chase;
+const WHACK = TUNING.whack, SNEAK_HIT = TUNING.sneakHit;
+export const SNEAK_STEP = TUNING.sneakStep;
+export const AWARE = TUNING.aware;
+const NOISE = TUNING.noise;
+const SENSES = TUNING.senses;
+const MORALE = TUNING.morale;
+const SECRET = TUNING.secret;
 
 export const ordinal = (n) => `${n}${["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
 

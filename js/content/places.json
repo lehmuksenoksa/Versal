@@ -1,0 +1,72 @@
+{
+  "about": "The places, one a level: each changes from one kind of ground to the next across it (js/levelgen.js), with its monsters by the ground of their room (kinds and how common), and how often a goblin pack is led by a warrior. Read by js/world.js.",
+  "places": [
+    {
+      "name": "The old crypts",
+      "depth": 1,
+      "from": "dungeon",
+      "to": "collapsed",
+      "down": true,
+      "warriors": 0,
+      "spawns": {
+        "dungeon": {
+          "skeleton": 3,
+          "cultist": 2,
+          "rat": 1,
+          "zombie": 1,
+          "spider": 1
+        },
+        "collapsed": {
+          "rat": 3,
+          "zombie": 2,
+          "spider": 2,
+          "skeleton": 1
+        }
+      }
+    },
+    {
+      "name": "The broken deep",
+      "depth": 2,
+      "from": "collapsed",
+      "to": "cavern",
+      "up": true,
+      "down": true,
+      "warriors": 0.25,
+      "spawns": {
+        "collapsed": {
+          "rat": 3,
+          "zombie": 2,
+          "spider": 2
+        },
+        "cavern": {
+          "goblin": 4,
+          "bat": 2,
+          "spider": 1,
+          "giant": 1
+        }
+      }
+    },
+    {
+      "name": "The goblin warrens",
+      "depth": 3,
+      "from": "cavern",
+      "to": "halls",
+      "up": true,
+      "throne": true,
+      "warriors": 0.8,
+      "spawns": {
+        "cavern": {
+          "goblin": 3,
+          "spider": 1,
+          "giant": 1,
+          "troll": 1,
+          "bat": 1
+        },
+        "halls": {
+          "goblin": 4,
+          "troll": 1
+        }
+      }
+    }
+  ]
+}
