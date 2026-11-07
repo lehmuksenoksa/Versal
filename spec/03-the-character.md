@@ -90,3 +90,24 @@ drawn from a pool, in families; rare or strong ones deeper.
   endurance (grit, dread).
 - **The pool after round 40:** 31 perks in four families (`round40-perks.md`, the catalogue's
   `perks`). No weapon-specific perks. **Slice 1 builds 15** (listed in `round40-perks.md`).
+
+## Experience and levelling up in slice 1 (agreed in chat: "Yes, for now. We might need to come back to this.")
+
+Built on rounds 2 and 3 (experience from going deeper and finding things out; kills a little; a
+perk and +1 to an attribute each level up; all attributes start equal).
+
+| Source | When it counts |
+|---|---|
+| New ground | Each square first seen: a little |
+| A new depth | Reaching it the first time: a lot |
+| Secrets | A secret door, a hidden cache or a trap found |
+| Sneaking past | Once per monster: within the reach where it would hear a walking step or see the player in its light, and it stayed calm |
+| Sneak attacks | Each one |
+| Kills | A little, by the monster's Depth |
+| The chieftain | A lot, killed or got past |
+
+- "Notes read" waits (no notes or bookshelves in slice 1).
+- **About 7 level ups by the end of depth 6;** thresholds set by the maths (`10-building-it.md`).
+- **Grit, brawn and cunning start at 3** (test).
+- **A level up heals a little,** not fully.
+- To come back to: the weighting (it decides how people play: exploration large, kills small).
