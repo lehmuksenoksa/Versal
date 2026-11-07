@@ -1,5 +1,15 @@
 # Round 44: slice 1's encounter templates
 
+**Answered.**
+- **Templates, step A:** goblin camp, goblin guard post, goblin patrol, goblins asleep, the
+  chieftain's camp; crypt sleepers; lantern patrol; rat nest, spider webs, giant spider's lair; a
+  fight already going (yes, against my no: discussed in chat).
+- **Templates, step B:** shaman's fire, beasthound and handler, bone guard, bandit hideout.
+- **Not templates but loose monsters** (your notes): the wolf pack ("Loose monster group"), the
+  restless dead, the thief, bats, creeping things, and the lone wanderer (which is the loose rule
+  itself). They're placed by the loose-monster rule (`06-levels.md`).
+- **Out:** the cult rite.
+
 How slice 1's monsters are placed (`06-levels.md`): a template is a group, its states, its place and
 its light, and what comes with it (traps, a gong, something worth the risk). The depth's mix picks
 who; the template, how. Groups are spaced by escalation and paced across the level (`06-levels.md`).

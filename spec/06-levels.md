@@ -37,6 +37,8 @@ What stealth needs from a map (my proposal, agreed as the basis):
   like to see single monsters and groups as well, in the loose ones."): monsters from the depth's
   mix placed outside any template, in loose rooms and corridors, singly and in small groups, mostly
   calm or wandering. They count in the spacing by escalation like any group. How many: to test.
+  Round 44 made some loose rather than templates: the wolf pack, the restless dead (a zombie), the
+  thief, bats, creeping things (a centipede, a snake).
 - Other ways monsters come into play (in chat): templates and loose monsters when a level is made;
   "from deeper, now and then" is part of the depth's mix. Later: arrivals over time (with resting),
   following the player down the stairs (a maybe), breeding, raising and summoning.
