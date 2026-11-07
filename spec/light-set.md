@@ -65,3 +65,24 @@ torch on that wall square. Tests first: a torch's bands along a corridor; on 100
 in a corridor, against a wall, in built ground, apart. **Its look: an iron bracket and a small
 flame, a stand-in**: its look to choose, with the "?" (L2). The levels' fingerprints, the run lock,
 the outlines, the map drawings and the view re-recorded; the deep run passes.
+
+**L4, the view draws the rules' light, part one: done.**
+- **The same numbers:** the view's lamp from `lights.json` (it was its own settings: lit 4½, dim 1,
+  faint 2; now as the rules: lit to 5, dim 1, faint 3, reaching 9), counted from the player's
+  square's middle as the rules count, and the lamp-out glow as far as the player's dark sight.
+- **A check that the two agree** (`tests/browser/light.mjs`, `npm run test:light`): at 24 moments in
+  play (the bot's moves in the page, the lamp lit and out, 4 seeds), every square both have in sight
+  the same light, dark, dim or lit, in the rules and as drawn (the view's light at its middle; with
+  the lamp out, the level's lights and lanterns only: the glow round the player is their dark
+  sight, not light). Squares within 0.35 of a band's end left out (the view's edges are ragged on
+  purpose). 408 squares agree; widening the view's lamp by one fails it.
+- **What it found, and how the two now agree:** a torch's light was cast from beside its wall by the
+  view and from its whole square by the rules: both now cast it from the square's middle, its flame
+  drawn on the wall. And the rules' casting is generous at walls' corners: a lit square now needs a
+  clear line from the light to its middle too, a line grazing a wall's corner by no more than a
+  tenth of a square getting past (as the view's walls, drawn along the squares' edges, let it).
+- **Found by the deep run:** the bot pacing a 15-square loop round a monster in sight now that lit
+  places are seen from afar: it goes for the monster when it's back on one square four times in
+  sixty steps.
+- The levels' fingerprints, the run lock, the map drawings and the view re-recorded; the deep run
+  passes (slower: about 6 minutes, light now checking a line for each square it reaches).

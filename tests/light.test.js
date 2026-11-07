@@ -216,7 +216,7 @@ test("the tips say only what can be told", async () => {
 // ---- Torches on the walls (L3) ----
 
 test("a torch on a corridor's wall lights its bands along the corridor", () => {
-  // (Its light just off the wall, in the square: full 1½, dim 1, faint 1½.)
+  // (Its light from the middle of its square: full 1½, dim 1, faint 1½.)
   const w = scenario(`
     ###############
     #@...........##
@@ -238,7 +238,7 @@ test("torches stand on corridors' walls in built ground, apart (100 levels)", as
     const mine = (L.lights ?? []).filter((l) => l.kind === "torch");
     torches += mine.length;
     for (const t of mine) {
-      const x = Math.floor(t.x), y = Math.floor(t.y), f = L.features.find((f) => f.type === "torch" && f.x === t.x && f.y === t.y);
+      const x = Math.floor(t.x), y = Math.floor(t.y), f = L.features.find((f) => f.type === "torch" && f.x === t.fx && f.y === t.fy);
       assert.ok(f, `seed ${seed}: a torch's light with no torch`);
       assert.ok(w.walkable(x, y) && L.roomOf[y * W + x] < 0, `seed ${seed}: a torch not in a corridor at ${x},${y}`);
       assert.ok(!w.walkable(x + f.dx, y + f.dy), `seed ${seed}: a torch not against a wall at ${x},${y}`);

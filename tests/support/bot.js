@@ -94,13 +94,16 @@ export function botStep(w, r, mem) {
   // (A door just come through: now and then, shut behind.)
   if (mem.door && w.canCloseDoor() && r.chance(0.3) && w.act({ do: "close" })) { mem.door = false; return "close"; }
   mem.door = !!w.doorAt(p.x, p.y);
-  // (Going round in a small loop, back and forth or round four squares (a
-  // monster in sight closing the way one step and out of sight the next, so
-  // the way turns back): go for the nearest monster in sight instead.)
-  const trail = (mem.trail ??= []);
-  trail.push(p.y * w.level.w + p.x);
-  if (trail.length > 12) trail.shift();
-  if (trail.length === 12 && new Set(trail).size <= 4 && !mem.hunt) {
+  // (Going round in a loop, back and forth or round four squares (a monster
+  // in sight closing the way one step and out of sight the next, so the way
+  // turns back): go for the nearest monster in sight instead.)
+  // (Or round a longer one: back on the same square four times in sixty
+  // steps.)
+  const trail = (mem.trail ??= []), here = p.y * w.level.w + p.x;
+  trail.push(here);
+  if (trail.length > 60) trail.shift();
+  const recent = trail.slice(-12), again = trail.filter((k) => k === here).length;
+  if (((recent.length === 12 && new Set(recent).size <= 4) || again >= 4) && !mem.hunt) {
     const seen = w.actors.filter((a) => a !== p && w.isVisible(a.x, a.y)).sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
     if (seen.length) mem.hunt = { g: seen[0], steps: 0 };
   }

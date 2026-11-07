@@ -21,6 +21,9 @@ import { hypot } from "./dmath.js";
 
 export const DARK = 0, DIM = 1, LIT = 2;
 
+// How far into a wall's corner a light's line may cut and still get past.
+const GRAZE = 0.1;
+
 export class Light {
   constructor(world) {
     this.w = world;
@@ -64,9 +67,24 @@ export class Light {
     const w = this.w, L = w.level, W = L.w, B = LIGHTS[kind] ?? LIGHTS.fire, far = B.full + B.dim + B.dark;
     const opaque = (x, y) => !isOpen(w.tileAt(x, y)) || w.shut(x, y);
     const near = shades.filter((pts) => pts.some(([x, y]) => Math.abs(x - lx) <= far + 1 && Math.abs(y - ly) <= far + 1));
+    // (A clear line from the light to the square's middle too: the casting
+    // is generous at walls' corners, where the light's line would cut
+    // across one; the view draws by the line. A line grazing a wall's corner,
+    // no more than a tenth of a square into it, gets past, as in the view,
+    // whose walls are drawn along the squares' edges.)
+    const clear = (cx, cy, x, y) => {
+      const d = hypot(cx - lx, cy - ly), n = Math.ceil(d / 0.05);
+      for (let i = 1; i < n; i++) {
+        const px = lx + ((cx - lx) * i) / n, py = ly + ((cy - ly) * i) / n, sx = Math.floor(px), sy = Math.floor(py);
+        if ((sx === x && sy === y) || !opaque(sx, sy)) continue;
+        if (Math.min(px - sx, sx + 1 - px, py - sy, sy + 1 - py) > GRAZE) return false;
+      }
+      return true;
+    };
     computeFov(L.w, L.h, Math.floor(lx), Math.floor(ly), far, opaque, (x, y) => {
       const cx = x + 0.5, cy = y + 0.5, d = hypot(cx - lx, cy - ly);
       if (d > far) return;
+      if (!opaque(x, y) && !clear(cx, cy, x, y)) return;
       if (near.some((pts) => !insideOutline(cx, cy, pts) && crossesOutline(lx, ly, cx, cy, pts))) return;
       const v = d <= B.full ? LIT : DIM, k = y * W + x;
       if (v > map[k]) map[k] = v;

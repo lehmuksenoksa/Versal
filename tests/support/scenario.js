@@ -60,7 +60,7 @@ export function levelFromText(text, { legend = {}, rooms = [] } = {}) {
   for (const t of torches) {
     const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]].find(([dx, dy]) => isOpen(tiles[idx(t.x + dx, t.y + dy)] ?? 0)) ?? [0, -1];
     const lx = t.x + dx + 0.5 - dx * 0.35, ly = t.y + dy + 0.5 - dy * 0.35;
-    lights.push({ x: lx, y: ly, kind: "torch" });
+    lights.push({ x: t.x + dx + 0.5, y: t.y + dy + 0.5, kind: "torch", fx: lx, fy: ly });
     features.push({ type: "torch", x: lx, y: ly, dx: -dx, dy: -dy });
   }
   // (A level below, come to by its stairs, needs no @.)

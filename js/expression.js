@@ -2377,9 +2377,16 @@ export class Expression {
   // light it is in, if in sight.
   lightAt(x, y) {
     const S = this.S, from = this.lightFrom ?? [-1e9, -1e9], TS = this.TS, r = (S.lightFull - 0.5 + S.lightDim) * TS;
-    const d = Math.hypot(x - from[0], y - from[1]), i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);
-    const lamp = this.lampLevel && i >= 0 && k >= 0 && i < this.mw && k < this.mh ? this.lampLevel[k * this.mw + i] : 0;
-    return Math.max(lamp, d < (S.lightFull - 0.5) * TS ? 1 : d < r ? S.dimLevel : d < this.lightOut() * TS ? S.darkLevel : 0) * this.inSight(x, y);
+    const d = Math.hypot(x - from[0], y - from[1]);
+    return Math.max(this.sourcesAt(x, y), d < (S.lightFull - 0.5) * TS ? 1 : d < r ? S.dimLevel : d < this.lightOut() * TS ? S.darkLevel : 0) * this.inSight(x, y);
+  }
+
+  // The level's lights and the lanterns at the map point (x, y), 0 to 1,
+  // without the player's own (lit, the lamp; out, the faint glow of their
+  // dark sight, which is sight, not light).
+  sourcesAt(x, y) {
+    const i = Math.floor((x * R) / this.TS), k = Math.floor((y * R) / this.TS);
+    return this.lampLevel && i >= 0 && k >= 0 && i < this.mw && k < this.mh ? this.lampLevel[k * this.mw + i] : 0;
   }
 
 

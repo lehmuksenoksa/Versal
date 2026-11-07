@@ -9,6 +9,7 @@
     "test:maps": "node tests/browser/maps.mjs",
     "maps:record": "node tests/browser/maps.mjs --record",
     "test:view": "node tests/browser/view.mjs",
+    "test:light": "node tests/browser/light.mjs",
     "view:record": "node tests/browser/view.mjs --record",
     "test:deep": "LEVEL_SEEDS=500 BOT_RUNS=250 node --test \"tests/*.test.js\"",
     "lock:record": "node tools/record-lock.mjs",

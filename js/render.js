@@ -8,7 +8,7 @@ import { drawFire, drawCandle } from "./fire.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { isOpen } from "./rules/dungeon.js";
 import { KNOW } from "./rules/senses.js";
-import { feature } from "./rules/content.js";
+import { feature, PLAYER } from "./rules/content.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
@@ -196,10 +196,14 @@ const BACKGROUND = new Set(["move", "chatter", "growl", "snore"]);
 const FLY = { dist: 1.75 };
 const FIGHT_MS = 2000;
 
-// The lamp out: sight close round the player, only the dark band of light.
-// (No full band at all: its ragged edge would light a speck round the
-// player.)
-const SNEAK = { sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: 3.5, flicker: 0, flickerSize: 0, warmth: 0 };
+// The lamp lit, as the rules have it (lights.json, `lamp`): the view counts
+// its bands from the player's square's middle less half a square, so its
+// lit band one half more, ending where the rules' does.
+const LAMP = { lightFull: LIGHTS.lamp.full + 0.5, lightDim: LIGHTS.lamp.dim, lightDark: LIGHTS.lamp.dark };
+// The lamp out: sight close round the player, only a faint band as far as
+// their dark sight (tuning.json, `player.darkSight`). (No full band at all:
+// its ragged edge would light a speck round the player.)
+const SNEAK = { sightFade: 0.5, lightFull: 0, lightDim: 0, lightDark: PLAYER.darkSight + 0.5, flicker: 0, flickerSize: 0, warmth: 0 };
 
 // Goblins also dart about inside their tile, so a pack looks like it is milling.
 // [range in tiles, min and max seconds between darts]
@@ -272,7 +276,8 @@ export class Renderer {
       this.setVis(SNEAK);
     } else if (!w.sneaking && this.dark) this.setVis(this.lit ?? Object.fromEntries(Object.keys(SNEAK).map((k) => [k, EXPRESSION_DEFAULTS[k]])));
     this.dark = w.sneaking;
-    this.setVis({ sight: w.sight });
+    // (The lamp's bands, lit, the rules' own.)
+    this.setVis(w.sneaking ? { sight: w.sight } : { ...LAMP, sight: w.sight });
   }
 
   // The player has gone to another level (from `prev`): its map drawing,
@@ -832,7 +837,8 @@ export class Renderer {
     // flame (LIGHTS); candles each a small flame seen from above in its glow.
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
-      const B = LIGHTS[l.kind] ?? LIGHTS.fire, x = l.x * TS, y = l.y * TS, target = this.inSight(x, y) ? 1 : 0;
+      // (A torch's flame on the wall, its light from its square: `fx`, `fy`.)
+      const B = LIGHTS[l.kind] ?? LIGHTS.fire, x = (l.fx ?? l.x) * TS, y = (l.fy ?? l.y) * TS, target = this.inSight(l.x * TS, l.y * TS) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
       this.fires.set(l, a);
       if (!(a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS)) return;

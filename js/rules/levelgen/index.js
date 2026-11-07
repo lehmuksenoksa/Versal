@@ -51,6 +51,7 @@ function withMargin(L, m) {
     o.x += m;
     o.y += m;
     if (o.cx !== undefined) { o.cx += m; o.cy += m; }
+    if (o.fx !== undefined) { o.fx += m; o.fy += m; }
     if (o.seat) move(o.seat);
   };
   for (const key of ["rooms", "doors", "secrets", "features", "posts", "recesses", "lights", "regions"]) for (const o of L[key] ?? []) move(o);

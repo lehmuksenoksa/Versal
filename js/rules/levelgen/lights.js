@@ -63,7 +63,8 @@ export function placeLights(g) {
 // Torches on the walls of the corridors in built ground (spec/light-set.md,
 // L3): the corridors' only light. About one for every `torchEvery` squares
 // of corridor, none nearer another than `torchApart`; each against a wall of
-// its square, its light just off the wall.
+// its square, its flame just off the wall (`fx`, `fy`), its light from the
+// middle of the square (as the rules and the view both cast it).
 function placeTorches(g) {
   const { S, rng, W, H, tiles, cave, area, roomOf, idx, lights, features, doors, blocks } = g;
   const doorSq = new Set(doors.map((d) => idx(d.x, d.y)));
@@ -80,7 +81,7 @@ function placeTorches(g) {
     if (placed.length >= want) break;
     if (placed.some((p) => Math.max(Math.abs(p.x - s.x), Math.abs(p.y - s.y)) < S.torchApart)) continue;
     const [dx, dy] = rng.pick(s.walls), lx = s.x + 0.5 + dx * 0.35, ly = s.y + 0.5 + dy * 0.35;
-    lights.push({ x: lx, y: ly, kind: "torch" });
+    lights.push({ x: s.x + 0.5, y: s.y + 0.5, kind: "torch", fx: lx, fy: ly });
     features.push({ type: "torch", x: lx, y: ly, dx, dy });
     placed.push(s);
   }
