@@ -5,6 +5,7 @@
 import { T } from "../dungeon.js";
 import { computeFov } from "../fov.js";
 import { LIGHTS } from "./make.js";
+import { sin, cos, hypot } from "../dmath.js";
 
 // Lights: campfires in big caves, in the middle of open floor (each
 // { x, y, kind: "fire" } in squares, and a thing drawn; the fire's square
@@ -117,14 +118,14 @@ export function placeLights(g) {
       }
       // (Up to the fire: to a dark square no more than three from it.)
       let up = 9999;
-      for (const w of ways) up = Math.min(up, darkest(L, w, (x, y, L) => !L[k(x, y)] && Math.hypot(x - fx, y - fy) <= 3));
+      for (const w of ways) up = Math.min(up, darkest(L, w, (x, y, L) => !L[k(x, y)] && hypot(x - fx, y - fy) <= 3));
       return Math.max(0, across - 1) + Math.max(0, up - 1);
     };
     let now = score();
     for (let placed = 0; placed < 4 && now > 0; placed++) {
       let best = null;
       for (let t = 0; t < 40; t++) {
-        const a = rng.range(0, 2 * Math.PI), d = rng.range(2, 3.8), cx = Math.round(fx + Math.cos(a) * d), cy = Math.round(fy + Math.sin(a) * d);
+        const a = rng.range(0, 2 * Math.PI), d = rng.range(2, 3.8), cx = Math.round(fx + cos(a) * d), cy = Math.round(fy + sin(a) * d);
         const clump = [[cx, cy]], want = rng.int(1, 3);
         for (let g = 0; g < want * 4 && clump.length < want; g++) {
           const [bx, by] = rng.pick(clump), [dx, dy] = rng.pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
@@ -157,7 +158,7 @@ export function placeLights(g) {
       for (let x = r.x + 1; x < r.x + r.w - 1; x++) {
         let open = true;
         for (let dy = -1; dy <= 1 && open; dy++) for (let dx = -1; dx <= 1 && open; dx++) open = floorAt(x + dx, y + dy);
-        const d = Math.hypot(x - r.cx, y - r.cy);
+        const d = hypot(x - r.cx, y - r.cy);
         if (open && (!best || d < best.d)) best = { x, y, d };
       }
     if (!best || best.d > 3) continue;

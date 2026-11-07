@@ -3,6 +3,7 @@
 
 import { T, carveCave } from "../dungeon.js";
 import { CAVERN, HALL_KINDS, fits } from "./make.js";
+import { sin, cos, hypot } from "../dmath.js";
 
 export function chooseHallKinds(g) {
   const { rng, rooms, across, S, to, typeAt } = g;
@@ -228,7 +229,7 @@ export const PLANS = {
     h.cut = true;
     h.rough = 0;
     h.inside = (u, v) => ((u - cu) / (len / 2)) ** 2 + ((v - mid) / (wide / 2)) ** 2 < 0.97;
-    for (let k = 0; k < 8; k++) cols.push([cu + Math.cos((k * Math.PI) / 4) * len * 0.29, mid + Math.sin((k * Math.PI) / 4) * wide * 0.29]);
+    for (let k = 0; k < 8; k++) cols.push([cu + cos((k * Math.PI) / 4) * len * 0.29, mid + sin((k * Math.PI) / 4) * wide * 0.29]);
     lamps.push([cu, mid]);
   },
 
@@ -295,7 +296,7 @@ export const PLANS = {
     h.flip = along ? r.cx < W / 2 : r.cy < H / 2;
     const ar = Math.max(3, Math.floor((wide - 1) / 2) - 1), un = len - 1 - ar;
     h.rough = 0.45;
-    h.inside = (u, v) => u <= un || Math.hypot(u - un, v - mid) < ar + 0.6;
+    h.inside = (u, v) => u <= un || hypot(u - un, v - mid) < ar + 0.6;
     for (const u of rows(un + 1)) cols.push([u, off], [u, wide - 1 - off]);
     const us = un + Math.max(1, ar - 2);
     r.seat = (([x, y]) => ({ x, y }))(at(us, mid));

@@ -8,6 +8,7 @@ import { generateAreas, AREAS, LIGHTS } from "./levelgen.js";
 import { computeFov } from "./fov.js";
 import { postOutline, crossesOutline, shadeOutline, insideOutline } from "./sightline.js";
 import { RNG, seedFor } from "./rng.js";
+import { hypot } from "./dmath.js";
 
 export const levelMethods = {
   // A level: its map, its monsters and things, what's been seen of it.
@@ -80,7 +81,7 @@ export const levelMethods = {
       const near = shades.filter((pts) => pts.some(([x, y]) => Math.abs(x - l.x) <= far + 1 && Math.abs(y - l.y) <= far + 1));
       computeFov(level.w, level.h, Math.floor(l.x), Math.floor(l.y), far, opaque, (x, y) => {
         const cx = x + 0.5, cy = y + 0.5;
-        if (Math.hypot(cx - l.x, cy - l.y) > far) return;
+        if (hypot(cx - l.x, cy - l.y) > far) return;
         if (near.some((pts) => !insideOutline(cx, cy, pts) && crossesOutline(l.x, l.y, cx, cy, pts))) return;
         this.lit[y * W + x] = 1;
       });

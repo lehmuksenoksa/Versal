@@ -12,6 +12,7 @@ import { digCorridors } from "./corridors.js";
 import { furnishRooms } from "./furnish.js";
 import { placeDoors, hideSecretDoors } from "./doors.js";
 import { placeLights, hallBraziers } from "./lights.js";
+import { hypot } from "../dmath.js";
 
 export { AREAS, LIGHTS, LEVELGEN_DEFAULTS } from "./make.js";
 
@@ -95,7 +96,7 @@ function tryAreas(S, rng) {
     for (let y = r.y; y < r.y + r.h; y++)
       for (let x = r.x; x < r.x + r.w; x++) {
         if (!floorAt(x, y) || blocks.has(idx(x, y))) continue;
-        const d = Math.hypot(x - r.cx, y - r.cy);
+        const d = hypot(x - r.cx, y - r.cy);
         if (!best || d < best.d) best = { x, y, d };
       }
     return best && { x: best.x, y: best.y };

@@ -75,9 +75,9 @@ have arriving at each depth: a guess to read against, not measured.
 
 | Depth | Rooms | Monsters (each kind, on average) | Things (on average) |
 |---|---:|---|---|
-| 1, The old crypts | 25.0 | rat 10.4, skeleton 3.5, zombie 2.9, cultist 2.6, spider 2.4 | potion 4.1, dagger 2.4, sword 1.8, helmet 1.6, chainmail 0.8 |
-| 2, The broken deep | 25.0 | goblin 23.1, rat 6.2, zombie 1.7, spider 1.7, warrior 1.3, bat 0.7, giant 0.1 | potion 2.9, dagger 2.0, axe 1.4, helmet 1.3, sword 1.3, warhammer 0.7, chainmail 0.6 |
-| 3, The goblin warrens | 20.9 | goblin 29.4, warrior 9.1, king 1.0, rat 1.0, bat 0.5, troll 0.4, spider 0.3, giant 0.2 | potion 2.9, dagger 1.6, helmet 1.1, axe 1.1, sword 1.0, chainmail 0.6, warhammer 0.5 |
+| 1, The old crypts | 25.0 | rat 11.0, zombie 3.2, cultist 3.1, skeleton 3.1, spider 2.2 | potion 4.1, dagger 2.2, helmet 1.7, sword 1.6, chainmail 0.9 |
+| 2, The broken deep | 25.0 | goblin 24.5, rat 5.8, zombie 1.8, spider 1.4, warrior 1.0, bat 0.5, giant 0.1 | potion 3.0, dagger 1.8, axe 1.4, sword 1.4, helmet 1.2, chainmail 0.6, warhammer 0.6 |
+| 3, The goblin warrens | 20.8 | goblin 28.8, warrior 8.9, rat 1.1, king 1.0, bat 0.6, troll 0.4, spider 0.4, giant 0.1 | potion 2.9, dagger 1.6, sword 1.2, axe 1.0, helmet 1.0, warhammer 0.6, chainmail 0.4 |
 
 ## Clearing a level, and what it gives
 
@@ -88,9 +88,9 @@ it, and the level it brings the player to, all told from the start.
 
 | Depth | Packs | XP | Level after | Lost, one at a time | Lost, in the open | Potions heal | Rest to heal the rest (one at a time) |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 1 (dagger, level 1, no armour) | 8.3 | 123 | 4 | 53.9 | 136.1 | 38.9 | 75 turns |
-| 2 (sword, level 3, chainmail) | 8.1 | 178 | 6 | 19.5 | 81.8 | 27.3 | 0 turns |
-| 3 (axe, level 5, chainmail and helmet) | 8.4 | 409 | 8 | 67.7 | 125.0 | 27.6 | 200 turns |
+| 1 (dagger, level 1, no armour) | 8.3 | 130 | 4 | 57.6 | 146.7 | 39.3 | 91 turns |
+| 2 (sword, level 3, chainmail) | 8.1 | 180 | 6 | 19.2 | 85.8 | 28.4 | 0 turns |
+| 3 (axe, level 5, chainmail and helmet) | 8.3 | 404 | 8 | 67.7 | 124.4 | 27.2 | 203 turns |
 
 (Resting heals a hit point every 5 turns; walking about, every 20. A potion heals 7–12.
 Murky potions, traits on things and monsters, and rooms' traits are left out of these sums.)

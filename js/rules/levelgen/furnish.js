@@ -5,6 +5,7 @@
 import { T } from "../dungeon.js";
 import { DUNGEON, ROOM_KINDS, fits } from "./make.js";
 import { FURNISH, LIGHTINGS } from "./kinds.js";
+import { hypot } from "../dmath.js";
 
 export function furnishRooms(g) {
   const { S, rng, W, H, tiles, roomOf, idx, floorAt, rooms } = g;
@@ -150,7 +151,7 @@ export function furnishRooms(g) {
         for (let y = r.y; y < r.y + r.h; y++)
           for (let x = r.x; x < r.x + r.w; x++) {
             if (!free(x, y) || !floorAt(x, y)) continue;
-            const [px, py] = at(a, b), d = Math.hypot(x - px, y - py);
+            const [px, py] = at(a, b), d = hypot(x - px, y - py);
             if (d <= 1.5 && (!bestSq || d < bestSq.d)) bestSq = { x, y, d };
           }
         if (!bestSq) return;

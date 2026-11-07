@@ -5,6 +5,7 @@ import { monTrait } from "./traits.js";
 import { T, isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
 import { crossesOutline } from "./sightline.js";
+import { hypot } from "./dmath.js";
 
 export const senseMethods = {
   // What the player can see: squares in sight past the walls and shut doors
@@ -91,7 +92,7 @@ export const senseMethods = {
       let gain = 0;
       if (sees && d <= far) gain += ((lit ? AWARE.sight : AWARE.sightDark) * (1 - (d - 1) / far) + (d <= 1 ? (lit ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
       for (const n of this.noises ?? []) {
-        const dn = Math.hypot(g.x - n.x, g.y - n.y);
+        const dn = hypot(g.x - n.x, g.y - n.y);
         if (dn <= n.r) gain += AWARE.hear * n.loud * (1 - dn / (n.r + 1)) * S.hear * (T.hear ?? 1);
       }
       if (g.wary) gain *= AWARE.wary;
@@ -138,7 +139,7 @@ export const senseMethods = {
   // sight, or one chasing within earshot?
   disturbed() {
     const p = this.player;
-    return this.monsterInSight() || this.actors.some((a) => a !== p && (a.state === "aggressive" || a.state === "suspicious") && Math.hypot(a.x - p.x, a.y - p.y) <= 12);
+    return this.monsterInSight() || this.actors.some((a) => a !== p && (a.state === "aggressive" || a.state === "suspicious") && hypot(a.x - p.x, a.y - p.y) <= 12);
   },
 
   // A noise the player makes, at their square, heard this turn.

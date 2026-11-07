@@ -3,6 +3,7 @@
 
 import { T } from "../dungeon.js";
 import { DUNGEON, CAVERN, COLLAPSED, HALLS, clamp, valueNoise } from "./make.js";
+import { sin, hypot } from "../dmath.js";
 
 export function digCorridors(g) {
   const { S, rng, W, H, n, tiles, cave, rubble, roomOf, idx, floorAt, typeAt, rooms, hallColumns } = g;
@@ -53,17 +54,17 @@ export function digCorridors(g) {
     const across = rng.chance(0.5);
     // Where a cavern passage heads: points along a bend from a to b (one bow
     // to the side, at least two squares, and each point jittered), then b.
-    const len = Math.hypot(b.cx - a.cx, b.cy - a.cy), px = -(b.cy - a.cy) / (len || 1), py = (b.cx - a.cx) / (len || 1);
+    const len = hypot(b.cx - a.cx, b.cy - a.cy), px = -(b.cy - a.cy) / (len || 1), py = (b.cx - a.cx) / (len || 1);
     const bow = (rng.chance(0.5) ? 1 : -1) * Math.max(2, rng.range(0.1, 0.35) * len), ways = [];
     for (let i = 1, m = Math.max(2, Math.round(len / 4)); i < m; i++) {
-      const t = i / m, off = bow * Math.sin(Math.PI * t) + rng.range(-1.5, 1.5);
+      const t = i / m, off = bow * sin(Math.PI * t) + rng.range(-1.5, 1.5);
       ways.push([clamp(Math.round(a.cx + (b.cx - a.cx) * t + px * off), 2, W - 3), clamp(Math.round(a.cy + (b.cy - a.cy) * t + py * off), 2, H - 3)]);
     }
     ways.push([b.cx, b.cy]);
     for (let step = 0; step < 4 * (W + H) && (x !== b.cx || y !== b.cy); step++) {
       const t = typeAt(x, y);
       // (Points nearly reached, or already passed along the way, are done.)
-      while (ways.length > 1 && (Math.hypot(ways[0][0] - x, ways[0][1] - y) < 2 || (ways[0][0] - x) * (b.cx - a.cx) + (ways[0][1] - y) * (b.cy - a.cy) < 0)) ways.shift();
+      while (ways.length > 1 && (hypot(ways[0][0] - x, ways[0][1] - y) < 2 || (ways[0][0] - x) * (b.cx - a.cx) + (ways[0][1] - y) * (b.cy - a.cy) < 0)) ways.shift();
       let dx = Math.sign(b.cx - x), dy = Math.sign(b.cy - y);
       if (t === CAVERN) {
         // Toward the next point, across or down in proportion to how far

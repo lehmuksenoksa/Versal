@@ -276,3 +276,12 @@ the keys left as they are):
   names used and never declared, declared and never used, declared twice, in the game, the tests
   and the tools. It found 10 leftovers (imports and a constant never used), now gone; a typo made on
   purpose (`levle`) is caught.
+- **The same maths everywhere: done.** `js/rules/dmath.js`: the rules' own sine, cosine, arctangent
+  and distance (fdlibm's polynomials; only adding, multiplying, dividing, rounding and the square
+  root, which every engine must work out alike), within about 1e-13 of the engine's own over 40,000
+  values (`tests/dmath.test.js`); a test that the rules use no maths an engine works out its own way.
+  **What changed:** in this engine, nothing you can see: not a square, a thing, a light, a door or
+  stairs in 180 levels, the bot's runs the same, the map drawings and the view the same. Only
+  numbers kept to the last digit moved (the distances the regions keep, the outlines'
+  corners), so the levels' fingerprints and the outlines were recorded again. What it gives: the
+  same seed makes the same level, and a replay plays the same, in every browser.

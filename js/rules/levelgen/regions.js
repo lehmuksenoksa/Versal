@@ -2,6 +2,7 @@
 // a level changing from one kind to another across it (`from`, `to`).
 
 import { AREAS, DUNGEON, clamp, valueNoise } from "./make.js";
+import { hypot } from "../dmath.js";
 
 export function layRegions(g) {
   const { S, rng, W, H, area, idx } = g;
@@ -12,7 +13,7 @@ export function layRegions(g) {
     let best = null;
     for (let t = 0; t < 30; t++) {
       const x = rng.range(0.1, 0.9) * W, y = rng.range(0.1, 0.9) * H;
-      const d = Math.min(Infinity, ...regions.map((q) => Math.hypot(x - q.x, y - q.y)));
+      const d = Math.min(Infinity, ...regions.map((q) => hypot(x - q.x, y - q.y)));
       if (!best || d > best.d) best = { x, y, d };
     }
     regions.push(best);
@@ -39,7 +40,7 @@ export function layRegions(g) {
       const px = x + 0.5 + (wx(x, y) - 0.5) * 14, py = y + 0.5 + (wy(x, y) - 0.5) * 14;
       let best = 0, bd = Infinity;
       regions.forEach((r, k) => {
-        const d = Math.hypot(px - r.x, py - r.y);
+        const d = hypot(px - r.x, py - r.y);
         if (d < bd) { bd = d; best = k; }
       });
       area[idx(x, y)] = regions[best].type;

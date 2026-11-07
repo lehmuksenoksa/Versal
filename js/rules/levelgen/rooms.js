@@ -5,6 +5,7 @@
 import { T, carveCave } from "../dungeon.js";
 import { CAVERN, COLLAPSED, HALLS, clamp, valueNoise } from "./make.js";
 import { hewKind } from "./halls.js";
+import { hypot } from "../dmath.js";
 
 // Rooms placed; false if too few fit (the generator tries again).
 export function placeRooms(g) {
@@ -106,7 +107,7 @@ export function carveRooms(g) {
       for (let y = r.y - 2; y < r.y + r.h + 2; y++)
         for (let x = r.x - 2; x < r.x + r.w + 2; x++) {
           if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
-          const d = Math.hypot(x + 0.5 - ex, y + 0.5 - ey) / rad + (fine(x, y) - 0.5) * 0.7;
+          const d = hypot(x + 0.5 - ex, y + 0.5 - ey) / rad + (fine(x, y) - 0.5) * 0.7;
           if (d >= 1) continue;
           cave[idx(x, y)] = 1;
           if (Math.max(Math.abs(x - r.cx), Math.abs(y - r.cy)) > 1) tiles[idx(x, y)] = T.ROCK;

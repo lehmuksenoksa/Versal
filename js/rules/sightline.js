@@ -4,12 +4,13 @@
 // hits, taken in angle order, outline what can be seen.
 
 import { feature } from "./content.js";
+import { sin, cos, atan2, hypot } from "./dmath.js";
 
 // A pillar's outline (a feature of type "post", in squares), as corners
 // [x, y] times `scale`: a hexagon if round, else a square set square.
 export function postOutline(f, scale = 1) {
   const n = f.shape === "round" ? 6 : 4, r = scale * (f.shape === "round" ? 0.21 : 0.26), a0 = n === 4 ? Math.PI / 4 : 0;
-  return Array.from({ length: n }, (_, i) => [f.x * scale + r * Math.cos(a0 + (i * 2 * Math.PI) / n), f.y * scale + r * Math.sin(a0 + (i * 2 * Math.PI) / n)]);
+  return Array.from({ length: n }, (_, i) => [f.x * scale + r * cos(a0 + (i * 2 * Math.PI) / n), f.y * scale + r * sin(a0 + (i * 2 * Math.PI) / n)]);
 }
 
 // The outline of a big thing that throws a shadow from the level's lights
@@ -20,12 +21,12 @@ export function shadeOutline(f, scale = 1) {
   if (f.holds) return null;
   const box = (w, h, rot = 0) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => {
     const dx = (u * w) / 2, dy = (v * h) / 2;
-    return [(f.x + dx * Math.cos(rot) - dy * Math.sin(rot)) * scale, (f.y + dx * Math.sin(rot) + dy * Math.cos(rot)) * scale];
+    return [(f.x + dx * cos(rot) - dy * sin(rot)) * scale, (f.y + dx * sin(rot) + dy * cos(rot)) * scale];
   });
   const shape = feature(f).outline;
   if (shape === "box") return box(f.w, f.h);
   if (shape === "square") return box(f.s, f.s, f.rot ?? 0);
-  if (shape === "hex") return Array.from({ length: 6 }, (_, i) => [(f.x + f.r * Math.cos((i * Math.PI) / 3)) * scale, (f.y + f.r * Math.sin((i * Math.PI) / 3)) * scale]);
+  if (shape === "hex") return Array.from({ length: 6 }, (_, i) => [(f.x + f.r * cos((i * Math.PI) / 3)) * scale, (f.y + f.r * sin((i * Math.PI) / 3)) * scale]);
   return null;
 }
 
@@ -104,7 +105,7 @@ export class Walls {
     // (A corner two walls share is aimed at once.)
     const angles = [], aimed = new Set();
     const aim = (x, y) => {
-      const a = Math.atan2(y - py, x - px);
+      const a = atan2(y - py, x - px);
       angles.push(a - 1e-4, a, a + 1e-4);
     };
     const edges = segs.slice(-4);
@@ -130,12 +131,12 @@ export class Walls {
     const dist = (s) => {
       const ex = s.x1 - s.x0, ey = s.y1 - s.y0, L = ex * ex + ey * ey;
       const t = L ? Math.max(0, Math.min(1, ((px - s.x0) * ex + (py - s.y0) * ey) / L)) : 0;
-      return Math.hypot(s.x0 + ex * t - px, s.y0 + ey * t - py);
+      return hypot(s.x0 + ex * t - px, s.y0 + ey * t - py);
     };
     const near = segs.map((s) => [dist(s), s]).sort((a, b) => a[0] - b[0]);
     const pts = [];
     for (const a of angles) {
-      const dx = Math.cos(a), dy = Math.sin(a);
+      const dx = cos(a), dy = sin(a);
       let best = Infinity;
       for (const [d, s] of near) {
         if (d > best) break;
@@ -157,7 +158,7 @@ export class Walls {
     path.beyond = (depth) => {
       const out = new Path2D();
       pts.forEach(([x, y], i) => {
-        const dx = x - px, dy = y - py, d = Math.hypot(dx, dy) || 1, k = (d + depth) / d;
+        const dx = x - px, dy = y - py, d = hypot(dx, dy) || 1, k = (d + depth) / d;
         i ? out.lineTo(px + dx * k, py + dy * k) : out.moveTo(px + dx * k, py + dy * k);
       });
       out.closePath();
