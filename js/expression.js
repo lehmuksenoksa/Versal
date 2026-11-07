@@ -76,9 +76,6 @@ const joinRect = (a, b) => {
 // in squares from the light, like the candle's (levelgen.js's LIGHTS); and
 // how far off the player sees what they light.
 const LAMPS = LIGHTS;
-// Lit places (rooms, stretches of corridor): lit throughout, the light
-// pouring out of them in bands as the player's, in squares past their edge.
-const LIT = { dim: 1, dark: 2 };
 const LAMP_SEE = 24;
 // How much a fire's light swells and shrinks as it flickers (of its size).
 const FIRE_SWELL = 0.04;
@@ -2168,7 +2165,7 @@ export class Expression {
       this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
       this.region(wg, this.seenShape, this.scale, lamp.view);
       // A fire's light flickers in brightness too, each its own way, dimming
-      // most toward its edge. (Lit places are steady.)
+      // most toward its edge.
       wg.globalCompositeOperation = "destination-out";
       wg.setTransform(T);
       for (const l of this.lampsSeen) {
@@ -2261,17 +2258,14 @@ export class Expression {
     return { x0, y0, w: x1 - x0, h: y1 - y0, view: { x: (x0 - T.e) / T.a, y: (y0 - T.f) / T.d, w: (x1 - x0) / T.a, h: (y1 - y0) / T.d } };
   }
 
-  // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
-  // light it is in, if in sight.
-  // The level's lights (campfires), each cast against the walls, posts and
-  // shut doors and lighting the rim of rock past them, in bands with ragged
-  // edges like the candle's; and its lit places, lit throughout, the light
-  // pouring out of their openings in bands the same way. As `lampLevel`
-  // (mask resolution), as a picture to show the lit map through
-  // (`lampCanvas`), and what it lets the player see from afar
-  // (`lampSight`). Each light and lit place, for finding those in sight:
-  // `lamps` (each the box it lights { x0, y0, x1, y1 }, in squares, and
-  // some of the map points it lights to look for, `cells`).
+  // The level's lights (campfires, braziers, candles), each cast against the
+  // walls, posts and shut doors and lighting the rim of rock past them, in
+  // bands with ragged edges like the candle's. As `lampLevel` (mask
+  // resolution), as a picture to show the lit map through (`lampCanvas`),
+  // and what it lets the player see from afar (`lampSight`). Each light, for
+  // finding those in sight: `lamps` (each the box it lights { x0, y0, x1,
+  // y1 }, in squares, and some of the map points it lights to look for,
+  // `cells`).
   //
   // And the lanterns carried about (`this.lanterns`, squares { x, y }: the
   // cultists'), laid over the rest, which is kept (`lampBase`) so that only
@@ -2279,11 +2273,11 @@ export class Expression {
   lightLamps(onlyLanterns = false, dirty = null) {
     const { mw, mh, TS, S, level: L } = this, lanterns = this.lanterns ?? [], base = onlyLanterns ? this.lampBase : null;
     const keep = base && dirty && this.lampCanvas && this.lampSight ? { lamp: this.lampCanvas, sight: this.lampSight } : null;
-    const lights = base ? [] : L.lights ?? [], places = base ? [] : this.litPlaces();
+    const lights = base ? [] : L.lights ?? [];
     this.lampLevel = this.lampCanvas = this.lampSight = null;
     this.lamps = base ? base.lamps.slice() : [];
     if (!base) this.lampBase = null;
-    if (!lights.length && !places.length && !lanterns.length && !this.lamps.length) return;
+    if (!lights.length && !lanterns.length && !this.lamps.length) return;
     const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh)), steady = base ? base.steady.slice() : new Float32Array(mw * mh);
     // (Every fourth map point each way that the light being laid lights; and
     // a fire's light kept apart, `own`, to flicker in size; the rest,
@@ -2330,25 +2324,6 @@ export class Expression {
       c.getContext("2d").putImageData(im, 0, 0);
       this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, pic: c, at: [own.x0, own.y0] } });
       own = null;
-    }
-    const out = LIT.dim + LIT.dark;
-    for (const p of places) {
-      cells = new Set();
-      // Throughout: its squares, and the rock round them as far as a light
-      // lights past a wall.
-      const wall = Math.ceil(S.lightWall * R);
-      for (const [x, y] of p.squares)
-        for (let my = y * R - wall; my < (y + 1) * R + wall; my++)
-          for (let mx = x * R - wall; mx < (x + 1) * R + wall; mx++) {
-            if (mx < 0 || my < 0 || mx >= mw || my >= mh) continue;
-            const j = my * mw + mx, inside = mx >= x * R && mx < (x + 1) * R && my >= y * R && my < (y + 1) * R;
-            if (inside || (!this.floor[j] && Math.hypot(Math.max(x * R - mx - 0.5, 0, mx + 0.5 - (x + 1) * R), Math.max(y * R - my - 0.5, 0, my + 0.5 - (y + 1) * R)) / R + rag((mx + 0.5) * (TS / R), (my + 0.5) * (TS / R)) < S.lightWall)) mark(mx, my, j, 1);
-          }
-      // Out of each opening: from each of its squares by unlit floor, the
-      // bands by how far past that square's edge.
-      for (const [x, y] of p.edges)
-        shine(x + 0.5, y + 0.5, out + 0.5, (mx, my) => Math.hypot(Math.max(x - mx / TS, 0, mx / TS - x - 1), Math.max(y - my / TS, 0, my / TS - y - 1)), (e) => (e <= 0 ? 1 : e < LIT.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      this.lamps.push({ x0: p.x0 - out, y0: p.y0 - out, x1: p.x1 + out, y1: p.y1 + out, cells: [...cells] });
     }
     if (!base) this.lampBase = { level: level.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
     // The lanterns: steady, in their own bands (LIGHTS.lantern).
@@ -2399,37 +2374,8 @@ export class Expression {
     return true;
   }
 
-  // The level's lit places: each a run of lit squares ([x, y]s), its box
-  // (x0, y0, x1, y1, in squares), and its `edges`, the squares of it by floor
-  // not lit (where its light pours out).
-  litPlaces() {
-    const L = this.level, lit = L.lit, W = L.w, H = L.h, done = new Uint8Array(W * H), places = [];
-    if (!lit) return places;
-    const floor = (x, y) => x >= 0 && y >= 0 && x < W && y < H && L.tiles[y * W + x] === T.FLOOR;
-    for (let i = 0; i < W * H; i++) {
-      if (!lit[i] || done[i]) continue;
-      const squares = [], edges = [], q = [i];
-      done[i] = 1;
-      let x0 = W, y0 = H, x1 = 0, y1 = 0;
-      while (q.length) {
-        const j = q.pop(), x = j % W, y = (j - x) / W;
-        squares.push([x, y]);
-        x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x + 1); y1 = Math.max(y1, y + 1);
-        let edge = false;
-        for (let dy = -1; dy <= 1; dy++)
-          for (let dx = -1; dx <= 1; dx++) {
-            const nx = x + dx, ny = y + dy, n = ny * W + nx;
-            if (!floor(nx, ny)) continue;
-            if (!lit[n]) edge = true;
-            else if (!done[n] && (dx === 0 || dy === 0)) { done[n] = 1; q.push(n); }
-          }
-        if (edge) edges.push([x, y]);
-      }
-      places.push({ squares, edges, x0, y0, x1, y1 });
-    }
-    return places;
-  }
-
+  // How lit the map point (x, y) is, 0 to 1, roughly: by which band of the
+  // light it is in, if in sight.
   lightAt(x, y) {
     const S = this.S, from = this.lightFrom ?? [-1e9, -1e9], TS = this.TS, r = (S.lightFull - 0.5 + S.lightDim) * TS;
     const d = Math.hypot(x - from[0], y - from[1]), i = Math.floor((x * R) / TS), k = Math.floor((y * R) / TS);

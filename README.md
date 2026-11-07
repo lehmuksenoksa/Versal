@@ -31,8 +31,8 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   shrine's altar, a brazier at one end of a crypt, a dining hall or a barracks, braziers in the
   middle of the rest, a lit room more often held up by columns); braziers
   down the middle aisle of the king's halls, between the rows of columns (either side of the king
-  in the throne room); and stretches of corridor lit throughout. Lit places are seen from far off,
-  in line of sight, and a sneaking player standing in the light (a light's full and dim bands) is
+  in the throne room). All light comes from these: no room or corridor is lit of itself (the
+  corridors stay dark until wall torches come). Lit places are seen from far off, in line of sight, and a sneaking player standing in the light (a light's full and dim bands) is
   noticed as if their lamp were lit.
 - The player whacks a monster by walking into it (goblins take a hit or two, skeletons three or four), opens a door by walking
   into it and closes one next to them with C, and puts the lamp out with F to sneak: sight close
@@ -96,10 +96,8 @@ goblins in the caves and skeletons in the built rooms. The player always starts 
   water's edge inside the walls and ripples; an infested storeroom or barracks, with a rats' nest
   against a wall, a brown heap of debris and stones spilling over the floor, whose rats come back a
   while after the last is killed).
-  Two are hidden: a cursed weapon or armour is a little worse and won't come off, found out on
-  wielding or wearing it (until then any weapon or armour not yet used is named with a question
-  mark, "a sword?"), and lifted by standing three turns next to an altar; murky potions all heal
-  well or all poison, a run's luck, found out by drinking one.
+  One is hidden: murky potions all heal well or all poison, a run's luck, found out by drinking
+  one. (Cursed things, and the altar's lifting of curses, are set aside until slice 2.)
 
 ## Running it
 

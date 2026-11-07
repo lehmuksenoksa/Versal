@@ -1,7 +1,7 @@
-// Things: what lies about, the pack, picking up, drinking, wielding and wearing, dropping; the altar's lifting of curses.
+// Things: what lies about, the pack, picking up, drinking, wielding and wearing, dropping.
 // Methods of the World (js/rules/world.js), joined to it there.
 import { ITEMS, PACK } from "./content.js";
-import { MURKY, CURSE, ITEM_TRAITS, ITEM_TRAIT, itemTrait } from "./traits.js";
+import { MURKY, ITEM_TRAITS, ITEM_TRAIT, itemTrait } from "./traits.js";
 import { an, itemName } from "./names.js";
 import { T } from "./dungeon.js";
 
@@ -111,18 +111,12 @@ export const itemMethods = {
     const it = this.packItem(key), d = it && ITEMS[it.type];
     if (!it || (d.cat !== "weapon" && d.cat !== "armour")) return false;
     const p = this.player, where = d.cat === "weapon" ? "hand" : d.slot;
-    // (What's cursed won't come off to make room.)
-    const stuck = [p.equip[where], d.hands === 2 ? p.equip.off : null].find((o) => o && itemTrait(o).sticks);
-    if (stuck) { this.log(`Your cursed ${ITEMS[stuck.type].name} won't come off.`); return false; }
     const item = this.unpack(it), old = p.equip[where], extra = d.hands === 2 ? p.equip.off : null;
     p.equip[where] = item;
     if (extra) p.equip.off = null;
     for (const o of [old, extra]) if (o && !this.stow(o)) this.drop(o, true);
-    // (Using it, its trait comes to light: a curse with it.)
-    const was = itemName(item, false).replace(/\?$/, "");
-    item.known = true;
+    const was = itemName(item, false);
     this.log(d.cat === "weapon" ? `You wield the ${was}.` : `You put on the ${was}.`);
-    if (item.trait === "cursed") this.log(`It's cursed! ${d.cat === "weapon" ? "Your hand won't let go of it." : "It won't come off."} (At an altar, it may be lifted.)`, "hurt");
     return this.tick();
   },
 
@@ -130,7 +124,6 @@ export const itemMethods = {
   takeOff(where) {
     const p = this.player, it = p.equip[where];
     if (!it) return false;
-    if (itemTrait(it).sticks) { this.log(`The cursed ${ITEMS[it.type].name} won't come off.`); return false; }
     if (p.pack.length >= PACK.size) { this.log("Your pack is full."); return false; }
     p.equip[where] = null;
     this.stow(it);
@@ -151,20 +144,5 @@ export const itemMethods = {
     this.items.push({ x: p.x, y: p.y, item });
     this.log(`You drop ${itemName(item)}.`);
     return quiet ? true : this.tick();
-  },
-
-  // A curse lifted: standing next to an altar CURSE.turns turns in a row,
-  // wearing or holding something cursed.
-  atAltar() {
-    const p = this.player, cursed = Object.values(p.equip).filter((it) => it && itemTrait(it).sticks);
-    const near = cursed.length && (this.level.features ?? []).some((f) => f.type === "altar" && Math.abs(p.x + 0.5 - f.x) <= (f.w ?? 1) / 2 + 1 && Math.abs(p.y + 0.5 - f.y) <= (f.h ?? 1) / 2 + 1);
-    if (!near) { p.altar = 0; return; }
-    if (!p.altar) this.log("You stand before the altar. The curse stirs.");
-    if (++p.altar < CURSE.turns) return;
-    p.altar = 0;
-    for (const it of cursed) {
-      delete it.trait;
-      this.log(`The curse lifts from your ${ITEMS[it.type].name}.`, "good");
-    }
   },
 };

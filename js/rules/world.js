@@ -141,7 +141,6 @@ export class World {
       this.ailing(resting);
       if (!this.ended) this.monstersTurn();
     }
-    this.atAltar();
     return true;
   }
 }

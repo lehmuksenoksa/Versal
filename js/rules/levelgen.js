@@ -22,8 +22,8 @@
 // furnishing), `posts` (pillars on grid crossings, [x, y]: no step
 // diagonally past one), `recesses` (shallow alcoves in the walls, each
 // { x, y, dx, dy, w }: in the wall that way from the square x, y, w squares
-// wide), `lights` (campfires, each { x, y, kind } in squares), `lit` (the
-// squares of lit rooms and corridors), `blocks` (squares in the way though
+// wide), `lights` (every light, each { x, y, kind } in squares: all light
+// comes from them), `blocks` (squares in the way though
 // floor: campfires), `roomOf` and `wallOf` (which room, an index into
 // `rooms`, each square's floor and each bit of rock bordering it is part
 // of; -1 for none: corridors, passages), each room's `kind`,
@@ -1138,8 +1138,8 @@ function tryAreas(S, rng) {
 
   // Lights: campfires in big caves, in the middle of open floor (each
   // { x, y, kind: "fire" } in squares, and a thing drawn; the fire's square
-  // is in the way: `blocks`); and lit places, some dungeon rooms and
-  // stretches of dungeon corridor, lit throughout (`lit`, a square each).
+  // is in the way: `blocks`); braziers and candles in the rooms that are lit.
+  // (No place is lit without a light of its own: spec/light-and-dread.md.)
   // Braziers down the middle of a hall, between the rows of its columns: in
   // line with every other column (the middle one among them), so each
   // brazier lights the aisle and the columns beside it throw stripes of
@@ -1275,7 +1275,7 @@ function tryAreas(S, rng) {
       now = best.v;
     }
   };
-  const lights = [], blocks = new Set(), lit = new Uint8Array(n), doorAt = new Set(doors.map((d) => idx(d.x, d.y)));
+  const lights = [], blocks = new Set(), doorAt = new Set(doors.map((d) => idx(d.x, d.y)));
   for (const r of rooms) {
     if (!r.cave || !rng.chance(S.campfires)) continue;
     let best = null;
@@ -1311,22 +1311,6 @@ function tryAreas(S, rng) {
         features.push(rng.chance(0.6) ? { type: "crate", x: fx, y: fy, s: size, rot: rng.range(-0.2, 0.2) } : { type: "barrel", x: fx, y: fy, r: size * 0.48 });
       }
   for (const r of rooms) if (r.halls && !r.stacks && rng.chance(S.litHalls)) hallBraziers(r);
-  const inRoom = (x, y) => rooms.some((r) => x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h);
-  const corridor = (x, y) => floorAt(x, y) && area[idx(x, y)] === DUNGEON && !cave[idx(x, y)] && !inRoom(x, y);
-  for (let y = 2; y < H - 2; y++)
-    for (let x = 2; x < W - 2; x++) {
-      if (!corridor(x, y) || lit[idx(x, y)] || !rng.chance(S.litCorridors)) continue;
-      // (A stretch of up to eight squares along the corridor.)
-      const q = [[x, y]];
-      lit[idx(x, y)] = 1;
-      for (let i = 0, want = rng.int(4, 8); i < q.length && q.length < want; i++)
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-          const nx = q[i][0] + dx, ny = q[i][1] + dy;
-          if (q.length >= want || !corridor(nx, ny) || lit[idx(nx, ny)]) continue;
-          lit[idx(nx, ny)] = 1;
-          q.push([nx, ny]);
-        }
-    }
 
   const get = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]);
   // (The player starts in a built room: a dungeon's if there is one. On a
@@ -1377,7 +1361,6 @@ function tryAreas(S, rng) {
     if (mustDoor.has([d.x, d.y].join()) || inStart(d.x + d.dx, d.y + d.dy) || inStart(d.x - d.dx, d.y - d.dy) || !rng.chance(S.secretDoors)) continue;
     doors.splice(doors.indexOf(d), 1);
     tiles[idx(d.x, d.y)] = T.ROCK;
-    lit[idx(d.x, d.y)] = 0;
     secrets.push({ x: d.x, y: d.y, dx: d.dx, dy: d.dy });
   }
   // Which room each square is part of: its floor (`roomOf`; corridors and
@@ -1395,7 +1378,7 @@ function tryAreas(S, rng) {
       }
     }
   return {
-    w: W, h: H, tiles, cave, rooms, roomOf, wallOf, area, rubble, doors, secrets, features, posts, recesses, lights, lit, blocks, regions,
+    w: W, h: H, tiles, cave, rooms, roomOf, wallOf, area, rubble, doors, secrets, features, posts, recesses, lights, blocks, regions,
     start: stairsUp ?? { x: startRoom.cx, y: startRoom.cy },
     startRoom, stairsUp, stairsDown, throneRoom,
     idx, get,

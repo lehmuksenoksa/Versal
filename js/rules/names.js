@@ -1,20 +1,16 @@
 // Names and words: a thing's, a monster's, a room's; "a" or "an"; ordinals.
 import { ITEMS, MONSTERS } from "./content.js";
-import { ITEM_TRAITS } from "./traits.js";
 
 export const an = (name) => (/^[aeiou]/.test(name) ? `an ${name}` : `a ${name}`);
 // A thing's name, its trait first ("a rusty sword", "3 strong potions of
 // healing").
-// (A weapon or armour not yet used that might be cursed has a question
-// mark, its curse unsaid: "a sword?"; a murky potion found out says what it
-// does.)
-export const unsure = (it) => ["weapon", "armour"].includes(ITEMS[it.type].cat) && !it.known && (!it.trait || ITEM_TRAITS[it.trait]?.hidden);
-export const shownTrait = (it) => (it.trait && !(ITEM_TRAITS[it.trait]?.hidden && !it.known) ? it.trait : null);
+// (A murky potion found out says what it does.)
+export const shownTrait = (it) => it.trait ?? null;
 export const itemName = (it, article = true) => {
   // (A murky potion is no potion of healing that anyone knows of.)
-  const D = it.trait === "murky" ? { name: "potion", plural: "potions" } : ITEMS[it.type], st = shownTrait(it), t = st ? `${st} ` : "", q = unsure(it) ? "?" : "";
+  const D = it.trait === "murky" ? { name: "potion", plural: "potions" } : ITEMS[it.type], st = shownTrait(it), t = st ? `${st} ` : "";
   const brew = it.trait === "murky" && it.known ? (it.brew ? " (heals)" : " (poison)") : "";
-  return (it.n > 1 ? `${it.n} ${t}${D.plural ?? `${D.name}s`}` : article ? an(t + D.name) : t + D.name) + q + brew;
+  return (it.n > 1 ? `${it.n} ${t}${D.plural ?? `${D.name}s`}` : article ? an(t + D.name) : t + D.name) + brew;
 };
 // A monster's name, its trait first ("savage goblin warrior").
 export const monName = (g) => `${g.trait ? `${g.trait} ` : ""}${MONSTERS[g.kind]?.name ?? g.kind}`;

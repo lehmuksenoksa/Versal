@@ -77,12 +77,6 @@ export const levelMethods = {
         this.lit[y * W + x] = 1;
       });
     }
-    // (A lit place, and the open squares next to it, its light's dim band.)
-    for (let y = 0; y < level.h; y++)
-      for (let x = 0; x < level.w; x++) {
-        if (!level.lit?.[y * W + x]) continue;
-        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!opaque(x + dx, y + dy)) this.lit[(y + dy) * W + x + dx] = 1;
-      }
     // A pack round every campfire, awake; and in about a third of the rooms,
     // each of a kind found in that room's ground (round a campfire, goblins
     // if there are any there). Not where the player arrives, nor near the stairs.

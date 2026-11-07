@@ -266,3 +266,25 @@ come feature set by feature set, after.
   - the behaviour lock, the browser check; the mockups load as before.
 - **The content check** now also checks `features.json`: every kind the levels make is listed, each
   has a drawing function in its family's table, and each table draws only kinds of its family.
+
+**R6, pare down: done.**
+- **Curses are gone** (back in slice 2): the cursed trait of weapons and armour, things that won't
+  come off, "a sword?" (a weapon or armour not yet used named with a question mark), the tips'
+  "might be cursed", and the altar's lifting of curses (`items.js`, `names.js`, `tips.js`,
+  `traits.json`, `tuning.json`). The altar stays as furniture, with its candles. The other item
+  traits are unchanged; a thing found that would have been cursed now has one of the others, or none.
+- **Kept, as not an item curse:** the cursed crypt, a room trait (the undead that fall there rise
+  once; nothing heals). Say if it should go too.
+- **All light comes from sources:** the stretches of corridor lit of themselves are gone (the
+  generator, the rules' lit squares, the view's lit places, the levels mockup's slider). Rooms were
+  already lit only by their own braziers and candles. Corridors are dark until wall torches come with
+  the light feature set.
+- **The levels:** the same walls, rooms, furniture, lights and starts for the same seed; only some
+  secret doors fall elsewhere (the dice the corridors' light took are no longer taken): in 6 of the
+  18 levels of the map check, 31 squares, all secret doors.
+- **Re-recorded on purpose:** the behaviour lock and the map drawings. A save from before R6 isn't
+  taken up (the save's version is raised): the page starts a new run.
+- **New test, the pare-down** (`tests/paredown.test.js`): no item trait cursed, sticking or hidden;
+  a thousand things found on every depth, none cursed; on 20 seeds, every depth, every lit square
+  has one of the level's lights within reach. Checked that it notices: run on the code before R6,
+  both fail.

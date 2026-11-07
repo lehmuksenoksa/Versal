@@ -14,7 +14,6 @@
     "morale": "when no more than half a pack is left, the rest flee for so many turns",
     "secret": "the chance each turn of seeing a secret door near and two squares off, searching and not; how far",
     "murky": "a murky potion that heals (as a strong one), or poisons (so many turns, so much harm at once)",
-    "curse": "lifting a curse: so many turns next to an altar",
     "itemTrait": "how often a thing found has a trait; bad and good weighed by depth",
     "monsterBleed": "a monster bleeding from a sharp blade: from a blow of at least at, a hit point a turn for so many turns",
     "monsterTrait": "how often a pack has a trait; how often its leader has its own",
@@ -153,9 +152,6 @@
       3
     ]
   },
-  "curse": {
-    "turns": 3
-  },
   "itemTrait": {
     "chance": 0.3333333333333333,
     "bad": [
@@ -218,7 +214,6 @@
     "caveRubble": 0.5,
     "campfires": 0.4,
     "litRooms": 0.3,
-    "litCorridors": 0.02,
     "litHalls": 0.6,
     "secretDoors": 0.15,
     "from": null,

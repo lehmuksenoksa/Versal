@@ -12,7 +12,9 @@
 import { RNG } from "./rng.js";
 import { T } from "./dungeon.js";
 
-const VERSION = 1;
+// (Raised when what a run holds changes so an older save would play wrong:
+// 2, curses and sourceless light pared away, R6.)
+const VERSION = 2;
 const TYPED = { Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Float32Array, Float64Array };
 
 const toBase64 = (bytes) => {

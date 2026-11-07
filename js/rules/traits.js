@@ -8,7 +8,6 @@ import TUNING from "../content/tuning.json" with { type: "json" };
 // on what each field does) and js/content/tuning.json.
 export const ITEM_TRAITS = TRAITS.items;
 export const MURKY = TUNING.murky;
-export const CURSE = TUNING.curse;
 export const ITEM_TRAIT = TUNING.itemTrait;
 // The kinds goblin-bane bites harder on.
 export const GOBLINS = new Set(TRAITS.baneOf);
