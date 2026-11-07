@@ -53,7 +53,7 @@ js/
     levels.js     making and entering levels (the generator, split from today's levelgen.js)
     names.js      names and words (from tips.js and world.js)
   content/      data only, JSON: what exists and its numbers
-    monsters.json, items.json, traits.json, lights.json, places.json, numbers.json
+    monsters.json, items.json, traits.json, lights.json, places.json, tuning.json
   draw/         the browser only: everything drawn
     families/     one table per family of things (section 6)
     ... today's maprender, expression, render, gpu, hatching, fire
@@ -68,7 +68,11 @@ Drawing and the interface read the state and the events; they never change the s
 The tests check this by trying to load `rules/` in Node.
 
 **Content as data, in JSON** (yours: "Yes, change it to JSON"): the content files are JSON
-(`content/monsters.json`, `items.json`, `traits.json`, `lights.json`, `places.json`, `numbers.json`).
+(`content/monsters.json`, `items.json`, `traits.json`, `lights.json`, `places.json`, `tuning.json`).
+- `tuning.json` (yours: "use tuning.json") holds the rules' own dials: the numbers that belong to no
+  one monster, item or light (hit chance, sneak attacks, noise, awareness, levelling, the pack, how
+  often traits come, the generator's settings). Drawing numbers stay with drawing; the player's own
+  settings (zoom, low power) stay in the browser.
 - Loaded the same way in Node and the browser, by importing JSON directly (`import ... with { type:
   "json" }`), which current browsers and Node support; a small loader only if an older browser needs
   one.
@@ -159,3 +163,23 @@ resuming; R6 is the paring down you'd notice.
 
 New features, new looks, the phone layout, the pages around the game, and any balance change. Those
 come feature set by feature set, after.
+
+## Progress
+
+**R1, tests first: done.**
+- `npm test` (Node's own runner, nothing to install), about 15 seconds:
+  - **same seed, same run** (`tests/same-seed.test.js`);
+  - **the crude bot** plays 30 whole runs, checking after every step that nothing is broken (no
+    monster in a wall, none on another's square, health within bounds) (`tests/bot.test.js`,
+    `tests/support/bot.js`, `tests/support/checks.js`);
+  - **level checks**: 25 seeds, every depth: the stairs down and every room can be reached
+    (`tests/levels.test.js`);
+  - **the behaviour lock**: 12 runs of 1,500 steps recorded (`tests/lock/runs.json`); every refactoring
+    step must replay them exactly (`tests/lock.test.js`). Re-recorded only on purpose
+    (`npm run lock:record`), when behaviour is meant to change. Checked: a 1% change to the hit
+    chance fails it.
+- `npm run test:browser`: the page loads with a fixed seed (`?seed=`, added for tests), plays a few
+  turns by keys, no errors, the view changes; screenshots in `tests/browser/shots/` (not kept in the
+  repository).
+- **A bug found and fixed before the lock was recorded:** a patrolling cultist could step onto the
+  square of a monster standing at its goal (two on one square). It now waits (`world.js`, `patrol`).

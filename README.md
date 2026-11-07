@@ -197,6 +197,18 @@ in the browser console.
 | `js/tips.js` | What things are in words: the tips, a monster's state and wounds, the rooms' names. |
 | `js/traits.js` | The traits of things, monsters and rooms, and what each does. |
 
+## Tests
+
+No build step and nothing to install: Node's own test runner.
+
+- `npm test`: the rules tests, the crude bot playing whole runs, the level checks, and the behaviour
+  lock (`tests/`). About 15 seconds.
+- `npm run test:browser`: the page in a headless browser (Playwright), a few turns played, no errors.
+- `npm run lock:record`: records the behaviour lock again. Only when the game's behaviour is meant to
+  change; never to make a refactoring pass.
+
+The plan for the rebuild these belong to: `spec/rebuild-plan.md`.
+
 ## Fonts
 
 Texturina (The Texturina Project Authors) and IM Fell English (Igino Marini) are in

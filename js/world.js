@@ -1098,7 +1098,8 @@ export class World {
     }
     if (!this.rng.chance(0.7)) return;
     const step = this.stepOnWay(g, g.goal);
-    if (step) this.moveActor(g, step.x, step.y);
+    // (The way's last step may be onto someone standing at the goal: wait.)
+    if (step) { if (this.isFree(step.x, step.y)) this.moveActor(g, step.x, step.y); }
     else g.goal = null;
   }
   // The first step on the shortest way from `a` to `t` (walking, through open

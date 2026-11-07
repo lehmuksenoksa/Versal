@@ -38,8 +38,9 @@ function newRun() {
   // and the player named when it's given. `?name=…` skips the question, for
   // trying things out.)
   if (world?.sneaking) renderer.toggleLamp();
-  const given = new URLSearchParams(location.search).get("name");
-  world = new World(undefined, { name: given || ui.lastName() || "Adventurer" });
+  const q = new URLSearchParams(location.search), given = q.get("name");
+  // (`?seed=…` makes the same run every time, for tests.)
+  world = new World(q.has("seed") ? Number(q.get("seed")) : undefined, { name: given || ui.lastName() || "Adventurer" });
   renderer.setWorld(world);
   if (!given) ui.askName((name) => { world.player.name = name; window.focus(); });
   window.focus();
