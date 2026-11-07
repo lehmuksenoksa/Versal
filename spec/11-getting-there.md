@@ -14,6 +14,23 @@ have their distinct look, and that will take a lot of effort as well."
   "The go" is given per slice.
 - **Only the current slice is specified in depth.** Everything else stays shallow in the catalogue.
 
+## The order of building (yours, after round 45)
+
+"Maybe we should hold our horses here. I think we're tackling way too much at a time for single
+release in Slice 1. I think rebuild of the current PoC to architecturally support upcoming changes
+should be the first thing. No new features, maybe even pairing down some existing ones, but updating
+the engine so new features are easier and cheaper to add. Also, making automated testing possible.
+Then features/feature sets one at a time. The small scale of PoC allows for faster testing and
+making sure everything works before we add too many variables to tell what isn't working."
+
+1. **The rebuild first: no new features.** The proof of concept's engine reworked so new features are
+   easier and cheaper to add, and automated testing is possible. Some existing features may be pared
+   down.
+2. **Then feature sets, one at a time,** each built, tested and played on the proof of concept's small
+   scale before the next, so when something doesn't work it's clear what.
+3. **Slice 1's spec stays the target:** what's decided for slice 1 is built feature set by feature
+   set, not all at once. Its looks are decided as each feature set comes (round 45 waits).
+
 ## The slices
 
 | Slice | What it adds | Maps |
