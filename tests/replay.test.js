@@ -31,8 +31,10 @@ test("a run saved and taken up again still replays from the start", () => {
 });
 
 test("a replay that goes off course says where", () => {
-  const { w } = playRun(1000, { maxSteps: 1500 });
-  const data = w.replay(), at = data.history.findIndex((c, i) => i > 300 && c[0] === "m");
+  // (A run long enough, its first step a third of the way in changed.)
+  let data = null;
+  for (let seed = 1000; !data; seed++) { const { w } = playRun(seed, { maxSteps: 1500 }); if (w.history.length > 600) data = w.replay(); }
+  const at = data.history.findIndex((c, i) => i > data.history.length / 3 && c[0] === "m");
   data.history[at] = data.history[at] === "m6" ? "m4" : "m6";
   const r = World.replay(data);
   assert.ok(r.offCourse !== undefined && r.offCourse > at && r.offCourse - at <= 101, `off course at ${r.offCourse}, the change at ${at}`);

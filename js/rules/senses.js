@@ -6,20 +6,55 @@ import { T, isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
 import { crossesOutline } from "./sightline.js";
 import { hypot } from "./dmath.js";
+import { DIM, LIT } from "./light.js";
+import { LIGHTS } from "./levelgen.js";
+
+// A pillar's box, [x0, y0, x1, y1] in squares (worked out once, kept aside:
+// not part of the level's state).
+const BOXES = new WeakMap();
+const boxOf = (p) => {
+  let B = BOXES.get(p);
+  if (!B) {
+    const xs = p.pts.map(([x]) => x), ys = p.pts.map(([, y]) => y);
+    BOXES.set(p, (B = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]));
+  }
+  return B;
+};
+
+// What the player can tell of a thing (knowAt).
+export const KNOW = { nothing: 0, something: 1, kind: 2, all: 3 };
+
+// How far round them the player sees: the lamp lit, as far as its light
+// reaches; out, their dark sight.
+export const sightRound = (sneaking) => (sneaking ? PLAYER.darkSight : LIGHTS.lamp.full + LIGHTS.lamp.dim + LIGHTS.lamp.dark);
 
 export const senseMethods = {
   // What the player can see: squares in sight past the walls and shut doors
   // (and the pillars: a square is hidden behind one when the line between
   // the middles of the two squares crosses it, as the map draws it).
+  // (By light (light-and-dread.md, section 2): every lit or dim square in
+  // line of sight, however far; in the dark, the player's dark sight round
+  // them.)
   updateFov() {
     // (What's lit first: the light model, light.js.)
     this.light.update();
     const { w, h } = this.level, { x: px, y: py } = this.player, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
-    const reach = Math.max(this.sight, GOBLIN.lose) + 1;
-    const pillars = this.pillars.filter((p) => Math.abs(p.x - px - 0.5) <= reach && Math.abs(p.y - py - 0.5) <= reach);
-    const behind = (x, y) => pillars.some((p) => crossesOutline(px + 0.5, py + 0.5, x + 0.5, y + 0.5, p.pts));
+    const far = Math.max(w, h), dark = PLAYER.darkSight;
+    // (Behind a pillar: the line between the two squares' middles crossing
+    // it; a pillar nowhere near the line's box passed over at once.)
+    const ax = px + 0.5, ay = py + 0.5;
+    const behind = (x, y) => {
+      const bx = x + 0.5, by = y + 0.5, x0 = Math.min(ax, bx), x1 = Math.max(ax, bx), y0 = Math.min(ay, by), y1 = Math.max(ay, by);
+      for (const p of this.pillars) {
+        const B = boxOf(p);
+        if (B[2] < x0 || B[0] > x1 || B[3] < y0 || B[1] > y1) continue;
+        if (crossesOutline(ax, ay, bx, by, p.pts)) return true;
+      }
+      return false;
+    };
     this.visible.fill(0);
-    computeFov(w, h, px, py, this.sight, opaque, (x, y) => {
+    computeFov(w, h, px, py, far, opaque, (x, y) => {
+      if (this.light.at(x, y) === 0 && Math.max(Math.abs(x - px), Math.abs(y - py)) > dark) return;
       if (behind(x, y)) return;
       this.visible[y * w + x] = 1;
       this.seen[y * w + x] = 1;
@@ -31,6 +66,16 @@ export const senseMethods = {
   },
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; },
+
+  // What the player can tell of what's at (x, y), by the light there
+  // (light-and-dread.md, section 2): 0 nothing (not in sight); 1 only that
+  // something's there (dark, within their dark sight); 2 its kind (dim);
+  // 3 everything (lit).
+  knowAt(x, y) {
+    if (!this.isVisible(x, y)) return KNOW.nothing;
+    const l = this.light.at(x, y);
+    return l === LIT ? KNOW.all : l === DIM ? KNOW.kind : KNOW.something;
+  },
 
   // The player spends a turn searching for secret doors.
   search() {
@@ -58,11 +103,11 @@ export const senseMethods = {
     }
   },
 
-  // Lamp out (sneaking, seeing only so far round) or lit again (the player's
-  // sight either way: tuning.json, `player.sight`).
+  // Lamp out (sneaking) or lit again: how far round them the player sees,
+  // by its light or their dark sight (`sight`, for the view to draw).
   setSneaking(on) {
     this.sneaking = on;
-    this.sight = on ? PLAYER.sight.dark : PLAYER.sight.lit;
+    this.sight = sightRound(on);
     this.updateFov();
     this.events.push({ type: "sneak", on });
     this.log(on ? "You put out your lamp." : "You light your lamp.");

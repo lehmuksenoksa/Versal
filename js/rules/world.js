@@ -19,7 +19,7 @@ import { makeItem } from "./items.js";
 import { DIRS8 } from "./dungeon.js";
 import { RNG, seedFor } from "./rng.js";
 import { levelMethods } from "./levels.js";
-import { senseMethods } from "./senses.js";
+import { senseMethods, sightRound } from "./senses.js";
 import { moveMethods } from "./moves.js";
 import { monsterMethods } from "./monsters.js";
 import { fightMethods } from "./fight.js";
@@ -37,8 +37,8 @@ export class World {
   // (`levels`: levels given by depth, taken instead of made: small maps for
   // tests, tests/support/scenario.js.)
   constructor(seed, { name = "Adventurer", levels = null } = {}) {
-    // (How far the player sees round them: the lamp lit, at first.)
-    this.sight = PLAYER.sight.lit;
+    // (How far round them the player sees: the lamp lit, at first.)
+    this.sight = sightRound(false);
     if (levels) this.given = levels;
     this.sneaking = false;
     // The dice (groundwork G5), in streams, so a die added to one part

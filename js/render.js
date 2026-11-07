@@ -7,6 +7,7 @@ import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire, drawCandle } from "./fire.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { isOpen } from "./rules/dungeon.js";
+import { KNOW } from "./rules/senses.js";
 import { feature } from "./rules/content.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
@@ -860,7 +861,8 @@ export class Renderer {
       const x = (it.x + 0.5) * TS, y = (it.y + 0.5) * TS;
       if (x < view.x - TS || y < view.y - TS || x > view.x + vw + TS || y > view.y + vh + TS) continue;
       const ink = ITEM_INK[it.item.type] ?? INK;
-      this.drawGlyph(lc, it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
+      const something = vis && w.knowAt(it.x, it.y) === KNOW.something;
+      this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
     }
     // Flooded rooms' water, rats' nests, under everything on the floor.
     this.drawWater(lc, view);
@@ -1241,7 +1243,10 @@ export class Renderer {
     ctx.stroke();
     ctx.restore();
     const style = a === this.world.player ? LETTERING.player : LETTERING[a.kind] ?? LETTERING.monster;
-    this.drawGlyph(ctx, a.glyph, cx, cy, style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
+    // (In the dark close by, only that something's there: a stand-in mark
+    // for now, its look to choose.)
+    const something = a !== this.world.player && this.world.knowAt(a.x, a.y) === KNOW.something;
+    this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
     // While the player looks (l), how aware each monster is, over it: ! alarmed, ? suspicious.
     const mark = this.lookMarks && a !== this.world.player ? { aggressive: ["!", "#c4402e"], suspicious: ["?", "#d9a53a"] }[a.state] : null;
     if (mark) {

@@ -40,3 +40,18 @@ source; the same light after saving; a player in a light's band noticed as one w
 What changed in play: a cultist's lantern lights the player by its bands (it was within 3 and in
 sight), and the lights' faint bands count as dim (they counted as dark): the run lock re-recorded.
 The view unchanged (the view lock passes).
+
+**L2, the player's sight by light: done.** What the player sees (`updateFov`): every lit or dim
+square in line of sight, however far (a brazier-lit hall seen whole from a dark corridor); in the
+dark, their dark sight, 3 steps round (`tuning.json`, `player.darkSight`). With the lamp lit, as
+far as its light reaches: 9 (it was a fixed 8, the view's). `knowAt(x, y)`: what the player can tell
+there, by the light: lit, everything; dim, its kind; dark within their dark sight, that something's
+there; else nothing. The tips say only that much ("Something"; "Goblin", no state, wounds or
+trait, in dim light); the view draws a thing or a monster known only to be there as **"?" (a
+stand-in: its look to choose)**. Tests first, from the spec (`tests/light.test.js`): a lit place
+seen from 26 squares off in the dark; dark sight 3 and no more; the lamp's reach; walls hiding
+light beyond; what can be told at each light; the tips. What changed in play: lit places far off are
+in sight (monsters there seen, and stopping explore and running as they come into sight); the run
+lock and the view re-recorded. **Speed:** sight across the whole level made a bot's step 2½ times
+slower (0.29 to 0.75 ms), most of it testing pillars nowhere near the line of sight; a box test
+first brought it to 0.45 ms, play unchanged.

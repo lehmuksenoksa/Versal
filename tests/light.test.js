@@ -131,3 +131,84 @@ test("a player in light is noticed as one with the lamp lit", () => {
   assert.ok(inLight !== null, "a player in a brazier's light never noticed");
   assert.ok(inDark === null || inDark > inLight, `noticed in ${inLight} turns in the light, ${inDark} in the dark`);
 });
+
+// ---- The player's sight by light (L2; light-and-dread.md, section 2) ----
+
+const sees = (w, x, y) => w.isVisible(x, y);
+
+test("a lit room is seen from the dark, however far", () => {
+  const w = scenario(`
+    ###############################
+    #@..........................B.#
+    ###############################
+  `, { sneaking: true });
+  assert.ok(sees(w, 27, 1) && sees(w, 29, 1), `the lit end not seen from 26 squares off\n${picture(w)}`);
+  assert.ok(!sees(w, 12, 1), `a dark square 11 off seen\n${picture(w)}`);
+});
+
+test("in the dark, the player sees 3 steps round them, no further", () => {
+  const w = scenario(`
+    ############
+    #@.........#
+    #..........#
+    #..........#
+    #..........#
+    #..........#
+    ############
+  `, { sneaking: true });
+  assert.ok(sees(w, 4, 1) && sees(w, 4, 4), picture(w));
+  assert.ok(!sees(w, 5, 1) && !sees(w, 1, 5), picture(w));
+});
+
+test("with the lamp lit, the player sees as far as its light reaches", () => {
+  const w = scenario(`
+    ######################
+    #@...................#
+    ######################
+  `);
+  assert.ok(sees(w, 10, 1), picture(w));
+  assert.ok(!sees(w, 11, 1), picture(w));
+});
+
+test("walls still hide what's lit beyond them", () => {
+  const w = scenario(`
+    ##########
+    #@..#.B..#
+    #...#....#
+    ##########
+  `, { sneaking: true });
+  assert.ok(!sees(w, 7, 1), picture(w));
+});
+
+test("what the player can tell: lit everything, dim the kind, dark close by only that something's there", () => {
+  const w = scenario(`
+    ##############################
+    #@.g.......................B.#
+    ##############################
+  `, { sneaking: true, legend: { h: "goblin" } });
+  // (A goblin 2 off in the dark; one in the brazier's light; one in its dim.)
+  w.placeMonster("goblin", 28, 1);
+  w.placeMonster("goblin", 23, 1);
+  w.updateFov();
+  assert.equal(w.knowAt(3, 1), 1, "the goblin in the dark close by");
+  assert.equal(w.knowAt(28, 1), 3, "the goblin in the light");
+  assert.equal(w.knowAt(23, 1), 2, "the goblin in the dim");
+  assert.equal(w.knowAt(12, 1), 0, "a dark square far off");
+});
+
+test("the tips say only what can be told", async () => {
+  const { tipFor } = await import("../js/tips.js");
+  const w = scenario(`
+    ##############################
+    #@.g.......................B.#
+    ##############################
+  `, { sneaking: true });
+  w.placeMonster("goblin", 28, 1, { trait: "savage" });
+  w.placeMonster("goblin", 23, 1, { trait: "savage" });
+  w.updateFov();
+  const shown = () => true;
+  assert.equal(tipFor(w, 3, 1, shown).title, "Something");
+  assert.equal(tipFor(w, 23, 1, shown).title, "Goblin", "the dim one: its kind, no trait");
+  assert.equal(tipFor(w, 23, 1, shown).lines.length, 0, "the dim one: no state, no wounds");
+  assert.match(tipFor(w, 28, 1, shown).title, /Savage goblin/i, "the lit one: all of it");
+});
