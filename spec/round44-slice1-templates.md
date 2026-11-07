@@ -5,6 +5,9 @@ its light, and what comes with it (traps, a gong, something worth the risk). The
 who; the template, how. Groups are spaced by escalation and paced across the level (`06-levels.md`).
 Step B monsters (round 41) come with step B templates. Sizes and depths are starting values.
 
+**Beside the templates, loose monsters** (decided in chat while this round was up): single monsters
+and small groups from the depth's mix, outside any template (`06-levels.md`).
+
 ## Goblins
 
 Their side: goblins and wolves. Camps and guard posts are the Over Dungeon's own (round 21).

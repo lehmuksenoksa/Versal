@@ -33,6 +33,13 @@ What stealth needs from a map (my proposal, agreed as the basis):
   states, its place and its light, for example a camp at a fire with one at the approach, sleepers
   in a dark side room by a chest, a patrol on a loop between two lit rooms, a guard at a lit way
   with a way round, vermin in the dark, a wanderer. The depth's mix picks who; the template, how.
+- **Loose monsters beside the templates** (yours: "Add loose monsters. Otherwise it's too staged. I'd
+  like to see single monsters and groups as well, in the loose ones."): monsters from the depth's
+  mix placed outside any template, in loose rooms and corridors, singly and in small groups, mostly
+  calm or wandering. They count in the spacing by escalation like any group. How many: to test.
+- Other ways monsters come into play (in chat): templates and loose monsters when a level is made;
+  "from deeper, now and then" is part of the depth's mix. Later: arrivals over time (with resting),
+  following the player down the stairs (a maybe), breeding, raising and summoning.
 - **How dense: by escalation** (yours: "Maybe we should consider escalation of fights here?"; the
   numbers found by playtesting).
   - **Within a fight, one step at a time.** A fight grows by sound (`stealth.md`): one foe notices;
@@ -54,7 +61,8 @@ What stealth needs from a map (my proposal, agreed as the basis):
 2. Place lights by what each room is for, and by ground: lighter where sentient beings live, darker
    in caves.
 3. Lay floors: loud, quiet, water.
-4. Place encounters from templates, spaced by escalation and paced across the level.
+4. Place encounters from templates, and loose monsters, singly and in small groups, spaced by
+   escalation and paced across the level.
 5. **Check the level with the stealth rules** (`stealth.md`): mark every square a calm monster would
    see or hear a sneaking player in; look for a path from the stairs up to the stairs down through
    unmarked squares. Where a level must have one and doesn't, move a light, a guard or a door, and
