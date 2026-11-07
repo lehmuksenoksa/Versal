@@ -7,3 +7,8 @@ import { LOCK_SEEDS, LOCK_STEPS, recordRun } from "../tests/support/lock.js";
 const runs = LOCK_SEEDS.map((seed) => recordRun(seed));
 writeFileSync(new URL("../tests/lock/runs.json", import.meta.url), JSON.stringify({ recorded: new Date().toISOString(), steps: LOCK_STEPS, runs }));
 console.log(`Recorded ${runs.length} runs of up to ${LOCK_STEPS} steps.`);
+
+// The features' outlines too (tests/lock/outlines.json).
+import { outlines } from "../tests/support/outlines.js";
+writeFileSync(new URL("../tests/lock/outlines.json", import.meta.url), JSON.stringify(outlines()));
+console.log("Recorded the features' outlines.");

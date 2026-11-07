@@ -36,3 +36,25 @@ test("traits point only at things that exist", () => {
   for (const k of T.baneOf) assert.ok(monsters[k], `baneOf: no monster ${k}`);
   for (const [k, t] of Object.entries(T.rooms)) need(`room trait ${k}`, t, ["kinds", "about"]);
 });
+
+test("every kind of feature is listed, and drawn by its family", async () => {
+  const { features } = load("features.json"), { FAMILIES } = await import("../js/draw/features.js");
+  const { World } = await import("../js/rules/world.js");
+  const OUTLINES = [null, "box", "square", "hex"];
+  for (const [k, f] of Object.entries(features)) {
+    need(`feature ${k}`, f, ["family", "lift", "shadow", "outline"]);
+    assert.ok(FAMILIES[f.family], `feature ${k}: no family ${f.family}`);
+    assert.equal(typeof FAMILIES[f.family][k], "function", `feature ${k}: its family ${f.family} doesn't draw it`);
+    assert.ok(OUTLINES.includes(f.outline), `feature ${k}: no outline ${f.outline}`);
+  }
+  for (const [name, table] of Object.entries(FAMILIES))
+    for (const k of Object.keys(table)) assert.equal(features[k]?.family, name, `${name} draws ${k}, which the data puts in ${features[k]?.family ?? "no family"}`);
+  // What the levels make, on a few seeds and every depth.
+  for (const seed of [3, 17, 41, 77]) {
+    const w = new World(seed);
+    for (let depth = 1; depth <= 3; depth++) {
+      if (depth > 1) w.enter(depth, "down");
+      for (const f of w.level.features ?? []) assert.ok(features[f.type], `seed ${seed}, depth ${depth}: a ${f.type}, not in features.json`);
+    }
+  }
+});

@@ -1,0 +1,28 @@
+{
+  "about": "The things in the rooms (a level's `features`): what family each belongs to, and what the rules and the drawing need to know of it. Read by js/rules/content.js; drawn by js/draw/ (a table per family).",
+  "fields": {
+    "family": "structure (posts, stairs), furniture, or light: which drawing table draws it (js/draw/)",
+    "lift": "how far its shadow falls, down and right, in squares (posts as far as the walls')",
+    "shadow": "whether it casts a shadow at all",
+    "outline": "its outline for the level's lights to throw shadows from: box (w by h), square (s by s, turned rot), hex (radius r); none if it throws none",
+    "pillar": "a pillar on the grid's crossings: blocks sight, light and diagonal steps",
+    "kept": "remembered with the walls once seen (not inked with the grid)"
+  },
+  "features": {
+    "post": { "family": "structure", "lift": 0.2, "shadow": true, "outline": null, "pillar": true, "kept": true },
+    "stairs": { "family": "structure", "lift": 0.11, "shadow": false, "outline": null, "kept": true },
+    "crate": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "square" },
+    "barrel": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "hex" },
+    "shelf": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
+    "table": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
+    "bench": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
+    "chair": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
+    "bed": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
+    "coffin": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": null },
+    "sarcophagus": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
+    "altar": { "family": "furniture", "lift": 0.11, "shadow": true, "outline": "box" },
+    "brazier": { "family": "light", "lift": 0.11, "shadow": true, "outline": null },
+    "candles": { "family": "light", "lift": 0.11, "shadow": false, "outline": null },
+    "campfire": { "family": "light", "lift": 0.11, "shadow": false, "outline": null }
+  }
+}

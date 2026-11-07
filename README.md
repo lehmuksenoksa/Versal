@@ -175,6 +175,7 @@ in the browser console.
 | `js/rules/levelgen.js` | The game's levels, by areas (`LEVELGEN_DEFAULTS`): regions of dungeon, cavern, collapsed ground and the goblin king's halls (or one kind changing into another across the level, with stairs and a throne room), their rooms, corridors, rubble, doors, room kinds and furnishings. |
 | `js/rules/dungeon.js` | Tile types, cave carving, and the older single-kind generator (still used by the expression mockup). |
 | `js/maprender.js` | The hand-inked map: wall outlines and strokes, recesses, doors, shadow, floor grid (looser on cave floors), rubble, furniture and pillars, room numbers. |
+| `js/draw/` | The things in the rooms drawn by family: a table of drawing functions per family (`structure.js`: posts and stairs; `furniture.js`; `lights.js`: braziers, candles, campfires), looked up by `features.js` from each kind's family in `js/content/features.json`. |
 | `mockups/levels.html` | A whole generated level, fully lit, with sliders for `js/levelgen.js`: regions, rooms, caverns, collapse, room kinds and furnishing. |
 | `js/hatching.js` | The stone hatching: rock cut into stretched triangle cells, each filled with a small group of strokes. |
 | `mockups/glyphs.html` | Player and goblin letters in Texturina and Grenze Gotisch, with ink, weight, halo and shadow options. |
@@ -183,7 +184,7 @@ in the browser console.
 | `mockups/letters.html` | Every letter, the player's and the monsters' to come, under each band of light, with each one's outline (paper or ink) and switches for how letters take the light. |
 | `mockups/expression.html` | The map as the game shows it, with a player to walk about and a panel for every setting of `js/expression.js`: sight, the candle and darkness, the in-sight and remembered looks, the depth map and hatching, unexplored ground, the rock. |
 | `mockups/hatching.html` | Standalone page for tuning the hatching, walls and grid with sliders. The game's hatching uses its "Cells with zones" panel with the settings in `HATCH` (`js/hatching.js`) and `WALL`/`GRID` (`js/maprender.js`). |
-| `js/content/*.json` | The game's content as data: monsters, items, traits, lights, places, and `tuning.json`, the rules' own numbers. Each file notes what its fields mean. |
+| `js/content/*.json` | The game's content as data: monsters, items, traits, lights, places, the things in the rooms (`features.json`: each kind's family, shadow and outline), and `tuning.json`, the rules' own numbers. Each file notes what its fields mean. |
 | `js/rules/` | The rules, headless (they run in Node as in the browser; they import only each other and `js/content/`): |
 | `js/rules/world.js` | The World: the run, the turn and the log; joined from its parts below. Takes the content and names from `content.js` and `names.js` for the rest of the game. |
 | `js/rules/levels.js` | Levels: making one when first come to, entering it and keeping it as left, filling it; the stairs. |
@@ -214,9 +215,13 @@ No build step and nothing to install: Node's own test runner.
 
 - `npm test`: the rules tests, the crude bot playing whole runs, the level checks, and the behaviour
   lock (`tests/`). About 15 seconds.
-- `npm run test:browser`: the page in a headless browser (Playwright), a few turns played, no errors.
-- `npm run lock:record`: records the behaviour lock again. Only when the game's behaviour is meant to
-  change; never to make a refactoring pass.
+- `npm run test:browser`: the page in a headless browser (Playwright), a few turns played, no errors;
+  a run reloaded and resumed.
+- `npm run test:maps`: 72 map drawings (6 seeds, 3 depths, 4 ways of drawing: whole, the grid's
+  layer, the walls' layer, the plan) compared pixel for pixel with `tests/browser/maps-baseline.json`.
+  `npm run maps:record` records them again: only when the drawing is meant to change.
+- `npm run lock:record`: records the behaviour lock again (and the features' outlines). Only when
+  the game's behaviour is meant to change; never to make a refactoring pass.
 
 The plan for the rebuild these belong to: `spec/rebuild-plan.md`.
 

@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Map drawing check</title>
+<!-- Draws the static map of fixed levels in each of the ways the game asks
+     for (renderMap's modes), and puts a hash of each drawing's pixels in
+     window.mapHashes, for tests/browser/maps.mjs to compare with the baseline. -->
+<script type="module">
+import { World } from "../../js/rules/world.js";
+import { renderMap } from "../../js/maprender.js";
+
+const kept = (f) => f.type === "post" || f.type === "stairs";
+const MODES = {
+  full: { keys: false },
+  layer: { keys: false, walls: false, doors: false, grid: true, furniture: "erase", inked: (f) => !kept(f) },
+  walls: { keys: false, grid: false, floor: false, hatch: false, walls: true, doors: false, furniture: "ink", inked: kept },
+  plan: { keys: false, plan: true },
+};
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+const out = {};
+for (const seed of [3, 17, 41, 77, 123, 999]) {
+  const w = new World(seed);
+  for (let depth = 1; depth <= 3; depth++) {
+    if (depth > 1) w.enter(depth, "down");
+    const st = w.places[depth - 1];
+    for (const [name, opts] of Object.entries(MODES)) {
+      const { canvas } = renderMap(st.level, 24, 1, st.seed, opts);
+      const px = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data;
+      out[`${seed}/${depth}/${name}`] = hex(await crypto.subtle.digest("SHA-256", px)).slice(0, 16);
+    }
+  }
+}
+window.mapHashes = out;
+</script>

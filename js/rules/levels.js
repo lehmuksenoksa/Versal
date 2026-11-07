@@ -1,6 +1,6 @@
 // Levels: making a level when first come to, entering one and keeping it as left, filling it with monsters, lights and things; the stairs.
 // Methods of the World (js/rules/world.js), joined to it there.
-import { MONSTERS, PACK, PLACES } from "./content.js";
+import { MONSTERS, PACK, PLACES, feature } from "./content.js";
 import { MONSTER_TRAITS, MONSTER_TRAIT, ROOM_TRAITS, ROOM_TRAIT, roomKind } from "./traits.js";
 import { roomAt } from "./names.js";
 import { T, isOpen, DIRS8 } from "./dungeon.js";
@@ -19,7 +19,7 @@ export const levelMethods = {
       // Pillars on grid crossings, which no step goes diagonally past; and the
       // doors, by their square.
       posts: new Set((level.posts ?? []).map(([x, y]) => y * (W + 1) + x)),
-      pillars: (level.features ?? []).filter((f) => f.type === "post").map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) })),
+      pillars: (level.features ?? []).filter((f) => feature(f).pillar).map((f) => ({ x: f.x, y: f.y, pts: postOutline(f) })),
       doors: new Map((level.doors ?? []).map((d) => [d.y * W + d.x, d])),
       // Squares in the way though floor (campfires), and squares lit by the
       // level's lights (no sneaking there).

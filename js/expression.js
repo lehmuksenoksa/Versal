@@ -18,6 +18,7 @@ import { RNG } from "./rules/rng.js";
 import { Walls, postOutline, shadeOutline } from "./rules/sightline.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { T } from "./rules/dungeon.js";
+import { feature } from "./rules/content.js";
 
 export const EXPRESSION_DEFAULTS = {
   // Sight: clear out to `sight` tiles, then fading out with distance over
@@ -329,8 +330,8 @@ export class Expression {
     // (The things in the rooms cut out of the grid, as the layers are
     // recoloured: the furniture inked with the grid, so not remembered; the
     // pillars with the walls.)
-    // (Stairs, as posts, remembered with the walls.)
-    const kept = (f) => f.type === "post" || f.type === "stairs";
+    // (Stairs, as posts, remembered with the walls: `kept` in features.json.)
+    const kept = (f) => !!feature(f).kept;
     this.markLayer = layer({ grid: true, keys: true, furniture: "erase", inked: (f) => !kept(f) }).canvas;
     this.wallLayer = layer({ walls: true, doors: false, furniture: "ink", inked: kept }).canvas;
     const cw = drawn.canvas.width, ch = drawn.canvas.height;
@@ -357,7 +358,7 @@ export class Expression {
     this.lightWalls = new Walls(drawn.loops, TS * 2);
     this.lampWalls = new Walls(drawn.loops, TS * 2);
     for (const f of level.features ?? []) {
-      const post = f.type === "post", pts = post ? postOutline(f, TS) : shadeOutline(f, TS);
+      const post = !!feature(f).pillar, pts = post ? postOutline(f, TS) : shadeOutline(f, TS);
       if (!pts) continue;
       for (let i = 0; i < pts.length; i++) {
         const [x0, y0] = pts[i], [x1, y1] = pts[(i + 1) % pts.length];
@@ -548,7 +549,7 @@ export class Expression {
     // shape of what is seen (so it is drawn whole, and remembered).
     const posts = [];
     for (const f of this.level.features ?? []) {
-      if (f.type !== "post" || Math.abs(f.x * TS - px) > (reach + 1) * TS || Math.abs(f.y * TS - py) > (reach + 1) * TS) continue;
+      if (!feature(f).pillar || Math.abs(f.x * TS - px) > (reach + 1) * TS || Math.abs(f.y * TS - py) > (reach + 1) * TS) continue;
       let v = 0, now = 0;
       for (let i = 0; i < 8; i++) {
         const mx = Math.floor((f.x + 0.42 * Math.cos((i * Math.PI) / 4)) * R), my = Math.floor((f.y + 0.42 * Math.sin((i * Math.PI) / 4)) * R);
@@ -1568,7 +1569,7 @@ export class Expression {
     const vis = this.visNow, { mw, mh } = this;
     if (vis)
       for (const f of this.level.features ?? []) {
-        if (f.type !== "post" || Math.hypot(f.x * TS - px, f.y * TS - py) > (far + 1) * TS) continue;
+        if (!feature(f).pillar || Math.hypot(f.x * TS - px, f.y * TS - py) > (far + 1) * TS) continue;
         let a = 0;
         for (let i = 0; i < 8; i++) {
           const mx = Math.floor((f.x + 0.4 * Math.cos((i * Math.PI) / 4)) * R), my = Math.floor((f.y + 0.4 * Math.sin((i * Math.PI) / 4)) * R);
@@ -1664,7 +1665,7 @@ export class Expression {
     const { mw, mh, TS, level: L } = this, c = blank(mw, mh), g = c.getContext("2d", { willReadFrequently: true });
     g.scale(R / TS, R / TS);
     for (const f of L.features ?? []) {
-      if (f.type !== "post") continue;
+      if (!feature(f).pillar) continue;
       const pts = postOutline(f, TS);
       g.beginPath();
       for (const [x, y] of pts) g.lineTo(x, y);

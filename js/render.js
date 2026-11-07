@@ -7,6 +7,7 @@ import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFire, drawCandle } from "./fire.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { isOpen } from "./rules/dungeon.js";
+import { feature } from "./rules/content.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
 export { EXPRESSION_DEFAULTS };
@@ -1181,7 +1182,7 @@ export class Renderer {
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const squares = [];
     for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) if (w.walkable(x, y) || (L.features ?? []).some((f) => Math.floor(f.x) === x && Math.floor(f.y) === y)) squares.push([x, y]);
-    const free = (x, y) => w.walkable(x, y) && !(L.features ?? []).some((f) => f.type !== "post" && Math.floor(f.x) === x && Math.floor(f.y) === y);
+    const free = (x, y) => w.walkable(x, y) && !(L.features ?? []).some((f) => !feature(f).pillar && Math.floor(f.x) === x && Math.floor(f.y) === y);
     const edge = [], k = WATER.inset, x0 = r.x + k, y0 = r.y + k, x1 = r.x + r.w - k, y1 = r.y + r.h - k;
     const side = (ax, ay, bx, by) => {
       const n = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / 0.25));

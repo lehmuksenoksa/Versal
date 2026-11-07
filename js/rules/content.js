@@ -5,6 +5,7 @@ import MONSTERS_DATA from "../content/monsters.json" with { type: "json" };
 import ITEMS_DATA from "../content/items.json" with { type: "json" };
 import PLACES_DATA from "../content/places.json" with { type: "json" };
 import TUNING from "../content/tuning.json" with { type: "json" };
+import FEATURES_DATA from "../content/features.json" with { type: "json" };
 
 export const MONSTERS = MONSTERS_DATA.monsters;
 export const ITEMS = ITEMS_DATA.items;
@@ -26,3 +27,9 @@ export const NOISE = TUNING.noise;
 export const SENSES = TUNING.senses;
 export const MORALE = TUNING.morale;
 export const SECRET = TUNING.secret;
+
+// The things in the rooms: each kind's family and what the rules and the
+// drawing need to know of it (features.json); `feature(f)` for a thing.
+export const FEATURES = FEATURES_DATA.features;
+const NONE = {};
+export const feature = (f) => FEATURES[f.type] ?? NONE;

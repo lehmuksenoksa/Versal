@@ -236,3 +236,33 @@ come feature set by feature set, after.
 - **The browser check** now also plays, reloads, checks the same run is back, and that N starts a new
   one.
 - The game is republished with the rebuild so far: https://claude.ai/artifact/MrmBHHSF379Aq66PsysqXz
+
+**R5, drawing by families: done.**
+- **The things in the rooms as data** (`js/content/features.json`): each kind's family (structure,
+  furniture, light), how far its shadow falls, whether it casts one, its outline for the lights'
+  shadows (box, square, hex, none), whether it's a pillar, whether it's kept with the walls once
+  seen. The rules read the outlines and pillars from it (`sightline.js`, `levels.js`); the drawing
+  reads the shadows (`maprender.js`); the view reads which are pillars and kept (`expression.js`,
+  `render.js`). No check of a kind by name is left outside the drawing tables.
+- **The drawing by families** (`js/draw/`): a table of drawing functions per family, `structure.js`
+  (posts, stairs), `furniture.js` (crates, barrels, shelves, tables, benches, chairs, beds, coffins,
+  sarcophagi, altars), `lights.js` (braziers, candles, campfires); `features.js` looks a thing's
+  function up by its family. The long chain of branches in `maprender.js` is gone; each function is
+  the old branch moved as it was, so the pen's dice are drawn in the same order. A new kind in a
+  known family is a line of data and a function in its table; a new family is a new file and a line
+  in `features.js`.
+- **What R5 doesn't cover:** the plan names families for floors, liquids, debris, monsters and items
+  too. Floors (shallow water) and debris (rubble) are drawn once each today, by their own code, not by
+  kind; monsters and items are drawn as letters in the view (`render.js`). Their tables are made when
+  a feature set gives them a second kind to draw (round 45's floors, slice 1's new monsters and
+  things), so as not to build tables of one.
+- **Nothing changed, proven:**
+  - **the map drawings** (`npm run test:maps`, new): 72 drawings (6 seeds, 3 depths, drawn whole, as
+    the grid's layer, as the walls' layer, as the plan) are the same, pixel for pixel, as before the
+    change. Checked that it notices: an altar's inset 0.12 to 0.13 fails 8 drawings; a post's shadow
+    0.2 to 0.21 fails 18.
+  - **the features' outlines** (`tests/outlines.test.js`, new): every post's and furniture's outline
+    on those levels, as recorded before the change (they shape sight and light);
+  - the behaviour lock, the browser check; the mockups load as before.
+- **The content check** now also checks `features.json`: every kind the levels make is listed, each
+  has a drawing function in its family's table, and each table draws only kinds of its family.

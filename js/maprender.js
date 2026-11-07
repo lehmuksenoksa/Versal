@@ -6,10 +6,11 @@
 import { T, isOpen } from "./rules/dungeon.js";
 import { RNG } from "./rules/rng.js";
 import { hatchRock, hatchSettings, distanceTransform } from "./hatching.js";
+import { feature } from "./rules/content.js";
+import { drawerFor } from "./draw/features.js";
 
-// A brazier's bowl, its radius in squares (render.js draws its near rim
-// again over the flame).
-export const BRAZIER_BOWL = 0.35;
+// (A brazier's bowl, its radius in squares: drawn with the lights.)
+export { BRAZIER_BOWL } from "./draw/features.js";
 export const INK = "#1b1815";
 
 // Random numbers of their own for a place: seeded by `seed` and the numbers
@@ -488,7 +489,7 @@ function drawShadow(ctx, level, TS, floor, seed) {
   const things = (mode) => {
     // (No shadow for a campfire's teepee, nor for stairs, flat on the floor,
     // nor candles.)
-    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => !["campfire", "stairs", "candles"].includes(f.type) : null);
+    if (level.features) drawFeatures(g, level.features, TS, new RNG(seed ^ 0xfea7), mode, mode === "cast" ? (f) => feature(f).shadow : null);
     if (level.rubble) drawRubble(g, level, TS, new RNG(seed ^ 0x2bb1e), mode);
   };
   things("cast");
@@ -612,14 +613,14 @@ function drawRubble(ctx, level, TS, rng, mode = "ink") {
 }
 
 // Things in the rooms (`level.features`, each { type, x, y, ... } in squares),
-// drawn with the pen: posts (pillars on grid crossings, or half of one on a
-// wall's line, the wall drawn over its back) in ink; furniture outlined over
-// the paper. (Their shadows are drawn with the walls': see drawShadow.)
+// drawn with the pen, each by its family's table (draw/features.js): posts
+// (pillars on grid crossings, or half of one on a wall's line, the wall drawn
+// over its back) in ink; furniture outlined over the paper. (Their shadows
+// are drawn with the walls': see drawShadow.)
 // (Those `pick` leaves out are drawn unseen, so each of the rest is drawn
 // with the same hand as when all are.)
 function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
   const k = TS / 32, P = pen(ctx, rng, k, mode), OUT = 2.9, IN = 1.9;
-  const lerp = ([ax, ay], [bx, by], t) => [ax + (bx - ax) * t, ay + (by - ay) * t];
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
@@ -627,7 +628,7 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
   for (const f of features) {
     // (Laying out shadows: moved down and right, posts as far as the walls'.)
     ctx.save();
-    if (mode === "cast") ctx.translate(...Array(2).fill(TS * (f.type === "post" ? 0.2 : 0.11)));
+    if (mode === "cast") ctx.translate(...Array(2).fill(TS * feature(f).lift));
     if (pick && !pick(f)) ctx.globalAlpha = 0;
     drawFeature(f);
     ctx.restore();
@@ -638,103 +639,7 @@ function drawFeatures(ctx, features, TS, rng, mode = "paper", pick = null) {
     const x = f.x * TS, y = f.y * TS, w = (f.w ?? 0) * TS, h = (f.h ?? 0) * TS;
     // Along a thing's head (hx, hy) and across it.
     const turn = (al, ac) => [x + f.hx * al - f.hy * ac, y + f.hy * al + f.hx * ac];
-    if (f.type === "post") {
-      const r = TS * 0.21, tilt = rng.range(-0.05, 0.05);
-      const draw = (d, fill, width) => (f.shape === "round" ? P.round(x + d, y + d, r, width, fill) : P.box(x + d, y + d, r * 1.75, r * 1.75, tilt, width, fill));
-      draw(0, INK, 1.6);
-    } else if (f.type === "crate") {
-      // A box with a cross brace.
-      const s = f.s * TS, c = P.box(x, y, s, s, f.rot, OUT, PAPER), m = [x, y], i = c.map((p) => lerp(p, m, 0.16));
-      P.line(...i[0], ...i[2], IN);
-      P.line(...i[1], ...i[3], IN);
-    } else if (f.type === "barrel") {
-      P.round(x, y, f.r * TS, OUT, PAPER);
-      P.round(x, y, f.r * TS * 0.48, IN);
-    } else if (f.type === "shelf") {
-      // A long shelf, split into bays, a few things on it.
-      const c = P.box(x, y, w, h, 0, OUT, PAPER), long = w > h, L = long ? w : h;
-      for (let i = 1; i < f.n; i++) {
-        const t = -L / 2 + (L * i) / f.n;
-        long ? P.line(x + t, y - h / 2, x + t, y + h / 2, IN) : P.line(x - w / 2, y + t, x + w / 2, y + t, IN);
-      }
-      for (let i = 0; i < f.n; i++) {
-        if (!rng.chance(0.6)) continue;
-        const t = -L / 2 + (L * (i + rng.range(0.3, 0.7))) / f.n, [px, py] = long ? [x + t, y] : [x, y + t];
-        rng.chance(0.5) ? P.round(px, py, TS * 0.09, 1.4) : P.box(px, py, TS * 0.17, TS * 0.17, rng.range(-0.3, 0.3), 1.4);
-      }
-    } else if (f.type === "table") {
-      P.box(x, y, w, h, rng.range(-0.02, 0.02), OUT, PAPER);
-    } else if (f.type === "bench") {
-      P.box(x, y, w, h, 0, IN + 0.5, PAPER);
-    } else if (f.type === "chair") {
-      // A seat, its back the heavier line, away from the table.
-      const s = f.s * TS;
-      P.box(x, y, s, s, rng.range(-0.08, 0.08), IN + 0.3, PAPER);
-      P.line(...turn(s / 2, -s / 2), ...turn(s / 2, s / 2), OUT);
-    } else if (f.type === "bed") {
-      // A frame, a pillow at the head, the edge of the blanket.
-      const L = f.hx ? w : h, Wd = f.hx ? h : w;
-      P.shape([turn(L / 2, -Wd / 2), turn(L / 2, Wd / 2), turn(-L / 2, Wd / 2), turn(-L / 2, -Wd / 2)], OUT, PAPER);
-      const p0 = L / 2 - TS * 0.07, p1 = L / 2 - TS * 0.3;
-      P.shape([turn(p0, -Wd * 0.33), turn(p0, Wd * 0.33), turn(p1, Wd * 0.33), turn(p1, -Wd * 0.33)], IN);
-      P.line(...turn(L / 2 - TS * 0.45, -Wd / 2), ...turn(L / 2 - TS * 0.45, Wd / 2), IN);
-    } else if (f.type === "coffin") {
-      // Wide at the shoulders, narrowing to head and foot; its lid inset.
-      const L = (f.hx ? w : h) / 2, Wd = (f.hx ? h : w) / 2;
-      const outline = (s) => [[L, -0.62], [L * 0.45, -1], [-L, -0.5], [-L, 0.5], [L * 0.45, 1], [L, 0.62]].map(([al, ac]) => turn(al * s, ac * Wd * s));
-      P.shape(outline(1), OUT, PAPER);
-      P.shape(outline(0.68), IN);
-    } else if (f.type === "sarcophagus" || f.type === "altar") {
-      P.box(x, y, w, h, 0, OUT + (f.type === "sarcophagus" ? 0.4 : 0), PAPER);
-      const inset = TS * (f.type === "sarcophagus" ? 0.17 : 0.12);
-      P.box(x, y, w - 2 * inset, h - 2 * inset, 0, IN);
-    } else if (f.type === "stairs") {
-      // A flight of steps seen from above: a frame, and treads across it,
-      // narrowing the way down (wider the way up), an arrow to say which.
-      const s = TS * 0.82, top = y - s / 2;
-      P.box(x, y, s, s, rng.range(-0.03, 0.03), OUT, PAPER);
-      for (let i = 1; i < 5; i++) {
-        const t = i / 5, half = (s / 2) * (f.dir === "down" ? 1 - t * 0.55 : 0.45 + t * 0.55) * 0.86;
-        P.line(x - half, top + s * t, x + half, top + s * t, IN);
-      }
-      const ay = f.dir === "down" ? 1 : -1, tip = y + ay * s * 0.32;
-      P.line(x - s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
-      P.line(x + s * 0.12, tip - ay * s * 0.14, x, tip, IN + 0.4);
-    } else if (f.type === "brazier") {
-      // A round bowl of coals on three short legs, big enough to hold its
-      // fire. (The flame is drawn over it as it burns, down inside the bowl:
-      // render.js.)
-      const r = TS * BRAZIER_BOWL;
-      for (const a of [0.5, 0.5 + (2 * Math.PI) / 3, 0.5 + (4 * Math.PI) / 3].map((a) => a + Math.PI / 2)) P.line(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8, x + Math.cos(a) * r * 1.45, y + Math.sin(a) * r * 1.45, OUT);
-      P.round(x, y, r, OUT, PAPER);
-      P.round(x, y, r * 0.62, IN, INK);
-    } else if (f.type === "candles") {
-      // Three fat candles standing on an altar, seen from above: a round
-      // each, its wick a dot. (Their flames and glows are drawn over them
-      // as they burn: fire.js.)
-      for (const [dx, dy] of f.flames) {
-        const cx = x + dx * TS, cy = y + dy * TS;
-        P.round(cx, cy, TS * 0.12, 1.5, PAPER);
-        if (mode === "paper" || mode === "ink") {
-          ctx.save();
-          ctx.fillStyle = INK;
-          ctx.beginPath();
-          ctx.arc(cx, cy, TS * 0.12 * 0.22, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-    } else if (f.type === "campfire") {
-      // A teepee of three logs seen from the side: plain bars of ink leaning
-      // together, crossing a little past their point. (The flame is drawn
-      // over it as it burns: fire.js.)
-      const w = 0.4, foot = 0.28, top = -0.14, th = 0.09, poke = 0.07;
-      for (const u of [-0.5, 0.5, 0]) {
-        const bx = x + u * w * TS, by = y + foot * TS, tx = x - u * poke * TS, ty = y + top * TS;
-        const len = Math.hypot(tx - bx, ty - by), nx = (-(ty - by) / len) * th * TS * 0.5, ny = ((tx - bx) / len) * th * TS * 0.5;
-        P.shape([[bx + nx, by + ny], [tx + nx, ty + ny], [tx - nx, ty - ny], [bx - nx, by - ny]], 0, INK);
-      }
-    }
+    drawerFor(f)?.(f, { P, rng, ctx, mode, x, y, w, h, TS, turn, OUT, IN, INK, PAPER });
   }
 }
 
