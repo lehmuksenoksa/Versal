@@ -67,7 +67,7 @@ Each part's state is one of:
 | 1 | [Vision](01-vision.md) | What kind of game, how long a run, who grows how, between runs, story, where it's played, sound, saving | decided (round 1) |
 | 2 | [The run](02-the-run.md) | Regions and levels, their order, bosses, the goal, how hard it gets | bosses, oil and dread decided; the goal and regions in round 4 |
 | 3 | [The character](03-the-character.md) | How levels are earned, the choices at a level up, attributes, magic | decided (rounds 2 and 3); the level-up choices' list in round 5 |
-| 4 | [Systems](04-systems.md) (in full: [`stealth.md`](stealth.md), [`light-and-dread.md`](light-and-dread.md), [`fighting.md`](fighting.md)) | Light and stealth, noise, awareness and the monsters' minds, combat, ailments, items and traits, resting, doors and secrets, food (or none) | decided in outline (rounds 2 and 3); details with the content |
+| 4 | [Systems](04-systems.md) (in full: [`stealth.md`](stealth.md), [`light-and-dread.md`](light-and-dread.md), [`fighting.md`](fighting.md), [`features.md`](features.md)) | Light and stealth, noise, awareness and the monsters' minds, combat, ailments, items and traits, resting, doors and secrets, food (or none) | decided in outline (rounds 2 and 3); details with the content |
 | 5 | Content | Every monster, item, trait, room kind and ground kind, as tables | open |
 | 6 | [Levels](06-levels.md) | How each ground kind is made, set pieces, how a level is laid out to be played | generating for stealth started |
 | 7 | Interface | Layout (big screens), panels, tips, keys and mouse, the level-up page, title, death and victory pages, settings, accessibility | open |
