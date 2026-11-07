@@ -163,3 +163,39 @@ test("the lamp out: sight close round; lit again: far", () => {
   w.act({ do: "lamp" });
   assert.ok(!w.sneaking && w.sight === far);
 });
+
+// ---- A level's state kept with it (groundwork G4) ----
+
+test("a level keeps what changed on it while the player is away", async () => {
+  const { levelFromText } = await import("./support/scenario.js");
+  const { World } = await import("../js/rules/world.js");
+  const upper = levelFromText(`
+    ########
+    #@'.g.>#
+    ########
+  `), lower = levelFromText(`
+    #######
+    #<...+#
+    #######
+  `);
+  const w = new World(1, { levels: { 1: upper.level, 2: lower.level } });
+  w.placeMonster("goblin", 4, 1, { state: "sleeping" });
+  w.items.push({ x: 3, y: 1, item: { type: "dagger", glyph: "/", n: 1 } });
+  w.act({ do: "close", x: 2, y: 1 });
+  Object.assign(w.player, { x: 6, y: 1 });
+  w.act({ do: "stairs", dir: "down" });
+  assert.equal(w.place.depth, 2);
+  assert.ok(!w.actors.some((a) => a.kind === "goblin") && !w.items.length, "the upper level's goblin or dagger came down too");
+  w.act({ do: "move", dx: 1, dy: 0 });
+  w.act({ do: "stairs", dir: "up" });
+  assert.ok(w.place.depth === 2, "went up from off the stairs");
+  Object.assign(w.player, { x: 1, y: 1 });
+  w.act({ do: "stairs", dir: "up" });
+  assert.equal(w.place.depth, 1);
+  assert.deepEqual([w.player.x, w.player.y], [6, 1], "not back on the stairs down");
+  assert.equal(w.doorAt(2, 1).open, false, "the door shut before going down is open again");
+  assert.ok(w.items.some((f) => f.item.type === "dagger"), "the dagger is gone");
+  assert.ok(w.actors.some((a) => a.kind === "goblin"), "the goblin is gone");
+  assert.equal(w.actors[0], w.player, "the player isn't first among the actors");
+  assert.equal(w.actors.filter((a) => a === w.player).length, 1);
+});

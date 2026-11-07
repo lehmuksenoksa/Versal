@@ -86,6 +86,7 @@ the groundwork."
 | **G1. Small maps** | A World from a map typed as text: walls, floor, doors, the player, monsters and lights by letter; a monster placed by the rules (`placeMonster`), a level given instead of generated | The first tests written on small maps, of rules as they are now |
 | **G2. Actions in the rules** | Every action the player takes as a command the rules carry out (`act`), resting till healed, walking and exploring among them; the keys, the bot and the tests using it | The bot, the lock (unchanged: same play), the browser check, you |
 | **G3. The view lock** | The game's view at fixed seeds and turns, the clock stopped, hashed; compared before and after a change | It notices a deliberate change; it passes unchanged on a repeat |
+| G4 to G6 | A second pass: section 7 | |
 
 ## Progress
 
@@ -140,5 +141,45 @@ the groundwork."
   feature set reworks it, with proof the view is unchanged; and a check on every change to the view
   meant to leave it alone.
 
-**The groundwork is done** (G1 to G3). Next, the first feature set: light (section 4).
+**G1 to G3 done.**
+
+## 7. A second pass (after G3)
+
+Asked again ("Can you do another pass at reassessing the architecture?"), then: "Yes, add G4 and G5,
+and do the CI check."
+
+**Before light:**
+- **G4. A level's state in one place.** Entering a level, the World copied 11 of its fields onto
+  itself (the lit squares, doors, things lying about, what's been seen...), and leaving, copied two
+  back. Light, traps, fire and lights set down all add state to a level that changes in play: each
+  would have had to be added in three places, and one forgotten shows only after going down and
+  coming back. Now the level's state lives on the level only; the World reaches it through the
+  level it's on.
+- **G5. The dice in streams.** All the dice in play were one stream: every new die a feature set
+  added would shift every die after it, so any change (a trap on depth 3) changed every fight in
+  every recorded run, and the lock couldn't tell a meant change from everything changing. Now
+  streams of their own: each level made and peopled by dice of its own (by the seed and its depth:
+  the same level whatever's played before it), and in play, fights, monsters' minds, things, and
+  the rest.
+- **G6. A check on every push** (GitHub): the suite (`npm test`) run on every push to the
+  repository, so a change that breaks it is caught wherever it was made. The pixel locks stay
+  local: another machine draws a little differently.
+
+**A principle from the light feature set on:** new systems as parts of their own, owned by the
+World (state of their own, a small way in: "how light is it here?", "a light changed"), not more
+methods mixed into one object that shares every field. The light model first; then conditions,
+monsters' behaviour.
+
+**With the light feature set:** a speed budget (turns a second; how long the light takes to work
+out again), checked with loose limits; splitting `expression.js` behind the view lock.
+
+**Cheap, whenever:** the mockups (13 use the game's code, four already show errors on load: a
+check that loads them, or retiring those that have served); a known list of the events the rules
+send the view, and a test that the view knows each.
+
+| Step | What | Checked by |
+|---|---|---|
+| **G4. A level's state in one place** | The World's copies of the level's state gone: reached through the level it's on (`here`) | The lock unchanged (same play); save and restore |
+| **G5. The dice in streams** | Levels by their seed and depth; in play, streams for fights, minds, things, the rest | A test that a level is the same whatever's played before it; the lock, levels' drawings and the view re-recorded on purpose |
+| **G6. A check on every push** | A GitHub workflow running `npm test` | It runs and passes on the push |
 

@@ -13,8 +13,9 @@ import { RNG } from "./rng.js";
 import { T } from "./dungeon.js";
 
 // (Raised when what a run holds changes so an older save would play wrong:
-// 2, curses and sourceless light pared away, R6.)
-const VERSION = 2;
+// 2, curses and sourceless light pared away, R6; 3, a level's state kept on
+// the level only, groundwork G4.)
+const VERSION = 3;
 const TYPED = { Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Float32Array, Float64Array };
 
 const toBase64 = (bytes) => {

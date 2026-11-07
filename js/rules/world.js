@@ -40,7 +40,6 @@ export class World {
     if (levels) this.given = levels;
     this.sneaking = false;
     this.rng = new RNG(seed);
-    this.seed = this.rng.seed;
     this.events = [];
     this.nextId = 1;
     this.player = { id: this.nextId++, kind: "player", glyph: "@", x: 0, y: 0, hp: PLAYER.hp, maxHp: PLAYER.hp, ailments: {}, healing: 0, kills: 0, name, cls: PLAYER.cls, level: 1, xp: 0,
@@ -149,6 +148,19 @@ export class World {
     return true;
   }
 }
+
+// The level the World is on, its state reached through it (`here`, a place
+// kept in `places`: levels.js): its map, its seed, the pillars, doors and
+// squares in the way, what its lights light, the things lying about, what's
+// seen and in view, who's there (the player among them while on it). One
+// place for each, so what a level keeps (lights put out, traps sprung) is
+// kept with it as the World goes up and down.
+for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "lit", "items", "visible", "seen", "inView", "actors"])
+  Object.defineProperty(World.prototype, key, {
+    get() { return this.here[key]; },
+    set(v) { this.here[key] = v; },
+    configurable: true,
+  });
 
 // Saving: the run as plain data (JSON can hold it), and a run from it.
 World.prototype.save = function () { return saveWorld(this); };

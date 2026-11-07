@@ -37,12 +37,15 @@ export const levelMethods = {
 
   // Go to level `depth` (made if it hasn't been): the player arriving on the
   // stairs from where they came (`via` "down": the stairs up; "up": down).
+  // (The level's state stays the level's: the World reaches it through
+  // `here`, the level it's on (world.js); the player is among the level's
+  // actors while on it, first.)
   enter(depth, via = null) {
-    if (this.place) this.saveHere();
+    if (this.here) this.here.actors = this.here.actors.filter((a) => a !== this.player);
     const fresh = !this.places[depth - 1];
     if (fresh) this.places[depth - 1] = this.makePlace(depth);
     const st = this.places[depth - 1];
-    Object.assign(this, { level: st.level, seed: st.seed, posts: st.posts, pillars: st.pillars, doors: st.doors, blocks: st.blocks, lit: st.lit, items: st.items, visible: st.visible, seen: st.seen, inView: st.inView });
+    this.here = st;
     this.place = st.P;
     const L = this.level, at = via === "up" ? L.stairsDown ?? L.start : L.stairsUp ?? L.start;
     this.player.x = at.x;
@@ -50,16 +53,9 @@ export const levelMethods = {
     // (The room arrived in needs no naming on the first step.)
     const r0 = roomAt(L, at.x, at.y);
     if (r0) r0.entered = true;
-    this.actors = [this.player, ...st.actors];
+    st.actors.unshift(this.player);
     if (fresh) this.furnish(st);
     this.updateFov();
-  },
-
-  // Keep this level as it is, to come back to.
-  saveHere() {
-    const st = this.places[this.place.depth - 1];
-    st.actors = this.actors.filter((a) => a !== this.player);
-    st.items = this.items;
   },
 
   // A new level's lights, monsters and things (a level given: its lights

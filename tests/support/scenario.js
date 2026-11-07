@@ -53,7 +53,9 @@ export function levelFromText(text, { legend = {}, rooms = [] } = {}) {
       } else if (letters[c]) monsters.push({ letter: c, kind: letters[c], x, y });
       else if (c !== ".") throw new Error(`a small map's letter ${JSON.stringify(c)}?`);
     }
-  if (!start) throw new Error("a small map needs the player: @");
+  // (A level below, come to by its stairs, needs no @.)
+  start ??= stairsUp ?? stairsDown;
+  if (!start) throw new Error("a small map needs the player (@) or stairs");
   // (A door's way through: along whichever way it has floor both sides.)
   const open = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (isOpen(tiles[idx(x, y)]) || secrets.some((s) => s.x === x && s.y === y));
   for (const d of [...doors, ...secrets]) [d.dx, d.dy] = open(d.x - 1, d.y) && open(d.x + 1, d.y) ? [1, 0] : [0, 1];
