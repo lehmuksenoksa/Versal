@@ -24,7 +24,7 @@ tag: light-shy"):
 |---|---|
 | **Vision** | How far it can tell what's in light: three distances, clear, kind, faint |
 | **Dark vision** | The same three distances, for what's in the dark |
-| **Light-shy** | A tag: no Vision; it sees by dark vision only, from itself, dazzled by light on the line to what it looks at (a band worse for dim, two for full light); it goes for lights it sees and fights worse in them |
+| **Light-shy** | A tag: no Vision; it sees by dark vision only, from itself; a light's own square blocks its sight as rock does; light on what it looks at makes it a band worse (dim) or two (full light); it goes for lights it sees and fights worse in them |
 
 - **Dark vision has bands** (yours: "the player should make out if the monster right next to them
   is a goblin or a rat"). Clear is 0 for most creatures, the player too; dark-dwellers see clearly in
@@ -39,11 +39,12 @@ tag: light-shy"):
 - **Light-shy eyes** see by dark vision alone: **light never makes them see better.** (Found trying
   it out: with a Vision of their own, a spider saw nothing on nearer dim squares and something on
   further lit ones.)
-- **Glare** (yours: "maybe for light shy creatures a light should obscure vision beyond it? This
-  could be used as a sneaking tool, especially later when player can set lights"): the brightest
-  light anywhere on the line from a light-shy creature to what it looks at, its own square and the
-  target's included, makes it a band worse for dim, two for full light. A light between you and a
-  spider hides you as if you stood in it.
+- **A light blocks light-shy sight** (yours: "light-shy creatures cannot see beyond a light source.
+  It blocks their vision like a square of rock"; "This could be used as a sneaking tool, especially
+  later when player can set lights"): a brazier's, a torch's, a lantern's square, and the player's
+  with the lamp lit, stop a light-shy creature's sight as rock does. (Tried, the other way: glare,
+  the brightest light anywhere on the line dazzling it, so a light's whole lit area screens what's
+  beyond, more weakly.)
 - **What it means.** For the player: clear, everything; kind, what it is; faint, that something is
   there ("?"). For a monster looking at the player: clear or kind, it sees them; faint, a glimpse.
 - **Dark-dwellers** (yours: "should definitely notice a light and treat its source aggressively, but
@@ -93,8 +94,7 @@ The diagonal step: "We can stay the decision about movement" (with stealth, feat
 
 ## Open
 
-1. **Glare:** any light on the line (leaning; it settles what dazzles them: their own square's
-   light and the target's both count), or only the light on what they look at.
+1. **A light blocks, as rock** (yours, shown on the page), or glare (any light on the line).
 2. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
    spider next to you in your lamp's light only glimpses you), or one band worse for any light.
 3. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
