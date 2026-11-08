@@ -21,7 +21,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
-await page.goto(`http://localhost:${server.address().port}/tests/browser/maps.html`, { waitUntil: "domcontentloaded" });
+await page.goto(`http://localhost:${server.address().port}/tests/browser/maps.html`, { waitUntil: "commit" });
 await page.waitForFunction(() => window.mapHashes, null, { timeout: 120000 });
 const got = await page.evaluate(() => window.mapHashes);
 await browser.close();

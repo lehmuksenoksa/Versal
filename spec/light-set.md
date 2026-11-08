@@ -139,3 +139,16 @@ Small flames are placed from their holder's middle (the ring's, each candle's) a
 the screen, so they sit the same on every wall and both ways along an altar (shown on the
 workbench). The holders, as chosen: the wall torch a ring (0.09) on a bracket (0.085); candles with
 long wicks; the campfire five square ends; the brazier as it is.
+
+Yours, after trying them in the test room: "The flames still don't look right. Can you add dark red
+outlines, not fully black?" Now outlined in a dark red (#6b2414), 1.4 pen widths round the big flames
+and 0.9 round the small (`outline` in lights.json); weights still to tune. Still not decided.
+
+And on light in general: "the light bands are too pixelated and the technique used to produce the
+flicker looks weird when there's more then one light close by." Now: the lights' bands are worked
+out at the map points (eight a square) as before, for the rules, but the screen draws each band's
+edge as a smooth line between them rather than a staircase of them (with the GPU: banded again per
+pixel from the light unbanded; without: from a picture three times finer). The flicker no longer
+swells each fire's light about it or wobbles the light near a fire; each fire only dims and brightens
+its own light a little, most toward its edge and fading to nothing at its edge, so lights that meet
+flicker together without a seam. Where light is (the rules) is unchanged.

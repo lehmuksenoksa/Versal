@@ -4,7 +4,7 @@
     "full": "how far it lights fully, squares from the flame",
     "dim": "then a dim band this wide",
     "dark": "then a faint band this wide (drawn fainter; played as dim)",
-    "flame": "how its flame is drawn (null: none drawn): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; tongues, a small, squat flame's (2 or 3), else round 1's big flame (spec/light-set.md, the flame workbench)"
+    "flame": "how its flame is drawn (null: none drawn): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; outline, the dark red line round it, in the pen's widths (0 none); tongues, a small, squat flame's (2 or 3), else round 1's big flame (spec/light-set.md, the flame workbench)"
   },
   "lights": {
     "fire": {
@@ -15,7 +15,8 @@
         "size": 0.225,
         "x": 0,
         "y": 0,
-        "flicker": 0.2
+        "flicker": 0.2,
+        "outline": 1.4
       }
     },
     "brazier": {
@@ -26,7 +27,8 @@
         "size": 0.3,
         "x": -0.005,
         "y": 0,
-        "flicker": 0.2
+        "flicker": 0.2,
+        "outline": 1.4
       }
     },
     "lantern": {
@@ -44,7 +46,8 @@
         "x": 0,
         "y": -0.08,
         "flicker": 0.1,
-        "tongues": 2
+        "tongues": 2,
+        "outline": 0.9
       }
     },
     "lamp": {
@@ -62,7 +65,8 @@
         "x": 0,
         "y": -0.025,
         "flicker": 0.1,
-        "tongues": 2
+        "tongues": 2,
+        "outline": 0.9
       }
     }
   }

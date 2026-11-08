@@ -1,13 +1,14 @@
 // The lights' flames, drawn each frame over the map, in the map's inks
-// (sienna, ochre and a straw heart), with no ink line: as set on the flame
-// workbench (spec/light-set.md). Redrawn eight times a second, each drawing a
+// (sienna, ochre and a straw heart), outlined in dark red: as set on the
+// flame workbench (spec/light-set.md). Redrawn eight times a second, each drawing a
 // little different, as a hand-animated fire on twos. How each light's flame
 // is drawn (its size, where it sits, its flicker) is the light's data
 // (js/content/lights.json, `flame`).
 
 import { RNG } from "./rules/rng.js";
 
-const COLOURS = { outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0" };
+// (The outline a dark red, not the map's black ink.)
+const COLOURS = { outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414" };
 const RATE = 8;
 
 // The big flame (campfires, braziers): a round bulb and three tongues, the
@@ -54,6 +55,15 @@ function squatPath(g, x, y, s, tips, R, f) {
   g.closePath();
 }
 
+// The flame's outline, `F.outline` the pen's widths (none if 0).
+function edge(g, F, TS) {
+  if (!F.outline) return;
+  g.lineWidth = (F.outline * TS) / 32;
+  g.strokeStyle = COLOURS.edge;
+  g.lineJoin = "round";
+  g.stroke();
+}
+
 // A light's flame at (x, y) in pixels (the place its data gives, already
 // added), `TS` a square's size, at time `t` (seconds); `seed` keeps flames
 // apart; `F` the light's `flame` (lights.json).
@@ -67,6 +77,7 @@ export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
     squatPath(g, x, by, s, tips, R, f);
     g.fillStyle = COLOURS.outer;
     g.fill();
+    edge(g, F, TS);
     squatPath(g, x, by + s * 0.05, s * 0.6, tips.map(([a, b]) => [a, b * 0.9]), R, f);
     g.fillStyle = COLOURS.mid;
     g.fill();
@@ -76,6 +87,7 @@ export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
     bigPath(g, x, y + s * 0.9, s, R, f);
     g.fillStyle = COLOURS.outer;
     g.fill();
+    edge(g, F, TS);
     bigPath(g, x, y + s * 0.9, s * 0.62, R, f);
     g.fillStyle = COLOURS.mid;
     g.fill();

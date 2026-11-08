@@ -12,6 +12,10 @@
 // is safe.)
 import { LAMPS, LAMP_SEE, R, blank, cellRng, clamp01, unite } from "./expression.js";
 
+// How many times finer than the map points the lights' picture is drawn
+// without the GPU (lampPicture).
+const LAMP_FINE = 3;
+
 export const lightMethods = {
   // The candle, drawn flat like the rest of the map. For each place the
   // player stands: what the light reaches (seen from a few points across
@@ -246,8 +250,8 @@ export const lightMethods = {
   // The level's lights (campfires, braziers, candles), each cast against the
   // walls, posts and shut doors and lighting the rim of rock past them, in
   // bands with ragged edges like the candle's. As `lampLevel` (mask
-  // resolution), as a picture to show the lit map through (`lampCanvas`),
-  // and what it lets the player see from afar (`lampSight`). Each light, for
+  // resolution), unbanded (`lampSoft`, for the screen to band smoothly: see
+  // lampPicture), and what it lets the player see from afar (`lampSight`). Each light, for
   // finding those in sight: `lamps` (each the box it lights { x0, y0, x1,
   // y1 }, in squares, and some of the map points it lights to look for,
   // `cells`).
@@ -257,28 +261,36 @@ export const lightMethods = {
   // they need laying again as they move (`onlyLanterns`).
   lightLamps(onlyLanterns = false, dirty = null) {
     const { mw, mh, TS, S, level: L } = this, lanterns = this.lanterns ?? [], base = onlyLanterns ? this.lampBase : null;
-    const keep = base && dirty && this.lampCanvas && this.lampSight ? { lamp: this.lampCanvas, sight: this.lampSight } : null;
+    const keep = base && dirty && this.lampSight ? { sight: this.lampSight } : null;
     const lights = base ? [] : L.lights ?? [];
-    this.lampLevel = this.lampCanvas = this.lampSight = null;
+    this.lampLevel = this.lampSoft = this.lampSight = null;
     this.lamps = base ? base.lamps.slice() : [];
     if (!base) this.lampBase = null;
     if (!lights.length && !lanterns.length && !this.lamps.length) return;
-    const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh)), steady = base ? base.steady.slice() : new Float32Array(mw * mh);
-    // (Every fourth map point each way that the light being laid lights; and
-    // a fire's light kept apart, `own`, to flicker in size; the rest,
-    // `steady`.)
-    let cells, own = null;
-    const mark = (x, y, j, v) => {
+    const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh));
+    const soft = (this.lampSoft = base ? base.soft.slice() : new Float32Array(mw * mh));
+    // (Every fourth map point each way that the light being laid lights.)
+    let cells;
+    const mark = (x, y, j, v, u) => {
       if (v > level[j]) level[j] = v;
+      if (u > soft[j]) soft[j] = u;
       if (v > 0 && !(x & 3) && !(y & 3)) cells.add(j);
-      if (!own) { if (v > steady[j]) steady[j] = v; }
-      else if (own.a) { const k = (y - own.y0) * own.w + (x - own.x0); if (v > own.a[k]) own.a[k] = v; }
     };
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
+    // The light unbanded, for the screen to band smoothly between the map
+    // points (`lampSoft`): falling steadily with how far, `e` (squares), and
+    // crossing halfway between two bands' levels just where the bands part
+    // (as js/gpu.js's lampBands reads it); `B` the light's bands.
+    const unbanded = (e, B) => {
+      const k = [[0, 1], [B.full, (S.dimLevel + 1) / 2], [B.full + B.dim, (S.darkLevel + S.dimLevel) / 2], [B.full + B.dim + B.dark, S.darkLevel / 2], [B.full + B.dim + B.dark + 0.5, 0]];
+      for (let i = 1; i < k.length; i++) if (e < k[i][0]) return k[i - 1][1] + ((e - k[i - 1][0]) / (k[i][0] - k[i - 1][0])) * (k[i][1] - k[i - 1][1]);
+      return 0;
+    };
     // Lights the map points round (x, y) (squares) in line of sight within
-    // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly.
-    // (Past the walls in view only into the rock, not past shut doors.)
-    const shine = (x, y, out, dist, band) => {
+    // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly,
+    // `B` its bands. (Past the walls in view only into the rock, not past
+    // shut doors.)
+    const shine = (x, y, out, dist, band, B) => {
       const view = this.lampWalls.visible(x * TS, y * TS, (out + 0.5) * TS), rim = view.beyond(S.lightWall * TS);
       const m = Math.ceil((out + 1) * R), cx = Math.floor(x * R), cy = Math.floor(y * R);
       const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
@@ -289,40 +301,34 @@ export const lightMethods = {
       g.fillStyle = "#0f0";
       g.fill(view);
       const a = g.getImageData(0, 0, bw, bh).data;
-      if (own) Object.assign(own, { x0, y0, w: bw, h: bh, a: new Float32Array(bw * bh) });
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
           const b = ((y - y0) * bw + (x - x0)) * 4, j = y * mw + x;
           if (a[b + 3] < 128 || (a[b + 1] < 128 && this.floor[j])) continue;
           const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R);
-          mark(x, y, j, band(dist(mx, my) + rag(mx, my)));
+          const e = dist(mx, my) + rag(mx, my);
+          mark(x, y, j, band(e), unbanded(e, B));
         }
     };
     for (const l of lights) {
       const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
       cells = new Set();
-      own = {};
-      shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0));
-      // (Its light as a picture of its own, at mask resolution.)
-      const c = blank(own.w, own.h), im = new ImageData(own.w, own.h);
-      for (let k = 0; k < own.a.length; k++) im.data[k * 4 + 3] = Math.round(255 * own.a[k]);
-      c.getContext("2d").putImageData(im, 0, 0);
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, pic: c, at: [own.x0, own.y0] } });
-      own = null;
+      shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0), B);
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4 } });
     }
-    if (!base) this.lampBase = { level: level.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
+    if (!base) this.lampBase = { level: level.slice(), soft: soft.slice(), lamps: this.lamps.slice() };
     // The lanterns: steady, in their own bands (LIGHTS.lantern).
     const LB = LAMPS.lantern, lout = LB.full + LB.dim + LB.dark;
     for (const l of lanterns) {
       cells = new Set();
-      own = null;
       const x = l.x + 0.5, y = l.y + 0.5;
-      shine(x, y, lout, (mx, my) => Math.hypot(mx / TS - x, my / TS - y), (e) => (e < LB.full ? 1 : e < LB.full + LB.dim ? S.dimLevel : e < lout ? S.darkLevel : 0));
+      shine(x, y, lout, (mx, my) => Math.hypot(mx / TS - x, my / TS - y), (e) => (e < LB.full ? 1 : e < LB.full + LB.dim ? S.dimLevel : e < lout ? S.darkLevel : 0), LB);
       this.lamps.push({ x0: x - lout, y0: y - lout, x1: x + lout, y1: y + lout, cells: [...cells], lantern: true });
     }
     // (Only the box `dirty` painted again into the pictures `keep`, when
     // only the lanterns moved.)
     const [bx0, by0, bx1, by1] = keep ? dirty.map((v, i) => Math.max(0, Math.min(i % 2 ? mh : mw, v))) : [0, 0, mw, mh];
+    this.lampPicDirty = keep && this.lampPic && this.lampPicDirty !== true ? unite(this.lampPicDirty, [bx0, by0, bx1, by1]) : true;
     const pic = (level, alpha, c) => {
       const w = bx1 - bx0, h = by1 - by0;
       c ??= blank(mw, mh);
@@ -333,9 +339,40 @@ export const lightMethods = {
       c.getContext("2d").putImageData(im, bx0, by0);
       return c;
     };
-    // (`lampCanvas`: the steady light; the fires' are laid over it as drawn.)
-    this.lampCanvas = pic(steady, (v) => v, keep?.lamp);
     this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)), keep?.sight);
+  },
+
+  // The lights as a picture to show the lit map through, for drawing without
+  // the GPU: banded from the light unbanded (`lampSoft`), read smoothly
+  // between the map points, LAMP_FINE times finer than them, so that each
+  // band's edge is a smooth line, not a staircase of map points (as the GPU
+  // draws it, js/gpu.js lampBands). Made when first asked for, and again
+  // where the light changed (`lampPicDirty`). Null if there are no lights.
+  lampPicture() {
+    const { mw, mh, S } = this, soft = this.lampSoft;
+    if (!soft) return (this.lampPic = null);
+    const F = LAMP_FINE, W = mw * F, H = mh * F;
+    if (!this.lampPic || this.lampPic.width !== W || this.lampPic.height !== H) this.lampPicDirty = true;
+    const box = this.lampPicDirty;
+    if (!box) return this.lampPic;
+    this.lampPicDirty = null;
+    const c = box === true ? (this.lampPic = blank(W, H)) : this.lampPic;
+    const [x0, y0, x1, y1] = box === true ? [0, 0, mw, mh] : box, w = (x1 - x0) * F, h = (y1 - y0) * F;
+    if (w <= 0 || h <= 0) return c;
+    const dk = S.darkLevel, dm = S.dimLevel, t1 = dk / 2, t2 = (dk + dm) / 2, t3 = (dm + 1) / 2;
+    const A = [0, Math.round(255 * dk), Math.round(255 * dm), 255];
+    const im = new ImageData(w, h), d = im.data;
+    for (let Y = 0; Y < h; Y++) {
+      const fy = (y0 * F + Y + 0.5) / F - 0.5, ky = Math.max(0, Math.min(mh - 1, Math.floor(fy))), ky1 = Math.min(mh - 1, ky + 1), ty = Math.max(0, Math.min(1, fy - ky));
+      for (let X = 0; X < w; X++) {
+        const fx = (x0 * F + X + 0.5) / F - 0.5, kx = Math.max(0, Math.min(mw - 1, Math.floor(fx))), kx1 = Math.min(mw - 1, kx + 1), tx = Math.max(0, Math.min(1, fx - kx));
+        const a = soft[ky * mw + kx], b = soft[ky * mw + kx1], e = soft[ky1 * mw + kx], f = soft[ky1 * mw + kx1];
+        const v = (a + (b - a) * tx) * (1 - ty) + (e + (f - e) * tx) * ty;
+        d[(Y * w + X) * 4 + 3] = A[v < t1 ? 0 : v < t2 ? 1 : v < t3 ? 2 : 3];
+      }
+    }
+    c.getContext("2d").putImageData(im, x0 * F, y0 * F);
+    return c;
   },
 
   // The lanterns carried about moved (squares { x, y }): their light laid

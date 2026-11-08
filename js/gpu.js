@@ -117,7 +117,7 @@ uniform vec4 uPrevBox; uniform vec2 uPrevC, uPrevShift; uniform float uPrevSize,
 uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC, uSeeMarkC, uSeeWallC, uMemMarkC, uMemWallC, uShadowC;
 uniform float uSeeMark, uSeeWall, uMemMark, uMemWall;
 uniform float uWarmth, uLampWarmth;
-uniform vec4 uFires[8]; uniform float uFireK[8]; uniform float uFireDim[8]; uniform int uFireN;
+uniform vec4 uFires[8]; uniform float uFireDim[8]; uniform int uFireN; uniform float uDarkL, uDimL;
 out vec4 o;
 
 vec4 paperAt(sampler2D t, vec2 p) { return texture(t, p * uScale / uPaper); }
@@ -151,6 +151,30 @@ vec3 inked(vec3 c, float m, vec4 mk, vec3 h, vec4 L, float shapeRock, float floo
   return over(c, uOut, cov);
 }
 
+// The level's lights (at mask resolution) read smoothly between their
+// pixels: a float picture can't be filtered, so it's done here.
+float lampAt(vec2 uv) {
+  ivec2 sz = textureSize(uLamp, 0), hi = sz - 1;
+  vec2 t = uv * vec2(sz) - 0.5, f = fract(t);
+  ivec2 i = ivec2(floor(t));
+  float a = texelFetch(uLamp, clamp(i, ivec2(0), hi), 0).r, b = texelFetch(uLamp, clamp(i + ivec2(1, 0), ivec2(0), hi), 0).r;
+  float c = texelFetch(uLamp, clamp(i + ivec2(0, 1), ivec2(0), hi), 0).r, d = texelFetch(uLamp, clamp(i + ivec2(1, 1), ivec2(0), hi), 0).r;
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+// The level's lights in their bands (lit 1, dim, dark), each band's edge a
+// smooth line through the light read between the map points, not a
+// staircase of them: the light unbanded (Expression's lampSoft), which
+// crosses halfway between two bands' levels where they part, banded again
+// here at the screen's own resolution, each edge softened by a pixel.
+float lampBands(vec2 uv) {
+  float v = lampAt(uv), w = max(fwidth(v) * 0.7, 1e-4);
+  float a = uDarkL * smoothstep(uDarkL * 0.5 - w, uDarkL * 0.5 + w, v);
+  float b = (uDimL - uDarkL) * smoothstep((uDarkL + uDimL) * 0.5 - w, (uDarkL + uDimL) * 0.5 + w, v);
+  float c = (1.0 - uDimL) * smoothstep((uDimL + 1.0) * 0.5 - w, (uDimL + 1.0) * 0.5 + w, v);
+  return a + b + c;
+}
+
 void main() {
   vec2 frag = vec2(gl_FragCoord.x, uCanvas.y - gl_FragCoord.y);
   vec2 p = uCam + frag / uSc;
@@ -173,14 +197,17 @@ void main() {
   // twice over but where the player's light warms it once.
   vec2 sp = p * uSightScale / uSightSize;
   float sight = texture(uSight, sp).a, seen = paperAt(uSeen, p).a;
-  vec2 lq = p; float dim = 1.0;
+  // (Each fire's own flicker, dimming most toward its edge and fading out to
+  // nothing at it, so where fires' lights meet they flicker together without
+  // a seam.)
+  float dim = 1.0;
   for (int i = 0; i < 8; i++) {
     if (i >= uFireN) break;
     vec4 f = uFires[i];
     float d = distance(p, f.xy);
-    if (d < f.z) { lq = (p - f.xy) / uFireK[i] + f.xy; dim = 1.0 - uFireDim[i] * smoothstep(0.0, f.z, d); break; }
+    if (d < f.z) dim *= 1.0 - uFireDim[i] * smoothstep(0.0, f.z, d) * (1.0 - smoothstep(0.8 * f.z, f.z, d));
   }
-  float la = texture(uLamp, lq * ${R}.0 / uTS / uMask).r * sight * texture(uLampSight, sp).a * seen * dim;
+  float la = lampBands(p * ${R}.0 / uTS / uMask) * sight * texture(uLampSight, sp).a * seen * dim;
   if (la > 0.0) {
     float w1 = uLampWarmth * 0.35, w2 = w1 * (uWarmth > 0.0 ? 1.0 - lp : 1.0);
     c = over(c, lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm)), la);
@@ -581,7 +608,7 @@ export class GpuMap {
       // (Cast anew when the player moves, and when a door opens or shuts.)
       uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightCasts}|${E.lightReach?.width}`),
       uLightPrev: this.texture("lightPrev", E.lightPrev ? E.lightReachPrev : E.lit, E.lightPrev ? `${E.lightPrev.casts}|${E.lightReachPrev.width}` : "none"),
-      uLamp: this.maskTexture("lamp", E.lampLevel ?? new Float32Array(mw * mh), E.lampLevel),
+      uLamp: this.maskTexture("lamp", E.lampSoft ?? new Float32Array(mw * mh), E.lampSoft),
     };
     const p = this.compose;
     gl.useProgram(p);
@@ -631,13 +658,13 @@ export class GpuMap {
     u("uSeeMarkC", ...hex(S.seeMarkC)); u("uSeeWallC", ...hex(S.seeWallC)); u("uMemMarkC", ...hex(S.memMarkC)); u("uMemWallC", ...hex(S.memWallC));
     u("uSeeMark", S.seeMark); u("uSeeWall", S.seeWall); u("uMemMark", S.memMark); u("uMemWall", S.memWall);
     u("uShadowC", 70 / 255, 62 / 255, 55 / 255);
+    u("uDarkL", S.darkLevel); u("uDimL", S.dimLevel);
     // Each fire in sight flickering its own way (as compose's).
     const fires = (E.lampsSeen ?? []).filter((l) => l.fire).slice(0, 8);
     gl.uniform1i(this.loc(p, "uFireN"), fires.length);
     fires.forEach((l, i) => {
       const { x, y, out, ph } = l.fire;
       gl.uniform4f(this.loc(p, `uFires[${i}]`), x * TS, y * TS, out * TS, ph);
-      gl.uniform1f(this.loc(p, `uFireK[${i}]`), 1 + 0.04 * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6)));
       const k = Math.max(0, Math.min(1, 0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7)));
       gl.uniform1f(this.loc(p, `uFireDim[${i}]`), 0.3 * k);
     });
