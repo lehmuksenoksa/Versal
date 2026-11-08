@@ -225,3 +225,8 @@ so a monster seen there was never told, and turned "?" as it stepped off. Now bu
 decided: in the dark the player tells the kind of what's next to them, the diagonals too
 (`player.darkKind` 1, reaching 1½; the "Next to you" choice gone from the test room). Still so: a
 monster lost from sight is forgotten, "?" when next seen in the dark.
+
+Yours: "Yes, remember them for a few turns, so if they reappear soon, they're still seen the same way.
+Don't remember them in the last seen position." Done: a monster told stays told for
+`player.remember` turns (5, to tune) after it's lost from sight, so it's known again if it's back
+by then; it isn't drawn while out of sight.

@@ -73,11 +73,23 @@ export const senseMethods = {
     computeFov(w, h, px, py, GOBLIN.lose, opaque, (x, y) => {
       if (!behind(x, y)) this.inView[y * w + x] = 1;
     });
-    // (A monster whose kind the player has told stays told while it stays in
-    // sight, `told`, though it goes off into the dark: not "?" again till
-    // lost from sight. Yours: "seen monsters should be remembered. It's
-    // strange they turn into question marks.")
-    for (const a of this.actors) if (a !== this.player) a.told = this.isVisible(a.x, a.y) && (a.told || this.knowAt(a.x, a.y) >= KNOW.kind);
+    // (A monster whose kind the player has told stays told, `told`, though it
+    // goes off into the dark; lost from sight (`lost`, the turn), for
+    // `player.remember` turns more, so it's known again if it's back soon.
+    // Yours: "seen monsters should be remembered. It's strange they turn into
+    // question marks"; "remember them for a few turns, so if they reappear
+    // soon, they're still seen the same way. Don't remember them in the last
+    // seen position.")
+    for (const a of this.actors) {
+      if (a === this.player) continue;
+      if (this.isVisible(a.x, a.y)) {
+        a.lost = null;
+        if (this.knowAt(a.x, a.y) >= KNOW.kind) a.told = true;
+      } else if (a.told) {
+        a.lost ??= this.turn;
+        if (this.turn - a.lost >= PLAYER.remember) a.told = false;
+      }
+    }
     // (And a thing on the floor, once seen (`seen`, for the map to remember
     // it by) or told (`told`), stays so while it lies there: yours, "Also
     // seen items".)
@@ -104,7 +116,7 @@ export const senseMethods = {
   },
 
   // What the player can tell of the monster `a`: as of its square, but its
-  // kind if told while it has stayed in sight (`told`, updateFov).
+  // kind if told and not long lost from sight (`told`, updateFov).
   knowOf(a) {
     const k = this.knowAt(a.x, a.y);
     return k === KNOW.something && a.told ? KNOW.kind : k;

@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { scenario, picture } from "./support/scenario.js";
 import { World } from "../js/rules/world.js";
+import { PLAYER } from "../js/rules/content.js";
 
 const at = (w, x, y) => w.light.at(x, y);
 
@@ -196,7 +197,7 @@ test("what the player can tell: lit everything, dim the kind, dark close by only
   assert.equal(w.knowAt(12, 1), 0, "a dark square far off");
 });
 
-test("a monster told in the light stays told as it goes off into the dark, till lost from sight", () => {
+test("a monster told in the light stays told as it goes off into the dark, and a few turns after it's lost from sight", () => {
   const w = scenario(`
     ##############################
     #@.........................B.#
@@ -211,13 +212,22 @@ test("a monster told in the light stays told as it goes off into the dark, till 
   w.updateFov();
   assert.equal(w.knowAt(3, 1), 1, "the square only says something's there");
   assert.equal(w.knowOf(g), 2, "but the goblin is remembered");
-  // (Lost from sight, then back in the dark: only something again.)
+  // (Lost from sight, back soon: still a goblin.)
   g.x = 12;
   w.updateFov();
   assert.equal(w.knowOf(g), 0, "out of sight");
+  w.turn += PLAYER.remember - 1;
   g.x = 3;
   w.updateFov();
-  assert.equal(w.knowOf(g), 1, "back, not seen in the light since: something");
+  assert.equal(w.knowOf(g), 2, "back soon: remembered");
+  // (Lost again, back only after longer: only something.)
+  g.x = 12;
+  w.updateFov();
+  w.turn += PLAYER.remember;
+  w.updateFov();
+  g.x = 3;
+  w.updateFov();
+  assert.equal(w.knowOf(g), 1, "back too late: something");
 });
 
 test("in the dark, the kind of what's next to the player, the diagonals too; further off only something", () => {
