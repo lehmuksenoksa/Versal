@@ -64,8 +64,8 @@ Placeholder numbers, to show the shape:
 
 | | Vision (clear / kind / faint) | Dark vision (clear / kind / faint) | Light-shy |
 |---|---|---|---|
-| The player | all in sight / – / – | 0 / 1½ / 3½ | – |
-| Goblin | 6 / 7 / 8 | 0 / 0 / 1½ | – |
+| The player | all in sight / – / – | 0 / 1 / 3 | – |
+| Goblin | 6 / 7 / 8 | 0 / 0 / 1 | – |
 | Cave spider | – | 3 / 4 / 6 | yes |
 | Dark elf | 6 / 7 / 8 | 4 / 5 / 6 | – |
 
@@ -118,6 +118,12 @@ square counts, drawn sizes against the rules', the edges, how far a line may gra
 - **The player's sight by the same lines as light** (today it's a square-by-square field of view, so
   the two can differ at corners).
 
+**Numbers in whole steps** (yours: "Can we record the steps in full numbers: 1, 2, 3, but treat
+them with half steps where needed? That'd be more human readable"): every band is written as a
+whole number of steps, and reaches the squares whose middle lies within that number and a half (a
+band of 3: within 3½). So the data reads 1, 2, 3 and the edges fall between rows of squares. 0 is no
+band. Halving (dim light) halves the number first.
+
 ## Sneak attacks
 
 **Decided** (yours: "Glimpse should allow stealth attack"): a blow on a monster that hasn't seen you,
@@ -130,7 +136,7 @@ only glimpsed you (or heard you), is a sneak attack. So the sight bands decide i
 | Dark elf (strong dark vision) | Hardly ever: asleep, or with help (a potion, a perk) |
 | Anything asleep | Always, unless your noise wakes it |
 
-**Proposed: noticing takes time** (yours: "can we tie this somehow into movement and/or timing. I
+**To plan in a session of its own, with stealth** (yours: "This needs a longer planning session of its own. Maybe later?"). **Proposed: noticing takes time** (yours: "can we tie this somehow into movement and/or timing. I
 envision someone pursuing player, player hiding behind a corner, and then stealth attacking a pursuer
 when they appear from around the corner. Or stealth attacking a lured monster when they move close
 by. Maybe noticing the player takes a while? Super fast player could step into the light and stealth
@@ -155,7 +161,8 @@ kill the first enemy from a group before it notices"). With actions taking ticks
 ## Open
 
 1. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
-   spider next to you in your lamp's light only glimpses you), or one band worse for any light.
+   spider next to you in your lamp's light only glimpses you), one band worse for any light, or a
+   band worse for dim and blind in full light. Shown on the "Sight in the dark" page.
 2. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
    orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
    ranges measured round; a diagonal step:

@@ -110,4 +110,5 @@ kind can be told there) but is drawn like the player's dark sight (only "somethi
 worked out as a proposal: `sight.md` (the faint band becomes the player's dark vision; Vision, Dark
 vision and light-shy for every creature). Decided so far: the map shows the light and the dark vision,
 dark vision drawn as the faint band is now; its bands show only in what's drawn on things. The two
-stand-in looks wait on it (leaning: the torch an iron cup on the wall; "?" a hatched shape).
+stand-in looks are still to discuss (yours: "These are not decided"); options shown so far: the torch
+as an iron cup on the wall or others, "?" as a hatched shape or others.
