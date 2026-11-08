@@ -95,6 +95,29 @@ a light-shy creature's sight as rock does (glare, tried, not taken).
 
 The diagonal step: "We can stay the decision about movement" (with stealth, feature set 2).
 
+## Decided: the round look and the rules agree
+
+The round, hand-drawn look stays (yours: "the round visual is important to me. We need to reconcile
+the rules with it"). Explored on two pages, "Round light bands" and "Shadows and corners": how a
+square counts, drawn sizes against the rules', the edges, how far a line may graze a corner.
+
+- **One radius per band,** used by the rules and the drawing alike; a square counts by its middle
+  (where the player, monsters and things are drawn). Counting by how much of a square is covered
+  only moves the radius the drawing must sit at; a drawn size that grows with the radius fits no
+  counting at every size.
+- **Circles: half-step radii, and the ragged edge bent round the middles** (yours: "half radii steps
+  and bending is okay for circumference"): the edges fall between rows of squares, and the wobble,
+  where it would cross a middle the wrong way, is nudged past it; the bends are no bigger than the
+  wobble, so the circles look as before. Every middle in the right shade.
+- **Corners and pillars: a stricter line, smooth shadow edges** (yours: "For corners, stricter looks
+  a lot better. But ragged and bent looks worse than smooth"): a line of sight or light must clear
+  a wall's corner or a pillar by a tenth of a square (today it may graze them by a tenth); shadow
+  edges drawn straight, without a wobble, by the same lines. Every square then looks the way it
+  counts in the scenes tried; the shadows come out a little fatter (no pillar's shadow thinner than a
+  square); sight and light no longer squeeze through a diagonal gap between two walls.
+- **The player's sight by the same lines as light** (today it's a square-by-square field of view, so
+  the two can differ at corners).
+
 ## Sneak attacks
 
 **Decided** (yours: "Glimpse should allow stealth attack"): a blow on a monster that hasn't seen you,
