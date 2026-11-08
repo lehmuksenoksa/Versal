@@ -5,6 +5,7 @@
 // and wounds, and the rooms' names, used by the look and the log too.
 import { ITEMS, MONSTERS, itemName, monName, shownTrait, roomName, roomAt } from "./rules/world.js";
 import { KNOW } from "./rules/senses.js";
+import { DIM } from "./rules/light.js";
 import { ITEM_TRAITS, ROOM_TRAITS } from "./rules/traits.js";
 
 // How a monster's state reads.
@@ -55,10 +56,12 @@ export function tipFor(w, x, y, shown) {
   // 2): in the dark close by, that something's there; in dim light, its kind;
   // lit, everything.)
   const a = w.actorAt(x, y), know = a && a !== w.player ? w.knowOf(a) : w.knowAt(x, y);
+  // (Why only its kind: dim light, the dark close by, or seen before.)
+  const only = w.light.at(x, y) === DIM ? "In dim light: what it is, no more." : w.knowAt(x, y) === KNOW.kind ? "In the dark, next to you: what it is, no more." : "In the dark: what it was when you saw it, no more.";
   const something = { at: { x, y }, title: "Something", lines: [], about: "In the dark, close by: something's there." };
   if (a && a !== w.player && shown(a)) {
     if (know === KNOW.something) return something;
-    if (know === KNOW.kind) return { at: { x, y }, title: cap(MONSTERS[a.kind]?.name ?? a.kind), lines: [], about: w.knowAt(x, y) === KNOW.kind ? "In dim light: what it is, no more." : "In the dark: what it was when you saw it, no more." };
+    if (know === KNOW.kind) return { at: { x, y }, title: cap(MONSTERS[a.kind]?.name ?? a.kind), lines: [], about: only };
     const hurt = wounds(a);
     return { at: { x, y }, title: cap(monName(a)), lines: [[[STATE[a.state] ?? a.state, "st"], [hurt, hurt === "unhurt" ? "" : "bad"]]], about: [ABOUT[a.kind], MONSTER_SAYS[a.trait]].filter(Boolean).join(" ") };
   }
@@ -66,7 +69,7 @@ export function tipFor(w, x, y, shown) {
   if (floor.length) {
     const top = floor[floor.length - 1], it = top.item, d = ITEMS[it.type], S = itemStats(it), knows = w.knowOfItem(top);
     if (knows === KNOW.something) return something;
-    if (knows === KNOW.kind) return { at: { x, y }, title: cap(it.trait === "murky" ? "potion" : d.name), lines: [], about: know === KNOW.kind ? "In dim light: what it is, no more." : "In the dark: what it was when you saw it, no more." };
+    if (knows === KNOW.kind) return { at: { x, y }, title: cap(it.trait === "murky" ? "potion" : d.name), lines: [], about: only };
     const what = d.cat === "weapon" ? `Blow ${S.dmg[0]}–${S.dmg[1]}, ${d.hands === 2 ? "two hands" : "one hand"}`
       : d.cat === "armour" ? `Worn on the ${d.slot}; takes off up to ${S.def}`
       : it.trait === "murky" ? (it.known ? (it.brew ? "Heals 12–18" : "Poisons") : "Heals well, or poisons")

@@ -92,12 +92,15 @@ export const senseMethods = {
 
   // What the player can tell of what's at (x, y), by the light there
   // (light-and-dread.md, section 2): 0 nothing (not in sight); 1 only that
-  // something's there (dark, within their dark sight); 2 its kind (dim);
-  // 3 everything (lit).
+  // something's there (dark, within their dark sight); 2 its kind (dim; or
+  // dark, next to them: `darkKind`, spec/sight.md, yours: "the player should
+  // make out if the monster right next to them is a goblin or a rat"); 3
+  // everything (lit).
   knowAt(x, y) {
     if (!this.isVisible(x, y)) return KNOW.nothing;
-    const l = this.light.at(x, y);
-    return l === LIT ? KNOW.all : l === DIM ? KNOW.kind : KNOW.something;
+    const l = this.light.at(x, y), dx = x - this.player.x, dy = y - this.player.y, r = PLAYER.darkKind + 0.5;
+    if (l === LIT) return KNOW.all;
+    return l === DIM || dx * dx + dy * dy <= r * r ? KNOW.kind : KNOW.something;
   },
 
   // What the player can tell of the monster `a`: as of its square, but its

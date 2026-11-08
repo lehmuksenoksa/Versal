@@ -1,7 +1,7 @@
 {
   "about": "The rules' own dials: numbers that belong to no one monster, item or light. Read by js/world.js, js/traits.js, js/levelgen.js. Drawing numbers stay with drawing; the player's own settings stay in the browser.",
   "notes": {
-    "player": "hit points to start; the bare blow (as a dagger's till there are weapons); healing, a hit point every so many turns, resting and not; darkSight, how far round them the player sees in the dark, steps (what's lit or dim they see however far: light-and-dread.md, section 2)",
+    "player": "hit points to start; the bare blow (as a dagger's till there are weapons); healing, a hit point every so many turns, resting and not; darkSight, how far round them the player sees in the dark, steps (what's lit or dim they see however far: light-and-dread.md, section 2); darkKind, how far round them in the dark they can tell a thing's kind, steps, each reaching half a step more (1: the squares next to them, the diagonals too; spec/sight.md)",
     "levels": "experience each level needs, all told; hit points each new level gives",
     "ailments": "bleeding from a hard blow (at damage or more, by a monster that bleeds, chance of the time), a hit point a turn for some turns, stopped by resting; poison, a hit point every so many turns for a while",
     "pack": "how many things carried; the pack's letters; bare hands' blow; things lying about (one for every so many rooms); the chance a monster drops something",
@@ -29,7 +29,8 @@
     "heal": 20,
     "restHeal": 5,
     "cls": "Adventurer",
-    "darkSight": 3
+    "darkSight": 3,
+    "darkKind": 1
   },
   "levels": {
     "xp": [

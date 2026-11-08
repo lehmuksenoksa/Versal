@@ -51,10 +51,9 @@ const LETTERING = {
 const ITEM_INK = { potion: "#b5302a" };
 
 // Being tried in the test room (its "dark" room): how things show in the
-// dark, `VERSAL_DARK` { near, letter, something } (js/scenes.js); none set,
-// as the game draws them. `near`: next to the player, the kind told (as
-// spec/sight.md has it, not built yet); `letter`: a letter on a dark square
-// (DARK_INK); `something`: what stands for a thing known only to be there.
+// dark, `VERSAL_DARK` { letter, something } (js/scenes.js); none set, as
+// the game draws them. `letter`: a letter on a dark square (DARK_INK);
+// `something`: what stands for a thing known only to be there.
 const DARK = () => globalThis.VERSAL_DARK ?? null;
 const DARK_INK = { pale: "#d9cfbb", floor: "#4a4540" };
 // A rats' nest: the heap's colour and size (squares), its strokes' weight
@@ -897,7 +896,7 @@ export class Renderer {
       const x = (it.x + 0.5) * TS, y = (it.y + 0.5) * TS;
       if (x < view.x - TS || y < view.y - TS || x > view.x + vw + TS || y > view.y + vh + TS) continue;
       const ink = ITEM_INK[it.item.type] ?? INK, D = DARK();
-      const something = (vis ? w.knowOfItem(it) === KNOW.something : !it.told) && !(D?.near && Math.hypot(it.x - w.player.x, it.y - w.player.y) <= 1.5);
+      const something = (vis ? w.knowOfItem(it) === KNOW.something : !it.told);
       const lit = vis ? this.exp.lightAt(x, y) : 0, dark = D && vis && lit <= this.settings.darkLevel + 1e-3 ? D : null;
       if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(lc, x, y, false, dark.something);
       else this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });
@@ -1346,7 +1345,7 @@ export class Renderer {
     // (In the dark close by, only that something's there: a stand-in mark
     // for now, its look to choose.)
     const pl = this.world.player, D = a !== pl ? DARK() : null;
-    const something = a !== pl && this.world.knowOf(a) === KNOW.something && !(D?.near && Math.hypot(a.x - pl.x, a.y - pl.y) <= 1.5);
+    const something = a !== pl && this.world.knowOf(a) === KNOW.something;
     const lit = this.exp.lightAt(bx, baseY), dark = D && lit <= this.settings.darkLevel + 1e-3 ? D : null;
     if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(ctx, cx, cy, true, dark.something, v.alpha);
     else this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });

@@ -220,6 +220,26 @@ test("a monster told in the light stays told as it goes off into the dark, till 
   assert.equal(w.knowOf(g), 1, "back, not seen in the light since: something");
 });
 
+test("in the dark, the kind of what's next to the player, the diagonals too; further off only something", () => {
+  const w = scenario(`
+    #######
+    #.....#
+    #..@..#
+    #.....#
+    #######
+  `, { sneaking: true });
+  w.updateFov();
+  assert.equal(w.knowAt(4, 2), 2, "next to them");
+  assert.equal(w.knowAt(4, 3), 2, "the diagonal");
+  assert.equal(w.knowAt(5, 2), 1, "two off");
+  // (A skeleton seen next to them, stepping off: still a skeleton.)
+  const s = w.placeMonster("skeleton", 4, 2);
+  w.updateFov();
+  s.x = 5;
+  w.updateFov();
+  assert.equal(w.knowOf(s), 2, "remembered as it steps off");
+});
+
 test("a thing told stays told in the dark; one never seen isn't remembered", () => {
   const w = scenario(`
     ##############################

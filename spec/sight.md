@@ -218,3 +218,10 @@ Yours: "Also seen items." Done: a thing on the floor, once told, stays told whil
 in the dark too (`told`, `knowOfItem`); one dropped by the player is told. And the map remembers
 only things actually seen (`seen`), as what they were seen as: one only ever seen as "?" stays "?"
 (before, a thing on any square once seen was drawn by its letter, even one dropped there later).
+
+Yours: "It doesn't seem to be working. Seen monsters turn into ?s." Found: the test room's "next to
+you, its kind" only drew the kind; the rules still had what's next to the player as only something,
+so a monster seen there was never told, and turned "?" as it stepped off. Now built in the rules, as
+decided: in the dark the player tells the kind of what's next to them, the diagonals too
+(`player.darkKind` 1, reaching 1½; the "Next to you" choice gone from the test room). Still so: a
+monster lost from sight is forgotten, "?" when next seen in the dark.
