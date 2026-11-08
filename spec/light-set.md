@@ -152,3 +152,10 @@ pixel from the light unbanded; without: from a picture three times finer). The f
 swells each fire's light about it or wobbles the light near a fire; each fire only dims and brightens
 its own light a little, most toward its edge and fading to nothing at its edge, so lights that meet
 flicker together without a seam. Where light is (the rules) is unchanged.
+
+Yours, on those: "The red outline doesn't help :( Maybe we need to try something different. Maybe the
+inked outline and paper coloured flame?" (Round 1's "in ink", dropped then, was close: outlined, the
+paper inside, two strokes in it, on the older shape.) Now tried in the test room, its picker
+switching between the map's inks (as now), ink on paper, ink on paper with an inner line, and ink on
+paper with a warm middle (js/fire.js STYLES; the ink outlines 1.9 pen widths big, 1.3 small). The game
+draws the map's inks unless the test room's picker says otherwise. Not decided.

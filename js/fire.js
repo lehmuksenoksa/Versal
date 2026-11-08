@@ -1,14 +1,24 @@
-// The lights' flames, drawn each frame over the map, in the map's inks
-// (sienna, ochre and a straw heart), outlined in dark red: as set on the
-// flame workbench (spec/light-set.md). Redrawn eight times a second, each drawing a
+// The lights' flames, drawn each frame over the map: in the map's inks
+// (sienna, ochre and a straw heart) outlined in dark red, as set on the flame
+// workbench (spec/light-set.md), or, being tried in the test room, in ink on
+// the paper (STYLES; the test room's picker sets `VERSAL_FLAMES`). Redrawn eight times a second, each drawing a
 // little different, as a hand-animated fire on twos. How each light's flame
 // is drawn (its size, where it sits, its flicker) is the light's data
 // (js/content/lights.json, `flame`).
 
 import { RNG } from "./rules/rng.js";
+import { INK, PAPER } from "./maprender.js";
 
-// (The outline a dark red, not the map's black ink.)
-const COLOURS = { outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414" };
+// How each style fills the flame, its middle and its heart (null: not
+// drawn; `line`: the middle drawn as an ink line, not filled), and its
+// outline's colour and weight (pen widths; null: the light's `outline`).
+export const STYLES = {
+  // (The outline a dark red, not the map's black ink.)
+  inks: { name: "In the map's inks", outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414", weight: null },
+  paper: { name: "Ink on paper", outer: PAPER, mid: null, heart: null, edge: INK, weight: [1.9, 1.3] },
+  line: { name: "Ink on paper, an inner line", outer: PAPER, mid: null, line: true, heart: null, edge: INK, weight: [1.9, 1.3] },
+  heart: { name: "Ink on paper, a warm middle", outer: PAPER, mid: "#efd9a0", heart: null, edge: INK, weight: [1.9, 1.3] },
+};
 const RATE = 8;
 
 // The big flame (campfires, braziers): a round bulb and three tongues, the
@@ -55,13 +65,23 @@ function squatPath(g, x, y, s, tips, R, f) {
   g.closePath();
 }
 
-// The flame's outline, `F.outline` the pen's widths (none if 0).
-function edge(g, F, TS) {
-  if (!F.outline) return;
-  g.lineWidth = (F.outline * TS) / 32;
-  g.strokeStyle = COLOURS.edge;
+// The flame's outline in style `C`, `F.outline` the pen's widths if the
+// style sets none (none if 0); `w` the weight to draw it at.
+function edge(g, C, F, TS, small, w = C.weight ? C.weight[small ? 1 : 0] : F.outline) {
+  if (!w) return;
+  g.lineWidth = (w * TS) / 32;
+  g.strokeStyle = C.edge;
   g.lineJoin = "round";
   g.stroke();
+}
+
+// The flame's middle, its path just made: filled, or drawn as a thin line.
+function middle(g, C, TS, small) {
+  if (C.line) edge(g, C, null, TS, small, (C.weight[small ? 1 : 0] * 0.55));
+  else if (C.mid) {
+    g.fillStyle = C.mid;
+    g.fill();
+  }
 }
 
 // A light's flame at (x, y) in pixels (the place its data gives, already
@@ -69,32 +89,33 @@ function edge(g, F, TS) {
 // apart; `F` the light's `flame` (lights.json).
 export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
   const R = new RNG(17 + Math.floor(t * RATE) * 13 + seed * 7919), s = F.size * TS, f = F.flicker ?? 0.1;
+  const C = STYLES[globalThis.VERSAL_FLAMES] ?? STYLES.inks, small = !!F.tongues;
   g.save();
   g.globalAlpha = alpha;
-  if (F.tongues) {
+  if (small) {
     // (Its bulb on the spot: it stands a bulb below it.)
     const tips = TIPS[F.tongues] ?? TIPS[2], by = y + s;
     squatPath(g, x, by, s, tips, R, f);
-    g.fillStyle = COLOURS.outer;
+    g.fillStyle = C.outer;
     g.fill();
-    edge(g, F, TS);
+    edge(g, C, F, TS, small);
     squatPath(g, x, by + s * 0.05, s * 0.6, tips.map(([a, b]) => [a, b * 0.9]), R, f);
-    g.fillStyle = COLOURS.mid;
-    g.fill();
+    middle(g, C, TS, small);
     g.beginPath();
     g.arc(x, by - s * 0.75, s * 0.32, 0, 2 * Math.PI);
   } else {
     bigPath(g, x, y + s * 0.9, s, R, f);
-    g.fillStyle = COLOURS.outer;
+    g.fillStyle = C.outer;
     g.fill();
-    edge(g, F, TS);
+    edge(g, C, F, TS, small);
     bigPath(g, x, y + s * 0.9, s * 0.62, R, f);
-    g.fillStyle = COLOURS.mid;
-    g.fill();
+    middle(g, C, TS, small);
     g.beginPath();
     g.arc(x, y + s * 0.35, s * 0.32, 0, 2 * Math.PI);
   }
-  g.fillStyle = COLOURS.heart;
-  g.fill();
+  if (C.heart) {
+    g.fillStyle = C.heart;
+    g.fill();
+  }
   g.restore();
 }
