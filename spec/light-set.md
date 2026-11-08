@@ -172,3 +172,9 @@ to start with, the outlines 1.9 big, 1.3 small, on its sliders), its squares and
 colour of a square lit by a level's light (#f3d3a9: the paper warmed by the light, as the GPU draws
 it; drawn without the GPU, lit squares come out a little darker). The test room's ink flames use the
 same fill. Not decided.
+
+Yours, next: "Can you add flame shape options to the large flames: two tongues, and the original
+flame shape?" On the workbench the brazier and campfire now choose between three tongues (round 1's
+shape, as now), two (the small flames' squat shape at the big flame's size) and the original (the
+game's first campfire flame, before round 1: three tongues of uneven heights, a second layer with
+two, a single tongue for its heart). Not decided.
