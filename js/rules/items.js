@@ -142,7 +142,8 @@ export const itemMethods = {
       if (!it) return false;
       item = this.unpack(it);
     }
-    this.items.push({ x: p.x, y: p.y, item });
+    // (Dropped by the player: what it is, told.)
+    this.items.push({ x: p.x, y: p.y, item, seen: true, told: true });
     this.log(`You drop ${itemName(item)}.`);
     return quiet ? true : this.tick();
   },

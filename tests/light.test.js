@@ -220,6 +220,31 @@ test("a monster told in the light stays told as it goes off into the dark, till 
   assert.equal(w.knowOf(g), 1, "back, not seen in the light since: something");
 });
 
+test("a thing told stays told in the dark; one never seen isn't remembered", () => {
+  const w = scenario(`
+    ##############################
+    #@.........................B.#
+    ##############################
+  `, { sneaking: true });
+  // (A potion in the brazier's dim light: told.)
+  const potion = { x: 23, y: 1, item: { type: "potion", glyph: "!", n: 1 } };
+  w.items.push(potion);
+  w.updateFov();
+  assert.equal(w.knowOfItem(potion), 2, "told in the dim");
+  assert.ok(potion.seen && potion.told);
+  // (The brazier's light gone: the potion in the dark now, still a potion.)
+  w.level.lights.length = 0;
+  w.light.changed();
+  potion.x = 3;
+  w.updateFov();
+  assert.equal(w.knowAt(3, 1), 1, "the square only says something's there");
+  assert.equal(w.knowOfItem(potion), 2, "but the potion is remembered");
+  // (A thing dropped far off in the dark, never seen: not remembered.)
+  w.items.push({ x: 12, y: 1, item: { type: "potion", glyph: "!", n: 1 } });
+  w.updateFov();
+  assert.ok(!w.items.at(-1).seen, "never seen");
+});
+
 test("the tips say only what can be told", async () => {
   const { tipFor } = await import("../js/tips.js");
   const w = scenario(`

@@ -889,14 +889,15 @@ export class Renderer {
         if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFlame(lc, x, y, TS, tt, i * 5 + k, a, F);
       });
     });
-    // Things lying about: in sight, as letters; remembered, faint.
+    // Things lying about: in sight, as letters; remembered, faint (as
+    // what they were seen as: "?" if never told).
     for (const it of w.items ?? []) {
-      const seen = w.seen[it.y * L.w + it.x], vis = w.isVisible(it.x, it.y);
-      if (!seen) continue;
+      const vis = w.isVisible(it.x, it.y);
+      if (!vis && !it.seen) continue;
       const x = (it.x + 0.5) * TS, y = (it.y + 0.5) * TS;
       if (x < view.x - TS || y < view.y - TS || x > view.x + vw + TS || y > view.y + vh + TS) continue;
       const ink = ITEM_INK[it.item.type] ?? INK, D = DARK();
-      const something = vis && w.knowAt(it.x, it.y) === KNOW.something && !(D?.near && Math.hypot(it.x - w.player.x, it.y - w.player.y) <= 1.5);
+      const something = (vis ? w.knowOfItem(it) === KNOW.something : !it.told) && !(D?.near && Math.hypot(it.x - w.player.x, it.y - w.player.y) <= 1.5);
       const lit = vis ? this.exp.lightAt(x, y) : 0, dark = D && vis && lit <= this.settings.darkLevel + 1e-3 ? D : null;
       if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(lc, x, y, false, dark.something);
       else this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });

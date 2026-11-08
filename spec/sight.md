@@ -213,3 +213,8 @@ the player knows; nothing a monster does): a monster whose kind the player has t
 it stays in sight, though it goes off into the dark (`told`, `knowOf`; the tips say "what it was when
 you saw it"). Lost from sight, it's forgotten, and is "?" again when next seen in the dark. Still
 open: whether a monster out of sight should be drawn where it was last seen, as items are.
+
+Yours: "Also seen items." Done: a thing on the floor, once told, stays told while it lies there,
+in the dark too (`told`, `knowOfItem`); one dropped by the player is told. And the map remembers
+only things actually seen (`seen`), as what they were seen as: one only ever seen as "?" stays "?"
+(before, a thing on any square once seen was drawn by its letter, even one dropped there later).

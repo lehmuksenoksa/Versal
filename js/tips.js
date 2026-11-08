@@ -64,9 +64,9 @@ export function tipFor(w, x, y, shown) {
   }
   const floor = w.itemsAt(x, y);
   if (floor.length) {
-    const it = floor[floor.length - 1].item, d = ITEMS[it.type], S = itemStats(it);
-    if (know === KNOW.something) return something;
-    if (know === KNOW.kind) return { at: { x, y }, title: cap(it.trait === "murky" ? "potion" : d.name), lines: [], about: "In dim light: what it is, no more." };
+    const top = floor[floor.length - 1], it = top.item, d = ITEMS[it.type], S = itemStats(it), knows = w.knowOfItem(top);
+    if (knows === KNOW.something) return something;
+    if (knows === KNOW.kind) return { at: { x, y }, title: cap(it.trait === "murky" ? "potion" : d.name), lines: [], about: know === KNOW.kind ? "In dim light: what it is, no more." : "In the dark: what it was when you saw it, no more." };
     const what = d.cat === "weapon" ? `Blow ${S.dmg[0]}–${S.dmg[1]}, ${d.hands === 2 ? "two hands" : "one hand"}`
       : d.cat === "armour" ? `Worn on the ${d.slot}; takes off up to ${S.def}`
       : it.trait === "murky" ? (it.known ? (it.brew ? "Heals 12–18" : "Poisons") : "Heals well, or poisons")

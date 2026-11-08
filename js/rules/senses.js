@@ -78,6 +78,14 @@ export const senseMethods = {
     // lost from sight. Yours: "seen monsters should be remembered. It's
     // strange they turn into question marks.")
     for (const a of this.actors) if (a !== this.player) a.told = this.isVisible(a.x, a.y) && (a.told || this.knowAt(a.x, a.y) >= KNOW.kind);
+    // (And a thing on the floor, once seen (`seen`, for the map to remember
+    // it by) or told (`told`), stays so while it lies there: yours, "Also
+    // seen items".)
+    for (const it of this.items) {
+      if (!this.isVisible(it.x, it.y)) continue;
+      it.seen = true;
+      if (!it.told && this.knowAt(it.x, it.y) >= KNOW.kind) it.told = true;
+    }
   },
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; },
@@ -97,6 +105,13 @@ export const senseMethods = {
   knowOf(a) {
     const k = this.knowAt(a.x, a.y);
     return k === KNOW.something && a.told ? KNOW.kind : k;
+  },
+
+  // The same for a thing on the floor (an entry of `items`): its kind once
+  // told while it has lain there.
+  knowOfItem(it) {
+    const k = this.knowAt(it.x, it.y);
+    return k === KNOW.something && it.told ? KNOW.kind : k;
   },
 
   // The player spends a turn searching for secret doors.
