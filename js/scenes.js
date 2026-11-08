@@ -5,7 +5,7 @@
 //
 // The map's letters: js/rules/scenario.js (# rock, . floor, @ you, B a
 // brazier, F a campfire, T a torch on that wall, A an altar with candles
-// along it, V across; monsters by their letter).
+// along it, V across; monsters by their letter; things by theirs, `things`).
 
 export const SCENES = {
   // Every light the levels have: a torch on each of the room's walls, a
@@ -26,6 +26,28 @@ export const SCENES = {
       #.................#
       #.................#
       #########T#########
+    `,
+  },
+  // Seeing in the dark: the lamp out; a goblin (g) and a dagger (3) in a
+  // brazier's full light, a rat (r) in its dim light; round the player in
+  // the dark a skeleton (s) and a potion (1) next to them, a zombie (z) and
+  // a sword (2) further off.
+  dark: {
+    sneaking: true,
+    zoom: 1,
+    things: { 1: "potion", 2: "sword", 3: "dagger" },
+    map: `
+      ###################
+      #.................#
+      #.................#
+      #..B.g............#
+      #.................#
+      #..3......z..@s...#
+      #.............1...#
+      #...r.............#
+      #.............2...#
+      #.................#
+      ###################
     `,
   },
 };

@@ -179,3 +179,29 @@ kill the first enemy from a group before it notices"). With actions taking ticks
    light (feature set 4).
 
 The questions with diagrams: the "Sight in the dark" page (an artifact, from this chat).
+
+## To discuss: how characters and items show in the dark
+
+Yours: "Let's discuss how characters and items show in the dark." Nothing here is decided.
+
+What the player can tell of a thing, as decided above: in light, everything; in dim light, its kind;
+in the dark within their dark vision, its kind next to them and "?" (that something is there)
+further off; past that, nothing. Drawn today (the "dark" test room, `?scene=dark`):
+
+- A letter takes the light: in its colour with a paper outline when lit, toward ink in dim light.
+  In the player's dark sight (drawn at the faint band's light) it keeps a faint pale outline, so it
+  looks lit, like a sticker; outside it, plain ink. Things remembered: items faint; monsters not drawn.
+- Something known only to be there: a "?" in ink, with that faint pale outline in the dark sight.
+- The rules' dark sight is still a square of 3 (so "?"s show just past the drawn circle): the sight
+  rebuild makes it round, and tells the kind next to the player.
+
+The questions, with options to try in the test room (its "Try" panel, `VERSAL_DARK`, js/render.js):
+
+1. **A letter whose kind can be told, in the dark:** A as now (a faint pale outline); B plain ink, no
+   outline; C pale, as chalk; D hollow (a pale outline only); E its own colour, dimmed.
+2. **Something known only to be there:** A "?" as now; A2 "?" with no outline; B only its shadow (the
+   three pen strokes creatures stand on; a thing gets them too); C an ink smudge; D two pale eyes for a
+   creature, a glint for a thing (that tells creatures from things, which the rules don't today).
+3. Should a creature and a thing look different when only "something" is known?
+4. The player's own letter in the dark (red, the faint pale outline, now).
+5. Remembered things: items drawn faint where last seen; monsters not drawn once out of sight.

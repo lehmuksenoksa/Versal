@@ -149,7 +149,7 @@ with his guard. Killing him wins the run.
 
 A run starts by asking the player's name (`?name=…` in the address skips it). **Test rooms** open the
 real game on a small set-up level, with no name asked and nothing saved: `?scene=lights` (on the
-published page, `#test-lights`) is a room with every light the levels have (`js/scenes.js`). The player has 20 hit
+published page, `#test-lights`) is a room with every light the levels have, `?scene=dark` things seen in the dark round the player (`js/scenes.js`). The player has 20 hit
 points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
 and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw
 can make you bleed (a hit point a turn for a few turns; resting stops it). Wounds heal a hit point

@@ -49,6 +49,14 @@ const LETTERING = {
 
 // Things' ink, where not black.
 const ITEM_INK = { potion: "#b5302a" };
+
+// Being tried in the test room (its "dark" room): how things show in the
+// dark, `VERSAL_DARK` { near, letter, something } (js/scenes.js); none set,
+// as the game draws them. `near`: next to the player, the kind told (as
+// spec/sight.md has it, not built yet); `letter`: a letter on a dark square
+// (DARK_INK); `something`: what stands for a thing known only to be there.
+const DARK = () => globalThis.VERSAL_DARK ?? null;
+const DARK_INK = { pale: "#d9cfbb", floor: "#4a4540" };
 // A rats' nest: the heap's colour and size (squares), its strokes' weight
 // (a 32nd of a square: the stones' outlines'), how many strokes, stones
 // outlined (brown), small stones and grit (the more spread over the floor).
@@ -887,9 +895,11 @@ export class Renderer {
       if (!seen) continue;
       const x = (it.x + 0.5) * TS, y = (it.y + 0.5) * TS;
       if (x < view.x - TS || y < view.y - TS || x > view.x + vw + TS || y > view.y + vh + TS) continue;
-      const ink = ITEM_INK[it.item.type] ?? INK;
-      const something = vis && w.knowAt(it.x, it.y) === KNOW.something;
-      this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit: vis ? this.exp.lightAt(x, y) : 0 });
+      const ink = ITEM_INK[it.item.type] ?? INK, D = DARK();
+      const something = vis && w.knowAt(it.x, it.y) === KNOW.something && !(D?.near && Math.hypot(it.x - w.player.x, it.y - w.player.y) <= 1.5);
+      const lit = vis ? this.exp.lightAt(x, y) : 0, dark = D && vis && lit <= this.settings.darkLevel + 1e-3 ? D : null;
+      if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(lc, x, y, false, dark.something);
+      else this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });
     }
     // Flooded rooms' water, rats' nests, under everything on the floor.
     this.drawWater(lc, view);
@@ -970,6 +980,21 @@ export class Renderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.lineJoin = "round";
+    // (Being tried: a letter on a dark square, as DARK says.)
+    const L = p.dark?.letter;
+    if (L && L !== "now") {
+      const mix = (a, b, k) => `rgb(${[0, 1, 2].map((i) => Math.round(parseInt(a.slice(1 + 2 * i, 3 + 2 * i), 16) * (1 - k) + parseInt(b.slice(1 + 2 * i, 3 + 2 * i), 16) * k)).join(", ")})`;
+      const c = L === "plain" ? INK : L === "dimmed" ? mix(style.ink, DARK_INK.floor, style.ink === INK ? 0 : 0.45) : DARK_INK.pale;
+      ctx.lineWidth = L === "hollow" ? size * 0.05 : size * LETTERING.bold;
+      ctx.strokeStyle = c;
+      ctx.strokeText(ch, 0, -m.desc);
+      if (L !== "hollow") {
+        ctx.fillStyle = c;
+        ctx.fillText(ch, 0, -m.desc);
+      }
+      ctx.restore();
+      return;
+    }
     // Letters take the light as the map does. An outline keeps the letter
     // legible over grid and hatching: paper, only as far as the light shows
     // the paper; or (the undead) ink. The letter's colour goes towards ink as
@@ -1014,6 +1039,53 @@ export class Renderer {
       }
       ctx.fillStyle = ink;
       ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Being tried (DARK): what stands for a thing known only to be there, at
+  // (x, y), a creature's or a thing's: `shadow`, only its hatched shadow (a
+  // creature's is drawn already); `smudge`, an ink scribble; `eyes`, two pale
+  // eyes (a creature), a glint (a thing).
+  drawSomething(ctx, x, y, creature, how, alpha = 1) {
+    const TS = this.TS;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineCap = "round";
+    if (how === "shadow" && !creature) {
+      const w = TS * 0.16, sy = y + TS * 0.2;
+      ctx.globalAlpha = 0.7 * alpha;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = Math.max(1, TS * 0.04);
+      ctx.beginPath();
+      for (let k = -1; k <= 1; k++) {
+        ctx.moveTo(x + k * w * 0.6 - w * 0.2, sy + w * 0.25);
+        ctx.lineTo(x + k * w * 0.6 + w * 0.2, sy - w * 0.25);
+      }
+      ctx.stroke();
+    } else if (how === "smudge") {
+      const r = creature ? TS * 0.22 : TS * 0.15, seed = Math.round(x * 7 + y * 13);
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = TS * 0.05;
+      ctx.beginPath();
+      for (let k = 0; k < 3; k++) ctx.ellipse(x + Math.sin(seed + k) * r * 0.15, y + Math.cos(seed * 2 + k) * r * 0.12, r * (0.8 + 0.1 * k), r * (0.55 - 0.08 * k), seed * 0.3 + k * 1.1, 0, 2 * Math.PI);
+      ctx.stroke();
+    } else if (how === "eyes") {
+      ctx.fillStyle = DARK_INK.pale;
+      if (creature) {
+        for (const s of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(x + s * TS * 0.075, y - TS * 0.04, TS * 0.035, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      } else {
+        const r = TS * 0.1, q = r * 0.22;
+        ctx.beginPath();
+        ctx.moveTo(x, y - r); ctx.lineTo(x + q, y - q); ctx.lineTo(x + r, y); ctx.lineTo(x + q, y + q);
+        ctx.lineTo(x, y + r); ctx.lineTo(x - q, y + q); ctx.lineTo(x - r, y); ctx.lineTo(x - q, y - q);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
     ctx.restore();
   }
@@ -1272,8 +1344,11 @@ export class Renderer {
     const style = a === this.world.player ? LETTERING.player : LETTERING[a.kind] ?? LETTERING.monster;
     // (In the dark close by, only that something's there: a stand-in mark
     // for now, its look to choose.)
-    const something = a !== this.world.player && this.world.knowAt(a.x, a.y) === KNOW.something;
-    this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit: this.exp.lightAt(bx, baseY) });
+    const pl = this.world.player, D = a !== pl ? DARK() : null;
+    const something = a !== pl && this.world.knowAt(a.x, a.y) === KNOW.something && !(D?.near && Math.hypot(a.x - pl.x, a.y - pl.y) <= 1.5);
+    const lit = this.exp.lightAt(bx, baseY), dark = D && lit <= this.settings.darkLevel + 1e-3 ? D : null;
+    if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(ctx, cx, cy, true, dark.something, v.alpha);
+    else this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });
     // While the player looks (l), how aware each monster is, over it: ! alarmed, ? suspicious.
     const mark = this.lookMarks && a !== this.world.player ? { aggressive: ["!", "#c4402e"], suspicious: ["?", "#d9a53a"] }[a.state] : null;
     if (mark) {

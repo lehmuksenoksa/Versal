@@ -40,7 +40,7 @@ function newRun() {
   // left alone.)
   if (SCENE) {
     broken = false;
-    world = guard(scenario(SCENES[SCENE].map, { name: "Tester", sneaking: SCENES[SCENE].sneaking }));
+    world = guard(scenario(SCENES[SCENE].map, { name: "Tester", ...SCENES[SCENE] }));
     renderer.setWorld(world);
     renderer.showLamp();
     // (Close up, to see what's being tried; the wheel or + and - as ever.)
