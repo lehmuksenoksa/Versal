@@ -124,3 +124,18 @@ After round 2: the wall torch "something between short and middle bracket, betwe
 ring"; candle wicks "long seem to work"; the campfire "Five square ends looks ok"; round 1's flame
 shape in the map's inks wanted back (round 2 had dropped it); small flames "still needs at least two
 tongues, and it needs to be shorter in height, not longer". Round 3 shows these.
+Flames, set on the "Flame workbench" (yours): in the map's inks (sienna, ochre, a straw heart), round
+1's shape for the big ones, a squat shape with two tongues for the small ones; no outline. Sizes are
+the bulb's radius, places from the light's spot (big) or from the holder (small), in squares:
+
+| | Size | Place | Flicker |
+|---|---|---|---|
+| Brazier | 0.3 | on the bowl (−0.005, 0) | 0.2 |
+| Campfire | 0.225 | on the logs (0, 0) | 0.2 |
+| Wall torch | 0.17, two tongues | on the ring (0, −0.025 from its middle) | 0.1 |
+| Candles | 0.16, two tongues | on each candle (0, −0.08 from its middle) | 0.1 |
+
+Small flames are placed from their holder's middle (the ring's, each candle's) and always stand up
+the screen, so they sit the same on every wall and both ways along an altar (shown on the
+workbench). The holders, as chosen: the wall torch a ring (0.09) on a bracket (0.085); candles with
+long wicks; the campfire five square ends; the brazier as it is.
