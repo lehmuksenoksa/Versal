@@ -95,6 +95,40 @@ a light-shy creature's sight as rock does (glare, tried, not taken).
 
 The diagonal step: "We can stay the decision about movement" (with stealth, feature set 2).
 
+## Sneak attacks
+
+**Decided** (yours: "Glimpse should allow stealth attack"): a blow on a monster that hasn't seen you,
+only glimpsed you (or heard you), is a sneak attack. So the sight bands decide it:
+
+| | When you can sneak attack it |
+|---|---|
+| Goblin (ordinary eyes, weak dark vision) | In the dark, lamp out, even next to it; not in dim within 3, not lit |
+| Cave spider (light-shy) | When you're lit: dazzled, next to you it only glimpses you; not in the dark within 3 |
+| Dark elf (strong dark vision) | Hardly ever: asleep, or with help (a potion, a perk) |
+| Anything asleep | Always, unless your noise wakes it |
+
+**Proposed: noticing takes time** (yours: "can we tie this somehow into movement and/or timing. I
+envision someone pursuing player, player hiding behind a corner, and then stealth attacking a pursuer
+when they appear from around the corner. Or stealth attacking a lured monster when they move close
+by. Maybe noticing the player takes a while? Super fast player could step into the light and stealth
+kill the first enemy from a group before it notices"). With actions taking ticks (`fighting.md`):
+
+- A monster whose sight would tell your kind or more doesn't know you at once: it **notices** you
+  after keeping you in sight for its **noticing time**. Until then it has only glimpsed you
+  (suspicious, a guess), so a blow lands as a sneak attack.
+- **Noticing time** (test), by mood: calm 100 ticks, wary or suspicious 60, alert or searching 30;
+  quick-eyed kinds (dark elves) half. Never instant, so even a pursuer can be caught.
+- **Sneak attacks on alert monsters** too, while they don't see you: a pursuer that has lost you
+  round a corner.
+- **Lying in wait** (a new action): you hold a blow ready, still and quiet; the moment a monster
+  steps next to you, you strike at once. A corner, a door, a lured monster's path become ambushes,
+  sure rather than left to when your turn falls.
+- **Speed tells:** stepping out of the dark and striking a calm goblin by a fire takes your step
+  plus the blow's start; walking in (100 ticks) only ties with its noticing (100), running in (60)
+  beats it, a hasted player more so. The rest of the group notice in their own time.
+- **The player sees it:** a monster noticing shows as such (its "?" mark), so you know you have a
+  moment.
+
 ## Open
 
 1. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
