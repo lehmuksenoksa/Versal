@@ -864,7 +864,8 @@ export class Renderer {
     // spot, or a small one's from its holder: the torch's ring, each candle.
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
-      const F = (LIGHTS[l.kind] ?? LIGHTS.fire).flame;
+      // (Or, in the test room, flames set on the flame workbench: VERSAL_FLAME_SET, by kind.)
+      const F = globalThis.VERSAL_FLAME_SET?.[l.kind] ?? (LIGHTS[l.kind] ?? LIGHTS.fire).flame;
       if (!F) return;
       const target = this.inSight(l.x * TS, l.y * TS) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);

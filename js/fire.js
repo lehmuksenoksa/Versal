@@ -70,8 +70,9 @@ function squatPath(g, x, y, s, tips, R, f) {
 }
 
 // The flame's outline in style `C`, `F.outline` the pen's widths if the
-// style sets none (none if 0); `w` the weight to draw it at.
-function edge(g, C, F, TS, small, w = C.weight ? C.weight[small ? 1 : 0] : F.outline) {
+// style sets none, or if the flame was set on the workbench (`workbench`;
+// none if 0); `w` the weight to draw it at.
+function edge(g, C, F, TS, small, w = C.weight && !F.workbench ? C.weight[small ? 1 : 0] : F.outline) {
   if (!w) return;
   g.lineWidth = (w * TS) / 32;
   g.strokeStyle = C.edge;
@@ -80,8 +81,8 @@ function edge(g, C, F, TS, small, w = C.weight ? C.weight[small ? 1 : 0] : F.out
 }
 
 // The flame's middle, its path just made: filled, or drawn as a thin line.
-function middle(g, C, TS, small) {
-  if (C.line) edge(g, C, null, TS, small, (C.weight[small ? 1 : 0] * 0.55));
+function middle(g, C, F, TS, small) {
+  if (C.line) edge(g, C, null, TS, small, (F.workbench ? F.outline : C.weight[small ? 1 : 0]) * 0.55);
   else if (C.mid) {
     g.fillStyle = C.mid;
     g.fill();
@@ -90,21 +91,23 @@ function middle(g, C, TS, small) {
 
 // A light's flame at (x, y) in pixels (the place its data gives, already
 // added), `TS` a square's size, at time `t` (seconds); `seed` keeps flames
-// apart; `F` the light's `flame` (lights.json).
+// apart; `F` the light's `flame` (lights.json). (A big flame of `shape`
+// "two" is drawn as a small one, two tongues, standing where a big one
+// stands.)
 export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
   const R = new RNG(17 + Math.floor(t * RATE) * 13 + seed * 7919), s = F.size * TS, f = F.flicker ?? 0.1;
   const C = STYLES[globalThis.VERSAL_FLAMES] ?? STYLES.inks, small = !!F.tongues;
   g.save();
   g.globalAlpha = alpha;
-  if (small) {
-    // (Its bulb on the spot: it stands a bulb below it.)
-    const tips = TIPS[F.tongues] ?? TIPS[2], by = y + s;
+  if (small || F.shape === "two") {
+    // (A small one's bulb on the spot: it stands a bulb below it.)
+    const tips = TIPS[F.tongues ?? 2] ?? TIPS[2], by = small ? y + s : y + s * 0.9;
     squatPath(g, x, by, s, tips, R, f);
     g.fillStyle = C.outer;
     g.fill();
     edge(g, C, F, TS, small);
     squatPath(g, x, by + s * 0.05, s * 0.6, tips.map(([a, b]) => [a, b * 0.9]), R, f);
-    middle(g, C, TS, small);
+    middle(g, C, F, TS, small);
     g.beginPath();
     g.arc(x, by - s * 0.75, s * 0.32, 0, 2 * Math.PI);
   } else {
@@ -113,7 +116,7 @@ export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
     g.fill();
     edge(g, C, F, TS, small);
     bigPath(g, x, y + s * 0.9, s * 0.62, R, f);
-    middle(g, C, TS, small);
+    middle(g, C, F, TS, small);
     g.beginPath();
     g.arc(x, y + s * 0.35, s * 0.32, 0, 2 * Math.PI);
   }

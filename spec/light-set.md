@@ -178,3 +178,9 @@ flame shape?" On the workbench the brazier and campfire now choose between three
 shape, as now), two (the small flames' squat shape at the big flame's size) and the original (the
 game's first campfire flame, before round 1: three tongues of uneven heights, a second layer with
 two, a single tongue for its heart). Not decided.
+
+Your workbench settings, to try in the test room (its picker's first choice, "Your workbench
+settings"; the game itself still draws the flames as lights.json has them): the inner line style;
+the brazier two tongues, 0.24, at (−0.005, −0.055); the campfire two tongues, 0.205, at (0, −0.035);
+both outlined 1.9; the wall torch 0.12 at (0, −0.085) and candles 0.115 at (0, −0.08), outlined 1.3;
+flicker as before. Not decided.
