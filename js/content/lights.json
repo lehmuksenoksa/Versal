@@ -4,7 +4,7 @@
     "full": "how far it lights fully, squares from the flame",
     "dim": "then a dim band this wide",
     "dark": "then a faint band this wide (drawn fainter; played as dim)",
-    "flame": "how its flame is drawn (null: none drawn): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; outline, the dark red line round it, in the pen's widths (0 none); tongues, a small, squat flame's (2 or 3), else round 1's big flame (spec/light-set.md, the flame workbench)"
+    "flame": "how its flame is drawn (null: none drawn), in ink, filled as a lit square, an inner line inside it (js/fire.js): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; outline, its ink line, in the pen's widths (0 none); tongues, a small, squat flame's (2 or 3); shape, a big flame's: \"two\", the small flames' two tongues at its size, else round 1's three (spec/light-set.md, the flame workbench)"
   },
   "lights": {
     "fire": {
@@ -12,11 +12,12 @@
       "dim": 2,
       "dark": 2,
       "flame": {
-        "size": 0.225,
+        "size": 0.205,
         "x": 0,
-        "y": 0,
+        "y": -0.035,
         "flicker": 0.2,
-        "outline": 1.4
+        "outline": 1.9,
+        "shape": "two"
       }
     },
     "brazier": {
@@ -24,11 +25,12 @@
       "dim": 1.5,
       "dark": 1.5,
       "flame": {
-        "size": 0.3,
+        "size": 0.24,
         "x": -0.005,
-        "y": 0,
+        "y": -0.055,
         "flicker": 0.2,
-        "outline": 1.4
+        "outline": 1.9,
+        "shape": "two"
       }
     },
     "lantern": {
@@ -42,12 +44,12 @@
       "dim": 1.25,
       "dark": 1.5,
       "flame": {
-        "size": 0.16,
+        "size": 0.115,
         "x": 0,
         "y": -0.08,
         "flicker": 0.1,
         "tongues": 2,
-        "outline": 0.9
+        "outline": 1.3
       }
     },
     "lamp": {
@@ -61,12 +63,12 @@
       "dim": 1,
       "dark": 1.5,
       "flame": {
-        "size": 0.17,
+        "size": 0.12,
         "x": 0,
-        "y": -0.025,
+        "y": -0.085,
         "flicker": 0.1,
         "tongues": 2,
-        "outline": 0.9
+        "outline": 1.3
       }
     }
   }

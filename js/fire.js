@@ -1,7 +1,7 @@
-// The lights' flames, drawn each frame over the map: in the map's inks
-// (sienna, ochre and a straw heart) outlined in dark red, as set on the flame
-// workbench (spec/light-set.md), or, being tried in the test room, in ink,
-// filled as a lit square (STYLES; the test room's picker sets `VERSAL_FLAMES`). Redrawn eight times a second, each drawing a
+// The lights' flames, drawn each frame over the map: in ink, filled as a lit
+// square, an inner line inside, as set on the flame workbench
+// (spec/light-set.md); the other STYLES to compare in the test room (its
+// picker sets `VERSAL_FLAMES`). Redrawn eight times a second, each drawing a
 // little different, as a hand-animated fire on twos. How each light's flame
 // is drawn (its size, where it sits, its flicker) is the light's data
 // (js/content/lights.json, `flame`).
@@ -15,13 +15,13 @@ const LIT = "#f3d3a9";
 
 // How each style fills the flame, its middle and its heart (null: not
 // drawn; `line`: the middle drawn as an ink line, not filled), and its
-// outline's colour and weight (pen widths; null: the light's `outline`).
+// outline's colour (its weight the light's `outline`). The game's: `line`.
 export const STYLES = {
+  line: { name: "An inner line", outer: LIT, mid: null, line: true, heart: null, edge: INK },
+  paper: { name: "Ink on a lit square", outer: LIT, mid: null, heart: null, edge: INK },
+  heart: { name: "A warm middle", outer: LIT, mid: "#efd9a0", heart: null, edge: INK },
   // (The outline a dark red, not the map's black ink.)
-  inks: { name: "In the map's inks", outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414", weight: null },
-  paper: { name: "Ink on a lit square", outer: LIT, mid: null, heart: null, edge: INK, weight: [1.9, 1.3] },
-  line: { name: "An inner line", outer: LIT, mid: null, line: true, heart: null, edge: INK, weight: [1.9, 1.3] },
-  heart: { name: "A warm middle", outer: LIT, mid: "#efd9a0", heart: null, edge: INK, weight: [1.9, 1.3] },
+  inks: { name: "In the map's inks", outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414" },
 };
 const RATE = 8;
 
@@ -69,10 +69,9 @@ function squatPath(g, x, y, s, tips, R, f) {
   g.closePath();
 }
 
-// The flame's outline in style `C`, `F.outline` the pen's widths if the
-// style sets none, or if the flame was set on the workbench (`workbench`;
-// none if 0); `w` the weight to draw it at.
-function edge(g, C, F, TS, small, w = C.weight && !F.workbench ? C.weight[small ? 1 : 0] : F.outline) {
+// The flame's outline in style `C`, `w` its weight in the pen's widths
+// (none if 0).
+function edge(g, C, TS, w) {
   if (!w) return;
   g.lineWidth = (w * TS) / 32;
   g.strokeStyle = C.edge;
@@ -81,8 +80,8 @@ function edge(g, C, F, TS, small, w = C.weight && !F.workbench ? C.weight[small 
 }
 
 // The flame's middle, its path just made: filled, or drawn as a thin line.
-function middle(g, C, F, TS, small) {
-  if (C.line) edge(g, C, null, TS, small, (F.workbench ? F.outline : C.weight[small ? 1 : 0]) * 0.55);
+function middle(g, C, F, TS) {
+  if (C.line) edge(g, C, TS, (F.outline ?? 0) * 0.55);
   else if (C.mid) {
     g.fillStyle = C.mid;
     g.fill();
@@ -96,7 +95,7 @@ function middle(g, C, F, TS, small) {
 // stands.)
 export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
   const R = new RNG(17 + Math.floor(t * RATE) * 13 + seed * 7919), s = F.size * TS, f = F.flicker ?? 0.1;
-  const C = STYLES[globalThis.VERSAL_FLAMES] ?? STYLES.inks, small = !!F.tongues;
+  const C = STYLES[globalThis.VERSAL_FLAMES] ?? STYLES.line, small = !!F.tongues;
   g.save();
   g.globalAlpha = alpha;
   if (small || F.shape === "two") {
@@ -105,18 +104,18 @@ export function drawFlame(g, x, y, TS, t, seed, alpha, F) {
     squatPath(g, x, by, s, tips, R, f);
     g.fillStyle = C.outer;
     g.fill();
-    edge(g, C, F, TS, small);
+    edge(g, C, TS, F.outline);
     squatPath(g, x, by + s * 0.05, s * 0.6, tips.map(([a, b]) => [a, b * 0.9]), R, f);
-    middle(g, C, F, TS, small);
+    middle(g, C, F, TS);
     g.beginPath();
     g.arc(x, by - s * 0.75, s * 0.32, 0, 2 * Math.PI);
   } else {
     bigPath(g, x, y + s * 0.9, s, R, f);
     g.fillStyle = C.outer;
     g.fill();
-    edge(g, C, F, TS, small);
+    edge(g, C, TS, F.outline);
     bigPath(g, x, y + s * 0.9, s * 0.62, R, f);
-    middle(g, C, F, TS, small);
+    middle(g, C, F, TS);
     g.beginPath();
     g.arc(x, y + s * 0.35, s * 0.32, 0, 2 * Math.PI);
   }

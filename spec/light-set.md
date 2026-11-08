@@ -184,3 +184,8 @@ settings"; the game itself still draws the flames as lights.json has them): the 
 the brazier two tongues, 0.24, at (−0.005, −0.055); the campfire two tongues, 0.205, at (0, −0.035);
 both outlined 1.9; the wall torch 0.12 at (0, −0.085) and candles 0.115 at (0, −0.08), outlined 1.3;
 flicker as before. Not decided.
+
+Yours: "Put these flames into the game itself." Done: the game's flames are now the workbench settings
+above (lights.json `flame`: a big flame's `shape` "two"; outlines 1.9 big, 1.3 small), drawn in ink
+filled as a lit square with an inner line (js/fire.js, style `line`). The test room's picker keeps
+the other styles to compare. Set by you.
