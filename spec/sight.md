@@ -230,3 +230,8 @@ Yours: "Yes, remember them for a few turns, so if they reappear soon, they're st
 Don't remember them in the last seen position." Done: a monster told stays told for
 `player.remember` turns (5, to tune) after it's lost from sight, so it's known again if it's back
 by then; it isn't drawn while out of sight.
+
+Yours: "Yes, put A2 into the game." Done: something known only to be there is a "?" in plain ink,
+with no outline (js/render.js, `somethingLook`); the test room keeps the old "?" and the other marks
+to compare. Still open: a letter in the dark (A as now, your pick when trying), your own letter in
+the dark, whether a creature and a thing should look different as "?".

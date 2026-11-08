@@ -56,6 +56,12 @@ const ITEM_INK = { potion: "#b5302a" };
 // `something`: what stands for a thing known only to be there.
 const DARK = () => globalThis.VERSAL_DARK ?? null;
 const DARK_INK = { pale: "#d9cfbb", floor: "#4a4540" };
+// Something known only to be there: a "?" in plain ink, no outline (yours,
+// "put A2 into the game"); being tried, `outline` the "?" as before (a
+// faint pale outline in the dark sight), or one of the marks drawSomething
+// draws.
+const SOMETHING_MARKS = new Set(["shadow", "smudge", "eyes"]);
+const somethingLook = (D) => ({ letter: D?.something === "outline" ? "now" : "plain" });
 // A rats' nest: the heap's colour and size (squares), its strokes' weight
 // (a 32nd of a square: the stones' outlines'), how many strokes, stones
 // outlined (brown), small stones and grit (the more spread over the floor).
@@ -898,8 +904,8 @@ export class Renderer {
       const ink = ITEM_INK[it.item.type] ?? INK, D = DARK();
       const something = (vis ? w.knowOfItem(it) === KNOW.something : !it.told);
       const lit = vis ? this.exp.lightAt(x, y) : 0, dark = D && vis && lit <= this.settings.darkLevel + 1e-3 ? D : null;
-      if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(lc, x, y, false, dark.something);
-      else this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });
+      if (something && SOMETHING_MARKS.has(dark?.something)) this.drawSomething(lc, x, y, false, dark.something);
+      else this.drawGlyph(lc, something ? "?" : it.item.glyph, x, y + TS * 0.05, { ...LETTERING.item, ink: something ? INK : ink }, { alpha: vis ? 1 : 0.4, lit, dark: something ? somethingLook(dark) : dark });
     }
     // Flooded rooms' water, rats' nests, under everything on the floor.
     this.drawWater(lc, view);
@@ -1347,8 +1353,8 @@ export class Renderer {
     const pl = this.world.player, D = a !== pl ? DARK() : null;
     const something = a !== pl && this.world.knowOf(a) === KNOW.something;
     const lit = this.exp.lightAt(bx, baseY), dark = D && lit <= this.settings.darkLevel + 1e-3 ? D : null;
-    if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(ctx, cx, cy, true, dark.something, v.alpha);
-    else this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });
+    if (something && SOMETHING_MARKS.has(dark?.something)) this.drawSomething(ctx, cx, cy, true, dark.something, v.alpha);
+    else this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit, dark: something ? somethingLook(dark) : dark });
     // While the player looks (l), how aware each monster is, over it: ! alarmed, ? suspicious.
     const mark = this.lookMarks && a !== this.world.player ? { aggressive: ["!", "#c4402e"], suspicious: ["?", "#d9a53a"] }[a.state] : null;
     if (mark) {
