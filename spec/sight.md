@@ -30,8 +30,9 @@ tag: light-shy"):
   is a goblin or a rat"). Clear is 0 for most creatures, the player too; dark-dwellers see clearly in
   the dark.
 - **Dark vision reaches past light** (yours: "for player and most monsters dark vision should extend
-  their vision beyond light"): in the dark, the distance is from the creature or from the nearest
-  square in light it can see, whichever is nearer. Not for the light-shy.
+  their vision beyond light"): in the dark, the distance is from the creature or from a square in
+  light it can see, whichever is nearer; past a light it tells no more than it can tell in that
+  light (so not beyond its own Vision). Not for the light-shy.
 - **A square in light:** read Vision at that distance; dim light makes it worse (question 1). **A
   dark square:** read Dark vision. Where both apply, the better counts.
 - **What it means.** For the player: clear, everything; kind, what it is; faint, that something is
