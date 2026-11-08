@@ -148,10 +148,16 @@ And on light in general: "the light bands are too pixelated and the technique us
 flicker looks weird when there's more then one light close by." Now: the lights' bands are worked
 out at the map points (eight a square) as before, for the rules, but the screen draws each band's
 edge as a smooth line between them rather than a staircase of them (with the GPU: banded again per
-pixel from the light unbanded; without: from a picture three times finer). The flicker no longer
-swells each fire's light about it or wobbles the light near a fire; each fire only dims and brightens
-its own light a little, most toward its edge and fading to nothing at its edge, so lights that meet
-flicker together without a seam. Where light is (the rules) is unchanged.
+pixel from the light unbanded; without: from a picture three times finer). (I also changed the flicker
+then, on my own; yours: "the new flicker is absolutely ugly. You can't make that kind of visual
+decisions on your own." So it is back as it was: each fire's light swelling and shrinking a little
+about it and dimming toward its edge, the seams where lights meet with it.) Where light is (the
+rules) is unchanged.
+
+Yours, for the light set's rebuild: "After we update the lights, I want us to work so that the light
+bands look like player's lamp light bands. Those are our target." (The player's lamp is drawn as
+shapes at the screen's own resolution: ragged circles and shadows cast from the flame; see
+js/expression-light.js. The level's lights are worked out at the map points and smoothed.)
 
 Yours, on those: "The red outline doesn't help :( Maybe we need to try something different. Maybe the
 inked outline and paper coloured flame?" (Round 1's "in ink", dropped then, was close: outlined, the
@@ -159,3 +165,10 @@ paper inside, two strokes in it, on the older shape.) Now tried in the test room
 switching between the map's inks (as now), ink on paper, ink on paper with an inner line, and ink on
 paper with a warm middle (js/fire.js STYLES; the ink outlines 1.9 pen widths big, 1.3 small). The game
 draws the map's inks unless the test room's picker says otherwise. Not decided.
+
+Yours, next: "Can we do the flame size and location tool with these kinds of flames? By the way, the
+fill should be the same as a lit square." The workbench now has the styles too (ink on a lit square
+to start with, the outlines 1.9 big, 1.3 small, on its sliders), its squares and flames' fill the
+colour of a square lit by a level's light (#f3d3a9: the paper warmed by the light, as the GPU draws
+it; drawn without the GPU, lit squares come out a little darker). The test room's ink flames use the
+same fill. Not decided.

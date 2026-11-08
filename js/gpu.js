@@ -117,7 +117,7 @@ uniform vec4 uPrevBox; uniform vec2 uPrevC, uPrevShift; uniform float uPrevSize,
 uniform vec3 uDark, uOut, uWarm, uSeeHatchC, uMemHatchC, uSeeMarkC, uSeeWallC, uMemMarkC, uMemWallC, uShadowC;
 uniform float uSeeMark, uSeeWall, uMemMark, uMemWall;
 uniform float uWarmth, uLampWarmth;
-uniform vec4 uFires[8]; uniform float uFireDim[8]; uniform int uFireN; uniform float uDarkL, uDimL;
+uniform vec4 uFires[8]; uniform float uFireK[8]; uniform float uFireDim[8]; uniform int uFireN; uniform float uDarkL, uDimL;
 out vec4 o;
 
 vec4 paperAt(sampler2D t, vec2 p) { return texture(t, p * uScale / uPaper); }
@@ -197,17 +197,14 @@ void main() {
   // twice over but where the player's light warms it once.
   vec2 sp = p * uSightScale / uSightSize;
   float sight = texture(uSight, sp).a, seen = paperAt(uSeen, p).a;
-  // (Each fire's own flicker, dimming most toward its edge and fading out to
-  // nothing at it, so where fires' lights meet they flicker together without
-  // a seam.)
-  float dim = 1.0;
+  vec2 lq = p; float dim = 1.0;
   for (int i = 0; i < 8; i++) {
     if (i >= uFireN) break;
     vec4 f = uFires[i];
     float d = distance(p, f.xy);
-    if (d < f.z) dim *= 1.0 - uFireDim[i] * smoothstep(0.0, f.z, d) * (1.0 - smoothstep(0.8 * f.z, f.z, d));
+    if (d < f.z) { lq = (p - f.xy) / uFireK[i] + f.xy; dim = 1.0 - uFireDim[i] * smoothstep(0.0, f.z, d); break; }
   }
-  float la = lampBands(p * ${R}.0 / uTS / uMask) * sight * texture(uLampSight, sp).a * seen * dim;
+  float la = lampBands(lq * ${R}.0 / uTS / uMask) * sight * texture(uLampSight, sp).a * seen * dim;
   if (la > 0.0) {
     float w1 = uLampWarmth * 0.35, w2 = w1 * (uWarmth > 0.0 ? 1.0 - lp : 1.0);
     c = over(c, lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm)), la);
@@ -665,6 +662,7 @@ export class GpuMap {
     fires.forEach((l, i) => {
       const { x, y, out, ph } = l.fire;
       gl.uniform4f(this.loc(p, `uFires[${i}]`), x * TS, y * TS, out * TS, ph);
+      gl.uniform1f(this.loc(p, `uFireK[${i}]`), 1 + 0.04 * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6)));
       const k = Math.max(0, Math.min(1, 0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7)));
       gl.uniform1f(this.loc(p, `uFireDim[${i}]`), 0.3 * k);
     });

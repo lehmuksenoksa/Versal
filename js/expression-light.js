@@ -251,7 +251,9 @@ export const lightMethods = {
   // walls, posts and shut doors and lighting the rim of rock past them, in
   // bands with ragged edges like the candle's. As `lampLevel` (mask
   // resolution), unbanded (`lampSoft`, for the screen to band smoothly: see
-  // lampPicture), and what it lets the player see from afar (`lampSight`). Each light, for
+  // lampPicture), and what it lets the player see from afar (`lampSight`).
+  // (Without the GPU, each fire's light is kept apart, unbanded, to flicker
+  // in size: firePicture; the rest, `steady`.) Each light, for
   // finding those in sight: `lamps` (each the box it lights { x0, y0, x1,
   // y1 }, in squares, and some of the map points it lights to look for,
   // `cells`).
@@ -263,18 +265,21 @@ export const lightMethods = {
     const { mw, mh, TS, S, level: L } = this, lanterns = this.lanterns ?? [], base = onlyLanterns ? this.lampBase : null;
     const keep = base && dirty && this.lampSight ? { sight: this.lampSight } : null;
     const lights = base ? [] : L.lights ?? [];
-    this.lampLevel = this.lampSoft = this.lampSight = null;
+    this.lampLevel = this.lampSoft = this.lampSteady = this.lampSight = null;
     this.lamps = base ? base.lamps.slice() : [];
     if (!base) this.lampBase = null;
     if (!lights.length && !lanterns.length && !this.lamps.length) return;
     const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh));
-    const soft = (this.lampSoft = base ? base.soft.slice() : new Float32Array(mw * mh));
-    // (Every fourth map point each way that the light being laid lights.)
-    let cells;
+    const soft = (this.lampSoft = base ? base.soft.slice() : new Float32Array(mw * mh)), steady = (this.lampSteady = base ? base.steady.slice() : new Float32Array(mw * mh));
+    // (Every fourth map point each way that the light being laid lights; and
+    // a fire's light kept apart, `own`.)
+    let cells, own = null;
     const mark = (x, y, j, v, u) => {
       if (v > level[j]) level[j] = v;
       if (u > soft[j]) soft[j] = u;
       if (v > 0 && !(x & 3) && !(y & 3)) cells.add(j);
+      if (!own) { if (u > steady[j]) steady[j] = u; }
+      else if (own.a) { const k = (y - own.y0) * own.w + (x - own.x0); if (u > own.a[k]) own.a[k] = u; }
     };
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
     // The light unbanded, for the screen to band smoothly between the map
@@ -301,6 +306,7 @@ export const lightMethods = {
       g.fillStyle = "#0f0";
       g.fill(view);
       const a = g.getImageData(0, 0, bw, bh).data;
+      if (own) Object.assign(own, { x0, y0, w: bw, h: bh, a: new Float32Array(bw * bh) });
       for (let y = y0; y < y1; y++)
         for (let x = x0; x < x1; x++) {
           const b = ((y - y0) * bw + (x - x0)) * 4, j = y * mw + x;
@@ -313,14 +319,17 @@ export const lightMethods = {
     for (const l of lights) {
       const B = LAMPS[l.kind] ?? LAMPS.fire, out = B.full + B.dim + B.dark;
       cells = new Set();
+      own = {};
       shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0), B);
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4 } });
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, soft: own.a, w: own.w, h: own.h, at: [own.x0, own.y0] } });
+      own = null;
     }
-    if (!base) this.lampBase = { level: level.slice(), soft: soft.slice(), lamps: this.lamps.slice() };
+    if (!base) this.lampBase = { level: level.slice(), soft: soft.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
     // The lanterns: steady, in their own bands (LIGHTS.lantern).
     const LB = LAMPS.lantern, lout = LB.full + LB.dim + LB.dark;
     for (const l of lanterns) {
       cells = new Set();
+      own = null;
       const x = l.x + 0.5, y = l.y + 0.5;
       shine(x, y, lout, (mx, my) => Math.hypot(mx / TS - x, my / TS - y), (e) => (e < LB.full ? 1 : e < LB.full + LB.dim ? S.dimLevel : e < lout ? S.darkLevel : 0), LB);
       this.lamps.push({ x0: x - lout, y0: y - lout, x1: x + lout, y1: y + lout, cells: [...cells], lantern: true });
@@ -342,14 +351,15 @@ export const lightMethods = {
     this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)), keep?.sight);
   },
 
-  // The lights as a picture to show the lit map through, for drawing without
-  // the GPU: banded from the light unbanded (`lampSoft`), read smoothly
-  // between the map points, LAMP_FINE times finer than them, so that each
-  // band's edge is a smooth line, not a staircase of map points (as the GPU
-  // draws it, js/gpu.js lampBands). Made when first asked for, and again
-  // where the light changed (`lampPicDirty`). Null if there are no lights.
+  // The steady light (all but the fires') as a picture to show the lit map
+  // through, for drawing without the GPU: banded from the light unbanded,
+  // read smoothly between the map points, LAMP_FINE times finer than them,
+  // so that each band's edge is a smooth line, not a staircase of map points
+  // (as the GPU draws it, js/gpu.js lampBands). Made when first asked for,
+  // and again where the light changed (`lampPicDirty`). Null if there are no
+  // lights.
   lampPicture() {
-    const { mw, mh, S } = this, soft = this.lampSoft;
+    const { mw, mh } = this, soft = this.lampSteady;
     if (!soft) return (this.lampPic = null);
     const F = LAMP_FINE, W = mw * F, H = mh * F;
     if (!this.lampPic || this.lampPic.width !== W || this.lampPic.height !== H) this.lampPicDirty = true;
@@ -357,8 +367,24 @@ export const lightMethods = {
     if (!box) return this.lampPic;
     this.lampPicDirty = null;
     const c = box === true ? (this.lampPic = blank(W, H)) : this.lampPic;
-    const [x0, y0, x1, y1] = box === true ? [0, 0, mw, mh] : box, w = (x1 - x0) * F, h = (y1 - y0) * F;
-    if (w <= 0 || h <= 0) return c;
+    this.bandPicture(c, soft, mw, mh, box === true ? [0, 0, mw, mh] : box);
+    return c;
+  },
+
+  // A fire's own light as such a picture (made when first asked for).
+  firePicture(fire) {
+    if (!fire.pic) {
+      fire.pic = blank(fire.w * LAMP_FINE, fire.h * LAMP_FINE);
+      this.bandPicture(fire.pic, fire.soft, fire.w, fire.h, [0, 0, fire.w, fire.h]);
+    }
+    return fire.pic;
+  },
+
+  // Bands the light unbanded `soft` (mw × mh map points) into the picture
+  // `c`, LAMP_FINE times finer, within the box [x0, y0, x1, y1] (map points).
+  bandPicture(c, soft, mw, mh, [x0, y0, x1, y1]) {
+    const S = this.S, F = LAMP_FINE, w = (x1 - x0) * F, h = (y1 - y0) * F;
+    if (w <= 0 || h <= 0) return;
     const dk = S.darkLevel, dm = S.dimLevel, t1 = dk / 2, t2 = (dk + dm) / 2, t3 = (dm + 1) / 2;
     const A = [0, Math.round(255 * dk), Math.round(255 * dm), 255];
     const im = new ImageData(w, h), d = im.data;
@@ -372,7 +398,6 @@ export const lightMethods = {
       }
     }
     c.getContext("2d").putImageData(im, x0 * F, y0 * F);
-    return c;
   },
 
   // The lanterns carried about moved (squares { x, y }): their light laid

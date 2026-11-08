@@ -1,13 +1,17 @@
 // The lights' flames, drawn each frame over the map: in the map's inks
 // (sienna, ochre and a straw heart) outlined in dark red, as set on the flame
-// workbench (spec/light-set.md), or, being tried in the test room, in ink on
-// the paper (STYLES; the test room's picker sets `VERSAL_FLAMES`). Redrawn eight times a second, each drawing a
+// workbench (spec/light-set.md), or, being tried in the test room, in ink,
+// filled as a lit square (STYLES; the test room's picker sets `VERSAL_FLAMES`). Redrawn eight times a second, each drawing a
 // little different, as a hand-animated fire on twos. How each light's flame
 // is drawn (its size, where it sits, its flicker) is the light's data
 // (js/content/lights.json, `flame`).
 
 import { RNG } from "./rules/rng.js";
-import { INK, PAPER } from "./maprender.js";
+import { INK } from "./maprender.js";
+
+// A square lit by a level's light, as drawn: the paper, warmed by the light
+// (js/gpu.js: the lit paper × the lights' warmth, the player's lamp out).
+const LIT = "#f3d3a9";
 
 // How each style fills the flame, its middle and its heart (null: not
 // drawn; `line`: the middle drawn as an ink line, not filled), and its
@@ -15,9 +19,9 @@ import { INK, PAPER } from "./maprender.js";
 export const STYLES = {
   // (The outline a dark red, not the map's black ink.)
   inks: { name: "In the map's inks", outer: "#a8552c", mid: "#c98d3e", heart: "#efd9a0", edge: "#6b2414", weight: null },
-  paper: { name: "Ink on paper", outer: PAPER, mid: null, heart: null, edge: INK, weight: [1.9, 1.3] },
-  line: { name: "Ink on paper, an inner line", outer: PAPER, mid: null, line: true, heart: null, edge: INK, weight: [1.9, 1.3] },
-  heart: { name: "Ink on paper, a warm middle", outer: PAPER, mid: "#efd9a0", heart: null, edge: INK, weight: [1.9, 1.3] },
+  paper: { name: "Ink on a lit square", outer: LIT, mid: null, heart: null, edge: INK, weight: [1.9, 1.3] },
+  line: { name: "An inner line", outer: LIT, mid: null, line: true, heart: null, edge: INK, weight: [1.9, 1.3] },
+  heart: { name: "A warm middle", outer: LIT, mid: "#efd9a0", heart: null, edge: INK, weight: [1.9, 1.3] },
 };
 const RATE = 8;
 

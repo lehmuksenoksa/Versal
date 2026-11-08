@@ -78,6 +78,8 @@ const joinRect = (a, b) => {
 // how far off the player sees what they light.
 export const LAMPS = LIGHTS;
 export const LAMP_SEE = 24;
+// How much a fire's light swells and shrinks as it flickers (of its size).
+const FIRE_SWELL = 0.04;
 // How warm their light is (as `warmth`; theirs whatever the player's lamp).
 const LAMP_WARMTH = 0.7;
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -1947,7 +1949,8 @@ export class Expression {
         wg.drawImage(c, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
         wg.setTransform(T);
       }
-      // (Where the lights fall.)
+      // (Where the lights fall: the steady light, and each fire's swelling
+      // and shrinking a little about it, on a wave of its own.)
       const m = this.lampMask || (this.lampMask = blank(1, 1)), mg = m.getContext("2d");
       if (m.width !== w.width || m.height !== w.height) { m.width = w.width; m.height = w.height; }
       mg.setTransform(1, 0, 0, 1, 0, 0);
@@ -1955,6 +1958,17 @@ export class Expression {
       mg.setTransform(T);
       mg.imageSmoothingEnabled = true;
       this.region(mg, lampPic, (R * lampPic.width) / this.mw / this.TS, lamp.view);
+      for (const l of this.lampsSeen) {
+        if (!l.fire) continue;
+        const { x, y, ph, at } = l.fire, TS = this.TS, pic = this.firePicture(l.fire), F = pic.width / l.fire.w;
+        const k = 1 + FIRE_SWELL * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6));
+        mg.save();
+        mg.translate(x * TS, y * TS);
+        mg.scale(k, k);
+        mg.translate(-x * TS, -y * TS);
+        mg.drawImage(pic, (at[0] * TS) / R, (at[1] * TS) / R, (pic.width * TS) / R / F, (pic.height * TS) / R / F);
+        mg.restore();
+      }
       wg.globalCompositeOperation = "destination-in";
       wg.setTransform(1, 0, 0, 1, 0, 0);
       wg.drawImage(m, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
@@ -1970,17 +1984,12 @@ export class Expression {
         if (!l.fire) continue;
         const { x, y, out, full, ph } = l.fire, TS = this.TS;
         const k = clamp01(0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7));
-        // (Fading out to nothing at its edge, so lights that meet flicker
-        // together without a seam.)
         const grad = wg.createRadialGradient(x * TS, y * TS, 0, x * TS, y * TS, out * TS);
         grad.addColorStop(0, `rgba(0, 0, 0, ${0.04 * k})`);
         grad.addColorStop(full / out, `rgba(0, 0, 0, ${0.08 * k})`);
-        grad.addColorStop(0.8, `rgba(0, 0, 0, ${0.24 * k})`);
-        grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        grad.addColorStop(1, `rgba(0, 0, 0, ${0.3 * k})`);
         wg.fillStyle = grad;
-        wg.beginPath();
-        wg.arc(x * TS, y * TS, out * TS, 0, 2 * Math.PI);
-        wg.fill();
+        wg.fillRect((x - out) * TS, (y - out) * TS, 2 * out * TS, 2 * out * TS);
       }
       wg.restore();
       g.setTransform(1, 0, 0, 1, 0, 0);
