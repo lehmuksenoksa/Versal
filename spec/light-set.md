@@ -104,3 +104,10 @@ lock passes): the carried lights kept until one moves, the squares a line crosse
 fine walk along it, what stops light kept in a grid. The everyday suite back under its minute (59
 seconds): the bot 80 runs (40 a half), the duels 1,000 a case, frozen content 12 runs; the deep run
 keeps its 500.
+
+**Played: the screen and the rules disagree on a light's faint band.** It plays as dim (a monster's
+kind can be told there) but is drawn like the player's dark sight (only "something" there). Being
+worked out as a proposal: `sight.md` (the faint band becomes the player's dark vision; Vision, Dark
+vision and light-shy for every creature). Decided so far: the map shows the light and the dark vision,
+dark vision drawn as the faint band is now; its bands show only in what's drawn on things. The two
+stand-in looks wait on it (leaning: the torch an iron cup on the wall; "?" a hatched shape).
