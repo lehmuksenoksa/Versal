@@ -120,3 +120,7 @@ enough"; candles perhaps longer wicks. Flames: in ink, seen from above and ember
 brazier's flame size and placement good; in the map's inks "promising" (to try: outline weights,
 none); for candles and wall torches no flame works yet, "maybe a small flame could work, if it wasn't
 just miniaturized larger flame". Also still to discuss: how characters and items show in the dark.
+After round 2: the wall torch "something between short and middle bracket, between middle and large
+ring"; candle wicks "long seem to work"; the campfire "Five square ends looks ok"; round 1's flame
+shape in the map's inks wanted back (round 2 had dropped it); small flames "still needs at least two
+tongues, and it needs to be shorter in height, not longer". Round 3 shows these.
