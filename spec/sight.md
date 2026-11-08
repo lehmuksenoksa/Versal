@@ -24,17 +24,21 @@ tag: light-shy"):
 |---|---|
 | **Vision** | How far it can tell what's in light: three distances, clear, kind, faint |
 | **Dark vision** | The same three distances, for what's in the dark |
-| **Light-shy** | A tag: nearly blind in light; its dark vision doesn't reach past lights; it goes for lights it sees and fights worse in them |
+| **Light-shy** | A tag: no Vision; it sees by dark vision only, from itself, a band worse in dim light and two in full light; it goes for lights it sees and fights worse in them |
 
 - **Dark vision has bands** (yours: "the player should make out if the monster right next to them
   is a goblin or a rat"). Clear is 0 for most creatures, the player too; dark-dwellers see clearly in
   the dark.
 - **Dark vision reaches past light** (yours: "for player and most monsters dark vision should extend
-  their vision beyond light"): in the dark, the distance is from the creature or from a square in
-  light it can see, whichever is nearer; past a light it tells no more than it can tell in that
-  light (so not beyond its own Vision). Not for the light-shy.
-- **A square in light:** read Vision at that distance; dim light makes it worse (question 1). **A
-  dark square:** read Dark vision. Where both apply, the better counts.
+  their vision beyond light"): the distance is from the creature or from a square in light it can
+  see, whichever is nearer; past a light it tells no more than its Vision would at that distance,
+  nor than it can in that light. On dark squares and dim ones alike. Not for the light-shy.
+- **Ordinary eyes** take the better of Vision (by the light on the square; dim light makes it worse,
+  question 1) and dark vision, on every square: **light never makes them see worse.** (Found trying
+  it out: otherwise a dark elf saw some squares worse once the player lit the lamp.)
+- **Light-shy eyes** see by dark vision alone: **light never makes them see better.** (Found trying
+  it out: with a Vision of their own, a spider saw nothing on nearer dim squares and something on
+  further lit ones.)
 - **What it means.** For the player: clear, everything; kind, what it is; faint, that something is
   there ("?"). For a monster looking at the player: clear or kind, it sees them; faint, a glimpse.
 - **Dark-dwellers** (yours: "should definitely notice a light and treat its source aggressively, but
@@ -56,7 +60,8 @@ Placeholder numbers, to show the shape:
 |---|---|---|---|
 | The player | all in sight / – / – | 0 / 1½ / 3½ | – |
 | Goblin | 6 / 7 / 8 | 0 / 0 / 1½ | – |
-| Cave spider | 2 / 3 / 5 | 3 / 4 / 6 | yes |
+| Cave spider | – | 3 / 4 / 6 | yes |
+| Dark elf | 6 / 7 / 8 | 4 / 5 / 6 | – |
 
 The lamp (lit 5, dim 1) with the player's dark vision past it: kinds told to 7, "?" to 9 (today all
 kinds to 9). Lamp out: the kind next to you, "?" to 3.
@@ -79,8 +84,8 @@ vision is shown what player can see about things."
    - A, one band worse: a monster sees you in dim nearly as far as in full light;
    - B, one band worse and a monster must see you clearly: in dim you're only ever glimpsed;
    - C, no detail and half as far: dim is half cover (close to `stealth.md` now). Leaning C.
-2. **How blind the light-shy are in light:** at most faint, or just a short Vision. Leaning at most
-   faint.
+2. **How much light hurts the light-shy:** a band worse in dim and two in full light (leaning; a
+   spider next to you in your lamp's light only glimpses you), or one band worse in any light.
 3. **What dazzles a light-shy creature:** the light on its target (leaning), or on its own square.
 4. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
    orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
