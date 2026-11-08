@@ -73,6 +73,11 @@ export const senseMethods = {
     computeFov(w, h, px, py, GOBLIN.lose, opaque, (x, y) => {
       if (!behind(x, y)) this.inView[y * w + x] = 1;
     });
+    // (A monster whose kind the player has told stays told while it stays in
+    // sight, `told`, though it goes off into the dark: not "?" again till
+    // lost from sight. Yours: "seen monsters should be remembered. It's
+    // strange they turn into question marks.")
+    for (const a of this.actors) if (a !== this.player) a.told = this.isVisible(a.x, a.y) && (a.told || this.knowAt(a.x, a.y) >= KNOW.kind);
   },
 
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; },
@@ -85,6 +90,13 @@ export const senseMethods = {
     if (!this.isVisible(x, y)) return KNOW.nothing;
     const l = this.light.at(x, y);
     return l === LIT ? KNOW.all : l === DIM ? KNOW.kind : KNOW.something;
+  },
+
+  // What the player can tell of the monster `a`: as of its square, but its
+  // kind if told while it has stayed in sight (`told`, updateFov).
+  knowOf(a) {
+    const k = this.knowAt(a.x, a.y);
+    return k === KNOW.something && a.told ? KNOW.kind : k;
   },
 
   // The player spends a turn searching for secret doors.

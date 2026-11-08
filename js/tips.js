@@ -54,11 +54,11 @@ export function tipFor(w, x, y, shown) {
   // (Only what can be told, by the light there (light-and-dread.md, section
   // 2): in the dark close by, that something's there; in dim light, its kind;
   // lit, everything.)
-  const know = w.knowAt(x, y), a = w.actorAt(x, y);
+  const a = w.actorAt(x, y), know = a && a !== w.player ? w.knowOf(a) : w.knowAt(x, y);
   const something = { at: { x, y }, title: "Something", lines: [], about: "In the dark, close by: something's there." };
   if (a && a !== w.player && shown(a)) {
     if (know === KNOW.something) return something;
-    if (know === KNOW.kind) return { at: { x, y }, title: cap(MONSTERS[a.kind]?.name ?? a.kind), lines: [], about: "In dim light: what it is, no more." };
+    if (know === KNOW.kind) return { at: { x, y }, title: cap(MONSTERS[a.kind]?.name ?? a.kind), lines: [], about: w.knowAt(x, y) === KNOW.kind ? "In dim light: what it is, no more." : "In the dark: what it was when you saw it, no more." };
     const hurt = wounds(a);
     return { at: { x, y }, title: cap(monName(a)), lines: [[[STATE[a.state] ?? a.state, "st"], [hurt, hurt === "unhurt" ? "" : "bad"]]], about: [ABOUT[a.kind], MONSTER_SAYS[a.trait]].filter(Boolean).join(" ") };
   }

@@ -1345,7 +1345,7 @@ export class Renderer {
     // (In the dark close by, only that something's there: a stand-in mark
     // for now, its look to choose.)
     const pl = this.world.player, D = a !== pl ? DARK() : null;
-    const something = a !== pl && this.world.knowAt(a.x, a.y) === KNOW.something && !(D?.near && Math.hypot(a.x - pl.x, a.y - pl.y) <= 1.5);
+    const something = a !== pl && this.world.knowOf(a) === KNOW.something && !(D?.near && Math.hypot(a.x - pl.x, a.y - pl.y) <= 1.5);
     const lit = this.exp.lightAt(bx, baseY), dark = D && lit <= this.settings.darkLevel + 1e-3 ? D : null;
     if (something && dark && dark.something !== "now" && dark.something !== "plain") this.drawSomething(ctx, cx, cy, true, dark.something, v.alpha);
     else this.drawGlyph(ctx, something ? "?" : a.glyph, cx, cy, something ? LETTERING.monster : style, { ...p, rot: p.rot + LETTERING.tilt * v.tilt * motion, alpha: v.alpha, lit, dark: something && dark ? { letter: dark.something === "plain" ? "plain" : "now" } : dark });

@@ -196,6 +196,30 @@ test("what the player can tell: lit everything, dim the kind, dark close by only
   assert.equal(w.knowAt(12, 1), 0, "a dark square far off");
 });
 
+test("a monster told in the light stays told as it goes off into the dark, till lost from sight", () => {
+  const w = scenario(`
+    ##############################
+    #@.........................B.#
+    ##############################
+  `, { sneaking: true });
+  // (A goblin in the brazier's dim light: its kind told.)
+  const g = w.placeMonster("goblin", 23, 1);
+  w.updateFov();
+  assert.equal(w.knowOf(g), 2, "told in the dim");
+  // (It walks off into the dark close by the player: still a goblin, not "?".)
+  g.x = 3;
+  w.updateFov();
+  assert.equal(w.knowAt(3, 1), 1, "the square only says something's there");
+  assert.equal(w.knowOf(g), 2, "but the goblin is remembered");
+  // (Lost from sight, then back in the dark: only something again.)
+  g.x = 12;
+  w.updateFov();
+  assert.equal(w.knowOf(g), 0, "out of sight");
+  g.x = 3;
+  w.updateFov();
+  assert.equal(w.knowOf(g), 1, "back, not seen in the light since: something");
+});
+
 test("the tips say only what can be told", async () => {
   const { tipFor } = await import("../js/tips.js");
   const w = scenario(`

@@ -205,3 +205,11 @@ The questions, with options to try in the test room (its "Try" panel, `VERSAL_DA
 3. Should a creature and a thing look different when only "something" is known?
 4. The player's own letter in the dark (red, the faint pale outline, now).
 5. Remembered things: items drawn faint where last seen; monsters not drawn once out of sight.
+
+Yours, trying them: next to you, its kind (as decided); a letter in the dark, A as now; something
+there, A2, "?" with no outline (your test room settings). And: "now that I tried it, I think seen
+monsters should be remembered. It's strange they turn into question marks." Done, in the rules (what
+the player knows; nothing a monster does): a monster whose kind the player has told stays told while
+it stays in sight, though it goes off into the dark (`told`, `knowOf`; the tips say "what it was when
+you saw it"). Lost from sight, it's forgotten, and is "?" again when next seen in the dark. Still
+open: whether a monster out of sight should be drawn where it was last seen, as items are.
