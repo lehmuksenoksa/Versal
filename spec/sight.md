@@ -84,20 +84,22 @@ vision is shown what player can see about things."
   where its kind can be told, "?" where only that something is there.
 - So the square under the player always shows how lit they are: no separate show of it.
 
-## Decided: dim light
+## Decided: dim light; light-shy and lights
 
 Yours: "C seems to behave best for dim light." In dim light no one sees clearly (clear becomes
 kind) and every distance of Vision is halved: dim is half cover. Close, a goblin sees you; further
 off it glimpses you or misses you. For the player, dim light tells the kind, however far.
 
+Light-shy and lights, yours: "A light blocks as a rock, for light-shy." A light's own square stops
+a light-shy creature's sight as rock does (glare, tried, not taken).
+
 The diagonal step: "We can stay the decision about movement" (with stealth, feature set 2).
 
 ## Open
 
-1. **A light blocks, as rock** (yours, shown on the page), or glare (any light on the line).
-2. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
+1. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
    spider next to you in your lamp's light only glimpses you), or one band worse for any light.
-3. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
+2. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
    orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
    ranges measured round; a diagonal step:
    - one step, as now: walking diagonally covers about 1.4 of distance a turn, so fleeing or
@@ -107,8 +109,8 @@ The diagonal step: "We can stay the decision about movement" (with stealth, feat
      travel with them.
    Melee reaches the 8 squares round either way. Ranges (throwing, shooting, hearing) use the round
    distance, as sight.
-4. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
-5. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
+3. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
+4. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
    light (feature set 4).
 
 The questions with diagrams: the "Sight in the dark" page (an artifact, from this chat).
