@@ -102,7 +102,18 @@ function guard(w) {
 // played (every few turns, on a new level, and when the page is left), and
 // taken up again when the page opens; gone when the run ends. `?seed=…`
 // (tests) always starts afresh.
-const SAVE_KEY = "versal.run", SAVE_EVERY = 5, SCENE = sceneAsked();
+const SAVE_KEY = "versal.run", SAVE_EVERY = 5;
+let SCENE = sceneAsked();
+// (A test room asked for once the page is open, `#test-…` arriving late: it
+// opens, the run left alone.)
+window.addEventListener("hashchange", () => {
+  const asked = sceneAsked();
+  if (asked && asked !== SCENE) {
+    if (!SCENE) saveRun();
+    SCENE = asked;
+    newRun();
+  }
+});
 let saved = { turn: -1, depth: 0 }, offerNew = null;
 function saveRun() {
   if (!world || broken || SCENE) return;
