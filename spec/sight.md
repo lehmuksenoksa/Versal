@@ -24,7 +24,7 @@ tag: light-shy"):
 |---|---|
 | **Vision** | How far it can tell what's in light: three distances, clear, kind, faint |
 | **Dark vision** | The same three distances, for what's in the dark |
-| **Light-shy** | A tag: no Vision; it sees by dark vision only, from itself, a band worse in dim light and two in full light; it goes for lights it sees and fights worse in them |
+| **Light-shy** | A tag: no Vision; it sees by dark vision only, from itself, dazzled by light on the line to what it looks at (a band worse for dim, two for full light); it goes for lights it sees and fights worse in them |
 
 - **Dark vision has bands** (yours: "the player should make out if the monster right next to them
   is a goblin or a rat"). Clear is 0 for most creatures, the player too; dark-dwellers see clearly in
@@ -39,6 +39,11 @@ tag: light-shy"):
 - **Light-shy eyes** see by dark vision alone: **light never makes them see better.** (Found trying
   it out: with a Vision of their own, a spider saw nothing on nearer dim squares and something on
   further lit ones.)
+- **Glare** (yours: "maybe for light shy creatures a light should obscure vision beyond it? This
+  could be used as a sneaking tool, especially later when player can set lights"): the brightest
+  light anywhere on the line from a light-shy creature to what it looks at, its own square and the
+  target's included, makes it a band worse for dim, two for full light. A light between you and a
+  spider hides you as if you stood in it.
 - **What it means.** For the player: clear, everything; kind, what it is; faint, that something is
   there ("?"). For a monster looking at the player: clear or kind, it sees them; faint, a glimpse.
 - **Dark-dwellers** (yours: "should definitely notice a light and treat its source aggressively, but
@@ -78,16 +83,21 @@ vision is shown what player can see about things."
   where its kind can be told, "?" where only that something is there.
 - So the square under the player always shows how lit they are: no separate show of it.
 
+## Decided: dim light
+
+Yours: "C seems to behave best for dim light." In dim light no one sees clearly (clear becomes
+kind) and every distance of Vision is halved: dim is half cover. Close, a goblin sees you; further
+off it glimpses you or misses you. For the player, dim light tells the kind, however far.
+
+The diagonal step: "We can stay the decision about movement" (with stealth, feature set 2).
+
 ## Open
 
-1. **What dim light does to sight** (for the player, every option is the same: the kind):
-   - A, one band worse: a monster sees you in dim nearly as far as in full light;
-   - B, one band worse and a monster must see you clearly: in dim you're only ever glimpsed;
-   - C, no detail and half as far: dim is half cover (close to `stealth.md` now). Leaning C.
-2. **How much light hurts the light-shy:** a band worse in dim and two in full light (leaning; a
-   spider next to you in your lamp's light only glimpses you), or one band worse in any light.
-3. **What dazzles a light-shy creature:** the light on its target (leaning), or on its own square.
-4. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
+1. **Glare:** any light on the line (leaning; it settles what dazzles them: their own square's
+   light and the target's both count), or only the light on what they look at.
+2. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
+   spider next to you in your lamp's light only glimpses you), or one band worse for any light.
+3. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
    orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
    ranges measured round; a diagonal step:
    - one step, as now: walking diagonally covers about 1.4 of distance a turn, so fleeing or
@@ -97,8 +107,8 @@ vision is shown what player can see about things."
      travel with them.
    Melee reaches the 8 squares round either way. Ranges (throwing, shooting, hearing) use the round
    distance, as sight.
-5. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
-6. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
+4. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
+5. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
    light (feature set 4).
 
 The questions with diagrams: the "Sight in the dark" page (an artifact, from this chat).
