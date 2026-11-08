@@ -2,9 +2,9 @@
 // hatching, what is in sight and remembered, the candle), and the animated
 // letters for the player and the goblins.
 
-import { INK, PAPER, BRAZIER_BOWL } from "./maprender.js";
+import { INK, PAPER, TORCH_RING_IN } from "./maprender.js";
 import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
-import { drawFire, drawCandle } from "./fire.js";
+import { drawFlame } from "./fire.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { isOpen } from "./rules/dungeon.js";
 import { KNOW } from "./rules/senses.js";
@@ -832,33 +832,27 @@ export class Renderer {
       lc.setTransform(hs, 0, 0, hs, -cx * hs, -cy * hs);
     }
     // Then the letters.
-    // The level's lights burning (campfires, braziers, candles),
-    // while in sight (fading in and out as goblins do): each its size of
-    // flame (LIGHTS); candles each a small flame seen from above in its glow.
+    // The level's lights burning (campfires, braziers, candles, wall
+    // torches), while in sight (fading in and out as goblins do): each its
+    // flame as its data has it (LIGHTS: `flame`), placed from the light's
+    // spot, or a small one's from its holder: the torch's ring, each candle.
     this.fires ??= new Map();
     (L.lights ?? []).forEach((l, i) => {
-      // (A torch's flame on the wall, its light from its square: `fx`, `fy`.)
-      const B = LIGHTS[l.kind] ?? LIGHTS.fire, x = (l.fx ?? l.x) * TS, y = (l.fy ?? l.y) * TS, target = this.inSight(l.x * TS, l.y * TS) ? 1 : 0;
+      const F = (LIGHTS[l.kind] ?? LIGHTS.fire).flame;
+      if (!F) return;
+      const target = this.inSight(l.x * TS, l.y * TS) ? 1 : 0;
       const a = (this.fires.get(l) ?? target) + (target - (this.fires.get(l) ?? target)) * Math.min(1, dt * 8);
       this.fires.set(l, a);
-      if (!(a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS)) return;
       const tt = t * (this.reduced ? 0.5 : 1);
-      if (l.kind === "candles") l.flames.forEach(([dx, dy], k) => drawCandle(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a));
-      else if (l.flames) l.flames.forEach(([dx, dy], k) => drawFire(lc, x + dx * TS, y + dy * TS, TS, tt, i * 5 + k, a, B.flame, B.foot));
-      else drawFire(lc, x, y, TS, tt, i, a, B.flame, B.foot);
-      // (A brazier's near rim drawn again over the flame's foot, so the fire
-      // burns down inside the bowl.)
-      if (l.kind === "brazier") {
-        lc.save();
-        lc.globalAlpha = a;
-        lc.strokeStyle = INK;
-        lc.lineCap = "round";
-        lc.lineWidth = (2.9 * TS) / 32;
-        lc.beginPath();
-        lc.arc(x, y, BRAZIER_BOWL * TS, 0.12, Math.PI - 0.12);
-        lc.stroke();
-        lc.restore();
-      }
+      // (A wall torch: its ring, a little out from where its light's flame
+      // point is (`fx`, `fy`), back toward its square; draw/lights.js.)
+      const spots = l.kind === "candles" ? l.flames.map(([dx, dy]) => [l.x + dx, l.y + dy])
+        : l.fx != null ? [[l.fx - Math.sign(l.fx - l.x) * TORCH_RING_IN, l.fy - Math.sign(l.fy - l.y) * TORCH_RING_IN]]
+        : [[l.x, l.y]];
+      spots.forEach(([sx, sy], k) => {
+        const x = (sx + F.x) * TS, y = (sy + F.y) * TS;
+        if (a > 0.02 && x > view.x - TS && y > view.y - TS && x < view.x + vw + TS && y < view.y + vh + TS) drawFlame(lc, x, y, TS, tt, i * 5 + k, a, F);
+      });
     });
     // Things lying about: in sight, as letters; remembered, faint.
     for (const it of w.items ?? []) {

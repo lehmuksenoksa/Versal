@@ -7,6 +7,14 @@
 // again over the flame).
 export const BRAZIER_BOWL = 0.35;
 
+// A wall torch: an iron ring on a short bracket out from the wall, sizes in
+// squares (the bracket from the wall's face to the ring, the ring's radius;
+// chosen on the options pages, spec/light-set.md). The torch's point (`x`,
+// `y`) is 0.15 out from the wall's face, so the ring's middle is
+// `TORCH_RING_IN` further out still: there its flame burns (render.js).
+export const TORCH = { bracket: 0.085, ring: 0.09 };
+export const TORCH_RING_IN = TORCH.bracket + TORCH.ring - 0.15;
+
 export const lights = {
   brazier(f, { P, x, y, TS, OUT, IN, PAPER, INK }) {
     // A round bowl of coals on three short legs, big enough to hold its
@@ -19,38 +27,41 @@ export const lights = {
 
   candles(f, { P, ctx, mode, x, y, TS, PAPER, INK }) {
     // Three fat candles standing on an altar, seen from above: a round
-    // each, its wick a dot.
+    // each, its long wick a short stroke leaning out of it. (Their flames
+    // drawn over them as they burn: render.js.)
     for (const [dx, dy] of f.flames) {
       const cx = x + dx * TS, cy = y + dy * TS;
       P.round(cx, cy, TS * 0.12, 1.5, PAPER);
       if (mode === "paper" || mode === "ink") {
         ctx.save();
-        ctx.fillStyle = INK;
+        ctx.strokeStyle = INK;
+        ctx.lineCap = "round";
+        ctx.lineWidth = Math.max(1.5, TS * 0.035);
         ctx.beginPath();
-        ctx.arc(cx, cy, TS * 0.12 * 0.22, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.moveTo(cx, cy);
+        ctx.quadraticCurveTo(cx + TS * 0.021, cy - TS * 0.084, cx + TS * 0.014, cy - TS * 0.14);
+        ctx.stroke();
         ctx.restore();
       }
     }
   },
 
-  torch(f, { P, x, y, TS, INK }) {
-    // A torch in an iron bracket on the wall: the bracket from the wall's
-    // face to the torch's head, a round of ink. (Its flame drawn over it as
-    // it burns: render.js.) A stand-in: its look to choose.
-    const wx = x + f.dx * TS * 0.15, wy = y + f.dy * TS * 0.15;
-    P.line(wx, wy, x, y, 2.4);
-    P.round(x, y, TS * 0.08, 1.2, INK);
+  torch(f, { P, x, y, TS, PAPER }) {
+    // A torch on the wall: a short iron bracket from the wall's face (`dx`,
+    // `dy`: toward the wall) to an iron ring. (Its flame drawn over the ring
+    // as it burns: render.js.)
+    const fx = x + f.dx * TS * 0.15, fy = y + f.dy * TS * 0.15, cx = x - f.dx * TS * TORCH_RING_IN, cy = y - f.dy * TS * TORCH_RING_IN;
+    P.line(fx, fy, cx + f.dx * TS * TORCH.ring, cy + f.dy * TS * TORCH.ring, 2.4);
+    P.round(cx, cy, TS * TORCH.ring, 1.57, PAPER);
   },
 
   campfire(f, { P, x, y, TS, INK }) {
-    // A teepee of three logs seen from the side: plain bars of ink leaning
-    // together, crossing a little past their point.
-    const w = 0.4, foot = 0.28, top = -0.14, th = 0.09, poke = 0.07;
-    for (const u of [-0.5, 0.5, 0]) {
-      const bx = x + u * w * TS, by = y + foot * TS, tx = x - u * poke * TS, ty = y + top * TS;
-      const len = Math.hypot(tx - bx, ty - by), nx = (-(ty - by) / len) * th * TS * 0.5, ny = ((tx - bx) / len) * th * TS * 0.5;
-      P.shape([[bx + nx, by + ny], [tx + nx, ty + ny], [tx - nx, ty - ny], [bx - nx, by - ny]], 0, INK);
+    // Five logs laid to the middle, seen from above as the map is: square-
+    // ended bars of ink, like an asterisk.
+    const t = TS * 0.05, r = TS * 0.31;
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 2 * Math.PI) / 5 - Math.PI / 2, c = Math.cos(a), s = Math.sin(a);
+      P.shape([[x - s * t, y + c * t], [x + c * r - s * t, y + s * r + c * t], [x + c * r + s * t, y + s * r - c * t], [x + s * t, y - c * t]], 0, INK);
     }
   },
 };

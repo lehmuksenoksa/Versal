@@ -147,7 +147,9 @@ light a sneaking player near them), goblins (`g`) led by bigger goblin warriors,
 healing), and in the throne room on the far side of the last level the goblin king (`G`, crowned)
 with his guard. Killing him wins the run.
 
-A run starts by asking the player's name (`?name=…` in the address skips it). The player has 20 hit
+A run starts by asking the player's name (`?name=…` in the address skips it). **Test rooms** open the
+real game on a small set-up level, with no name asked and nothing saved: `?scene=lights` (on the
+published page, `#test-lights`) is a room with every light the levels have (`js/scenes.js`). The player has 20 hit
 points and is an adventurer of the first level; kills give experience (a goblin 5, a skeleton 8),
 and each new level 4 more hit points and, every other one, a harder blow. Goblins hit for 1 to 3, skeletons claw for 1 to 4, and a hard claw
 can make you bleed (a hit point a turn for a few turns; resting stops it). Wounds heal a hit point
@@ -203,6 +205,9 @@ in the browser console.
 | `js/plates.js` | The torn plates under the corner, the sidebar and the drawer: the chosen polylines, their edges drawn as cave walls and torn. |
 | `js/rules/fov.js` | Recursive shadowcasting field of view (tile-based, for game logic). |
 | `js/rules/sightline.js` | Visibility polygons cast against the wall outlines, for sight and light. |
+| `js/rules/scenario.js` | Small maps: a World on a level typed as text (the tests' set-up situations, and the test rooms, `js/scenes.js`). |
+| `js/scenes.js` | Test rooms: small set-up levels the game opens from the address (`?scene=…`, `#test-…`), unsaved. |
+| `js/fire.js` | The lights' flames, in the map's inks, flickering on twos; each light's flame as its data has it (`lights.json`). |
 | `js/rules/light.js` | The light: each square dark, dim or lit, from every source (the level's lights, the player's lamp, cultists' lanterns), along lines of sight; a part of its own, owned by the World (`world.light`). |
 | `js/rules/actions.js` | The player's actions as commands (`act`): moves, things, the lamp, and the activities that go on a turn at a time (resting, walking, exploring, running). |
 | `js/rules/replay.js` | Replays: every call made into the rules noted, with checkpoints, and a run played again from its seed and calls. |

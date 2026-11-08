@@ -10,7 +10,7 @@ import { feature } from "./rules/content.js";
 import { drawerFor } from "./draw/features.js";
 
 // (A brazier's bowl, its radius in squares: drawn with the lights.)
-export { BRAZIER_BOWL } from "./draw/features.js";
+export { BRAZIER_BOWL, TORCH_RING_IN } from "./draw/features.js";
 export const INK = "#1b1815";
 
 // Random numbers of their own for a place: seeded by `seed` and the numbers

@@ -4,51 +4,66 @@
     "full": "how far it lights fully, squares from the flame",
     "dim": "then a dim band this wide",
     "dark": "then a faint band this wide (drawn fainter; played as dim)",
-    "flame": "the flame's size, times a campfire's",
-    "foot": "where it stands, squares below the light's middle"
+    "flame": "how its flame is drawn (null: none drawn): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; tongues, a small, squat flame's (2 or 3), else round 1's big flame (spec/light-set.md, the flame workbench)"
   },
   "lights": {
     "fire": {
       "full": 3.5,
       "dim": 2,
       "dark": 2,
-      "flame": 1.15,
-      "foot": 0.1
+      "flame": {
+        "size": 0.225,
+        "x": 0,
+        "y": 0,
+        "flicker": 0.2
+      }
     },
     "brazier": {
       "full": 2.5,
       "dim": 1.5,
       "dark": 1.5,
-      "flame": 1,
-      "foot": 0.17
+      "flame": {
+        "size": 0.3,
+        "x": -0.005,
+        "y": 0,
+        "flicker": 0.2
+      }
     },
     "lantern": {
       "full": 2,
       "dim": 1,
       "dark": 1.5,
-      "flame": 0,
-      "foot": 0
+      "flame": null
     },
     "candles": {
       "full": 1.25,
       "dim": 1.25,
       "dark": 1.5,
-      "flame": 0.2,
-      "foot": -0.05
+      "flame": {
+        "size": 0.16,
+        "x": 0,
+        "y": -0.08,
+        "flicker": 0.1,
+        "tongues": 2
+      }
     },
     "lamp": {
       "full": 5,
       "dim": 1,
       "dark": 3,
-      "flame": 0,
-      "foot": 0
+      "flame": null
     },
     "torch": {
       "full": 1.5,
       "dim": 1,
       "dark": 1.5,
-      "flame": 0.42,
-      "foot": 0.02
+      "flame": {
+        "size": 0.17,
+        "x": 0,
+        "y": -0.025,
+        "flicker": 0.1,
+        "tongues": 2
+      }
     }
   }
 }

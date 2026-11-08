@@ -21,7 +21,12 @@ test("monsters, items, lights and places have what they need", () => {
     if (it.cat === "armour") need(`item ${k}`, it, ["slot", "def"]);
     if (it.cat === "potion") need(`item ${k}`, it, ["heal"]);
   }
-  for (const [k, l] of Object.entries(lights)) need(`light ${k}`, l, ["full", "dim", "dark", "flame", "foot"]);
+  for (const [k, l] of Object.entries(lights)) {
+    need(`light ${k}`, l, ["full", "dim", "dark"]);
+    // (Its flame as drawn, or null for none: the lamp's and lanterns'.)
+    assert.ok("flame" in l, `light ${k}: no flame (null for none)`);
+    if (l.flame) need(`light ${k}'s flame`, l.flame, ["size", "x", "y"]);
+  }
   places.forEach((p, i) => {
     need(`place ${i + 1}`, p, ["name", "depth", "from", "to", "spawns"]);
     assert.equal(p.depth, i + 1, `place ${i + 1}: depth ${p.depth}`);

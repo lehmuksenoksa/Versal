@@ -5,6 +5,8 @@ import { Renderer, bindZoom } from "./render.js";
 import { UI } from "./ui.js";
 import { wayTo, WALK } from "./rules/travel.js";
 import { tipFor, tipHtml } from "./tips.js";
+import { scenario } from "./rules/scenario.js";
+import { SCENES, sceneAsked } from "./scenes.js";
 
 const KEYS = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -34,6 +36,19 @@ function newRun() {
   ui.togglePanel("sheet");
   document.body.dataset.started = "1";
   offerNew = null;
+  // (A test room (js/scenes.js): no name asked, and the run saved before
+  // left alone.)
+  if (SCENE) {
+    broken = false;
+    world = guard(scenario(SCENES[SCENE].map, { name: "Tester", sneaking: SCENES[SCENE].sneaking }));
+    renderer.setWorld(world);
+    renderer.showLamp();
+    // (Close up, to see what's being tried; the wheel or + and - as ever.)
+    renderer.setZoom(SCENES[SCENE].zoom ?? 1.4);
+    world.log(`A test room (${SCENE}). Nothing here is saved; N starts it again.`);
+    window.focus();
+    return;
+  }
   try { localStorage.removeItem(SAVE_KEY); } catch {}
   saved = { turn: -1, depth: 0 };
   // (The level is there at once; the name asked over it, in the corner,
@@ -87,10 +102,10 @@ function guard(w) {
 // played (every few turns, on a new level, and when the page is left), and
 // taken up again when the page opens; gone when the run ends. `?seed=…`
 // (tests) always starts afresh.
-const SAVE_KEY = "versal.run", SAVE_EVERY = 5;
+const SAVE_KEY = "versal.run", SAVE_EVERY = 5, SCENE = sceneAsked();
 let saved = { turn: -1, depth: 0 }, offerNew = null;
 function saveRun() {
-  if (!world || broken) return;
+  if (!world || broken || SCENE) return;
   try {
     if (world.ended) localStorage.removeItem(SAVE_KEY);
     else localStorage.setItem(SAVE_KEY, JSON.stringify(world.save()));
@@ -107,7 +122,7 @@ function keepSaved() {
   if (offerNew !== null && world.turn !== offerNew) offerNew = null;
 }
 function savedRun() {
-  if (new URLSearchParams(location.search).has("seed")) return null;
+  if (SCENE || new URLSearchParams(location.search).has("seed")) return null;
   try {
     const text = localStorage.getItem(SAVE_KEY);
     return text ? World.restore(JSON.parse(text)) : null;

@@ -12,7 +12,7 @@ import { structure } from "./structure.js";
 import { furniture } from "./furniture.js";
 import { lights } from "./lights.js";
 
-export { BRAZIER_BOWL } from "./lights.js";
+export { BRAZIER_BOWL, TORCH_RING_IN } from "./lights.js";
 
 export const FAMILIES = { structure, furniture, light: lights };
 

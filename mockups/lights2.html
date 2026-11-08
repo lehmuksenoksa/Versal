@@ -56,7 +56,9 @@
 <script type="module">
 import { pen, PAPER, INK, wallLine } from "../js/maprender.js";
 import { RNG } from "../js/rules/rng.js";
-import { drawFire } from "../js/fire.js";
+import { drawFlame } from "../js/fire.js";
+// (The flames as the game now draws them: the old call, kept for this page.)
+const drawFire = (g, x, y, TS, t, seed, a, size = 1, foot = 0.24) => drawFlame(g, x, y + TS * foot * 0.5, TS, t, seed, a, { size: 0.29 * size, flicker: 0.15 });
 
 const OUT = 2.9, IN = 1.9, BIG = 60;
 const FIRE = "#f2541b", FIRE_MID = "#fba52b", FIRE_IN = "#fde48e";
