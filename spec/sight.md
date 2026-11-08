@@ -118,6 +118,10 @@ square counts, drawn sizes against the rules', the edges, how far a line may gra
 - **The player's sight by the same lines as light** (today it's a square-by-square field of view, so
   the two can differ at corners).
 
+**How much light hurts the light-shy** (yours: "Dim 1 band, full 2"): a band worse on a dim square,
+two on a lit one. A spider next to you in your lamp's light only glimpses you; in dim light it knows
+you within 3.
+
 **Numbers in whole steps** (yours: "Can we record the steps in full numbers: 1, 2, 3, but treat
 them with half steps where needed? That'd be more human readable"): every band is written as a
 whole number of steps, and reaches the squares whose middle lies within that number and a half (a
@@ -160,10 +164,7 @@ kill the first enemy from a group before it notices"). With actions taking ticks
 
 ## Open
 
-1. **How much light hurts the light-shy:** a band worse for dim and two for full light (leaning; a
-   spider next to you in your lamp's light only glimpses you), one band worse for any light, or a
-   band worse for dim and blind in full light. Shown on the "Sight in the dark" page.
-2. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
+1. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
    orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
    ranges measured round; a diagonal step:
    - one step, as now: walking diagonally covers about 1.4 of distance a turn, so fleeing or
@@ -173,8 +174,8 @@ kill the first enemy from a group before it notices"). With actions taking ticks
      travel with them.
    Melee reaches the 8 squares round either way. Ranges (throwing, shooting, hearing) use the round
    distance, as sight.
-3. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
-4. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
+2. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
+3. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
    light (feature set 4).
 
 The questions with diagrams: the "Sight in the dark" page (an artifact, from this chat).
