@@ -112,3 +112,11 @@ vision and light-shy for every creature). Decided so far: the map shows the ligh
 dark vision drawn as the faint band is now; its bands show only in what's drawn on things. The two
 stand-in looks are still to discuss (yours: "These are not decided"); options shown so far: the torch
 as an iron cup on the wall or others, "?" as a hatched shape or others.
+
+**The lights' looks, being worked out** (pages "Versal's lights" and "Light holders and flames").
+Yours, after round 1: the wall torch between "as now" (the least) and an empty ring on a bracket (the
+most); the campfire as now or an asterisk (to try: square ends, five arms); the brazier "looks ok
+enough"; candles perhaps longer wicks. Flames: in ink, seen from above and embers dropped; the
+brazier's flame size and placement good; in the map's inks "promising" (to try: outline weights,
+none); for candles and wall torches no flame works yet, "maybe a small flame could work, if it wasn't
+just miniaturized larger flame". Also still to discuss: how characters and items show in the dark.
