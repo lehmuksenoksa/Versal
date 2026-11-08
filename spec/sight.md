@@ -43,12 +43,19 @@ tag: light-shy"):
   the light") have a long dark vision and no tag; cave spiders ("almost blind in light") have the
   tag.
 
+- **Distances are round** (yours: "if the player's vision is a circle (and not a square), same
+  should be true for monsters"): as the crow flies between squares' middles, as lights already are;
+  a square is within a distance if its middle is. Every band is then a rough circle, drawn as one.
+  (Today the player's dark sight is a square of 3 in the rules, `max(|dx|, |dy|)`, but drawn as a
+  circle of 3½: the corners are seen but drawn dark.) Bands can be halves: next to you includes the
+  diagonal squares only from 1½.
+
 Placeholder numbers, to show the shape:
 
 | | Vision (clear / kind / faint) | Dark vision (clear / kind / faint) | Light-shy |
 |---|---|---|---|
-| The player | all in sight / – / – | 0 / 1 / 3 | – |
-| Goblin | 6 / 7 / 8 | 0 / 0 / 1 | – |
+| The player | all in sight / – / – | 0 / 1½ / 3½ | – |
+| Goblin | 6 / 7 / 8 | 0 / 0 / 1½ | – |
 | Cave spider | 2 / 3 / 5 | 3 / 4 / 6 | yes |
 
 The lamp (lit 5, dim 1) with the player's dark vision past it: kinds told to 7, "?" to 9 (today all
@@ -75,8 +82,18 @@ vision is shown what player can see about things."
 2. **How blind the light-shy are in light:** at most faint, or just a short Vision. Leaning at most
    faint.
 3. **What dazzles a light-shy creature:** the light on its target (leaning), or on its own square.
-4. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
-5. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
+4. **Steps and distance** (yours: "is the distance to a diagonal square the same as distance to an
+   orthogonal square? This matters at least for movement and range"). Sight, light, hearing and
+   ranges measured round; a diagonal step:
+   - one step, as now: walking diagonally covers about 1.4 of distance a turn, so fleeing or
+     closing in diagonally is quicker than straight;
+   - or a turn and a half (yours: "diagonal movement taking more ticks"): a square 5 off is about 5
+     turns away whichever way it lies, matching the circles; paths weigh diagonals, the bot and
+     travel with them.
+   Melee reaches the 8 squares round either way. Ranges (throwing, shooting, hearing) use the round
+   distance, as sight.
+5. **The numbers:** the player's dark vision, the lights' new bands, each monster's.
+6. Elsewhere: going for lights (feature set 2, the monster behaviour table); fighting worse in
    light (feature set 4).
 
 The questions with diagrams: the "Sight in the dark" page (an artifact, from this chat).
