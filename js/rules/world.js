@@ -169,7 +169,7 @@ export class World {
 // seen and in view, who's there (the player among them while on it). One
 // place for each, so what a level keeps (lights put out, traps sprung) is
 // kept with it as the World goes up and down.
-for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "items", "visible", "seen", "inView", "actors"])
+for (const key of ["level", "seed", "posts", "pillars", "doors", "blocks", "items", "visible", "seen", "looked", "inView", "actors"])
   Object.defineProperty(World.prototype, key, {
     get() { return this.here[key]; },
     set(v) { this.here[key] = v; },

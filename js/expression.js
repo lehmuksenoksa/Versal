@@ -456,6 +456,23 @@ export class Expression {
     if (this.player) this.learn(this.player.x, this.player.y);
   }
 
+  // What was seen of the level before this drawing was made (a run taken up
+  // again, a level gone back to after the page was opened anew): seen again
+  // from the squares the player looked from (`list`, [x, y, how] taken from
+  // its end, `how` 1 with the lamp lit, 2 with it out), with the sight each
+  // had (`sights`: { 1, 2 }, each { sight, sightFade }), until the time
+  // `until` (performance.now()) is past. A slice a frame (render.js), so the
+  // page opens at once.
+  recallFrom(list, sights, until) {
+    const S = this.S, keep = { sight: S.sight, sightFade: S.sightFade };
+    while (list.length && performance.now() < until) {
+      const [x, y, how] = list.pop();
+      Object.assign(S, sights[how]);
+      this.learn(x, y, true);
+    }
+    Object.assign(S, keep);
+  }
+
   // All the rock, in `seenShape` from the start (it goes with the floor seen
   // wherever the shape is used; and the level's lights show only on what is
   // in it, never on floor not seen).
@@ -471,9 +488,11 @@ export class Expression {
   // how well: unblocked by walls, fully out to `sight`, then less and less
   // over the fade with distance. Each bit of floor is remembered as well as
   // it has ever been seen. Returns whether anything is now better known.
-  learn(tx, ty) {
+  // (`past`: a place looked from before, recalled: only what was seen from
+  // it remembered, nothing of what's in sight now.)
+  learn(tx, ty, past = false) {
     const { mw, mh, floor, seen, S, TS } = this, px = (tx + 0.5) * TS, py = (ty + 0.5) * TS, far = S.sight + S.sightFade;
-    this.player = { x: tx, y: ty };
+    if (!past) this.player = { x: tx, y: ty };
     // (Further, where lights near by may light what can be seen far off.)
     const near = (l) => Math.hypot(Math.max(l.x0 - tx - 0.5, 0, tx + 0.5 - l.x1), Math.max(l.y0 - ty - 0.5, 0, ty + 0.5 - l.y1)) < LAMP_SEE;
     const lamps = this.lampLevel && this.lamps.some(near);
@@ -482,10 +501,13 @@ export class Expression {
     // what is seen, from the same points, so the two agree.)
     // (The one view serves for both when lights are near: what it sees beyond
     // `far` counts only where lit.)
-    this.lampView = lamps ? this.viewFrom(px, py, (LAMP_SEE + 1) * TS) : null;
-    const path = this.lampView ?? this.viewFrom(px, py, (far + 1) * TS);
+    const lampView = lamps ? this.viewFrom(px, py, (LAMP_SEE + 1) * TS) : null;
+    const path = lampView ?? this.viewFrom(px, py, (far + 1) * TS);
     // (Kept for castSight from the same place: no need to cast it again.)
-    this.lastView = { px, py, r: (lamps ? LAMP_SEE + 1 : far + 1) * TS, path };
+    if (!past) {
+      this.lampView = lampView;
+      this.lastView = { px, py, r: (lamps ? LAMP_SEE + 1 : far + 1) * TS, path };
+    }
     // Only the square the view can reach is looked at.
     const m = Math.ceil((reach + 1) * R) + 1, cx = Math.floor((px * R) / TS), cy = Math.floor((py * R) / TS);
     const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
@@ -573,10 +595,11 @@ export class Expression {
     const key = `${tx},${ty},${far},${S.flame},${this.doorsChanged ?? 0}`;
     if (!this.viewpoints) this.viewpoints = new Map();
     if (!this.viewpoints.has(key)) {
-      const v = { path, px, py, far, lamps: this.lampView, posts };
+      const v = { path, px, py, far, lamps: lampView, posts };
       this.viewpoints.set(key, v);
       this.addShape(v);
     }
+    if (past) return grew;
     this.visNow = vis;
     this.roomsInSight();
     // (The lights that light anything in sight now: a few points round each.)

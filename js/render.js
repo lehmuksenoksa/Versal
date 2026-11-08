@@ -7,7 +7,7 @@ import { Expression, EXPRESSION_DEFAULTS } from "./expression.js";
 import { drawFlame } from "./fire.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { isOpen } from "./rules/dungeon.js";
-import { KNOW } from "./rules/senses.js";
+import { KNOW, sightRound } from "./rules/senses.js";
 import { feature, PLAYER } from "./rules/content.js";
 import { GpuMap, gpuContext } from "./gpu.js";
 
@@ -454,7 +454,32 @@ export class Renderer {
       }
     }
     this.exp.low = this.low;
+    const fresh = !this.exp.seenShape;
     this.exp.setScale(this.dpr * this.zoom); // learns what is seen and draws
+    // (A drawing made new for a level already looked about in: what was seen
+    // of it, seen again from where the player looked from (the rules'
+    // `looked`), with the lamp's sight or the dark sight as they had it; a
+    // slice each frame, the nearest first (frame, Expression.recallFrom).)
+    if (fresh) {
+      const W = w.level.w, { x: px, y: py } = w.player, list = [];
+      for (let j = 0; j < (w.looked?.length ?? 0); j++) for (const how of [1, 2]) if (w.looked[j] & how && j !== py * W + px) list.push([j % W, (j - (j % W)) / W, how]);
+      list.sort((a, b) => Math.hypot(b[0] - px, b[1] - py) - Math.hypot(a[0] - px, a[1] - py));
+      const lit = this.dark ? this.lit : this.settings;
+      this.recalling = list.length ? { exp: this.exp, list, sights: { 1: { sight: sightRound(false), sightFade: lit?.sightFade ?? EXPRESSION_DEFAULTS.sightFade }, 2: { sight: sightRound(true), sightFade: SNEAK.sightFade } } } : null;
+    }
+  }
+
+  // What was seen of the level, seen again, a slice of each frame (buildMap);
+  // redrawn once it's all back.
+  recallSome() {
+    const r = this.recalling;
+    if (!r) return;
+    if (r.exp !== this.exp) { this.recalling = null; return; }
+    r.exp.recallFrom(r.list, r.sights, performance.now() + 24);
+    if (!r.list.length) {
+      this.recalling = null;
+      r.exp.rebuildSoon();
+    }
   }
 
   // Redo the drawing after `delay` ms, a slice each frame (newly seen ground
@@ -728,6 +753,7 @@ export class Renderer {
   }
 
   frame(now) {
+    this.recallSome();
     const w = this.world;
     if (!w || !this.exp) return;
     const t0 = performance.now();

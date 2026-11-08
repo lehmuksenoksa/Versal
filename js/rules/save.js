@@ -127,5 +127,8 @@ export function restoreWorld(data, proto) {
   w.noises = [];
   w.chaseMap = null;
   for (const st of w.places) if (st?.level) relink(st.level);
+  // (A save from before the levels kept where the player looked from: none
+  // known, so what was seen is drawn again only from here on.)
+  for (const st of w.places) if (st?.seen && !st.looked) st.looked = new Uint8Array(st.seen.length);
   return w;
 }

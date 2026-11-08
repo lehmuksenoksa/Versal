@@ -28,6 +28,10 @@ export const levelMethods = {
       blocks: level.blocks ?? new Set(),
       actors: [], items: [],
       visible: new Uint8Array(W * H), seen: new Uint8Array(W * H),
+      // Where the player has looked from: 1 with the lamp lit, 2 with it out
+      // (both, 3), so the view can draw again what was seen from each after
+      // a resume (render.js, recall).
+      looked: new Uint8Array(W * H),
       // What has a line of sight to the player (for monsters noticing them,
       // whatever the player can see).
       inView: new Uint8Array(W * H),

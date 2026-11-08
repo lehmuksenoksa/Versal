@@ -61,6 +61,7 @@ export const senseMethods = {
       computeFov(w, h, px, py, far, opaque, (x, y) => { if (!behind(x, y)) cells.push(y * w + x); });
       this.los = { key, level: this.level, cells };
     }
+    this.looked[py * w + px] |= this.sneaking ? 2 : 1;
     this.visible.fill(0);
     for (const k of this.los.cells) {
       const x = k % w, y = (k - x) / w;
