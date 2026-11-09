@@ -6,7 +6,7 @@ import { T, isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
 import { lineClear } from "./sightline.js";
 import { hypot } from "./dmath.js";
-import { DIM, LIT } from "./light.js";
+import { DARK, DIM, LIT } from "./light.js";
 import { LIGHTS } from "./levelgen.js";
 
 // What the player can tell of a thing (knowAt).
@@ -176,6 +176,71 @@ export const senseMethods = {
     this.log(on ? "You put out your lamp." : "You light your lamp.");
   },
 
+  // What the monster `g` can tell of the player by its own eyes
+  // (spec/light-rebuild.md, S4; spec/sight.md): 3 clearly, 2 their kind (it
+  // sees them), 1 a glimpse, 0 nothing; with how far its sight went
+  // (`sightOf`: { tell, far }, `far` for how much a sighting counts by how
+  // near). Along the same lines as the player's sight (`inView`). Its
+  // Vision by the light on the player's square (dim: none clear, each
+  // halved); its dark vision from itself, or from a lit or dim square near
+  // the player it sees, but past a light no better than its Vision would see
+  // them lit; the better of the two. Light-shy: dark vision only, from
+  // itself, a band worse on a dim square, two on a lit one, and a light's own
+  // square in the way stops it.
+  sightOf(g) {
+    const p = this.player, M = MONSTERS[g.kind], W = this.level.w;
+    if (this.inView[g.y * W + g.x] !== 1) return { tell: 0, far: 1 };
+    const d2 = (g.x - p.x) ** 2 + (g.y - p.y) ** 2, Lp = this.light.at(p.x, p.y);
+    // (A band of n reaches the middles within n and a half; 0 is no band.)
+    const within = (n, r2) => n > 0 && r2 <= (n + 0.5) ** 2;
+    const band = (b, r2) => (!b ? 0 : within(b[0], r2) ? 3 : within(b[1], r2) ? 2 : within(b[2], r2) ? 1 : 0);
+    const reach = (b) => (b ? b[2] + 0.5 : 0);
+    const plus = monTrait(g).dark ?? 0, dark = M.dark && M.dark.map((n) => n + plus);
+    if (M.lightShy) {
+      if (this.lightBetween(g)) return { tell: 0, far: 1 };
+      return { tell: Math.max(0, band(dark, d2) - Lp), far: reach(dark) };
+    }
+    const half = M.vision && M.vision.map((n) => n / 2);
+    const see = !M.vision || Lp === DARK ? 0 : Lp === LIT ? band(M.vision, d2) : Math.min(2, band(half, d2));
+    let best = { tell: see, far: Lp === LIT ? reach(M.vision) : reach(half) };
+    if (dark) {
+      // (The nearest lit or dim square to the player that it sees: theirs, if so.)
+      let D2 = d2;
+      if (Lp > DARK) D2 = 0;
+      else {
+        const R = Math.ceil(dark[2] + 0.5), opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y), pillars = this.pillars.map((q) => q.pts);
+        for (let dy = -R; dy <= R; dy++)
+          for (let dx = -R; dx <= R; dx++) {
+            const x = p.x + dx, y = p.y + dy, e = dx * dx + dy * dy;
+            if (e < D2 && this.light.at(x, y) > DARK && lineClear(g.x + 0.5, g.y + 0.5, x, y, opaque, pillars)) D2 = e;
+          }
+      }
+      let dv = band(dark, D2);
+      if (D2 < d2) dv = Math.min(dv, band(M.vision, d2));
+      if (dv > best.tell) best = { tell: dv, far: D2 < d2 ? reach(M.vision) : reach(dark) };
+    }
+    return best;
+  },
+
+  tellOf(g) { return this.sightOf(g).tell; },
+
+  // Does a light's own square stand between the monster `g` and the player
+  // (a level's light's, a lantern carrier's), stopping a light-shy one's
+  // sight as rock does?
+  lightBetween(g) {
+    const p = this.player, squares = new Set();
+    for (const l of this.level.lights ?? []) if (!l.out) squares.add(`${Math.floor(l.x)},${Math.floor(l.y)}`);
+    for (const a of this.actors) if (a !== g && a !== p && MONSTERS[a.kind]?.lantern) squares.add(`${a.x},${a.y}`);
+    if (!squares.size) return false;
+    const ax = g.x + 0.5, ay = g.y + 0.5, bx = p.x + 0.5, by = p.y + 0.5, n = Math.ceil(Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2) / 0.1);
+    for (let i = 1; i < n; i++) {
+      const x = Math.floor(ax + ((bx - ax) * i) / n), y = Math.floor(ay + ((by - ay) * i) / n);
+      if ((x === g.x && y === g.y) || (x === p.x && y === p.y)) continue;
+      if (squares.has(`${x},${y}`)) return true;
+    }
+    return false;
+  },
+
   // Is the player lit: their square dim or lit (their lamp, a light's,
   // a cultist's lantern's: light.js)?
   playerLit() {
@@ -189,18 +254,20 @@ export const senseMethods = {
   // pack with it. Aggressive packs give up after GOBLIN.calm turns of not
   // seeing the player, or when they are far off, but stay suspicious.
   notice() {
-    const p = this.player, W = this.level.w, lit = this.playerLit(), range = lit ? AWARE.seeLit : AWARE.seeDark;
+    const p = this.player;
     const angry = new Set();
     for (const g of this.actors) {
       if (g === p) continue;
-      const d = Math.max(Math.abs(g.x - p.x), Math.abs(g.y - p.y)), sees = this.inView[g.y * W + g.x] === 1;
-      g.sees = sees;
+      // (By its own eyes, sightOf: seeing the player counts as a sighting
+      // did, a glimpse as a sighting in the dark did; more the nearer, and
+      // next to it more again.)
+      const { tell, far } = this.sightOf(g), d = hypot(g.x - p.x, g.y - p.y);
+      g.sees = tell > 0;
+      g.tell = tell;
       if (g.state === "aggressive" || g.state === "fleeing") continue;
       const S = SENSES[g.state] ?? SENSES.neutral, T = monTrait(g);
-      // (A watchful monster sees further in the dark; a sleepy one hears less.)
-      const far = lit ? range : range * (T.see ?? 1);
       let gain = 0;
-      if (sees && d <= far) gain += ((lit ? AWARE.sight : AWARE.sightDark) * (1 - (d - 1) / far) + (d <= 1 ? (lit ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
+      if (tell > 0) gain += ((tell >= 2 ? AWARE.sight : AWARE.sightDark) * Math.max(0, 1 - (d - 1) / far) + (d <= 1.5 ? (tell >= 2 ? AWARE.near : AWARE.nearDark) : 0)) * S.see;
       for (const n of this.noises ?? []) {
         const dn = hypot(g.x - n.x, g.y - n.y);
         if (dn <= n.r) gain += AWARE.hear * n.loud * (1 - dn / (n.r + 1)) * S.hear * (T.hear ?? 1);

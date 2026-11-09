@@ -28,7 +28,10 @@ export const fightMethods = {
   // a sharp blade's hard blow making the living bleed; a timid monster flees
   // when first hurt.)
   whack(g) {
-    const unaware = g.state === "sleeping" || g.state === "neutral", T = itemTrait(this.player.equip.hand);
+    // (Unaware: asleep, calm, or suspicious and only glimpsing the player
+    // now (spec/sight.md, "Glimpse should allow stealth attack"; `tell`,
+    // senses.js). An alarmed one, not yet: the stealth planning session.)
+    const unaware = g.state === "sleeping" || g.state === "neutral" || (g.state === "suspicious" && this.tellOf(g) <= 1), T = itemTrait(this.player.equip.hand);
     const hit = unaware || this.dice.fight.chance(WHACK + (T.hit ?? 0));
     let dmg = 0;
     if (hit) {

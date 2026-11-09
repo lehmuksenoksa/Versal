@@ -2,7 +2,7 @@
   "about": "Things with character (round 3): a word before a thing's, a monster's or a room's name that changes how it plays. Read by js/traits.js.",
   "fields": {
     "items": "on: what it's found on; good: for the better; depth: the shallowest it's found; dmg: to the blow [low, high]; hit: to the chance to hit; def: to what armour takes off; bleed: a blow of 4 or more makes a living monster bleed; bane: more blow against goblins (baneOf); padded: hard blows make the player bleed half as often; spikes: a monster that hits the player takes this; heal: a potion's; weight: how much commoner or rarer than the rest",
-    "monsters": "on: what it's found on; dmg and hit: to its blows; hp, speed, xp: times its own; brave: never flees; timid: flees when first hurt; sleepy: asleep at the start, hear times as well; see: times as far in the dark; relentless: never gives up a chase; poison: more to the chance it poisons, poisonFor times as long",
+    "monsters": "on: what it's found on; dmg and hit: to its blows; hp, speed, xp: times its own; brave: never flees; timid: flees when first hurt; sleepy: asleep at the start, hear times as well; dark: added to each of its dark vision's distances; relentless: never gives up a chase; poison: more to the chance it poisons, poisonFor times as long",
     "rooms": "kinds: the room kinds it's found in; about: the line in its tip; cursed: the undead that fall there rise again once (after rise turns), and nothing heals; hallowed: resting heals twice as fast, the undead keep out; echoing: noises carry twice as far; flooded: every step wades, slow times as long; looted: nothing to find; stocked: more times the things; infested: a rats' nest, rats of them, back so many turns after the last is killed",
     "baneOf": "the kinds goblin-bane bites harder on"
   },
@@ -147,7 +147,7 @@
         "cultist",
         "spider"
       ],
-      "see": 2
+      "dark": 1
     },
     "swift": {
       "on": [

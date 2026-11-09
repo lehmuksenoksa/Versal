@@ -22,7 +22,10 @@
     "patrol": "its pack walks from room to room",
     "lantern": "carries a lantern: lights the player near it",
     "regen": "heals, hit points a turn",
-    "boss": "killing it wins"
+    "boss": "killing it wins",
+    "vision": "how well it sees what's in light: clear, kind, faint, whole steps reaching half a step more; seeing the player clearly or their kind, it sees them, faint a glimpse; in dim light none clear and each halved (null: none, the light-shy) (spec/light-rebuild.md, S4)",
+    "dark": "how well it sees in the dark, the same three: from itself, or (not the light-shy) from a lit or dim square it sees, but past a light no better than its vision would see it lit",
+    "lightShy": "sees by its dark vision alone; a band worse on a dim square, two on a lit one; a light's own square stops its sight as rock does"
   },
   "monsters": {
     "goblin": {
@@ -45,7 +48,17 @@
       ],
       "verb": "hits",
       "xp": 5,
-      "drops": true
+      "drops": true,
+      "vision": [
+        6,
+        7,
+        8
+      ],
+      "dark": [
+        0,
+        0,
+        2
+      ]
     },
     "warrior": {
       "glyph": "g",
@@ -68,7 +81,17 @@
       "verb": "hacks",
       "bleeds": true,
       "xp": 15,
-      "drops": true
+      "drops": true,
+      "vision": [
+        6,
+        7,
+        8
+      ],
+      "dark": [
+        0,
+        0,
+        2
+      ]
     },
     "king": {
       "glyph": "G",
@@ -92,7 +115,17 @@
       "bleeds": true,
       "xp": 100,
       "lurker": true,
-      "boss": true
+      "boss": true,
+      "vision": [
+        6,
+        7,
+        8
+      ],
+      "dark": [
+        0,
+        0,
+        2
+      ]
     },
     "skeleton": {
       "glyph": "z",
@@ -119,7 +152,17 @@
       "verb": "claws",
       "bleeds": true,
       "xp": 8,
-      "undead": true
+      "undead": true,
+      "vision": [
+        5,
+        6,
+        7
+      ],
+      "dark": [
+        0,
+        1,
+        2
+      ]
     },
     "zombie": {
       "glyph": "z",
@@ -142,7 +185,17 @@
       "verb": "batters",
       "xp": 10,
       "undead": true,
-      "relentless": true
+      "relentless": true,
+      "vision": [
+        3,
+        4,
+        5
+      ],
+      "dark": [
+        0,
+        1,
+        1
+      ]
     },
     "rat": {
       "glyph": "r",
@@ -163,7 +216,17 @@
         2
       ],
       "verb": "bites",
-      "xp": 2
+      "xp": 2,
+      "vision": [
+        3,
+        4,
+        6
+      ],
+      "dark": [
+        1,
+        2,
+        3
+      ]
     },
     "bat": {
       "glyph": "b",
@@ -185,7 +248,17 @@
       ],
       "verb": "bites",
       "xp": 3,
-      "erratic": true
+      "erratic": true,
+      "vision": [
+        2,
+        3,
+        4
+      ],
+      "dark": [
+        3,
+        4,
+        6
+      ]
     },
     "spider": {
       "glyph": "s",
@@ -208,7 +281,14 @@
       "verb": "bites",
       "poison": 0.4,
       "xp": 6,
-      "lurker": true
+      "lurker": true,
+      "vision": null,
+      "dark": [
+        3,
+        4,
+        6
+      ],
+      "lightShy": true
     },
     "giant": {
       "glyph": "S",
@@ -231,7 +311,14 @@
       "verb": "bites",
       "poison": 0.6,
       "xp": 25,
-      "lurker": true
+      "lurker": true,
+      "vision": null,
+      "dark": [
+        4,
+        5,
+        7
+      ],
+      "lightShy": true
     },
     "cultist": {
       "glyph": "h",
@@ -255,7 +342,17 @@
       "xp": 12,
       "drops": true,
       "patrol": true,
-      "lantern": true
+      "lantern": true,
+      "vision": [
+        6,
+        7,
+        8
+      ],
+      "dark": [
+        0,
+        0,
+        1
+      ]
     },
     "troll": {
       "glyph": "T",
@@ -277,7 +374,17 @@
       ],
       "verb": "smashes",
       "xp": 40,
-      "regen": 0.5
+      "regen": 0.5,
+      "vision": [
+        4,
+        5,
+        6
+      ],
+      "dark": [
+        2,
+        3,
+        4
+      ]
     }
   }
 }

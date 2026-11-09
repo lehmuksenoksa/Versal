@@ -8,7 +8,7 @@
     "chase": "an aggressive pack gives up after calm turns not seeing the player, or at once further off than lose; the chance a chasing monster gets a shut door open",
     "whack": "the player's chance to hit; sneak: a blow at a monster that hasn't noticed them always lands, so many times as hard",
     "sneakStep": "a step with the lamp out takes so many turns",
-    "aware": "awareness (0 to 1) grows each turn a monster sees or hears the player and ebbs while it doesn't; at a third, suspicious; full, alarmed",
+    "aware": "awareness (0 to 1) grows each turn a monster sees or hears the player and ebbs while it doesn't; at a third, suspicious; full, alarmed. How far it sees: its own sight (monsters.json, vision and dark); sight and near when it sees the player, sightDark and nearDark when it glimpses them (spec/light-rebuild.md, S4)",
     "noise": "each noise: how far it carries, how loud",
     "senses": "how much a monster sees and hears by its state",
     "morale": "when no more than half a pack is left, the rest flee for so many turns",
@@ -85,8 +85,6 @@
   "sneakHit": 3,
   "sneakStep": 1.5,
   "aware": {
-    "seeLit": 8,
-    "seeDark": 2.5,
     "sight": 0.45,
     "near": 0.4,
     "sightDark": 0.22,

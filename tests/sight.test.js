@@ -132,3 +132,82 @@ test("S3: the dark vision reaches past a light seen far off: within 3 of its lig
   assert.deepEqual([12, 13, 15, 16].map((x) => w.knowAt(x, 1)), [0, 1, 2, 2], `this side\n${picture(w)}`);
   assert.deepEqual([24, 25, 26, 27, 28].map((x) => w.knowAt(x, 1)), [2, 2, 1, 1, 0], `the far side\n${picture(w)}`);
 });
+
+// ---- S4. Monsters' sight ----
+// (What a monster can tell of the player, `tellOf`: 3 clearly, 2 their kind
+// (it sees them), 1 a glimpse, 0 nothing.)
+
+const CORRIDOR = `
+  ######################
+  #@...................#
+  ######################
+`;
+
+test("S4: a goblin (Vision 6, 7, 8) sees the player lit by the lamp at 7, glimpses them at 8, not at 9", () => {
+  const w = scenario(CORRIDOR);
+  const tells = [8, 9, 10].map((x) => { const g = w.placeMonster("goblin", x, 1); w.updateFov(); const t = w.tellOf(g); w.actors.splice(w.actors.indexOf(g), 1); return t; });
+  assert.deepEqual(tells, [2, 1, 0], picture(w));
+});
+
+test("S4: the lamp out, a goblin next to the player only glimpses them; a suspicious one struck so is struck unawares", () => {
+  const w = scenario(`
+    #######
+    #@g...#
+    #######
+  `, { sneaking: true, states: { g: "suspicious" } });
+  const g = w.actors.find((a) => a.kind === "goblin");
+  assert.equal(w.tellOf(g), 1);
+  w.act({ do: "move", dx: 1, dy: 0 });
+  assert.ok(w.events.some((e) => e.type === "whack" && e.sneak), "a sneak attack");
+});
+
+test("S4: with the lamp lit, a suspicious goblin next to the player sees them: no sneak attack", () => {
+  const w = scenario(`
+    #######
+    #@g...#
+    #######
+  `, { states: { g: "suspicious" } });
+  const g = w.actors.find((a) => a.kind === "goblin");
+  assert.equal(w.tellOf(g), 3);
+  w.act({ do: "move", dx: 1, dy: 0 });
+  assert.ok(w.events.some((e) => e.type === "whack" && !e.sneak), "a plain blow");
+});
+
+test("S4: the player in dim light: a goblin sees them within 4 (its Vision halved), glimpses them further, to its lit faint 8½", () => {
+  // (A brazier at 1: the player at 5, 4 from it, in its dim light.)
+  const w = scenario(`
+    ######################
+    #B...@...............#
+    ######################
+  `, { sneaking: true });
+  assert.equal(w.light.at(5, 1), 1, picture(w));
+  const tells = [9, 10, 13, 14].map((x) => { const g = w.placeMonster("goblin", x, 1); w.updateFov(); const t = w.tellOf(g); w.actors.splice(w.actors.indexOf(g), 1); return t; });
+  assert.deepEqual(tells, [2, 1, 1, 0], picture(w));
+});
+
+test("S4: a spider (light-shy, dark vision 3, 4, 6) next to the player lit by the lamp only glimpses them", () => {
+  const w = scenario(`
+    #######
+    #@p...#
+    #######
+  `);
+  assert.equal(w.tellOf(w.actors.find((a) => a.kind === "spider")), 1);
+});
+
+test("S4: in the dark, a spider sees the player within 4½ and glimpses them to 6½", () => {
+  const w = scenario(CORRIDOR, { sneaking: true });
+  const tells = [5, 6, 8].map((x) => { const g = w.placeMonster("spider", x, 1); w.updateFov(); const t = w.tellOf(g); w.actors.splice(w.actors.indexOf(g), 1); return t; });
+  assert.deepEqual(tells, [2, 1, 0], picture(w));
+});
+
+test("S4: a brazier between a spider and the player hides them, as rock would", () => {
+  // (The player 5 from the brazier, in the dark; the spider 6 from them,
+  // within its dark vision's faint 6½, the brazier's square between.)
+  const w = scenario(`
+    ###########
+    #@....Bp..#
+    ###########
+  `, { sneaking: true });
+  assert.equal(w.light.at(1, 1), 0, picture(w));
+  assert.equal(w.tellOf(w.actors.find((a) => a.kind === "spider")), 0, picture(w));
+});
