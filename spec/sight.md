@@ -1,5 +1,7 @@
 # Sight: a proposal
 
+The plan to build it, with proposed numbers: `light-rebuild.md`.
+
 Being worked out in chat during the light feature set (`light-set.md`); **not decided as a whole**.
 What is decided is marked so. When it is, it changes `light-and-dread.md` (sections 1 and 2) and
 `stealth.md` (section 4), and the light set is changed to match.
