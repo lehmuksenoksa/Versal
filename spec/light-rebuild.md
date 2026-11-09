@@ -1,7 +1,22 @@
-# The light set rebuilt: a plan, to approve
+# The light set rebuilt: the plan
 
-A draft (yours: "draft the plan with proposed numbers"). **Nothing here is decided until you say
-so**: the steps and the numbers are proposals. It builds on what's decided in `sight.md` (the
+**Approved** (yours: "Let's go with the numbers as you proposed and tweak them in play testing
+later"): the numbers below as proposed, to tune in play. The questions not answered, as I picked:
+the steps in this order; trolls not light-shy yet; monsters' sight into today's awareness until the
+stealth session. And dark vision past a light reaching dim squares as well as dark ones stays (yours:
+"It's ok"): so for a goblin, a ring of glimpses about 2½ round every light, dim light keeping you
+from being seen but not from being glimpsed. Asked about the numbers' reasons (yours: "What is your
+story and gameplay reasons for these numbers?"): given in chat; the weak ones (the bat's, the
+cultist's and the troll's dark vision; the monsters' clear distances, which do nothing until the
+stealth session gives clear sight a part) to look at in play.
+
+Asked also (yours: "is dark vision added up beyond normal vision? Will a goblin see better in partly
+lit room than in a fully lit huge room?"): no. A square is seen by the better of Vision (by its light)
+and dark vision (from the creature or the nearest lit or dim square it sees), never the two added;
+and past a light, no better than Vision would see it lit. More light never makes ordinary eyes see
+worse, and partial light never better than full.
+
+Originally a draft (yours: "draft the plan with proposed numbers"). It builds on what's decided in `sight.md` (the
 proposal, its "Decided" sections) and in `light-set.md` (the looks), and puts it into the game as
 the light feature set did: each step's rules as tests on small maps first, then the rules, then the
 looks; then you play it.
