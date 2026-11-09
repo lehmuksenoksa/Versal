@@ -12,9 +12,11 @@
 // is safe.)
 import { LAMPS, LAMP_SEE, R, blank, cellRng, clamp01, unite } from "./expression.js";
 
-// How many times finer than the map points the lights' picture is drawn
-// without the GPU (lampPicture).
-const LAMP_FINE = 3;
+// How many times finer than the map points the lights are worked out each
+// way (lampSoft, lightLamps); how many times finer than that a fire's own
+// picture is drawn without the GPU (firePicture); and how far past a
+// square's middle its band's ragged edge is bent (squares).
+const LAMP_SAMPLES = 2, LAMP_FINE = 2, BEND = 0.06;
 
 export const lightMethods = {
   // The candle, drawn flat like the rest of the map. For each place the
@@ -270,20 +272,28 @@ export const lightMethods = {
     if (!base) this.lampBase = null;
     if (!lights.length && !lanterns.length && !this.lamps.length) return;
     const level = (this.lampLevel = base ? base.level.slice() : new Float32Array(mw * mh));
-    const soft = (this.lampSoft = base ? base.soft.slice() : new Float32Array(mw * mh)), steady = (this.lampSteady = base ? base.steady.slice() : new Float32Array(mw * mh));
+    // (The light unbanded, `lampSoft`, LAMP_SAMPLES times finer than the map
+    // points each way, for the screen to band at its own resolution, as the
+    // player's lamp is drawn (spec/light-rebuild.md, S5); the steady light
+    // (all but the fires') and each fire's own, likewise.)
+    const SF = LAMP_SAMPLES, fw = mw * SF, fh = mh * SF, PX = TS / (R * SF);
+    this.lampSoftSize = [fw, fh];
+    const soft = (this.lampSoft = base ? base.soft.slice() : new Float32Array(fw * fh)), steady = (this.lampSteady = base ? base.steady.slice() : new Float32Array(fw * fh));
     // (Every fourth map point each way that the light being laid lights; and
     // a fire's light kept apart, `own`.)
     let cells, own = null;
-    const mark = (x, y, j, v, u) => {
+    const markLevel = (x, y, j, v) => {
       if (v > level[j]) level[j] = v;
-      if (u > soft[j]) soft[j] = u;
       if (v > 0 && !(x & 3) && !(y & 3)) cells.add(j);
-      if (!own) { if (u > steady[j]) steady[j] = u; }
-      else if (own.a) { const k = (y - own.y0) * own.w + (x - own.x0); if (u > own.a[k]) own.a[k] = u; }
+    };
+    const markFine = (X, Y, J, u) => {
+      if (u > soft[J]) soft[J] = u;
+      if (!own) { if (u > steady[J]) steady[J] = u; }
+      else if (own.a) { const k = (Y - own.y0) * own.w + (X - own.x0); if (u > own.a[k]) own.a[k] = u; }
     };
     const rag = (mx, my) => S.lightRag * (2 * (0.65 * this.fine(mx, my) + 0.35 * this.noise(mx, my)) - 1);
-    // The light unbanded, for the screen to band smoothly between the map
-    // points (`lampSoft`): falling steadily with how far, `e` (squares), and
+    // The light unbanded, for the screen to band smoothly between the
+    // samples (`lampSoft`): falling steadily with how far, `e` (squares), and
     // crossing halfway between two bands' levels just where the bands part
     // (as js/gpu.js's lampBands reads it); `B` the light's bands.
     const unbanded = (e, B) => {
@@ -291,29 +301,52 @@ export const lightMethods = {
       for (let i = 1; i < k.length; i++) if (e < k[i][0]) return k[i - 1][1] + ((e - k[i - 1][0]) / (k[i][0] - k[i - 1][0])) * (k[i][1] - k[i - 1][1]);
       return 0;
     };
-    // Lights the map points round (x, y) (squares) in line of sight within
-    // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares), raggedly,
-    // `B` its bands. (Past the walls in view only into the rock, not past
-    // shut doors.)
+    // How far the point (mx, my) (map pixels) is, raggedly; the ragged edge
+    // bent round the squares' middles (yours: "half radii steps and bending
+    // is okay for circumference"): where a middle would fall on the wrong
+    // side of the lit or the dim band's edge for how far it is (the rules
+    // count a square by its middle), the edge nudged past it by BEND, the
+    // nudge fading out half a square from the middle, so the edge stays
+    // whole.
+    const raggedAt = (mx, my, dist, B) => {
+      let e = dist(mx, my) + rag(mx, my);
+      const cx = (Math.floor(mx / TS) + 0.5) * TS, cy = (Math.floor(my / TS) + 0.5) * TS, r = Math.hypot(mx - cx, my - cy) / TS;
+      if (r >= 0.5) return e;
+      const dm = dist(cx, cy), em = dm + rag(cx, cy), k = 1 - r / 0.5, w = k * k * (3 - 2 * k);
+      for (const edge of [B.full, B.full + B.dim]) {
+        const inside = dm <= edge;
+        if (inside !== em <= edge) e += ((inside ? edge - BEND : edge + BEND) - em) * w;
+      }
+      return e;
+    };
+    // Lights the samples round (x, y) (squares) in line of sight within
+    // `out`, `band(e)` of how far each is (`dist(mx, my)`, squares),
+    // raggedly, `B` its bands; and the map points, for what the player sees
+    // from afar. (Past the walls in view only into the rock, not past shut
+    // doors.)
     const shine = (x, y, out, dist, band, B) => {
       const view = this.lampWalls.visible(x * TS, y * TS, (out + 0.5) * TS), rim = view.beyond(S.lightWall * TS);
-      const m = Math.ceil((out + 1) * R), cx = Math.floor(x * R), cy = Math.floor(y * R);
-      const x0 = Math.max(0, cx - m), y0 = Math.max(0, cy - m), x1 = Math.min(mw, cx + m), y1 = Math.min(mh, cy + m), bw = x1 - x0, bh = y1 - y0;
+      const m = Math.ceil((out + 1) * R * SF), cx = Math.floor(x * R * SF), cy = Math.floor(y * R * SF);
+      const X0 = Math.max(0, cx - m), Y0 = Math.max(0, cy - m), X1 = Math.min(fw, cx + m), Y1 = Math.min(fh, cy + m), bw = X1 - X0, bh = Y1 - Y0;
+      if (bw <= 0 || bh <= 0) return;
       const c = blank(bw, bh), g = c.getContext("2d", { willReadFrequently: true });
-      g.setTransform(R / TS, 0, 0, R / TS, -x0, -y0);
+      g.setTransform(1 / PX, 0, 0, 1 / PX, -X0, -Y0);
       g.fillStyle = "#f00";
       g.fill(rim);
       g.fillStyle = "#0f0";
       g.fill(view);
       const a = g.getImageData(0, 0, bw, bh).data;
-      if (own) Object.assign(own, { x0, y0, w: bw, h: bh, a: new Float32Array(bw * bh) });
-      for (let y = y0; y < y1; y++)
-        for (let x = x0; x < x1; x++) {
-          const b = ((y - y0) * bw + (x - x0)) * 4, j = y * mw + x;
-          if (a[b + 3] < 128 || (a[b + 1] < 128 && this.floor[j])) continue;
-          const mx = (x + 0.5) * (TS / R), my = (y + 0.5) * (TS / R);
-          const e = dist(mx, my) + rag(mx, my);
-          mark(x, y, j, band(e), unbanded(e, B));
+      if (own) Object.assign(own, { x0: X0, y0: Y0, w: bw, h: bh, a: new Float32Array(bw * bh) });
+      const reached = (X, Y) => {
+        const b = ((Y - Y0) * bw + (X - X0)) * 4;
+        return !(a[b + 3] < 128 || (a[b + 1] < 128 && this.floor[Math.floor(Y / SF) * mw + Math.floor(X / SF)]));
+      };
+      for (let Y = Y0; Y < Y1; Y++)
+        for (let X = X0; X < X1; X++) if (reached(X, Y)) markFine(X, Y, Y * fw + X, unbanded(raggedAt((X + 0.5) * PX, (Y + 0.5) * PX, dist, B), B));
+      for (let y = Math.ceil(Y0 / SF); y < Math.floor(Y1 / SF); y++)
+        for (let x = Math.ceil(X0 / SF); x < Math.floor(X1 / SF); x++) {
+          const X = x * SF + (SF >> 1), Y = y * SF + (SF >> 1);
+          if (reached(X, Y)) markLevel(x, y, y * mw + x, band(raggedAt((x + 0.5) * (TS / R), (y + 0.5) * (TS / R), dist, B)));
         }
     };
     for (const l of lights) {
@@ -321,7 +354,9 @@ export const lightMethods = {
       cells = new Set();
       own = {};
       shine(l.x, l.y, out, (mx, my) => Math.hypot(mx / TS - l.x, my / TS - l.y), (e) => (e < B.full ? 1 : e < B.full + B.dim ? S.dimLevel : e < out ? S.darkLevel : 0), B);
-      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, soft: own.a, w: own.w, h: own.h, at: [own.x0, own.y0] } });
+      // (Its own light kept with it, at the samples: where it lies and how
+      // big, in squares.)
+      this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, soft: own.a ?? new Float32Array(1), w: own.w ?? 1, h: own.h ?? 1, at: [(own.x0 ?? 0) / (R * SF), (own.y0 ?? 0) / (R * SF)], size: [(own.w ?? 1) / (R * SF), (own.h ?? 1) / (R * SF)] } });
       own = null;
     }
     if (!base) this.lampBase = { level: level.slice(), soft: soft.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
@@ -353,21 +388,21 @@ export const lightMethods = {
 
   // The steady light (all but the fires') as a picture to show the lit map
   // through, for drawing without the GPU: banded from the light unbanded,
-  // read smoothly between the map points, LAMP_FINE times finer than them,
+  // read smoothly between its samples, at their resolution,
   // so that each band's edge is a smooth line, not a staircase of map points
   // (as the GPU draws it, js/gpu.js lampBands). Made when first asked for,
   // and again where the light changed (`lampPicDirty`). Null if there are no
   // lights.
   lampPicture() {
-    const { mw, mh } = this, soft = this.lampSteady;
+    const soft = this.lampSteady;
     if (!soft) return (this.lampPic = null);
-    const F = LAMP_FINE, W = mw * F, H = mh * F;
+    const [W, H] = this.lampSoftSize;
     if (!this.lampPic || this.lampPic.width !== W || this.lampPic.height !== H) this.lampPicDirty = true;
     const box = this.lampPicDirty;
     if (!box) return this.lampPic;
     this.lampPicDirty = null;
     const c = box === true ? (this.lampPic = blank(W, H)) : this.lampPic;
-    this.bandPicture(c, soft, mw, mh, box === true ? [0, 0, mw, mh] : box);
+    this.bandPicture(c, soft, W, H, box === true ? [0, 0, W, H] : box.map((v) => v * LAMP_SAMPLES), 1);
     return c;
   },
 
@@ -375,15 +410,15 @@ export const lightMethods = {
   firePicture(fire) {
     if (!fire.pic) {
       fire.pic = blank(fire.w * LAMP_FINE, fire.h * LAMP_FINE);
-      this.bandPicture(fire.pic, fire.soft, fire.w, fire.h, [0, 0, fire.w, fire.h]);
+      this.bandPicture(fire.pic, fire.soft, fire.w, fire.h, [0, 0, fire.w, fire.h], LAMP_FINE);
     }
     return fire.pic;
   },
 
-  // Bands the light unbanded `soft` (mw × mh map points) into the picture
-  // `c`, LAMP_FINE times finer, within the box [x0, y0, x1, y1] (map points).
-  bandPicture(c, soft, mw, mh, [x0, y0, x1, y1]) {
-    const S = this.S, F = LAMP_FINE, w = (x1 - x0) * F, h = (y1 - y0) * F;
+  // Bands the light unbanded `soft` (mw × mh samples) into the picture `c`,
+  // F times finer, within the box [x0, y0, x1, y1] (samples).
+  bandPicture(c, soft, mw, mh, [x0, y0, x1, y1], F) {
+    const S = this.S, w = (x1 - x0) * F, h = (y1 - y0) * F;
     if (w <= 0 || h <= 0) return;
     const dk = S.darkLevel, dm = S.dimLevel, t1 = dk / 2, t2 = (dk + dm) / 2, t3 = (dm + 1) / 2;
     const A = [0, Math.round(255 * dk), Math.round(255 * dm), 255];
@@ -433,7 +468,13 @@ export const lightMethods = {
   // without the player's own (lit, the lamp; out, the faint glow of their
   // dark sight, which is sight, not light).
   sourcesAt(x, y) {
-    const i = Math.floor((x * R) / this.TS), k = Math.floor((y * R) / this.TS);
-    return this.lampLevel && i >= 0 && k >= 0 && i < this.mw && k < this.mh ? this.lampLevel[k * this.mw + i] : 0;
+    // (Banded from the light unbanded, read between its samples, as the
+    // screen draws it.)
+    const soft = this.lampSoft, S = this.S;
+    if (!soft) return 0;
+    const [fw, fh] = this.lampSoftSize, fx = (x * R * LAMP_SAMPLES) / this.TS - 0.5, fy = (y * R * LAMP_SAMPLES) / this.TS - 0.5;
+    const i = Math.floor(fx), k = Math.floor(fy), tx = fx - i, ty = fy - k, at = (a, b) => (a >= 0 && b >= 0 && a < fw && b < fh ? soft[b * fw + a] : 0);
+    const v = (at(i, k) * (1 - tx) + at(i + 1, k) * tx) * (1 - ty) + (at(i, k + 1) * (1 - tx) + at(i + 1, k + 1) * tx) * ty;
+    return v < S.darkLevel / 2 ? 0 : v < (S.darkLevel + S.dimLevel) / 2 ? S.darkLevel : v < (S.dimLevel + 1) / 2 ? S.dimLevel : 1;
   }
 };

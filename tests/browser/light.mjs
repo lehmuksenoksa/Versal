@@ -2,9 +2,9 @@
 // moments in play (the bot's moves, in the page, on the game's World), the
 // lamp lit and out, every square both have in sight is the same light,
 // dark, dim or lit, in the rules (js/rules/light.js) and as the view draws
-// it (its light at the square's middle). Squares on a band's edge are left
-// out: the view's edges are ragged on purpose. So the screen never says dark
-// where a monster sees the player lit.
+// it (its light at the square's middle): every middle, band edges too, the
+// view's ragged edges bent round the middles (spec/light-rebuild.md, S5). So
+// the screen never says dark where a monster sees the player lit.
 //
 //   node tests/browser/light.mjs
 import { createServer } from "node:http";
@@ -46,23 +46,13 @@ for (const seed of [3, 41, 999, 2024]) {
     }, m);
     await page.waitForTimeout(1200);
     const r = await page.evaluate(async () => {
-      const { LIGHTS } = await import("/js/rules/levelgen.js"), { MONSTERS } = await import("/js/rules/content.js");
       const w = window.versal.world, E = window.versal.renderer.exp, L = w.level, TS = window.versal.renderer.TS, out = [];
       if (!E) return { n: 0, bad: [] };
       const rules = (x, y) => w.light.at(x, y);
-      // (On a band's edge: the square's middle within 0.35 of where a
-      // light's lit or dim band ends; the view's edges wander by about 0.2.)
-      const sources = [...(L.lights ?? []).map((l) => ({ x: l.x, y: l.y, B: LIGHTS[l.kind] ?? LIGHTS.fire })),
-        ...(w.sneaking ? [] : [{ x: w.player.x + 0.5, y: w.player.y + 0.5, B: LIGHTS.lamp }]),
-        ...w.actors.filter((a) => MONSTERS[a.kind]?.lantern).map((a) => ({ x: a.x + 0.5, y: a.y + 0.5, B: LIGHTS.lantern }))];
-      const edge = (x, y) => sources.some(({ x: sx, y: sy, B }) => {
-        const d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy);
-        return Math.abs(d - (B.lit + 0.5)) < 0.35 || Math.abs(d - (B.dim + 0.5)) < 0.35;
-      });
       let n = 0;
       for (let y = 0; y < L.h; y++)
         for (let x = 0; x < L.w; x++) {
-          if (!w.isVisible(x, y) || !w.walkable(x, y) || edge(x, y)) continue;
+          if (!w.isVisible(x, y) || !w.walkable(x, y)) continue;
           const px = (x + 0.5) * TS, py = (y + 0.5) * TS;
           if (E.inSight(px, py) < 0.99) continue;
           // (The lamp out, the view's faint glow round the player is their
@@ -84,4 +74,4 @@ for (const seed of [3, 41, 999, 2024]) {
 await browser.close();
 server.close();
 if (problems.length) { console.error(`The view and the rules disagree on the light:\n${problems.join("\n")}`); process.exit(1); }
-console.log(`Light: the view and the rules agree, ${compared} squares at ${moments} moments (band edges left out).`);
+console.log(`Light: the view and the rules agree, ${compared} squares at ${moments} moments, every middle.`);

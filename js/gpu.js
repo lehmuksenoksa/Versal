@@ -605,7 +605,8 @@ export class GpuMap {
       // (Cast anew when the player moves, and when a door opens or shuts.)
       uLight: this.texture("light", E.lightReach ?? E.lit, `${E.lightCasts}|${E.lightReach?.width}`),
       uLightPrev: this.texture("lightPrev", E.lightPrev ? E.lightReachPrev : E.lit, E.lightPrev ? `${E.lightPrev.casts}|${E.lightReachPrev.width}` : "none"),
-      uLamp: this.maskTexture("lamp", E.lampSoft ?? new Float32Array(mw * mh), E.lampSoft),
+      // (The level's lights, worked out finer than the masks: lampSoftSize.)
+      uLamp: ((s) => this.texture("lamp", { w: s[0], h: s[1], data: E.lampSoft ?? new Float32Array(mw * mh), internal: gl.R32F, format: gl.RED, type: gl.FLOAT }, E.lampSoft, gl.NEAREST))(E.lampSoft ? E.lampSoftSize : [mw, mh]),
     };
     const p = this.compose;
     gl.useProgram(p);

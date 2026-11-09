@@ -359,6 +359,21 @@ export class Expression {
     // among them.)
     this.lightWalls = new Walls(drawn.loops, TS * 2);
     this.lampWalls = new Walls(drawn.loops, TS * 2);
+    // (At each corner of the walls on the grid, a small diamond a tenth of a
+    // square round it, so that sight and light pass a corner no nearer than
+    // the rules' lines do, and their shadows' edges run straight along those
+    // lines: spec/light-rebuild.md, S1, S5.)
+    const near = (v) => Math.abs(v / TS - Math.round(v / TS)) < 1e-6, CR = 0.1 * TS;
+    for (const loop of drawn.loops)
+      for (let i = 0; i < loop.length; i++) {
+        const a = loop[(i + loop.length - 1) % loop.length], v = loop[i], b = loop[(i + 1) % loop.length];
+        if (!near(v.x) || !near(v.y) || (a.x - v.x) * (b.y - v.y) - (a.y - v.y) * (b.x - v.x) === 0) continue;
+        const d = [[CR, 0], [0, CR], [-CR, 0], [0, -CR]];
+        for (let k = 0; k < 4; k++) {
+          const [x0, y0] = d[k], [x1, y1] = d[(k + 1) % 4], seg = { x0: v.x + x0, y0: v.y + y0, x1: v.x + x1, y1: v.y + y1 };
+          for (const w of [this.walls, this.lightWalls, this.lampWalls]) w.add({ ...seg });
+        }
+      }
     for (const f of level.features ?? []) {
       const post = !!feature(f).pillar, pts = post ? postOutline(f, TS) : shadeOutline(f, TS);
       if (!pts) continue;
@@ -1965,13 +1980,13 @@ export class Expression {
       this.region(mg, lampPic, (R * lampPic.width) / this.mw / this.TS, lamp.view);
       for (const l of this.lampsSeen) {
         if (!l.fire) continue;
-        const { x, y, ph, at } = l.fire, TS = this.TS, pic = this.firePicture(l.fire), F = pic.width / l.fire.w;
+        const { x, y, ph, at, size } = l.fire, TS = this.TS, pic = this.firePicture(l.fire);
         const k = 1 + FIRE_SWELL * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6));
         mg.save();
         mg.translate(x * TS, y * TS);
         mg.scale(k, k);
         mg.translate(-x * TS, -y * TS);
-        mg.drawImage(pic, (at[0] * TS) / R, (at[1] * TS) / R, (pic.width * TS) / R / F, (pic.height * TS) / R / F);
+        mg.drawImage(pic, at[0] * TS, at[1] * TS, size[0] * TS, size[1] * TS);
         mg.restore();
       }
       wg.globalCompositeOperation = "destination-in";

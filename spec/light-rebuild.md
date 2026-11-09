@@ -174,3 +174,16 @@ seen within 4 and glimpsed to 8½ (the plan's example said 4½: corrected); a sp
 lamp-lit player glimpsing; in the dark seeing within 4½, glimpsing to 6½; a brazier between hiding
 the player from it. What changed in play: monsters notice by their own eyes: the run lock and the
 view re-recorded. A step 0.85 ms.
+
+**S5, the screen: a first version, to show you.** The level's lights worked out twice as finely
+each way (16 samples to a square, `LAMP_SAMPLES`), the ragged noise too, and banded at the screen's
+own resolution, as the lamp's are; the ragged edge bent round the squares' middles (where a middle
+would fall on the wrong side of the lit or dim edge for its distance, the edge nudged a little past
+it, the nudge fading out half a square off), so every middle is drawn in its band. Shadows: their
+edges straight, as the light's lines from its flame; at each corner of the walls on the grid a
+small diamond a tenth of a square round it, so sight and light pass corners no nearer than the
+rules' lines do. The view-and-rules check now covers every square's middle, band edges too (it
+left them out): it agrees. The player's dark vision past the lights is drawn as the faint ring
+round each light (as in S2), the lamp's look unchanged, the flicker as it was. Working out a
+level's lights at the finer samples takes about twice as long (about 0.1 s for a level's dozen
+lights, on entering it). The view re-recorded.
