@@ -235,3 +235,10 @@ Yours: "Yes, put A2 into the game." Done: something known only to be there is a 
 with no outline (js/render.js, `somethingLook`); the test room keeps the old "?" and the other marks
 to compare. Still open: a letter in the dark (A as now, your pick when trying), your own letter in
 the dark, whether a creature and a thing should look different as "?".
+
+**Decided** (yours): a letter whose kind can be told in the dark: "As now" (a faint pale outline in
+the dark sight; plain ink outside it). Your own letter in the dark: "As now" (red, the faint pale
+outline). Creatures and things: "Let's use smaller question mark for items. It seems like it's like
+that now already": so it is, in the game too: a thing's "?" in the things' lettering (0.66 of a
+square), a creature's in the monsters' (1.05), small animals' too, so a "?" doesn't tell a rat
+from a goblin.
