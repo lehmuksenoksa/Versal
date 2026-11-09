@@ -84,7 +84,15 @@ const joinRect = (a, b) => {
 export const LAMPS = Object.fromEntries(Object.entries(LIGHTS).map(([k, B]) => [k, { ...B, full: B.lit + 0.5, dim: B.dim - B.lit, dark: PLAYER.darkSight }]));
 export const LAMP_SEE = 24;
 // How much a fire's light swells and shrinks as it flickers (of its size).
-const FIRE_SWELL = 0.04;
+const FIRE_SWELL = 0.2;
+// How much a fire's light swells or shrinks at time `t` (seconds), as a
+// scale about its flame, its light reaching `out` squares: as the player's
+// lamp does, on its waves (castLight), each fire its own way (`ph`), its edge
+// moving out and in by up to FIRE_SWELL squares, about the lamp's; its
+// brightness steady (yours: "The flicker of light sources should look like
+// the players lamps flicker. No change in luminosity. Similar tempo.
+// Contracting and expanding.").
+export const fireSwell = (t, ph, out) => 1 + ((FIRE_SWELL / Math.max(1, out)) * (Math.sin(t * 5.1 + ph) + 0.5 * Math.sin(t * 8.9 + 0.7 + ph * 1.7) + 0.3 * Math.sin(t * 13.3 + 2 + ph * 0.6))) / 1.8;
 // How warm their light is (as `warmth`; theirs whatever the player's lamp).
 const LAMP_WARMTH = 0.7;
 // The rock this close to known floor (in tiles) shows the walls' ink.
@@ -1980,8 +1988,8 @@ export class Expression {
       this.region(mg, lampPic, (R * lampPic.width) / this.mw / this.TS, lamp.view);
       for (const l of this.lampsSeen) {
         if (!l.fire) continue;
-        const { x, y, ph, at, size } = l.fire, TS = this.TS, pic = this.firePicture(l.fire);
-        const k = 1 + FIRE_SWELL * (0.6 * Math.sin(t * 4.3 + ph * 1.3) + 0.4 * Math.sin(t * 9.1 + ph * 0.6));
+        const { x, y, ph, at, size, out } = l.fire, TS = this.TS, pic = this.firePicture(l.fire);
+        const k = fireSwell(t, ph, out);
         mg.save();
         mg.translate(x * TS, y * TS);
         mg.scale(k, k);
@@ -1996,21 +2004,6 @@ export class Expression {
       this.region(wg, this.sightCanvas.eased, ss, lamp.view);
       this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
       this.region(wg, this.seenShape, this.scale, lamp.view);
-      // A fire's light flickers in brightness too, each its own way, dimming
-      // most toward its edge.
-      wg.globalCompositeOperation = "destination-out";
-      wg.setTransform(T);
-      for (const l of this.lampsSeen) {
-        if (!l.fire) continue;
-        const { x, y, out, full, ph } = l.fire, TS = this.TS;
-        const k = clamp01(0.5 + 0.3 * Math.sin(t * 5.3 + ph) + 0.2 * Math.sin(t * 11.7 + ph * 1.9) + 0.15 * Math.sin(t * 17.9 + ph * 0.7));
-        const grad = wg.createRadialGradient(x * TS, y * TS, 0, x * TS, y * TS, out * TS);
-        grad.addColorStop(0, `rgba(0, 0, 0, ${0.04 * k})`);
-        grad.addColorStop(full / out, `rgba(0, 0, 0, ${0.08 * k})`);
-        grad.addColorStop(1, `rgba(0, 0, 0, ${0.3 * k})`);
-        wg.fillStyle = grad;
-        wg.fillRect((x - out) * TS, (y - out) * TS, 2 * out * TS, 2 * out * TS);
-      }
       wg.restore();
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(w, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);

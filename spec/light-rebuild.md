@@ -187,3 +187,13 @@ left them out): it agrees. The player's dark vision past the lights is drawn as 
 round each light (as in S2), the lamp's look unchanged, the flicker as it was. Working out a
 level's lights at the finer samples takes about twice as long (about 0.1 s for a level's dozen
 lights, on entering it). The view re-recorded.
+
+Yours, on the flicker: "The flicker of light sources should look like the players lamps flicker. No
+change in luminosity. Similar tempo. Contracting and expanding. Now the flicker looks like the light
+is under water. Not right." (The GPU stretched the whole light round the nearest fire, other lights'
+and shadows too, and each fire's brightness pulsed.) Now: each fire's own light, kept apart, swells
+and shrinks about its flame on the lamp's waves (`fireSwell`, `js/expression.js`), its edge moving
+out and in by up to a fifth of a square as the lamp's does, each fire its own way; no change in
+brightness; where lights meet, the brightest shows, so no seams. On the GPU the fires' own light
+side by side in one picture (`fireAtlas`), up to 16 fires in sight (more: all shown steady); without
+the GPU each fire's picture swells as before, the brightness flicker gone.

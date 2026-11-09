@@ -359,7 +359,29 @@ export const lightMethods = {
       this.lamps.push({ x0: l.x - out, y0: l.y - out, x1: l.x + out, y1: l.y + out, cells: [...cells], fire: { x: l.x, y: l.y, out, full: B.full, ph: this.lamps.length * 2.4, soft: own.a ?? new Float32Array(1), w: own.w ?? 1, h: own.h ?? 1, at: [(own.x0 ?? 0) / (R * SF), (own.y0 ?? 0) / (R * SF)], size: [(own.w ?? 1) / (R * SF), (own.h ?? 1) / (R * SF)] } });
       own = null;
     }
-    if (!base) this.lampBase = { level: level.slice(), soft: soft.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
+    if (!base) {
+      this.lampBase = { level: level.slice(), soft: soft.slice(), steady: steady.slice(), lamps: this.lamps.slice() };
+      // (The fires' own light side by side in one picture for the GPU,
+      // `fireAtlas`, each at its `atlas` [x, y] there: so each flickers about
+      // its own flame, the brightest of them shown where they meet.)
+      const AW = 2048;
+      let ax = 0, ay = 0, row = 0;
+      for (const l of this.lamps) {
+        const f = l.fire;
+        if (!f) continue;
+        if (ax + f.w > AW) { ax = 0; ay += row; row = 0; }
+        f.atlas = [ax, ay];
+        ax += f.w;
+        row = Math.max(row, f.h);
+      }
+      const AH = Math.max(1, ay + row), data = new Float32Array(AW * AH);
+      for (const l of this.lamps) {
+        const f = l.fire;
+        if (!f) continue;
+        for (let y = 0; y < f.h; y++) data.set(f.soft.subarray(y * f.w, (y + 1) * f.w), (f.atlas[1] + y) * AW + f.atlas[0]);
+      }
+      this.fireAtlas = { w: AW, h: AH, data };
+    }
     // The lanterns: steady, in their own bands (LIGHTS.lantern).
     const LB = LAMPS.lantern, lout = LB.full + LB.dim + LB.dark;
     for (const l of lanterns) {
