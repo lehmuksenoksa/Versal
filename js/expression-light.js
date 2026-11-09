@@ -395,17 +395,10 @@ export const lightMethods = {
     // only the lanterns moved.)
     const [bx0, by0, bx1, by1] = keep ? dirty.map((v, i) => Math.max(0, Math.min(i % 2 ? mh : mw, v))) : [0, 0, mw, mh];
     this.lampPicDirty = keep && this.lampPic && this.lampPicDirty !== true ? unite(this.lampPicDirty, [bx0, by0, bx1, by1]) : true;
-    const pic = (level, alpha, c) => {
-      const w = bx1 - bx0, h = by1 - by0;
-      c ??= blank(mw, mh);
-      if (w <= 0 || h <= 0) return c;
-      const im = new ImageData(w, h);
-      for (let y = by0; y < by1; y++)
-        for (let x = bx0; x < bx1; x++) im.data[((y - by0) * w + (x - bx0)) * 4 + 3] = Math.round(255 * alpha(level[y * mw + x]));
-      c.getContext("2d").putImageData(im, bx0, by0);
-      return c;
-    };
-    this.lampSight = pic(level, (v) => clamp01(v / Math.max(0.01, S.darkLevel)), keep?.sight);
+    // (What lets the player see from afar: where the lights reach, their
+    // faint ring too, from the finer samples so its edge is smooth: a
+    // sample's worth of edge.)
+    this.lampSight = this.reachPicture(soft, fw, fh, keep ? [bx0 * SF, by0 * SF, bx1 * SF, by1 * SF] : [0, 0, fw, fh], keep?.sight);
   },
 
   // The steady light (all but the fires') as a picture to show the lit map
@@ -425,6 +418,23 @@ export const lightMethods = {
     this.lampPicDirty = null;
     const c = box === true ? (this.lampPic = blank(W, H)) : this.lampPic;
     this.bandPicture(c, soft, W, H, box === true ? [0, 0, W, H] : box.map((v) => v * LAMP_SAMPLES), 1);
+    return c;
+  },
+
+  // Where the light unbanded `soft` (w × h samples) reaches at all (the
+  // faint ring's edge, softened over a sample), as a picture, within the box
+  // [x0, y0, x1, y1] (samples), into `c` (made if not given).
+  reachPicture(soft, W, H, [x0, y0, x1, y1], c) {
+    // (Past the faint ring's edge the light unbanded falls from half the
+    // dark band's level to nothing in half a square: `step`, its fall from one
+    // sample to the next.)
+    const S = this.S, t = S.darkLevel / 2, step = Math.max(1e-4, t / (0.5 * R * LAMP_SAMPLES)), w = x1 - x0, h = y1 - y0;
+    c ??= blank(W, H);
+    if (w <= 0 || h <= 0) return c;
+    const im = new ImageData(w, h), d = im.data;
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) d[((y - y0) * w + (x - x0)) * 4 + 3] = Math.round(255 * clamp01((soft[y * W + x] - t) / step + 0.5));
+    c.getContext("2d").putImageData(im, x0, y0);
     return c;
   },
 

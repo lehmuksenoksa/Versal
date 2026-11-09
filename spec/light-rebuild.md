@@ -197,3 +197,11 @@ out and in by up to a fifth of a square as the lamp's does, each fire its own wa
 brightness; where lights meet, the brightest shows, so no seams. On the GPU the fires' own light
 side by side in one picture (`fireAtlas`), up to 16 fires in sight (more: all shown steady); without
 the GPU each fire's picture swells as before, the brightness flicker gone.
+
+Yours: "The dark sight around the player seems to differ from the one beyond the lights." It did:
+the ring past each light was drawn as part of the light (warmed, a browner grey) and cut where the
+player sees far off by a picture at the map points (stair-stepped), while the player's own dark sight
+is drawn as their lamp's faint band (a cooler grey). Now the ring past the lights is drawn as the
+player's own dark sight is, the two one where they meet (on the GPU); and what lets the player see
+far off is made from the finer samples, its edge smooth. Without the GPU, the ring is still drawn as
+before.

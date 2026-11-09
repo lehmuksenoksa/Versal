@@ -221,12 +221,18 @@ void main() {
       lp = mix(lp, was, uPrevK);
     }
   }
-  c = over(c, lit, lp);
   // The level's lights: each fire flickering its own way about it; warmed
-  // twice over but where the player's light warms it once.
+  // twice over but where the player's light warms it once. Their lit and
+  // dim bands are light; the faint ring past them is the player's dark
+  // vision (spec/light-rebuild.md, S3), drawn as their own round them is:
+  // the two one, the more of them where they meet.
   vec2 sp = p * uSightScale / uSightSize;
-  float sight = texture(uSight, sp).a, seen = paperAt(uSeen, p).a;
-  float la = lampBands(lampV(p)) * sight * texture(uLampSight, sp).a * seen;
+  float sight = texture(uSight, sp).a, seen = paperAt(uSeen, p).a, v = lampV(p);
+  float w = max(fwidth(v) * 0.7, 1e-4), t1 = uDarkL * 0.5, t2 = (uDarkL + uDimL) * 0.5;
+  float inLight = smoothstep(t2 - w, t2 + w, v), ring = uDarkL * smoothstep(t1 - w, t1 + w, v) * (1.0 - inLight);
+  lp = max(lp, ring * sight * texture(uLampSight, sp).a * seen);
+  c = over(c, lit, lp);
+  float la = lampBands(v) * inLight * sight * texture(uLampSight, sp).a * seen;
   if (la > 0.0) {
     float w1 = uLampWarmth * 0.35, w2 = w1 * (uWarmth > 0.0 ? 1.0 - lp : 1.0);
     c = over(c, lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm)), la);
