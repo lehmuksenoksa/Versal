@@ -1,0 +1,95 @@
+# The light set rebuilt: a plan, to approve
+
+A draft (yours: "draft the plan with proposed numbers"). **Nothing here is decided until you say
+so**: the steps and the numbers are proposals. It builds on what's decided in `sight.md` (the
+proposal, its "Decided" sections) and in `light-set.md` (the looks), and puts it into the game as
+the light feature set did: each step's rules as tests on small maps first, then the rules, then the
+looks; then you play it.
+
+Left out, for the stealth planning session (yours: "This needs a longer planning session of its
+own"): noticing taking time, lying in wait, sneak attacks on alert monsters, the diagonal step
+(`sight.md`, "Open", 1). Monsters going for lights is behaviour (feature set 2), fighting worse in
+light feature set 4.
+
+## What changes, in short
+
+- **Light has two bands, lit and dim.** The lights' faint bands go; past them, what you see is your
+  dark vision, not light.
+- **You and every monster see by the same model:** Vision (in light) and Dark vision (in the dark),
+  each three distances, clear, kind and faint; some creatures light-shy.
+- **Distances are round** and written in whole steps (a band of 3 reaches squares whose middle is
+  within 3½), the same for the rules and the drawing, so every square looks as it counts.
+- **The screen draws every light's bands the way it draws your lamp's** (yours: "the light bands
+  look like player's lamp light bands. Those are our target"), and your dark vision as the faint
+  band is drawn now.
+- **Monsters notice you by their own eyes,** not by two fixed ranges for every kind.
+
+## The steps
+
+| Step | What | Tests first (small maps) |
+|---|---|---|
+| **S1. Round distances, one line of sight** | One distance for everything: round, between squares' middles; a band written `n` reaches middles within `n + ½`. One line-of-sight test for light and sight alike: a line must clear a wall's corner or a pillar by a tenth of a square (today light may graze by a tenth, and your sight is a square-by-square field of view). The player's sight uses it, so sight and light agree at corners. | A band of 3 takes the diagonal (2, 2) (2.8) and not (3, 2) (3.6); a line past a corner too close is stopped; no sight or light through a diagonal gap between two walls; your sight and a light's agree square by square round a pillar. |
+| **S2. Light in two bands** | Each light: `lit` and `dim`, whole steps, from its spot (the table below). The faint band gone from the rules (`light.js`: lit 2, dim 1, dark 0 as now). `lights.json` rewritten. | A brazier's lit and dim squares, by the numbers; nothing past its dim band; the lamp's. |
+| **S3. Your sight** | Vision: everything lit or dim in line of sight, however far (as now); in dim light, the kind. Dark vision: clear 0, kind 1, faint 3, from you, **and from every lit or dim square you can see** (yours: "dark vision should extend their vision beyond light"), no further past a light than your Vision there. What you can tell (`knowAt`) from those. Already built: the kind next to you, remembering what you've told, the "?" look. | Lamp out: kind next to you, "?" to 3, nothing at 4. Lamp lit (lit 5, dim 6): kinds to 7, "?" to 9. A "?" within 3 of a lit hall seen from far off, nothing beyond. |
+| **S4. Monsters' sight** | Each kind's Vision and Dark vision and light-shy tag, in `monsters.json` (the table below). What a monster can tell of you, by the light on your square: **clear or kind, it sees you; faint, a glimpse; else nothing.** Dim light: no one sees clearly (clear becomes kind) and Vision's distances are halved (rule C). Light-shy: dark vision only, from itself; one band worse on a dim square, two on a lit one; a light's own square (a brazier's, a torch's, a lantern's, yours lamp lit) stops its sight as rock does. **Into the awareness as it is** (the stealth session changes that): seeing you adds what a sighting adds now (`aware.sight`, more the nearer), a glimpse what the dark adds now (`aware.sightDark`), next to it the extra as now; `aware.seeLit` and `seeDark` go. A blow on a monster that only glimpses you, or hasn't noticed you, is a sneak attack (decided). The `watchful` trait: each Dark vision band one more (it was "sees further in the dark"). | A goblin sees you lit at 7, glimpses you at 8, not at 9; lamp out next to it, only glimpses you, and your blow is a sneak attack; in dim light it sees you within 3½, glimpses you within 4. A spider next to you in your lamp's light only glimpses you; dark, it sees you within 4; a brazier between you hides you. |
+| **S5. The screen** | Every light's bands drawn as your lamp's are: at the screen's own resolution, ragged circles at half steps, the wobble bent round the squares' middles so each middle is in the right band; shadows straight, along the same lines as the rules'. Your dark vision drawn as the faint band is now (dark, the floor's grid and things on it), round you and past the lights you see. The flicker as now. The view-and-rules check then covers every square's middle (today it leaves band edges out). | The view-and-rules check: every middle, every light, lamp lit and out. |
+| **Then you play it.** | Then the stealth session. | |
+
+Each step is committed on its own, the run lock and the view re-recorded where play or the look
+changes on purpose, with what changed and why.
+
+## The numbers, proposed
+
+All in whole steps; a band of `n` reaches `n + ½`. The lights' are today's, rounded to whole steps
+with their faint bands dropped (your dark vision now covers about what they did, as "?").
+
+**Lights** (`lights.json`):
+
+| | Lit | Dim | Today: lit / dim / faint (reaches) | Why |
+|---|---|---|---|---|
+| Campfire | 3 | 5 | 3½ / 5½ / 7½ | The same lit and dim. |
+| Brazier | 2 | 4 | 2½ / 4 / 5½ | Dim a half step further, for the faint band it loses. |
+| Candles | 1 | 2 | 1¼ / 2½ / 4 | |
+| Wall torch | 1 | 2 | 1½ / 2½ / 4 | |
+| Cultist's lantern | 2 | 3 | 2 / 3 / 4½ | |
+| Your lamp | 5 | 6 | 5 / 6 / 9 (from your square) | As `sight.md` has it: kinds told to 7, "?" to 9. |
+
+**You** (`tuning.json`, `player`): Vision: everything in sight; Dark vision clear 0, kind 1,
+faint 3 (`darkKind` 1, `darkSight` 3, as now); remembered 5 turns after lost from sight (as now).
+
+**Monsters** (`monsters.json`; Vision and Dark vision each clear / kind / faint):
+
+| | Vision | Dark vision | Light-shy | Today | Why |
+|---|---|---|---|---|---|
+| Goblin, warrior, king | 6 / 7 / 8 | 0 / 0 / 2 | | lit: within 8; dark: within 2½ | Today's ranges; next to you in the dark only a glimpse, so a sneak attack (decided). |
+| Cultist | 6 / 7 / 8 | 0 / 0 / 1 | | as goblins | Folk who carry their light. |
+| Skeleton | 5 / 6 / 7 | 0 / 1 / 2 | | as goblins | The undead sense the living close by: next to them they know you. |
+| Zombie | 3 / 4 / 5 | 0 / 1 / 1 | | as goblins | Dull eyes; slow to spot you, near-blind in the dark. |
+| Rat | 3 / 4 / 6 | 1 / 2 / 3 | | as goblins | Poor eyes, lives in the dark. |
+| Bat | 2 / 3 / 4 | 3 / 4 / 6 | | as goblins | Finds its way in the dark. |
+| Spider | – | 3 / 4 / 6 | yes | as goblins | `sight.md`'s cave spider. |
+| Giant spider | – | 4 / 5 / 7 | yes | as goblins | |
+| Troll | 4 / 5 / 6 | 2 / 3 / 4 | | as goblins | A cave dweller that sees in the dark; light-shy is an option (see below). |
+
+What a monster tells of you also depends on its state, as now (asleep sees nothing; a calm one
+less, a suspicious one more: `senses`).
+
+## What you'll notice
+
+- Lights a little different: no faint band round them; instead a "?" where something stands within
+  3 of a lit or dim square you can see, as about as far as the faint band reached.
+- Every band and shadow drawn as smoothly as your lamp's, and every square's middle in the shade it
+  counts as.
+- Monsters differ: rats and bats find you in the dark, zombies hardly see you at all, spiders don't
+  see past a brazier, and stepping into a spider's light from the dark dazzles it.
+- With the lamp out, a goblin next to you only glimpses you: your blow is a sneak attack.
+
+## Questions for you
+
+1. **The steps:** as above, or another order? (S5 can come right after S2, if you'd rather see the
+   bands first.)
+2. **The numbers:** as proposed, or changed? Any kind whose sight feels wrong to you?
+3. **Trolls light-shy?** Cave trolls fearing light fits folklore and would make a torch a weapon
+   against them; it also makes them go for lights once monsters do (feature set 2). My pick: not
+   yet, until they have that behaviour.
+4. **Monsters' noticing into today's awareness** (S4) until the stealth session: as proposed?
