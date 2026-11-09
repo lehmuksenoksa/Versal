@@ -205,3 +205,10 @@ is drawn as their lamp's faint band (a cooler grey). Now the ring past the light
 player's own dark sight is, the two one where they meet (on the GPU); and what lets the player see
 far off is made from the finer samples, its edge smooth. Without the GPU, the ring is still drawn as
 before.
+
+Yours: "The players dark sight seems to be overlayed on dim bands of light? And the same for the
+player's lamp's dim band, which should merge with the other dim bands instead." It was: the player's
+light (lamp or dark sight) was laid down first and the level's lights over it, so where they met the
+two added up. Now (on the GPU) they merge as the level's lights do among themselves: the brighter
+shows, warmed by the level's lights as far as theirs is the light shown. The lamp's light keeps its
+own paler tint, so where it reaches is still to be seen.

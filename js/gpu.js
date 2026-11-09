@@ -231,11 +231,16 @@ void main() {
   float w = max(fwidth(v) * 0.7, 1e-4), t1 = uDarkL * 0.5, t2 = (uDarkL + uDimL) * 0.5;
   float inLight = smoothstep(t2 - w, t2 + w, v), ring = uDarkL * smoothstep(t1 - w, t1 + w, v) * (1.0 - inLight);
   lp = max(lp, ring * sight * texture(uLampSight, sp).a * seen);
-  c = over(c, lit, lp);
   float la = lampBands(v) * inLight * sight * texture(uLampSight, sp).a * seen;
-  if (la > 0.0) {
+  // (The player's light and the level's merge, the brighter showing where
+  // they meet, as the level's lights do among themselves: a dim band over
+  // the player's dark sight just dim, two dim bands just dim. Warmed by the
+  // level's lights as far as theirs is the light shown.)
+  float A = max(lp, la);
+  if (A > 0.0) {
     float w1 = uLampWarmth * 0.35, w2 = w1 * (uWarmth > 0.0 ? 1.0 - lp : 1.0);
-    c = over(c, lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm)), la);
+    vec3 warm = lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm));
+    c = over(c, mix(lit, warm, la / A), A);
   }
   // Where the ink in sight goes; the inks, the old fading out under the new.
   float m = sight;
