@@ -11,8 +11,9 @@ import { PLAYER } from "../js/rules/content.js";
 
 const at = (w, x, y) => w.light.at(x, y);
 
-test("a brazier lights its full band, then dim through its dim and faint bands, then nothing", () => {
-  // (The brazier at 8,2, its middle 8.5,2.5: full 2½, dim 1½, faint 1½.)
+test("a brazier lights its lit band, then dim through its dim band, then nothing", () => {
+  // (The brazier at 8,2, its middle 8.5,2.5: lit 2, dim 4, each reaching
+  // half a step more: spec/light-rebuild.md, S2.)
   const w = scenario(`
     #################
     #@..............#
@@ -23,8 +24,8 @@ test("a brazier lights its full band, then dim through its dim and faint bands, 
   assert.equal(at(w, 9, 2), 2, picture(w));
   assert.equal(at(w, 10, 2), 2, picture(w));
   assert.equal(at(w, 11, 2), 1, picture(w));
-  assert.equal(at(w, 13, 2), 1, picture(w));
-  assert.equal(at(w, 14, 2), 0, picture(w));
+  assert.equal(at(w, 12, 2), 1, picture(w));
+  assert.equal(at(w, 13, 2), 0, picture(w));
   assert.equal(at(w, 1, 1), 0, picture(w));
 });
 
@@ -66,11 +67,11 @@ test("the player's lamp lights round them and goes with them; out, it lights not
     #@...................#
     ######################
   `);
-  // (The lamp: full 5, dim 1, faint 3.)
+  // (The lamp: lit 5, dim 6.)
   assert.equal(at(w, 1, 1), 2);
-  assert.equal(at(w, 5, 1), 2, picture(w));
+  assert.equal(at(w, 6, 1), 2, picture(w));
   assert.equal(at(w, 7, 1), 1, picture(w));
-  assert.equal(at(w, 9, 1), 1, picture(w));
+  assert.equal(at(w, 8, 1), 0, picture(w));
   assert.equal(at(w, 11, 1), 0, picture(w));
   for (let i = 0; i < 6; i++) w.act({ do: "move", dx: 1, dy: 0 });
   assert.equal(w.player.x, 7);
@@ -167,8 +168,8 @@ test("with the lamp lit, the player sees as far as its light reaches", () => {
     #@...................#
     ######################
   `);
-  assert.ok(sees(w, 10, 1), picture(w));
-  assert.ok(!sees(w, 11, 1), picture(w));
+  assert.ok(sees(w, 7, 1), picture(w));
+  assert.ok(!sees(w, 8, 1), picture(w));
 });
 
 test("walls still hide what's lit beyond them", () => {
@@ -295,7 +296,7 @@ test("the tips say only what can be told", async () => {
 // ---- Torches on the walls (L3) ----
 
 test("a torch on a corridor's wall lights its bands along the corridor", () => {
-  // (Its light from the middle of its square: full 1½, dim 1, faint 1½.)
+  // (Its light from the middle of its square: lit 1, dim 2.)
   const w = scenario(`
     ###############
     #@...........##
@@ -304,7 +305,7 @@ test("a torch on a corridor's wall lights its bands along the corridor", () => {
   assert.equal(at(w, 6, 1), 2, picture(w));
   assert.equal(at(w, 7, 1), 2, picture(w));
   assert.equal(at(w, 8, 1), 1, picture(w));
-  assert.equal(at(w, 9, 1), 1, picture(w));
+  assert.equal(at(w, 9, 1), 0, picture(w));
   assert.equal(at(w, 11, 1), 0, picture(w));
 });
 

@@ -79,7 +79,7 @@ test("walking into a shut door opens it, and takes the turn", () => {
 });
 
 test("no resting with a monster in sight", () => {
-  const w = scenario(ROOM.replace("#........#\n  ##", "#.......g#\n  ##"));
+  const w = scenario(ROOM.replace("#........#\n  ##", "#......g.#\n  ##"));
   w.player.hp = 5;
   assert.match(w.cantRest() ?? "", /enemy in sight/);
 });
@@ -151,7 +151,7 @@ test("exploring stops when a monster comes into sight", () => {
 });
 
 test("no exploring with a monster about that's after you", () => {
-  const w = scenario(ROOM.replace("#........#\n  ##", "#.......g#\n  ##"), { states: { g: "aggressive" } });
+  const w = scenario(ROOM.replace("#........#\n  ##", "#......g.#\n  ##"), { states: { g: "aggressive" } });
   assert.equal(w.act({ do: "explore" }), false);
   assert.match(w.messages.at(-1).text, /Not with a goblin about/);
 });
@@ -275,7 +275,7 @@ test("running stops by a door, and when a monster comes into sight", () => {
 });
 
 test("no running with a monster in sight", () => {
-  const w = scenario(ROOM.replace("#........#\n  ##", "#.......g#\n  ##"));
+  const w = scenario(ROOM.replace("#........#\n  ##", "#......g.#\n  ##"));
   assert.equal(w.act({ do: "run", dx: 1, dy: 0 }), false);
   assert.match(w.messages.at(-1).text, /Not with a monster in sight/);
 });

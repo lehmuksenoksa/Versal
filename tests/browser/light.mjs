@@ -57,7 +57,7 @@ for (const seed of [3, 41, 999, 2024]) {
         ...w.actors.filter((a) => MONSTERS[a.kind]?.lantern).map((a) => ({ x: a.x + 0.5, y: a.y + 0.5, B: LIGHTS.lantern }))];
       const edge = (x, y) => sources.some(({ x: sx, y: sy, B }) => {
         const d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy);
-        return Math.abs(d - B.full) < 0.35 || Math.abs(d - (B.full + B.dim + B.dark)) < 0.35;
+        return Math.abs(d - (B.lit + 0.5)) < 0.35 || Math.abs(d - (B.dim + 0.5)) < 0.35;
       });
       let n = 0;
       for (let y = 0; y < L.h; y++)
@@ -67,7 +67,9 @@ for (const seed of [3, 41, 999, 2024]) {
           if (E.inSight(px, py) < 0.99) continue;
           // (The lamp out, the view's faint glow round the player is their
           // dark sight, not light: the level's lights and lanterns only.)
-          const v = w.sneaking ? E.sourcesAt(px, py) : E.lightAt(px, py), view = v >= 0.99 ? 2 : v > 0.001 ? 1 : 0;
+          // (The faint ring past a light, drawn at the dark band's light, is
+          // the player's dark sight, not light: dark.)
+          const S = E.S, v = w.sneaking ? E.sourcesAt(px, py) : E.lightAt(px, py), view = v >= 0.99 ? 2 : v > (S.darkLevel + S.dimLevel) / 2 ? 1 : 0;
           n++;
           if (view !== rules(x, y)) out.push(`${x},${y}: rules ${rules(x, y)}, view ${view} (${v.toFixed(2)})`);
         }

@@ -14,7 +14,7 @@ import { placeDoors, hideSecretDoors } from "./doors.js";
 import { placeLights, hallBraziers } from "./lights.js";
 import { hypot } from "../dmath.js";
 
-export { AREAS, LIGHTS, LEVELGEN_DEFAULTS } from "./make.js";
+export { AREAS, LIGHTS, lightReach, LEVELGEN_DEFAULTS } from "./make.js";
 
 export function generateAreas(rng, settings = {}) {
   const S = { ...LEVELGEN_DEFAULTS, ...settings };

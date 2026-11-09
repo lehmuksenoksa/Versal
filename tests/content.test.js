@@ -22,7 +22,10 @@ test("monsters, items, lights and places have what they need", () => {
     if (it.cat === "potion") need(`item ${k}`, it, ["heal"]);
   }
   for (const [k, l] of Object.entries(lights)) {
-    need(`light ${k}`, l, ["full", "dim", "dark"]);
+    need(`light ${k}`, l, ["lit", "dim"]);
+    // (Bands in whole steps, the dim reaching at least as far as the lit:
+    // spec/light-rebuild.md, S2.)
+    assert.ok(Number.isInteger(l.lit) && Number.isInteger(l.dim) && l.lit <= l.dim, `light ${k}: lit and dim whole steps, lit no further than dim`);
     // (Its flame as drawn, or null for none: the lamp's and lanterns'.)
     assert.ok("flame" in l, `light ${k}: no flame (null for none)`);
     if (l.flame) need(`light ${k}'s flame`, l.flame, ["size", "x", "y"]);

@@ -19,6 +19,10 @@ export const DUNGEON = 0, CAVERN = 1, COLLAPSED = 2, HALLS = 3;
 // the flame's size and where it stands. Campfires in caves; braziers in rooms
 // and the king's halls; candles on an altar.
 export const LIGHTS = LIGHTS_DATA.lights;
+// How far a light's bands reach (squares from its flame to a square's
+// middle): each written in whole steps, reaching half a step more
+// (spec/light-rebuild.md, S2).
+export const lightReach = (B) => ({ lit: B.lit + 0.5, dim: B.dim + 0.5 });
 
 // The generator's settings (tuning.json, `levelgen`): the level's size and
 // margin; regions; rooms, loops and doors; long loops and shortcuts; caves;

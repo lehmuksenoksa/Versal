@@ -4,7 +4,7 @@
 
 import { T } from "../dungeon.js";
 import { computeFov } from "../fov.js";
-import { LIGHTS, DUNGEON } from "./make.js";
+import { LIGHTS, DUNGEON, lightReach } from "./make.js";
 import { sin, cos, hypot } from "../dmath.js";
 
 // Lights: campfires in big caves, in the middle of open floor (each
@@ -97,7 +97,7 @@ function placeLightsBefore(g) {
   // light as the game reckons it: what the fire lights in its full and dim
   // bands, in line of sight.
   const shadowLanes = (r, fx, fy) => {
-    const F = LIGHTS.fire, far = F.full + F.dim;
+    const far = lightReach(LIGHTS.fire).dim;
     const x0 = r.x - 1, y0 = r.y - 1, bw = r.w + 2, bh = r.h + 2, inBox = (x, y) => x >= x0 && y >= y0 && x < x0 + bw && y < y0 + bh;
     const k = (x, y) => (y - y0) * bw + (x - x0);
     const fire = idx(fx, fy);

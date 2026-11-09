@@ -1,16 +1,14 @@
 {
   "about": "The kinds of light (light-and-dread.md, section 1): the level's lights and the carried ones. Read by js/rules/light.js (what's lit), js/rules/levelgen (where they stand), js/render.js and js/expression.js (how they're drawn).",
   "fields": {
-    "full": "how far it lights fully, squares from the flame",
-    "dim": "then a dim band this wide",
-    "dark": "then a faint band this wide (drawn fainter; played as dim)",
+    "lit": "how far it lights fully: whole steps from the flame, reaching the squares whose middle is within this and a half (spec/light-rebuild.md: 2 reaches 2½)",
+    "dim": "how far it lights dimly, the same way (beyond, dark: no faint band; what's seen past a light is the dark vision's)",
     "flame": "how its flame is drawn (null: none drawn), in ink, filled as a lit square, an inner line inside it (js/fire.js): size, the bulb's radius in squares; x, y, where it sits, in squares from the light's spot (a small flame's from its holder: the torch's ring, each candle); flicker, how much it moves from frame to frame; outline, its ink line, in the pen's widths (0 none); tongues, a small, squat flame's (2 or 3); shape, a big flame's: \"two\", the small flames' two tongues at its size, else round 1's three (spec/light-set.md, the flame workbench)"
   },
   "lights": {
     "fire": {
-      "full": 3.5,
-      "dim": 2,
-      "dark": 2,
+      "lit": 3,
+      "dim": 5,
       "flame": {
         "size": 0.205,
         "x": 0,
@@ -21,9 +19,8 @@
       }
     },
     "brazier": {
-      "full": 2.5,
-      "dim": 1.5,
-      "dark": 1.5,
+      "lit": 2,
+      "dim": 4,
       "flame": {
         "size": 0.24,
         "x": -0.005,
@@ -34,15 +31,13 @@
       }
     },
     "lantern": {
-      "full": 2,
-      "dim": 1,
-      "dark": 1.5,
+      "lit": 2,
+      "dim": 3,
       "flame": null
     },
     "candles": {
-      "full": 1.25,
-      "dim": 1.25,
-      "dark": 1.5,
+      "lit": 1,
+      "dim": 2,
       "flame": {
         "size": 0.115,
         "x": 0,
@@ -53,15 +48,13 @@
       }
     },
     "lamp": {
-      "full": 5,
-      "dim": 1,
-      "dark": 3,
+      "lit": 5,
+      "dim": 6,
       "flame": null
     },
     "torch": {
-      "full": 1.5,
-      "dim": 1,
-      "dark": 1.5,
+      "lit": 1,
+      "dim": 2,
       "flame": {
         "size": 0.12,
         "x": 0,

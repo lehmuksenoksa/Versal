@@ -209,10 +209,11 @@ const BACKGROUND = new Set(["move", "chatter", "growl", "snore"]);
 const FLY = { dist: 1.75 };
 const FIGHT_MS = 2000;
 
-// The lamp lit, as the rules have it (lights.json, `lamp`): the view counts
-// its bands from the player's square's middle less half a square, so its
-// lit band one half more, ending where the rules' does.
-const LAMP = { lightFull: LIGHTS.lamp.full + 0.5, lightDim: LIGHTS.lamp.dim, lightDark: LIGHTS.lamp.dark };
+// The lamp lit, as the rules have it (lights.json, `lamp`: lit and dim, each
+// reaching half a step more): the view counts its bands from the player's
+// square's middle less half a square, so its lit band one half more again,
+// ending where the rules' does; past the dim, the player's dark sight.
+const LAMP = { lightFull: LIGHTS.lamp.lit + 1, lightDim: LIGHTS.lamp.dim - LIGHTS.lamp.lit, lightDark: PLAYER.darkSight };
 // The lamp out: sight close round the player, only a faint band as far as
 // their dark sight (tuning.json, `player.darkSight`). (No full band at all:
 // its ragged edge would light a speck round the player.)

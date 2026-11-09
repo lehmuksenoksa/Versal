@@ -19,7 +19,7 @@ import { Walls, postOutline, shadeOutline } from "./rules/sightline.js";
 import { LIGHTS } from "./rules/levelgen.js";
 import { T } from "./rules/dungeon.js";
 import { lightMethods } from "./expression-light.js";
-import { feature } from "./rules/content.js";
+import { feature, PLAYER } from "./rules/content.js";
 
 export const EXPRESSION_DEFAULTS = {
   // Sight: clear out to `sight` tiles, then fading out with distance over
@@ -76,7 +76,12 @@ const joinRect = (a, b) => {
 // Lights in the level (campfires, braziers, candles): their bands,
 // in squares from the light, like the candle's (levelgen.js's LIGHTS); and
 // how far off the player sees what they light.
-export const LAMPS = LIGHTS;
+// The lights as the view draws their bands (until the light set's screen is
+// rebuilt, spec/light-rebuild.md, S5): `full` how far the lit band reaches
+// (from the flame), `dim` the dim band's width beyond it (the rules' lit and
+// dim, lights.json, each reaching half a step more), and `dark` a faint ring
+// past them as wide as the player's dark sight: what they see past a light.
+export const LAMPS = Object.fromEntries(Object.entries(LIGHTS).map(([k, B]) => [k, { ...B, full: B.lit + 0.5, dim: B.dim - B.lit, dark: PLAYER.darkSight }]));
 export const LAMP_SEE = 24;
 // How much a fire's light swells and shrinks as it flickers (of its size).
 const FIRE_SWELL = 0.04;

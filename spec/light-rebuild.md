@@ -131,3 +131,16 @@ its own lines, so at a corner it can now light a square the rules keep dark: the
 check finds one such square (of hundreds compared), to go with S5, which draws by the rules' lines.
 The browser check's guard step made sure no run is still going on before it looks at what's saved
 (a run going on saved again, now and then failing the check).
+
+**S2, light in two bands: done.** `lights.json`: each light's `lit` and `dim` in whole steps, as
+approved (campfire 3 and 5, brazier 2 and 4, candles and torch 1 and 2, lantern 2 and 3, lamp 5
+and 6), each reaching half a step more (`lightReach`); no faint band in the rules. The level
+generator's campfire lanes measure the same (5½), so the levels are unchanged (the map drawings
+match). The view draws each light's lit and dim bands from the same numbers, and past them, until
+S5, a faint ring as wide as the player's dark sight (what they'll see past a light, S3); the
+view-and-rules check counts that ring as dark. Tests first: a brazier's and the lamp's bands, no
+faint band; every light's bands in whole steps, the dim no nearer than the lit. The tests of the
+old bands changed to the new numbers; three tests of resting, exploring and running with a goblin
+in sight had it 7 off, in the lamp's old faint band: now 6 off, in its dim. What changed in play:
+the faint bands no longer count as dim (a player in one is no longer lit for the monsters): the run
+lock and the view re-recorded.

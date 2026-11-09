@@ -12,9 +12,9 @@ import { LIGHTS } from "./levelgen.js";
 // What the player can tell of a thing (knowAt).
 export const KNOW = { nothing: 0, something: 1, kind: 2, all: 3 };
 
-// How far round them the player sees: the lamp lit, as far as its light
-// reaches; out, their dark sight.
-export const sightRound = (sneaking) => (sneaking ? PLAYER.darkSight : LIGHTS.lamp.full + LIGHTS.lamp.dim + LIGHTS.lamp.dark);
+// How far round them the player sees: the lamp lit, as far as its dim light
+// reaches and their dark sight past it; out, their dark sight.
+export const sightRound = (sneaking) => (sneaking ? PLAYER.darkSight : LIGHTS.lamp.dim + PLAYER.darkSight);
 
 export const senseMethods = {
   // What the player can see: squares in sight past the walls and shut doors

@@ -34,7 +34,7 @@ test("all light comes from a source (20 seeds, every depth)", () => {
       for (let y = 0; y < L.h; y++)
         for (let x = 0; x < L.w; x++) {
           if (!w.light.at(x, y)) continue;
-          const by = sources.some(({ x: lx, y: ly, B }) => Math.hypot(x + 0.5 - lx, y + 0.5 - ly) <= B.full + B.dim + B.dark);
+          const by = sources.some(({ x: lx, y: ly, B }) => Math.hypot(x + 0.5 - lx, y + 0.5 - ly) <= B.dim + 0.5);
           assert.ok(by, `${where}: the square ${x},${y} is lit with no light near`);
         }
     }

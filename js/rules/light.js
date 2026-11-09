@@ -1,8 +1,8 @@
 // One model of light (spec/light-set.md, L1; light-and-dread.md, section 1):
 // each square of the level the World is on dark (0), dim (1) or lit (2). Lit
-// within a light's full band, dim within its dim and faint bands (the faint
-// one drawn fainter, played as dim: "Can we treat dim and faint band same
-// from gameplay perspective, but show them differently visually?"); along
+// within a light's lit band, dim within its dim band, each written in whole
+// steps and reaching half a step more (spec/light-rebuild.md, S2: no faint
+// band; what's seen past a light is the dark vision's); along
 // lines of sight, walls, shut doors and pillars stopping it (and the big
 // furniture, the fixed lights'); where lights meet, the brightest. Every light
 // a source: the level's own (braziers, candles, campfires: `level.lights`,
@@ -12,7 +12,7 @@
 //
 // A part of its own, owned by the World (`world.light`): its state is the
 // level's lights; what it keeps is worked out from them, not saved.
-import { LIGHTS } from "./levelgen.js";
+import { LIGHTS, lightReach } from "./levelgen.js";
 import { MONSTERS } from "./content.js";
 import { isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
@@ -71,7 +71,7 @@ export class Light {
   // A light of `kind` at (lx, ly) (squares, its middle) onto `map`, its
   // line stopped by walls and pillars, and the furniture `shades` crosses.
   shine(map, lx, ly, kind, shades) {
-    const L = this.w.level, W = L.w, H = L.h, B = LIGHTS[kind] ?? LIGHTS.fire, far = B.full + B.dim + B.dark, block = this.block;
+    const L = this.w.level, W = L.w, H = L.h, R = lightReach(LIGHTS[kind] ?? LIGHTS.fire), far = R.dim, block = this.block;
     const opaque = (x, y) => x < 0 || y < 0 || x >= W || y >= H || block[y * W + x] === 1;
     const close = (pts) => pts.some(([x, y]) => Math.abs(x - lx) <= far + 1 && Math.abs(y - ly) <= far + 1);
     const pillars = this.pillarShades.filter(close), things = shades.filter(close);
@@ -82,7 +82,7 @@ export class Light {
       const cx = x + 0.5, cy = y + 0.5, d = hypot(cx - lx, cy - ly);
       if (d > far) return;
       if (!opaque(x, y) && !lineClear(lx, ly, x, y, opaque, pillars, things)) return;
-      const v = d <= B.full ? LIT : DIM, k = y * W + x;
+      const v = d <= R.lit ? LIT : DIM, k = y * W + x;
       if (v > map[k]) map[k] = v;
     });
   }

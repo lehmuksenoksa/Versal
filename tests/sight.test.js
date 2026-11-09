@@ -24,8 +24,8 @@ test("S1: the dark sight is round: 3 reaches the squares whose middle is within 
 });
 
 // (A wall square standing alone at (5, 3); the player at (1, 1), the lamp
-// lit. The line to (7, 3) touches the wall's corner; the one to (8, 3)
-// clears it by 0.2.)
+// lit. The line to (7, 3) touches the wall's corner; the one to (6, 5)
+// clears it by 0.23.)
 const PAST_A_CORNER = `
   ###############
   #@............#
@@ -40,7 +40,7 @@ test("S1: a line must clear a wall's corner by a tenth of a square: light and si
   const w = scenario(PAST_A_CORNER);
   assert.equal(w.light.at(7, 3), 0, `the lamp's light touching the corner stops\n${picture(w)}`);
   assert.ok(!w.isVisible(7, 3), "and the player's sight");
-  assert.ok(w.light.at(8, 3) > 0 && w.isVisible(8, 3), "clearing it by 0.2, both get past");
+  assert.ok(w.light.at(6, 5) > 0 && w.isVisible(6, 5), "clearing it by 0.23, both get past");
 });
 
 test("S1: no light or sight through a diagonal gap between two walls", () => {
@@ -74,4 +74,25 @@ test("S1: round a pillar, the player's sight and the lamp's light agree square b
     }
   assert.deepEqual(off, [], picture(w));
   assert.ok(hidden.length > 0, "the pillars hide something");
+});
+
+// ---- S2. Light in two bands ----
+
+test("S2: a brazier lights within 2½ and dims within 4½ (lit 2, dim 4): no faint band beyond", () => {
+  const w = scenario(`
+    ##############
+    #B..........@#
+    ##############
+  `, { sneaking: true });
+  // (The brazier's middle at 1½: square x is x - 1 from it.)
+  assert.deepEqual([2, 3, 4, 5, 6, 7].map((x) => w.light.at(x, 1)), [2, 2, 1, 1, 0, 0], picture(w));
+});
+
+test("S2: the lamp lights within 5½ and dims within 6½ (lit 5, dim 6), and no further", () => {
+  const w = scenario(`
+    ##############
+    #@...........#
+    ##############
+  `);
+  assert.deepEqual([6, 7, 8, 9].map((x) => w.light.at(x, 1)), [2, 1, 0, 0], picture(w));
 });
