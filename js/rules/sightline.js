@@ -50,6 +50,110 @@ export function crossesOutline(ax, ay, bx, by, pts) {
   return false;
 }
 
+// ---- The line of sight and light (spec/light-rebuild.md, S1) ----
+// One test for the rules' light, the player's sight and the monsters' alike:
+// a line must keep CLEAR of every wall square on its way, and of every
+// pillar (yours: "For corners, stricter looks a lot better"): a tenth of a
+// square. So nothing squeezes through a diagonal gap between two walls.
+export const CLEAR = 0.1;
+
+// An outline's box, [x0, y0, x1, y1] (worked out once, kept aside: not part
+// of the level's state).
+const BOXES = new WeakMap();
+function boxOf(pts) {
+  let B = BOXES.get(pts);
+  if (!B) {
+    const xs = pts.map(([x]) => x), ys = pts.map(([, y]) => y);
+    BOXES.set(pts, (B = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]));
+  }
+  return B;
+}
+
+// The distance from (px, py) to the segment (ax, ay)-(bx, by).
+function pointSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+  const t = L ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)) : 0;
+  const ex = ax + dx * t - px, ey = ay + dy * t - py;
+  return Math.sqrt(ex * ex + ey * ey);
+}
+
+// Does the segment cross the box [x0, x1] × [y0, y1] (Liang–Barsky)?
+function segInBox(ax, ay, bx, by, x0, y0, x1, y1) {
+  let t0 = 0, t1 = 1;
+  const dx = bx - ax, dy = by - ay;
+  for (const [p, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dy, ay - y0], [dy, y1 - ay]]) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+    else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return true;
+}
+
+// The distance from the segment to the square (x, y) (0 if it crosses it).
+function segSquare(ax, ay, bx, by, x, y) {
+  if (segInBox(ax, ay, bx, by, x, y, x + 1, y + 1)) return 0;
+  let d = Math.min(pointSeg(x, y, ax, ay, bx, by), pointSeg(x + 1, y, ax, ay, bx, by), pointSeg(x, y + 1, ax, ay, bx, by), pointSeg(x + 1, y + 1, ax, ay, bx, by));
+  for (const [px, py] of [[ax, ay], [bx, by]]) {
+    const ex = Math.max(x - px, 0, px - x - 1), ey = Math.max(y - py, 0, py - y - 1);
+    d = Math.min(d, Math.sqrt(ex * ex + ey * ey));
+  }
+  return d;
+}
+
+// The distance from the segment to the outline `pts` (0 if it crosses it).
+function segOutline(ax, ay, bx, by, pts) {
+  if (crossesOutline(ax, ay, bx, by, pts)) return 0;
+  let d = Infinity;
+  for (let i = 0; i < pts.length; i++) {
+    const [cx, cy] = pts[i], [dx, dy] = pts[(i + 1) % pts.length];
+    d = Math.min(d, pointSeg(cx, cy, ax, ay, bx, by), pointSeg(ax, ay, cx, cy, dx, dy), pointSeg(bx, by, cx, cy, dx, dy));
+  }
+  return d;
+}
+
+// Is the line from (ax, ay) to the middle of the square (tx, ty) clear: no
+// wall square nearer it than CLEAR (`opaque(x, y)`; the square it ends in
+// aside), no pillar (`pillars`, outlines) nearer than CLEAR, and crossing
+// none of `things` (the big furniture's outlines, for the level's lights: they
+// only stop a line that crosses them, and not one that ends inside them)?
+export function lineClear(ax, ay, tx, ty, opaque, pillars = [], things = []) {
+  const bx = tx + 0.5, by = ty + 0.5;
+  // (The squares the line passes, walked one by one, and those round each:
+  // a wall among them too near stops it.)
+  const dx = bx - ax, dy = by - ay, len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const near = (gx, gy) => {
+    for (let y = gy - 1; y <= gy + 1; y++)
+      for (let x = gx - 1; x <= gx + 1; x++) {
+        if ((x === tx && y === ty) || !opaque(x, y)) continue;
+        // (A square whose middle is further than its half-diagonal and CLEAR
+        // from the line can't be near it.)
+        if (Math.abs((x + 0.5 - ax) * dy - (y + 0.5 - ay) * dx) / len > 0.7072 + CLEAR) continue;
+        if (segSquare(ax, ay, bx, by, x, y) < CLEAR) return true;
+      }
+    return false;
+  };
+  let gx = Math.floor(ax), gy = Math.floor(ay);
+  const sx = Math.sign(dx), sy = Math.sign(dy);
+  const tdx = dx ? Math.abs(1 / dx) : Infinity, tdy = dy ? Math.abs(1 / dy) : Infinity;
+  let tX = dx ? (sx > 0 ? gx + 1 - ax : ax - gx) * tdx : Infinity, tY = dy ? (sy > 0 ? gy + 1 - ay : ay - gy) * tdy : Infinity;
+  for (let i = 0; i < 4096; i++) {
+    if (near(gx, gy)) return false;
+    if (gx === tx && gy === ty) break;
+    if (tX < tY) { gx += sx; tX += tdx; }
+    else { gy += sy; tY += tdy; }
+  }
+  // (A pillar nowhere near the line's box passed over at once.)
+  const lx0 = Math.min(ax, bx) - CLEAR, lx1 = Math.max(ax, bx) + CLEAR, ly0 = Math.min(ay, by) - CLEAR, ly1 = Math.max(ay, by) + CLEAR;
+  for (const pts of pillars) {
+    const B = boxOf(pts);
+    if (B[2] < lx0 || B[0] > lx1 || B[3] < ly0 || B[1] > ly1) continue;
+    if (segOutline(ax, ay, bx, by, pts) < CLEAR) return false;
+  }
+  for (const pts of things) if (!insideOutline(bx, by, pts) && !insideOutline(ax, ay, pts) && crossesOutline(ax, ay, bx, by, pts)) return false;
+  return true;
+}
+
 export class Walls {
   // loops: closed outlines of the floor, as arrays of {x, y} in map pixels.
   constructor(loops, bucket) {

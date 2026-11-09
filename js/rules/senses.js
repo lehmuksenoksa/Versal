@@ -4,22 +4,10 @@ import { MONSTERS, GOBLIN, AWARE, NOISE, SENSES, SECRET, PLAYER } from "./conten
 import { monTrait } from "./traits.js";
 import { T, isOpen } from "./dungeon.js";
 import { computeFov } from "./fov.js";
-import { crossesOutline } from "./sightline.js";
+import { lineClear } from "./sightline.js";
 import { hypot } from "./dmath.js";
 import { DIM, LIT } from "./light.js";
 import { LIGHTS } from "./levelgen.js";
-
-// A pillar's box, [x0, y0, x1, y1] in squares (worked out once, kept aside:
-// not part of the level's state).
-const BOXES = new WeakMap();
-const boxOf = (p) => {
-  let B = BOXES.get(p);
-  if (!B) {
-    const xs = p.pts.map(([x]) => x), ys = p.pts.map(([, y]) => y);
-    BOXES.set(p, (B = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]));
-  }
-  return B;
-};
 
 // What the player can tell of a thing (knowAt).
 export const KNOW = { nothing: 0, something: 1, kind: 2, all: 3 };
@@ -40,39 +28,36 @@ export const senseMethods = {
     this.light.update();
     const { w, h } = this.level, { x: px, y: py } = this.player, opaque = (x, y) => !isOpen(this.tileAt(x, y)) || this.shut(x, y);
     const far = Math.max(w, h), dark = PLAYER.darkSight;
-    // (Behind a pillar: the line between the two squares' middles crossing
-    // it; a pillar nowhere near the line's box passed over at once.)
-    const ax = px + 0.5, ay = py + 0.5;
-    const behind = (x, y) => {
-      const bx = x + 0.5, by = y + 0.5, x0 = Math.min(ax, bx), x1 = Math.max(ax, bx), y0 = Math.min(ay, by), y1 = Math.max(ay, by);
-      for (const p of this.pillars) {
-        const B = boxOf(p);
-        if (B[2] < x0 || B[0] > x1 || B[3] < y0 || B[1] > y1) continue;
-        if (crossesOutline(ax, ay, bx, by, p.pts)) return true;
-      }
-      return false;
-    };
+    // (Along a clear line from the player's middle to the square's, as light
+    // goes: lineClear, sightline.js; walls themselves seen as they're cast.)
+    const ax = px + 0.5, ay = py + 0.5, pillars = this.pillars.map((p) => p.pts);
+    const sees = (x, y) => opaque(x, y) || lineClear(ax, ay, x, y, opaque, pillars);
     // (The squares in line of sight, kept until the player moves or a door
     // or a secret door changes (`losKey`, forgotten in moves.js and here);
     // only the light on them worked out again.)
     const key = `${this.place.depth}:${px},${py}`;
     if (this.los?.key !== key || this.los.level !== this.level) {
       const cells = [];
-      computeFov(w, h, px, py, far, opaque, (x, y) => { if (!behind(x, y)) cells.push(y * w + x); });
-      this.los = { key, level: this.level, cells };
+      computeFov(w, h, px, py, far, opaque, (x, y) => { if (sees(x, y)) cells.push(y * w + x); });
+      // (And the squares from which a monster could see the player, as near
+      // as `GOBLIN.lose`: the same lines, the other way, so the same squares.)
+      const R2 = GOBLIN.lose * GOBLIN.lose, near = cells.filter((k) => {
+        const x = k % w, y = (k - x) / w;
+        return (x - px) * (x - px) + (y - py) * (y - py) <= R2;
+      });
+      this.los = { key, level: this.level, cells, near };
     }
     this.looked[py * w + px] |= this.sneaking ? 2 : 1;
     this.visible.fill(0);
     for (const k of this.los.cells) {
       const x = k % w, y = (k - x) / w;
-      if (this.light.at(x, y) === 0 && Math.max(Math.abs(x - px), Math.abs(y - py)) > dark) continue;
+      // (In the dark, round: a square whose middle is within dark sight and a half.)
+      if (this.light.at(x, y) === 0 && (x - px) * (x - px) + (y - py) * (y - py) > (dark + 0.5) * (dark + 0.5)) continue;
       this.visible[k] = 1;
       this.seen[k] = 1;
     }
     this.inView.fill(0);
-    computeFov(w, h, px, py, GOBLIN.lose, opaque, (x, y) => {
-      if (!behind(x, y)) this.inView[y * w + x] = 1;
-    });
+    for (const k of this.los.near) this.inView[k] = 1;
     // (A monster whose kind the player has told stays told, `told`, though it
     // goes off into the dark; lost from sight (`lost`, the turn), for
     // `player.remember` turns more, so it's known again if it's back soon.

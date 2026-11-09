@@ -92,6 +92,8 @@ for (const seed of [123, 4567]) {
   });
   if (!r.same || r.offCourse !== null || r.error) problems.push(`replay: not the same run (${JSON.stringify(r)})`);
   // Something gone wrong in the rules: shown, and the run no longer saved.
+  // (A run still going on saves again as it goes: stopped first.)
+  await keys(["Escape"], 500);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("versal.run") ?? "null")?.world?.turn ?? null);
   await page.evaluate(() => { const w = window.versal.world; w.tick = () => { throw new Error("a bug, on purpose"); }; });
   await keys(["ArrowRight", "ArrowLeft", "z", "z", "z", "z", "z", "z"]);

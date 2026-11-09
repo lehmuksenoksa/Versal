@@ -108,3 +108,26 @@ less, a suspicious one more: `senses`).
    against them; it also makes them go for lights once monsters do (feature set 2). My pick: not
    yet, until they have that behaviour.
 4. **Monsters' noticing into today's awareness** (S4) until the stealth session: as proposed?
+
+## Progress
+
+**S1, round distances and one line of sight: done.** One line test for the rules' light, the
+player's sight and what monsters see of the player (`lineClear`, `js/rules/sightline.js`): a line
+to a square's middle must keep a tenth of a square clear of every wall square on its way (the one
+it ends in aside) and of every pillar; the big furniture stops a fixed light's line only where it
+crosses it, as before. So light and sight no longer graze into corners or squeeze through a
+diagonal gap between two walls, and they agree at corners and round pillars. The dark sight is
+round: 3 reaches the squares whose middle is within 3½ (it was a square of 3). Small maps can have
+pillars (`pillars`). Tests first (`tests/sight.test.js`): the round dark sight; a line touching a
+wall's corner stopped, one clearing it by 0.2 not; no light or sight through a diagonal gap; the
+player's sight and the lamp's light the same square by square round pillars. The old test of the
+square dark sight changed to the round one.
+
+What changed in play: a little less seen and lit at corners, so the bot's runs went differently:
+the run lock and the view re-recorded. **Speed:** a step as quick as before (0.76 ms; the player's
+lines are kept while they stand still, and what monsters see of them is the same lines); the unit
+tests take about a quarter longer, the recorded runs now longer. **The view** still draws light by
+its own lines, so at a corner it can now light a square the rules keep dark: the view-and-rules
+check finds one such square (of hundreds compared), to go with S5, which draws by the rules' lines.
+The browser check's guard step made sure no run is still going on before it looks at what's saved
+(a run going on saved again, now and then failing the check).

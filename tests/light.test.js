@@ -147,7 +147,7 @@ test("a lit room is seen from the dark, however far", () => {
   assert.ok(!sees(w, 12, 1), `a dark square 11 off seen\n${picture(w)}`);
 });
 
-test("in the dark, the player sees 3 steps round them, no further", () => {
+test("in the dark, the player sees 3 steps round them, round (within 3½: spec/light-rebuild.md, S1), no further", () => {
   const w = scenario(`
     ############
     #@.........#
@@ -157,8 +157,8 @@ test("in the dark, the player sees 3 steps round them, no further", () => {
     #..........#
     ############
   `, { sneaking: true });
-  assert.ok(sees(w, 4, 1) && sees(w, 4, 4), picture(w));
-  assert.ok(!sees(w, 5, 1) && !sees(w, 1, 5), picture(w));
+  assert.ok(sees(w, 4, 1) && sees(w, 3, 3), picture(w));
+  assert.ok(!sees(w, 5, 1) && !sees(w, 1, 5) && !sees(w, 4, 4), picture(w));
 });
 
 test("with the lamp lit, the player sees as far as its light reaches", () => {

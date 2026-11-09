@@ -23,7 +23,8 @@
 //   a thing lying about: its letter in `things` ({ letter: item type }).
 //
 // Options: `seed` (the dice; 1), `legend` ({ letter: kind }), `things`
-// ({ letter: item type }, digits best), `states`
+// ({ letter: item type }, digits best), `pillars` ([[x, y], …], square
+// pillars on the grid's crossings), `states`
 // ({ letter: state }; else "neutral"), `rooms` (boxes { x, y, w, h, trait,
 // kind } for what goes by rooms: names, traits), `sneaking` (the lamp out),
 // `name` (the player's).
@@ -35,7 +36,7 @@ export const MONSTER_LETTERS = { g: "goblin", w: "warrior", k: "king", s: "skele
 const LIGHT_LETTERS = { B: "brazier", F: "fire" }, FEATURE = { brazier: "brazier", fire: "campfire" };
 
 // The level a text map stands for, and where its monsters are.
-export function levelFromText(text, { legend = {}, rooms = [], things = {} } = {}) {
+export function levelFromText(text, { legend = {}, rooms = [], things = {}, pillars = [] } = {}) {
   const rows = text.replace(/^\n+|\s+$/g, "").split("\n");
   const pad = Math.min(...rows.filter((r) => r.trim()).map((r) => r.match(/^ */)[0].length));
   const lines = rows.map((r) => r.slice(pad).replace(/\s+$/, ""));
@@ -85,19 +86,20 @@ export function levelFromText(text, { legend = {}, rooms = [], things = {} } = {
   const open = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (isOpen(tiles[idx(x, y)]) || secrets.some((s) => s.x === x && s.y === y));
   for (const d of [...doors, ...secrets]) [d.dx, d.dy] = open(d.x - 1, d.y) && open(d.x + 1, d.y) ? [1, 0] : [0, 1];
   for (const [s, dir] of [[stairsUp, "up"], [stairsDown, "down"]]) if (s) features.push({ type: "stairs", dir, x: s.x + 0.5, y: s.y + 0.5 });
+  for (const [x, y] of pillars) features.push({ type: "post", x, y, shape: "square" });
   const level = {
     w: W, h: H, tiles, idx, get: (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? T.ROCK : tiles[idx(x, y)]),
     rooms: rooms.map((r) => ({ cx: r.x + (r.w >> 1), cy: r.y + (r.h >> 1), ...r })),
     roomOf: new Int16Array(n).fill(-1), wallOf: new Int16Array(n).fill(-1), area: new Uint8Array(n), cave: new Uint8Array(n), rubble: new Uint8Array(n),
-    doors, secrets, features, posts: [], recesses: [], lights, blocks, regions: [],
+    doors, secrets, features, posts: pillars.map(([x, y]) => [x, y]), recesses: [], lights, blocks, regions: [],
     start, stairsUp, stairsDown, startRoom: null, throneRoom: null,
   };
   return { level, monsters, items };
 }
 
 // A World on the small map `text`, its monsters placed.
-export function scenario(text, { seed = 1, legend, rooms, things, states = {}, sneaking = false, name } = {}) {
-  const { level, monsters, items } = levelFromText(text, { legend, rooms, things });
+export function scenario(text, { seed = 1, legend, rooms, things, pillars, states = {}, sneaking = false, name } = {}) {
+  const { level, monsters, items } = levelFromText(text, { legend, rooms, things, pillars });
   const w = new World(seed, { levels: { 1: level }, ...(name ? { name } : {}) });
   w.items.push(...items);
   const leaders = {};
