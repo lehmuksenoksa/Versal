@@ -144,3 +144,14 @@ old bands changed to the new numbers; three tests of resting, exploring and runn
 in sight had it 7 off, in the lamp's old faint band: now 6 off, in its dim. What changed in play:
 the faint bands no longer count as dim (a player in one is no longer lit for the monsters): the run
 lock and the view re-recorded.
+
+**S3, the player's sight: done.** Seen: every lit or dim square in line of sight, however far (as
+before); and a dark one by the player's dark vision, measured from the player or from the nearest
+lit or dim square they see: within 3½ that something's there, within 1½ its kind (`los.tell`, kept
+with the lines, not saved). What they can tell (`knowAt`) from that: lit everything, dim the kind,
+dark by the dark vision. So with the lamp lit (lit 5, dim 6) kinds are told to 7 and something seen
+to 9; a "?" shows within 3 of a light seen far off. Tests first: the lamp out (the kind next to
+them, something within 3, nothing at 4); the lamp lit (kinds to 7, something to 9, nothing at 10);
+past a brazier far down a corridor, on both sides. The test of how far the lamp lit lets the player
+see changed (as far as its light, and 3 past it). What changed in play: more seen and remembered
+round lights far off: the run lock and the view re-recorded. A step 0.9 ms.

@@ -96,3 +96,39 @@ test("S2: the lamp lights within 5½ and dims within 6½ (lit 5, dim 6), and no 
   `);
   assert.deepEqual([6, 7, 8, 9].map((x) => w.light.at(x, 1)), [2, 1, 0, 0], picture(w));
 });
+
+// ---- S3. The player's sight ----
+// (What they can tell: 3 everything, 2 its kind, 1 that something's
+// there, 0 nothing.)
+
+test("S3: the lamp out: the kind next to them, something within 3, nothing at 4", () => {
+  const w = scenario(`
+    ###########
+    #@........#
+    ###########
+  `, { sneaking: true });
+  assert.deepEqual([2, 3, 4, 5].map((x) => w.knowAt(x, 1)), [2, 1, 1, 0], picture(w));
+});
+
+test("S3: the lamp lit (lit 5, dim 6): kinds told to 7, something to 9, nothing at 10", () => {
+  const w = scenario(`
+    ###############
+    #@............#
+    ###############
+  `);
+  // (Square x is x - 1 from the player: 6 lit, 7 dim, 8 next to the dim
+  // light, 9 and 10 within 3 of it, 11 not.)
+  assert.deepEqual([6, 7, 8, 9, 10, 11].map((x) => w.knowAt(x, 1)), [3, 2, 2, 1, 1, 0], picture(w));
+});
+
+test("S3: the dark vision reaches past a light seen far off: within 3 of its light, no further", () => {
+  // (A brazier far down a corridor, the player's lamp out: its light from
+  // 16 to 24, its middle 20½.)
+  const w = scenario(`
+    ##############################
+    #@..................B........#
+    ##############################
+  `, { sneaking: true });
+  assert.deepEqual([12, 13, 15, 16].map((x) => w.knowAt(x, 1)), [0, 1, 2, 2], `this side\n${picture(w)}`);
+  assert.deepEqual([24, 25, 26, 27, 28].map((x) => w.knowAt(x, 1)), [2, 2, 1, 1, 0], `the far side\n${picture(w)}`);
+});

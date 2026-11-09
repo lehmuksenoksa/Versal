@@ -162,14 +162,14 @@ test("in the dark, the player sees 3 steps round them, round (within 3½: spec/l
   assert.ok(!sees(w, 5, 1) && !sees(w, 1, 5) && !sees(w, 4, 4), picture(w));
 });
 
-test("with the lamp lit, the player sees as far as its light reaches", () => {
+test("with the lamp lit, the player sees as far as its light reaches, and their dark vision 3 past it", () => {
   const w = scenario(`
     ######################
     #@...................#
     ######################
   `);
-  assert.ok(sees(w, 7, 1), picture(w));
-  assert.ok(!sees(w, 8, 1), picture(w));
+  assert.ok(sees(w, 10, 1), picture(w));
+  assert.ok(!sees(w, 11, 1), picture(w));
 });
 
 test("walls still hide what's lit beyond them", () => {

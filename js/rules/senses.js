@@ -48,11 +48,35 @@ export const senseMethods = {
       this.los = { key, level: this.level, cells, near };
     }
     this.looked[py * w + px] |= this.sneaking ? 2 : 1;
+    // (Seen: every lit or dim square in line of sight, however far; and a dark
+    // one by the player's dark vision, whose distance is from the player or
+    // from a lit or dim square they see, whichever is nearer (spec/sight.md;
+    // spec/light-rebuild.md, S3): within `darkSight` (and a half) that
+    // something's there, within `darkKind` its kind (`los.tell`, 1 and 2).
+    // Kept with the lines, not saved.)
+    const L = this.light, cells = this.los.cells, R1 = (PLAYER.darkKind + 0.5) ** 2, R3 = (dark + 0.5) ** 2, reach = Math.ceil(dark + 0.5);
+    const lit = (this.los.lit ??= new Uint8Array(w * h)), tell = (this.los.tell ??= new Uint8Array(w * h));
+    lit.fill(0);
+    tell.fill(0);
+    let any = false;
+    for (const k of cells) {
+      const x = k % w;
+      if (L.at(x, (k - x) / w) > 0) lit[k] = any = 1;
+    }
     this.visible.fill(0);
-    for (const k of this.los.cells) {
+    for (const k of cells) {
       const x = k % w, y = (k - x) / w;
-      // (In the dark, round: a square whose middle is within dark sight and a half.)
-      if (this.light.at(x, y) === 0 && (x - px) * (x - px) + (y - py) * (y - py) > (dark + 0.5) * (dark + 0.5)) continue;
+      if (!lit[k]) {
+        let near = (x - px) * (x - px) + (y - py) * (y - py);
+        if (any && near > R1)
+          for (let dy = -reach; dy <= reach; dy++)
+            for (let dx = -reach; dx <= reach; dx++) {
+              const d = dx * dx + dy * dy, X = x + dx, Y = y + dy;
+              if (d < near && X >= 0 && Y >= 0 && X < w && Y < h && lit[Y * w + X]) near = d;
+            }
+        if (near > R3) continue;
+        tell[k] = near <= R1 ? 2 : 1;
+      }
       this.visible[k] = 1;
       this.seen[k] = 1;
     }
@@ -88,16 +112,16 @@ export const senseMethods = {
   isVisible(x, y) { return this.visible[y * this.level.w + x] === 1; },
 
   // What the player can tell of what's at (x, y), by the light there
-  // (light-and-dread.md, section 2): 0 nothing (not in sight); 1 only that
-  // something's there (dark, within their dark sight); 2 its kind (dim; or
-  // dark, next to them: `darkKind`, spec/sight.md, yours: "the player should
-  // make out if the monster right next to them is a goblin or a rat"); 3
-  // everything (lit).
+  // (light-and-dread.md, section 2): 0 nothing (not in sight); 3 everything
+  // (lit); 2 its kind (dim; or dark, within their dark vision's `darkKind`
+  // of them or of a lit or dim square they see: spec/sight.md, yours: "the
+  // player should make out if the monster right next to them is a goblin or
+  // a rat"); else 1, only that something's there.
   knowAt(x, y) {
     if (!this.isVisible(x, y)) return KNOW.nothing;
-    const l = this.light.at(x, y), dx = x - this.player.x, dy = y - this.player.y, r = PLAYER.darkKind + 0.5;
+    const l = this.light.at(x, y);
     if (l === LIT) return KNOW.all;
-    return l === DIM || dx * dx + dy * dy <= r * r ? KNOW.kind : KNOW.something;
+    return l === DIM || this.los?.tell?.[y * this.level.w + x] === 2 ? KNOW.kind : KNOW.something;
   },
 
   // What the player can tell of the monster `a`: as of its square, but its
