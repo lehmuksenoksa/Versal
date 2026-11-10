@@ -80,6 +80,9 @@ export const lightMethods = {
       // the rim reaches, dim at its edge, the threshold wandering with a
       // fine noise). As tones, or all paper if hatched.
       const reachImg = g.getImageData(0, 0, size, size), rd = reachImg.data, level = new Uint8Array(size * size);
+      // (Drawing without the GPU: the light's three steps too, as it's cast:
+      // lightBands.)
+      const steps = this.wantBands ? [null, 1, 2, 3].map((k) => k && new ImageData(size, size)) : null;
       const tone = strokes ? [0, 255, 255, 255] : [0, Math.round(255 * S.darkLevel), Math.round(255 * S.dimLevel), 255];
       const nearEdge = (d) => Math.abs(d - rFull) < rag || Math.abs(d - rad) < rag || Math.abs(d - out) < rag;
       for (let y = 0; y < size; y++) {
@@ -117,15 +120,26 @@ export const lightMethods = {
           }
           level[p] = Math.min(reached, band);
           rd[i + 3] = tone[level[p]];
+          if (steps) for (let k = 1; k <= level[p]; k++) steps[k].data[i + 3] = 255;
         }
       }
       g.putImageData(reachImg, 0, 0);
+      if (steps) {
+        this.lightBandPics = [null, 1, 2, 3].map((k) => {
+          if (!k) return null;
+          const c = this.lightBandPics?.[k]?.width === size ? this.lightBandPics[k] : blank(size, size);
+          c.getContext("2d").putImageData(steps[k], 0, 0);
+          return c;
+        });
+        this.lightBandsFor = (this.lightCasts ?? 0) + 1;
+      }
       this.inkLight(level, box, size, toBox);
       this.lightFrom = [px, py];
       this.lightCasts = (this.lightCasts ?? 0) + 1;
     }
-    const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
-    const bright = 1 - S.flicker * 0.25 * (wave + 1) / 2;
+    // (Its brightness steady, as the level's lights' (yours: "No change in
+    // luminosity"; "make the lamp's tone match the fires'").)
+    const bright = 1;
     // The size flickers too, on a wave of its own.
     const swell = (Math.sin(t * 5.1) + 0.5 * Math.sin(t * 8.9 + 0.7) + 0.3 * Math.sin(t * 13.3 + 2)) / 1.8;
     const k = inked ? 1 : 1 + S.flickerSize * swell, cx = (px - box.x) * res, cy = (py - box.y) * res;
@@ -137,6 +151,9 @@ export const lightMethods = {
     g.drawImage(this.lightReach, 0, 0);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalAlpha = 1;
+    // (Kept for drawing without the GPU: lightBands, compose.)
+    this.lightK = k;
+    this.lightBright = bright;
     this.lightBox = box;
   },
 
@@ -394,7 +411,9 @@ export const lightMethods = {
     // (Only the box `dirty` painted again into the pictures `keep`, when
     // only the lanterns moved.)
     const [bx0, by0, bx1, by1] = keep ? dirty.map((v, i) => Math.max(0, Math.min(i % 2 ? mh : mw, v))) : [0, 0, mw, mh];
-    this.lampPicDirty = keep && this.lampPic && this.lampPicDirty !== true ? unite(this.lampPicDirty, [bx0, by0, bx1, by1]) : true;
+    this.lampDirty ??= [];
+    this.lampPics ??= [];
+    for (let k = 0; k <= 3; k++) this.lampDirty[k] = keep && this.lampPics[k] && this.lampDirty[k] !== true ? unite(this.lampDirty[k], [bx0, by0, bx1, by1]) : true;
     // (What lets the player see from afar: where the lights reach, their
     // faint ring too, from the finer samples so its edge is smooth: a
     // sample's worth of edge.)
@@ -406,19 +425,77 @@ export const lightMethods = {
   // read smoothly between its samples, at their resolution,
   // so that each band's edge is a smooth line, not a staircase of map points
   // (as the GPU draws it, js/gpu.js lampBands). Made when first asked for,
-  // and again where the light changed (`lampPicDirty`). Null if there are no
+  // and again where the light changed (`lampDirty`); `k` as bandPicture's.
+  // Null if there are no
   // lights.
-  lampPicture() {
+  lampPicture(k = 0) {
     const soft = this.lampSteady;
-    if (!soft) return (this.lampPic = null);
+    if (!soft) return null;
     const [W, H] = this.lampSoftSize;
-    if (!this.lampPic || this.lampPic.width !== W || this.lampPic.height !== H) this.lampPicDirty = true;
-    const box = this.lampPicDirty;
-    if (!box) return this.lampPic;
-    this.lampPicDirty = null;
-    const c = box === true ? (this.lampPic = blank(W, H)) : this.lampPic;
-    this.bandPicture(c, soft, W, H, box === true ? [0, 0, W, H] : box.map((v) => v * LAMP_SAMPLES), 1);
+    this.lampPics ??= [];
+    this.lampDirty ??= [];
+    if (!this.lampPics[k] || this.lampPics[k].width !== W || this.lampPics[k].height !== H) this.lampDirty[k] = true;
+    const box = this.lampDirty[k];
+    if (!box) return this.lampPics[k];
+    this.lampDirty[k] = null;
+    const c = box === true ? (this.lampPics[k] = blank(W, H)) : this.lampPics[k];
+    this.bandPicture(c, soft, W, H, box === true ? [0, 0, W, H] : box.map((v) => v * LAMP_SAMPLES), 1, k);
     return c;
+  },
+
+  // A fire's own light as such a picture (made when first asked for); `k`
+  // as lampPicture's.
+  firePicture(fire, k = 0) {
+    fire.pics ??= [];
+    if (!fire.pics[k]) {
+      fire.pics[k] = blank(fire.w * LAMP_FINE, fire.h * LAMP_FINE);
+      this.bandPicture(fire.pics[k], fire.soft, fire.w, fire.h, [0, 0, fire.w, fire.h], LAMP_FINE, k);
+    }
+    return fire.pics[k];
+  },
+
+  // Bands the light unbanded `soft` (mw × mh samples) into the picture `c`,
+  // F times finer, within the box [x0, y0, x1, y1] (samples): in the bands'
+  // tones; or, `k` 1 to 3, all of it in the faint band or brighter, the dim
+  // or brighter, the lit (for merging lights without the GPU, compose).
+  bandPicture(c, soft, mw, mh, [x0, y0, x1, y1], F, k = 0) {
+    const S = this.S, w = (x1 - x0) * F, h = (y1 - y0) * F;
+    if (w <= 0 || h <= 0) return;
+    const dk = S.darkLevel, dm = S.dimLevel, t1 = dk / 2, t2 = (dk + dm) / 2, t3 = (dm + 1) / 2;
+    const A = k ? [0, 1, 2, 3].map((n) => (n >= k ? 255 : 0)) : [0, Math.round(255 * dk), Math.round(255 * dm), 255];
+    const im = new ImageData(w, h), d = im.data;
+    for (let Y = 0; Y < h; Y++) {
+      const fy = (y0 * F + Y + 0.5) / F - 0.5, ky = Math.max(0, Math.min(mh - 1, Math.floor(fy))), ky1 = Math.min(mh - 1, ky + 1), ty = Math.max(0, Math.min(1, fy - ky));
+      for (let X = 0; X < w; X++) {
+        const fx = (x0 * F + X + 0.5) / F - 0.5, kx = Math.max(0, Math.min(mw - 1, Math.floor(fx))), kx1 = Math.min(mw - 1, kx + 1), tx = Math.max(0, Math.min(1, fx - kx));
+        const a = soft[ky * mw + kx], b = soft[ky * mw + kx1], e = soft[ky1 * mw + kx], f = soft[ky1 * mw + kx1];
+        const v = (a + (b - a) * tx) * (1 - ty) + (e + (f - e) * tx) * ty;
+        d[(Y * w + X) * 4 + 3] = A[v < t1 ? 0 : v < t2 ? 1 : v < t3 ? 2 : 3];
+      }
+    }
+    c.getContext("2d").putImageData(im, x0 * F, y0 * F);
+  },
+
+  // The player's light (as cast, `lightReach`) as three pictures, all of it
+  // in the faint band or brighter, the dim or brighter, the lit: [, 1, 2, 3]
+  // (for merging lights without the GPU, compose). Made again when cast anew.
+  lightBands() {
+    const src = this.lightReach;
+    if (!src) return null;
+    // (Asked for: made as the light's cast from now on, castLight.)
+    this.wantBands = true;
+    if (this.lightBandsFor === this.lightCasts && this.lightBandPics?.[1]?.width === src.width) return this.lightBandPics;
+    const S = this.S, n = src.width, a = src.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, n, n).data;
+    const t1 = 0.5 * 255 * S.darkLevel, t2 = 0.5 * 255 * (S.darkLevel + S.dimLevel), t3 = 0.5 * 255 * (S.dimLevel + 1);
+    const pics = [null];
+    for (const t of [t1, t2, t3]) {
+      const c = blank(n, n), im = new ImageData(n, n), d = im.data;
+      for (let i = 3; i < a.length; i += 4) d[i] = a[i] >= t ? 255 : 0;
+      c.getContext("2d").putImageData(im, 0, 0);
+      pics.push(c);
+    }
+    this.lightBandsFor = this.lightCasts;
+    return (this.lightBandPics = pics);
   },
 
   // Where the light unbanded `soft` (w × h samples) reaches at all (the
@@ -436,35 +513,6 @@ export const lightMethods = {
       for (let x = x0; x < x1; x++) d[((y - y0) * w + (x - x0)) * 4 + 3] = Math.round(255 * clamp01((soft[y * W + x] - t) / step + 0.5));
     c.getContext("2d").putImageData(im, x0, y0);
     return c;
-  },
-
-  // A fire's own light as such a picture (made when first asked for).
-  firePicture(fire) {
-    if (!fire.pic) {
-      fire.pic = blank(fire.w * LAMP_FINE, fire.h * LAMP_FINE);
-      this.bandPicture(fire.pic, fire.soft, fire.w, fire.h, [0, 0, fire.w, fire.h], LAMP_FINE);
-    }
-    return fire.pic;
-  },
-
-  // Bands the light unbanded `soft` (mw × mh samples) into the picture `c`,
-  // F times finer, within the box [x0, y0, x1, y1] (samples).
-  bandPicture(c, soft, mw, mh, [x0, y0, x1, y1], F) {
-    const S = this.S, w = (x1 - x0) * F, h = (y1 - y0) * F;
-    if (w <= 0 || h <= 0) return;
-    const dk = S.darkLevel, dm = S.dimLevel, t1 = dk / 2, t2 = (dk + dm) / 2, t3 = (dm + 1) / 2;
-    const A = [0, Math.round(255 * dk), Math.round(255 * dm), 255];
-    const im = new ImageData(w, h), d = im.data;
-    for (let Y = 0; Y < h; Y++) {
-      const fy = (y0 * F + Y + 0.5) / F - 0.5, ky = Math.max(0, Math.min(mh - 1, Math.floor(fy))), ky1 = Math.min(mh - 1, ky + 1), ty = Math.max(0, Math.min(1, fy - ky));
-      for (let X = 0; X < w; X++) {
-        const fx = (x0 * F + X + 0.5) / F - 0.5, kx = Math.max(0, Math.min(mw - 1, Math.floor(fx))), kx1 = Math.min(mw - 1, kx + 1), tx = Math.max(0, Math.min(1, fx - kx));
-        const a = soft[ky * mw + kx], b = soft[ky * mw + kx1], e = soft[ky1 * mw + kx], f = soft[ky1 * mw + kx1];
-        const v = (a + (b - a) * tx) * (1 - ty) + (e + (f - e) * tx) * ty;
-        d[(Y * w + X) * 4 + 3] = A[v < t1 ? 0 : v < t2 ? 1 : v < t3 ? 2 : 3];
-      }
-    }
-    c.getContext("2d").putImageData(im, x0 * F, y0 * F);
   },
 
   // The lanterns carried about moved (squares { x, y }): their light laid

@@ -44,7 +44,13 @@ for (const seed of [3, 41, 999, 2024]) {
       if ((m % 2 === 1) !== w.sneaking) w.act({ do: "lamp" });
       window.versal.renderer.showLamp();
     }, m);
+    // (Then until the view has caught up: the map drawn, and the light cast
+    // from where the player is; a fixed wait, as long as that takes.)
     await page.waitForTimeout(1200);
+    await page.waitForFunction(() => {
+      const w = window.versal.world, E = window.versal.renderer.exp, TS = window.versal.renderer.TS;
+      return !E || (!E.job && E.lightFrom && E.lightFrom[0] === (w.player.x + 0.5) * TS && E.lightFrom[1] === (w.player.y + 0.5) * TS);
+    }, null, { timeout: 20000 }).catch(() => problems.push(`seed ${seed}: the view never caught up with the player`));
     const r = await page.evaluate(async () => {
       const w = window.versal.world, E = window.versal.renderer.exp, L = w.level, TS = window.versal.renderer.TS, out = [];
       if (!E) return { n: 0, bad: [] };

@@ -1858,6 +1858,24 @@ export class Expression {
     eg.globalAlpha = 1;
   }
 
+  // The lit paper warmed twice over, as the lights warm it (compose), kept
+  // until the paper is painted again.
+  litWarm() {
+    if (this.litWarmFor === this.painted && this.litWarmPic?.width === this.lit.width) return this.litWarmPic;
+    const c = (this.litWarmPic = this.litWarmPic?.width === this.lit.width && this.litWarmPic.height === this.lit.height ? this.litWarmPic : blank(this.lit.width, this.lit.height)), g = c.getContext("2d");
+    g.globalCompositeOperation = "source-over";
+    g.drawImage(this.lit, 0, 0);
+    g.globalCompositeOperation = "multiply";
+    g.fillStyle = `rgba(255, 196, 120, ${LAMP_WARMTH * 0.35})`;
+    g.fillRect(0, 0, c.width, c.height);
+    g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = "destination-in";
+    g.drawImage(this.lit, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    this.litWarmFor = this.painted;
+    return c;
+  }
+
   // A canvas the size of `ctx`'s, for compositing what is in view.
   work(ctx) {
     const c = ctx.canvas;
@@ -1914,100 +1932,110 @@ export class Expression {
     if (!(x1 > x0 && y1 > y0)) return;
     g.fillStyle = S.darkColor;
     g.fillRect(x0, y0, x1 - x0, y1 - y0);
-    const box = this.screenBox(T, g.canvas);
-    if (box) {
-      // The lit picture, through the light.
-      const c = this.boxCanvas || (this.boxCanvas = blank(1, 1)), bg = c.getContext("2d");
-      if (c.width < box.w || c.height < box.h) { c.width = Math.max(c.width, box.w); c.height = Math.max(c.height, box.h); }
-      bg.setTransform(1, 0, 0, 1, 0, 0);
-      bg.globalCompositeOperation = "source-over";
-      bg.clearRect(0, 0, c.width, c.height);
-      bg.setTransform(T.a, 0, 0, T.d, T.e - box.x0, T.f - box.y0);
-      bg.imageSmoothingEnabled = true;
-      this.region(bg, this.lit, this.scale, box.view);
-      bg.globalCompositeOperation = "destination-in";
-      this.drawLightBox(bg);
-      bg.globalCompositeOperation = "source-over";
-      g.setTransform(1, 0, 0, 1, 0, 0);
-      g.drawImage(c, 0, 0, box.w, box.h, box.x0, box.y0, box.w, box.h);
-      g.setTransform(T);
-      // The light's own ink.
-      if (this.lightInked) {
-        const b = this.lightBox;
-        g.drawImage(this.lightInk, b.x, b.y, b.w, b.w);
+    // The light (spec/light-rebuild.md, S5): the player's (their lamp, or
+    // their dark sight) and the level's lights' merged, the brighter showing
+    // where they meet, as on the GPU: three nested regions, U[1] the faint
+    // band or brighter (the dark vision), U[2] the dim or brighter, U[3] the
+    // lit, each the player's and the level's together (theirs where in
+    // sight); the paper painted through each once: the faint band as the dark
+    // sight is, unwarmed; dim and lit warmed twice over, as the level's
+    // lights warm, the lamp's light too (yours, "make the lamp's tone match
+    // the fires'").
+    const box = this.screenBox(T, g.canvas), lampPic = this.lampPicture(1), lamp = lampPic && this.lampBox(T, g.canvas);
+    if (box || lamp) {
+      const t = performance.now() / 1000, cv = g.canvas, U = (this.lightU ??= [null, blank(1, 1), blank(1, 1), blank(1, 1)]), seenBy = (this.lightSeenBy ??= blank(1, 1));
+      for (const c of [U[1], U[2], U[3], seenBy]) if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; }
+      // (All within the box round the light, in whole pixels.)
+      const r = [box, lamp].filter(Boolean), cx0 = Math.min(...r.map((q) => q.x0)), cy0 = Math.min(...r.map((q) => q.y0));
+      const cw = Math.max(...r.map((q) => q.x0 + q.w)) - cx0, ch = Math.max(...r.map((q) => q.y0 + q.h)) - cy0;
+      const clipTo = (c) => { c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.beginPath(); c.rect(cx0, cy0, cw, ch); c.clip(); };
+      const reach = box ? this.lightBands() : null, b = this.lightBox, [px, py] = this.lightFrom ?? [0, 0], lk = this.lightK ?? 1, TS = this.TS;
+      // (Where the level's lights can be seen: the eased sight, the far sight
+      // and what's been seen, together.)
+      if (lamp) {
+        const sg = seenBy.getContext("2d");
+        clipTo(sg);
+        sg.clearRect(cx0, cy0, cw, ch);
+        sg.setTransform(T);
+        sg.imageSmoothingEnabled = true;
+        this.region(sg, this.sightCanvas.eased, ss, lamp.view);
+        sg.globalCompositeOperation = "destination-in";
+        this.region(sg, this.sightCanvas.lamps, ss, lamp.view);
+        this.region(sg, this.seenShape, this.scale, lamp.view);
+        sg.restore();
       }
-    }
-    // The lit picture through the level's lights, where in sight (fires
-    // flickering a little), warmed: only round the lights near the player, the
-    // only ones that can be in sight.
-    const lampPic = this.lampPicture(), lamp = lampPic && this.lampBox(T, g.canvas);
-    if (lamp) {
-      const t = performance.now() / 1000;
-      wg.setTransform(1, 0, 0, 1, 0, 0);
-      wg.globalCompositeOperation = "source-over";
-      wg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
-      wg.save();
-      wg.beginPath();
-      wg.rect(lamp.x0, lamp.y0, lamp.w, lamp.h);
-      wg.clip();
-      wg.setTransform(T);
-      this.region(wg, this.lit, this.scale, lamp.view);
-      // (Warmed twice over, as where the player's lamp warms it too: so the
-      // same with the lamp lit or out. Where the lamp's light is, it does
-      // the second warming itself.)
-      {
-        const warm = `rgba(255, 196, 120, ${LAMP_WARMTH * 0.35})`, v = lamp.view;
-        wg.globalCompositeOperation = "multiply";
-        wg.fillStyle = warm;
-        wg.fillRect(v.x, v.y, v.w, v.h);
-        const c = this.warm2 || (this.warm2 = blank(1, 1)), cg = c.getContext("2d");
-        if (c.width !== w.width || c.height !== w.height) { c.width = w.width; c.height = w.height; }
-        cg.setTransform(1, 0, 0, 1, 0, 0);
-        cg.globalCompositeOperation = "source-over";
-        cg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
-        cg.setTransform(T);
-        cg.fillStyle = warm;
-        cg.fillRect(v.x, v.y, v.w, v.h);
-        if (S.warmth > 0) {
-          cg.globalCompositeOperation = "destination-out";
-          this.drawLightBox(cg);
-          cg.globalCompositeOperation = "source-over";
+      for (let k = 1; k <= 3; k++) {
+        const ug = U[k].getContext("2d");
+        clipTo(ug);
+        ug.clearRect(cx0, cy0, cw, ch);
+        ug.imageSmoothingEnabled = true;
+        // (The level's, each fire swelling and shrinking its own way about
+        // its flame, where in sight.)
+        if (lamp) {
+          const pic = this.lampPicture(k);
+          ug.setTransform(T);
+          this.region(ug, pic, (R * pic.width) / this.mw / TS, lamp.view);
+          for (const l of this.lampsSeen) {
+            if (!l.fire) continue;
+            const { x, y, ph, at, size, out } = l.fire, s = fireSwell(t, ph, out);
+            ug.setTransform(T);
+            ug.translate(x * TS, y * TS);
+            ug.scale(s, s);
+            ug.translate(-x * TS, -y * TS);
+            ug.drawImage(this.firePicture(l.fire, k), at[0] * TS, at[1] * TS, size[0] * TS, size[1] * TS);
+          }
+          ug.setTransform(1, 0, 0, 1, 0, 0);
+          ug.globalCompositeOperation = "destination-in";
+          ug.drawImage(seenBy, 0, 0);
+          ug.globalCompositeOperation = "source-over";
         }
-        wg.setTransform(1, 0, 0, 1, 0, 0);
-        wg.drawImage(c, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
+        // (The player's with it, swelling as their light does.)
+        if (reach) {
+          ug.setTransform(T);
+          ug.translate(px, py);
+          ug.scale(lk, lk);
+          ug.translate(-px, -py);
+          ug.globalAlpha = this.lightBright ?? 1;
+          ug.drawImage(reach[k], b.x, b.y, b.w, b.w);
+          ug.globalAlpha = 1;
+        }
+        ug.restore();
+      }
+      // (The paper through them: the faint band only where not dim; then,
+      // warmed (kept: litWarm), the dim and the lit at once, through U[2]
+      // made over into how much: the dim band's light, all where lit.)
+      const paint = (paper, mask, alpha, less) => {
+        clipTo(wg);
+        wg.clearRect(cx0, cy0, cw, ch);
         wg.setTransform(T);
-      }
-      // (Where the lights fall: the steady light, and each fire's swelling
-      // and shrinking a little about it, on a wave of its own.)
-      const m = this.lampMask || (this.lampMask = blank(1, 1)), mg = m.getContext("2d");
-      if (m.width !== w.width || m.height !== w.height) { m.width = w.width; m.height = w.height; }
-      mg.setTransform(1, 0, 0, 1, 0, 0);
-      mg.clearRect(lamp.x0, lamp.y0, lamp.w, lamp.h);
-      mg.setTransform(T);
-      mg.imageSmoothingEnabled = true;
-      this.region(mg, lampPic, (R * lampPic.width) / this.mw / this.TS, lamp.view);
-      for (const l of this.lampsSeen) {
-        if (!l.fire) continue;
-        const { x, y, ph, at, size, out } = l.fire, TS = this.TS, pic = this.firePicture(l.fire);
-        const k = fireSwell(t, ph, out);
-        mg.save();
-        mg.translate(x * TS, y * TS);
-        mg.scale(k, k);
-        mg.translate(-x * TS, -y * TS);
-        mg.drawImage(pic, at[0] * TS, at[1] * TS, size[0] * TS, size[1] * TS);
-        mg.restore();
-      }
-      wg.globalCompositeOperation = "destination-in";
-      wg.setTransform(1, 0, 0, 1, 0, 0);
-      wg.drawImage(m, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
-      wg.setTransform(T);
-      this.region(wg, this.sightCanvas.eased, ss, lamp.view);
-      this.region(wg, this.sightCanvas.lamps, ss, lamp.view);
-      this.region(wg, this.seenShape, this.scale, lamp.view);
-      wg.restore();
-      g.setTransform(1, 0, 0, 1, 0, 0);
-      g.drawImage(w, lamp.x0, lamp.y0, lamp.w, lamp.h, lamp.x0, lamp.y0, lamp.w, lamp.h);
-      g.setTransform(T);
+        this.region(wg, paper, this.scale, view);
+        wg.setTransform(1, 0, 0, 1, 0, 0);
+        wg.globalCompositeOperation = "destination-in";
+        wg.drawImage(mask, 0, 0);
+        if (less) {
+          wg.globalCompositeOperation = "destination-out";
+          wg.drawImage(less, 0, 0);
+        }
+        wg.restore();
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.globalAlpha = alpha;
+        g.drawImage(w, cx0, cy0, cw, ch, cx0, cy0, cw, ch);
+        g.globalAlpha = 1;
+        g.setTransform(T);
+      };
+      paint(this.lit, U[1], S.darkLevel, U[2]);
+      const mg = U[2].getContext("2d");
+      clipTo(mg);
+      mg.globalCompositeOperation = "copy";
+      mg.globalAlpha = S.dimLevel;
+      mg.drawImage(U[2], 0, 0);
+      mg.globalCompositeOperation = "lighter";
+      mg.globalAlpha = 1 - S.dimLevel;
+      mg.drawImage(U[3], 0, 0);
+      mg.restore();
+      paint(this.litWarm(), U[2], 1, null);
+      // The light's own ink.
+      if (box && this.lightInked) g.drawImage(this.lightInk, b.x, b.y, b.w, b.w);
     }
     // Where the ink in sight goes: the eased sight (which has the ground
     // near the player in it, see castSight).
@@ -2035,22 +2063,6 @@ export class Expression {
       g.setTransform(T);
     }
     this.region(g, st.cover, this.scale, view);
-    // The warmth where the light falls.
-    if (box && S.warmth > 0) {
-      const warm = this.warmCanvas || (this.warmCanvas = blank(1, 1)), lc = this.lightCanvas;
-      if (warm.width !== lc.width || warm.height !== lc.height) { warm.width = lc.width; warm.height = lc.height; }
-      const hg = warm.getContext("2d");
-      hg.globalCompositeOperation = "source-over";
-      hg.clearRect(0, 0, warm.width, warm.height);
-      hg.drawImage(lc, 0, 0);
-      hg.globalCompositeOperation = "source-in";
-      hg.fillStyle = `rgba(255, 196, 120, ${S.warmth * 0.35})`;
-      hg.fillRect(0, 0, warm.width, warm.height);
-      const b = this.lightBox;
-      g.globalCompositeOperation = "multiply";
-      g.drawImage(warm, b.x, b.y, b.w, b.w);
-      g.globalCompositeOperation = "source-over";
-    }
   }
 
   // The light's square on a canvas with transform `T`, in whole pixels (so

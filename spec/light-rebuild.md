@@ -212,3 +212,15 @@ light (lamp or dark sight) was laid down first and the level's lights over it, s
 two added up. Now (on the GPU) they merge as the level's lights do among themselves: the brighter
 shows, warmed by the level's lights as far as theirs is the light shown. The lamp's light keeps its
 own paler tint, so where it reaches is still to be seen.
+
+Yours: "Make the canvas path match too, and make the lamp's tone match the fires'." Done. Without the
+GPU the player's light and the level's lights now merge the same way (the brighter showing): each of
+the three steps (the faint band or brighter, the dim or brighter, the lit) is made one region of
+theirs and the level's (the level's where in sight), and the paper painted through them, the faint
+band as the dark sight is, dim and lit warmed. The lamp's light warmed as the fires' is, on both
+paths (twice over, the paper only; it was once, inks too), and its brightness steady (it dimmed by up
+to a tenth: with it, the lamp's light came out darker than the fires'), so the two can't be told
+apart where they meet. Measured: the two paths' colours within a unit or two of each other; the
+lamp's lit paper (242, 211, 169), a fire's (240, 206, 165). Without the GPU a frame takes longer:
+about 27 ms on a level, it was 17. The view-and-rules check now waits for the view to catch up with
+the player (the map drawn, the light cast where they are) before comparing, not a fixed second.

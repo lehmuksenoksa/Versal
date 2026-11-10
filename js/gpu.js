@@ -234,13 +234,14 @@ void main() {
   float la = lampBands(v) * inLight * sight * texture(uLampSight, sp).a * seen;
   // (The player's light and the level's merge, the brighter showing where
   // they meet, as the level's lights do among themselves: a dim band over
-  // the player's dark sight just dim, two dim bands just dim. Warmed by the
-  // level's lights as far as theirs is the light shown.)
+  // the player's dark sight just dim, two dim bands just dim. Light, the
+  // lamp's as the level's, warmed twice over (yours, "make the lamp's tone
+  // match the fires'"); the faint band, the dark vision, not.)
   float A = max(lp, la);
   if (A > 0.0) {
-    float w1 = uLampWarmth * 0.35, w2 = w1 * (uWarmth > 0.0 ? 1.0 - lp : 1.0);
-    vec3 warm = lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w2 * (1.0 - uWarm));
-    c = over(c, mix(lit, warm, la / A), A);
+    float w1 = uLampWarmth * 0.35, wa = max(fwidth(A) * 0.7, 1e-4);
+    vec3 warm = lit * (1.0 - w1 * (1.0 - uWarm)) * (1.0 - w1 * (1.0 - uWarm));
+    c = over(c, mix(lit, warm, smoothstep(t2 - wa, t2 + wa, A)), A);
   }
   // Where the ink in sight goes; the inks, the old fading out under the new.
   float m = sight;
@@ -252,7 +253,6 @@ void main() {
   else c = now;
   // The warmth of the player's light; and the map ending at its edges (no
   // fade: the hatching runs to the edge).
-  c *= 1.0 - uWarmth * 0.35 * lp * (1.0 - uWarm);
   vec2 e = min(p, uMap - p);
   float keep = e.x >= 0.0 && e.y >= 0.0 ? 1.0 : 0.0;
   o = vec4(mix(uOut, c, keep), 1.0);
@@ -658,13 +658,12 @@ export class GpuMap {
     u("uPaper", E.paper.width, E.paper.height); u("uMask", mw, mh); u("uScale", E.scale); u("uTS", TS); u("uMap", E.W * TS, E.H * TS);
     u("uSightScale", E.sightScale); u("uSightSize", E.sightCanvas.eased.width, E.sightCanvas.eased.height);
     u("uFade", prev ? 1 : 0); u("uFadeK", fadeK);
-    // The light's flicker, as castLight's: brightness and size.
+    // The light's flicker, as castLight's: its size (its brightness steady).
     const box = E.lightBox;
     u("uLightOn", box && E.lightReach ? 1 : 0);
     if (box && E.lightReach) {
-      const wave = (Math.sin(t * 7.3) + 0.6 * Math.sin(t * 12.7 + 1) + 0.4 * Math.sin(t * 3.1 + 2)) / 2;
       const swell = (Math.sin(t * 5.1) + 0.5 * Math.sin(t * 8.9 + 0.7) + 0.3 * Math.sin(t * 13.3 + 2)) / 1.8;
-      u("uBright", 1 - S.flicker * 0.25 * (wave + 1) / 2);
+      u("uBright", 1);
       u("uLightK", 1 + S.flickerSize * swell);
       u("uLightBox", box.x, box.y, box.w, box.res);
       u("uLightSize", E.lightReach.width);
