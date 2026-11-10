@@ -130,5 +130,11 @@ export function restoreWorld(data, proto) {
   // (A save from before the levels kept where the player looked from: none
   // known, so what was seen is drawn again only from here on.)
   for (const st of w.places) if (st?.seen && !st.looked) st.looked = new Uint8Array(st.seen.length);
+  // (A save from before things on the floor kept whether they'd been seen,
+  // none marked: those on squares seen counted seen, as the map drew them
+  // then.)
+  if (!w.places.some((st) => st?.items?.some((it) => it.seen !== undefined)))
+    for (const st of w.places)
+      for (const it of st?.items ?? []) if (st.level && st.seen?.[it.y * st.level.w + it.x]) it.seen = true;
   return w;
 }

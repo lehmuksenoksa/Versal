@@ -224,3 +224,7 @@ apart where they meet. Measured: the two paths' colours within a unit or two of 
 lamp's lit paper (242, 211, 169), a fire's (240, 206, 165). Without the GPU a frame takes longer:
 about 27 ms on a level, it was 17. The view-and-rules check now waits for the view to catch up with
 the player (the map drawn, the light cast where they are) before comparing, not a fixed second.
+
+Yours: "Take it to full game." **The light rebuild is in the game: S1 to S5 done.** With it, a save from
+before things on the floor kept whether they'd been seen (none marked) counts those on squares seen
+as seen, as the map drew them then, so resuming doesn't forget them.
